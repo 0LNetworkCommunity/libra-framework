@@ -189,7 +189,7 @@ module ol_framework::vouch {
       }
     }
 
-    /// will only succesfully vouch if the two are not related by ancestry
+    /// will only successfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
     public entry fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {

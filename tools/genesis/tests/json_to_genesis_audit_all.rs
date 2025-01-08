@@ -3,6 +3,7 @@ mod support;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
 use diem_types::{account_view::AccountView, chain_id::NamedChain};
+use libra_backwards_compatibility::legacy_recovery_v6::AccountRole;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::{
     compare,
@@ -12,10 +13,7 @@ use libra_genesis_tools::{
     supply::{self},
     vm::libra_genesis_default,
 };
-use libra_types::{
-    exports::ChainId, legacy_types::legacy_recovery_v6::AccountRole,
-    move_resource::gas_coin::GasCoinStoreResource,
-};
+use libra_types::{exports::ChainId, move_resource::gas_coin::GasCoinStoreResource};
 use support::{path_utils::json_path, test_vals};
 
 #[test]

@@ -12,12 +12,12 @@ use serde::{Deserialize, Serialize};
 
 // Legacy Balance resource
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LegacyBalanceResource {
+pub struct LegacyBalanceResourceV6 {
     pub coin: u64,
 }
 
-impl LegacyBalanceResource {
-    /// Attempts to deserialize bytes into a `LegacyBalanceResource` instance
+impl LegacyBalanceResourceV6 {
+    /// Attempts to deserialize bytes into a `LegacyBalanceResourceV6` instance
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self> {
         bcs::from_bytes(bytes).map_err(Into::into)
     }

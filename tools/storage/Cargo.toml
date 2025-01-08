@@ -25,10 +25,11 @@ diem-logger = { workspace = true }
 diem-push-metrics = { workspace = true }
 diem-types = { workspace = true }
 glob = { workspace = true }
-libra-types = { workspace = true }
+libra-backwards-compatibility = { workspace = true }
 num_cpus = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+
 
 [dev-dependencies]
 diem-temppath = { workspace = true }
