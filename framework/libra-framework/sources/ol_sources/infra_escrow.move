@@ -18,13 +18,14 @@ module ol_framework::infra_escrow{
     use ol_framework::ol_account;
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::pledge_accounts;
-    // use ol_framework::slow_wallet;
-    // use std::fixed_point32;
-    // use std::signer;
+
     // use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend ol_framework::epoch_boundary;
+
+    #[test_only]
+    friend ol_framework::mock;
 
     const EGENESIS_REWARD: u64 = 0;
     /// for use on genesis, creates the infra escrow pledge policy struct
@@ -103,5 +104,13 @@ module ol_framework::infra_escrow{
           ol_account::deposit_coins(to, coin);
         option::destroy_none(c_opt);
       }
+    }
+
+    #[test_only]
+    // test helper to initialize escrow for unit tests which don't do a full genesis
+    public fun init_escrow_with_deposit(framework: &signer, depositor: &signer, amount: u64){
+      pledge_accounts::initialize(framework);
+      initialize(framework);
+      user_pledge_infra(depositor, amount);
     }
 }
