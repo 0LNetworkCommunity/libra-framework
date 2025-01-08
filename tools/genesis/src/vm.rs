@@ -28,7 +28,8 @@ use diem_vm_genesis::{
     initialize_on_chain_governance, publish_framework, set_genesis_end, validate_genesis_config,
     verify_genesis_write_set, GenesisConfiguration, Validator, GENESIS_KEYPAIR,
 };
-use libra_types::{legacy_types::legacy_recovery_v6::LegacyRecoveryV6, ol_progress::OLProgress};
+use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_types::ol_progress::OLProgress;
 
 /// set the genesis parameters
 /// NOTE: many of the parameters are ignored in libra_framework

@@ -5791,7 +5791,6 @@ dependencies = [
  "diem",
  "diem-config",
  "diem-node",
- "diem-vm",
  "libra-config",
  "libra-framework",
  "libra-genesis-tools",
@@ -5803,6 +5802,32 @@ dependencies = [
  "libra-wallet",
  "tokio",
  "vergen",
+]
+
+[[package]]
+name = "libra-backwards-compatibility"
+version = "7.0.3"
+dependencies = [
+ "anyhow",
+ "bcs 0.1.4",
+ "bytes",
+ "diem-api-types",
+ "diem-backup-cli",
+ "diem-config",
+ "diem-crypto",
+ "diem-crypto-derive",
+ "diem-temppath",
+ "diem-types",
+ "hex",
+ "libra-types",
+ "move-core-types",
+ "once_cell",
+ "rand 0.7.3",
+ "serde 1.0.214",
+ "serde_bytes",
+ "serde_json",
+ "tiny-keccak",
+ "tokio",
 ]
 
 [[package]]
@@ -5887,6 +5912,7 @@ dependencies = [
  "diem-vm",
  "diem-vm-genesis",
  "indicatif",
+ "libra-backwards-compatibility",
  "libra-config",
  "libra-framework",
  "libra-types",
@@ -5989,7 +6015,7 @@ dependencies = [
  "diem-temppath",
  "diem-types",
  "glob",
- "libra-types",
+ "libra-backwards-compatibility",
  "num_cpus",
  "serde_json",
  "tokio",

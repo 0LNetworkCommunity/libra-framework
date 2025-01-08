@@ -1,0 +1,37 @@
+[package]
+name = "libra-backwards-compatibility"
+
+# Workspace inherited keys
+authors = { workspace = true }
+version = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+publish = { workspace = true }
+repository = { workspace = true }
+rust-version = { workspace = true }
+
+
+[dependencies]
+anyhow = { workspace = true }
+bcs = { workspace = true }
+diem-api-types = { workspace = true }
+diem-backup-cli = { workspace = true }
+diem-config = { workspace = true }
+diem-crypto = { workspace = true }
+diem-crypto-derive = { workspace = true }
+diem-types = { workspace = true }
+move-core-types = { workspace = true }
+hex = { workspace = true }
+libra-types = { workspace = true }
+once_cell = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tiny-keccak = { workspace = true }
+bytes = { workspace = true }
+serde_bytes = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+diem-temppath = { workspace = true }
