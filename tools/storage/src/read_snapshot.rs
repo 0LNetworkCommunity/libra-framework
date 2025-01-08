@@ -15,7 +15,7 @@ use diem_types::{
         state_value::StateValue,
     },
 };
-use libra_types::legacy_types::legacy_recovery_v6;
+use libra_backwards_compatibility::legacy_recovery_v6;
 use serde_json::json;
 use std::{
     collections::HashMap,
@@ -24,12 +24,9 @@ use std::{
 };
 use tokio::{fs::OpenOptions, io::AsyncRead};
 
-#[cfg(test)]
-use libra_types::legacy_types::legacy_recovery_v6::{get_legacy_recovery, AccountRole};
-
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into object
-pub fn load_snapshot_manifest(path: &PathBuf) -> Result<StateSnapshotBackup, Error> {
+pub fn load_snapshot_manifest(path: &Path) -> Result<StateSnapshotBackup, Error> {
     let config = std::fs::read_to_string(path).map_err(|e| {
         format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
         e
@@ -126,11 +123,11 @@ pub async fn accounts_from_snapshot_backup(
 
 #[test]
 // TODO: adapt for V7.
-#[ignore]
+
 fn test_parse_manifest() {
     use std::str::FromStr;
     let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
-    this_path.push("fixtures/state_epoch_79_ver_33217173.795d/state.manifest");
+    this_path.push("fixtures/v7/state_epoch_116_ver_38180075.05af/state.manifest");
     let _r = load_snapshot_manifest(&this_path).expect("parse manifest");
     // dbg!(&r.epoch);
 }
@@ -140,7 +137,7 @@ pub async fn manifest_to_json(manifest_path: PathBuf, out_path: Option<PathBuf>)
     let archive_path = manifest_path.parent().unwrap();
     let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
         .await
-        .expect("could not parse snapshot");
+        .expect("could not decode snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
         let legacy_recovery = legacy_recovery_v6::get_legacy_recovery(account_state)
@@ -177,11 +174,11 @@ async fn test_deserialize_account() {
     let archive_path = this_path.parent().unwrap();
     let account_states = accounts_from_snapshot_backup(snapshot_manifest, archive_path)
         .await
-        .expect("could not parse snapshot");
+        .expect("could not decode snapshot");
     let mut legacy_recovery_vec = Vec::new();
     for account_state in account_states.iter() {
-        let legacy_recovery =
-            get_legacy_recovery(account_state).expect("could not get legacy recovery");
+        let legacy_recovery = legacy_recovery_v6::get_legacy_recovery(account_state)
+            .expect("could not get legacy recovery");
 
         legacy_recovery_vec.push(legacy_recovery);
     }
@@ -202,7 +199,7 @@ async fn test_deserialize_account() {
     assert_eq!(
         legacy_recovery_vec
             .iter()
-            .filter(|l| l.role == AccountRole::System)
+            .filter(|l| l.role == legacy_recovery_v6::AccountRole::System)
             .fold(0, |count, _| count + 1),
         1
     );
@@ -210,7 +207,7 @@ async fn test_deserialize_account() {
     assert_eq!(
         legacy_recovery_vec
             .iter()
-            .filter(|l| l.role == AccountRole::Validator)
+            .filter(|l| l.role == legacy_recovery_v6::AccountRole::Validator)
             .fold(0, |count, _| count + 1),
         74
     );
@@ -219,7 +216,7 @@ async fn test_deserialize_account() {
     assert_eq!(
         legacy_recovery_vec
             .iter()
-            .filter(|l| l.role == AccountRole::Operator)
+            .filter(|l| l.role == legacy_recovery_v6::AccountRole::Operator)
             .fold(0, |count, _| count + 1),
         0
     );

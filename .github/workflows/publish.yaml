@@ -9,8 +9,7 @@ on:
 
 jobs:
   publish:
-    permissions:
-      write-all
+    permissions: write-all
     name: publish
     runs-on: ubuntu-latest
     steps:
@@ -30,17 +29,6 @@ jobs:
       - name: build libra cli release
         # size and performance optimized binary with profile.cli
         run: cargo b --release -p libra
-
-      # release bin
-      - name: libra publish
-        if: ${{ !contains(github.ref, 'ci-bins') }}
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/libra
-          tag: ${{ github.ref }}
-          overwrite: true
-          file_glob: true
 
       # CI bin
       - name: libra publish

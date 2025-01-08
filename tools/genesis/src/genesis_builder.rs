@@ -29,13 +29,14 @@ use diem_vm_genesis::{
     GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
 };
 use indicatif::ProgressBar;
+use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_framework::release;
 use libra_types::{
     core_types::fixtures::TestPersona,
     exports::{ChainId, NamedChain},
-    legacy_types::legacy_recovery_v6::LegacyRecoveryV6,
     ol_progress::OLProgress,
 };
+
 use libra_wallet::{
     account_keys::get_keys_from_mnem,
     keys::generate_key_objects_from_legacy,
