@@ -385,7 +385,7 @@ module ol_framework::lockbox {
   }
 
   #[test(framework = @0x1, bob_sig = @0x10002)]
-  #[expected_failure(abort_code = 65545)] // error::invalid_argument(EINVALID_DURATION)
+  #[expected_failure(abort_code = 65545, location = ol_framework::lockbox)]
   fun test_non_standard_duration(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
     let bob_addr = signer::address_of(bob_sig);
     let coin = test_setup(framework, 100);
