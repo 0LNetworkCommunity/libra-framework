@@ -1,9 +1,8 @@
 //! Module for handling recovery genesis blob creation
 
-use libra_types::{
-    exports::{AccountAddress, AuthenticationKey},
-    legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
-};
+use libra_backwards_compatibility::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
+
+use libra_types::exports::{AccountAddress, AuthenticationKey};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,

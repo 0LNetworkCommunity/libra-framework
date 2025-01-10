@@ -22,7 +22,7 @@ spec ol_framework::lockbox {
     spec add_to_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) {
         // Pre-conditions
         requires signer::address_of(user) != @0x0;  // User must have valid address
-        
+
         // Post-conditions
         ensures exists<SlowWalletV2>(signer::address_of(user));  // SlowWalletV2 must exist after operation
     }
@@ -47,7 +47,7 @@ spec ol_framework::lockbox {
     spec delay_impl(user: &signer, duration_from: u64, duration_to: u64, units: u64) {
         // Pre-conditions
         requires signer::address_of(user) != @0x0;  // User must have valid address
-        
+
         // Post-conditions
         ensures duration_from < duration_to;  // Can only move to longer duration
     }
@@ -60,7 +60,7 @@ spec ol_framework::lockbox {
         requires exists<SlowWalletV2>(to);                        // Receiver must have SlowWalletV2
         requires units > 0;                                        // Must transfer positive amount
         requires to != @0x0;                                      // Receiver address must be valid
-        
+
         // Post-conditions
         ensures units > 0;                                        // Amount remains positive
         ensures to != @0x0;                                      // Receiver remains valid
@@ -86,4 +86,3 @@ spec ol_framework::lockbox {
         days / 10000000 + 1
     }
 }
-

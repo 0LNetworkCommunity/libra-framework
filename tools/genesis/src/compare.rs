@@ -9,12 +9,13 @@ use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::{state_view::LatestDbStateCheckpointView, DbReader};
 use diem_types::{account_view::AccountView, transaction::Transaction};
 use indicatif::{ProgressBar, ProgressIterator};
+use libra_backwards_compatibility::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
 use libra_types::{
     exports::AccountAddress,
-    legacy_types::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6},
     move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance},
     ol_progress::OLProgress,
 };
+
 use move_core_types::{language_storage::CORE_CODE_ADDRESS, move_resource::MoveResource};
 use serde::{Deserialize, Serialize};
 use std::{

@@ -3,6 +3,7 @@ mod support;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
 use diem_types::{account_view::AccountView, chain_id::NamedChain};
+use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_framework::head_release_bundle;
 use libra_genesis_tools::{
     compare, genesis::make_recovery_genesis_from_vec_legacy_recovery, genesis_reader, parse_json,
@@ -10,9 +11,9 @@ use libra_genesis_tools::{
 };
 use libra_types::{
     exports::{AccountAddress, ChainId},
-    legacy_types::legacy_recovery_v6::LegacyRecoveryV6,
     move_resource::ancestry::AncestryResource,
 };
+
 use support::{path_utils::json_path, test_vals};
 #[test]
 // test that a genesis blob created from struct, will actually contain the data

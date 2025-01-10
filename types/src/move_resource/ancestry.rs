@@ -10,7 +10,7 @@ use move_core_types::{
 use serde::{Deserialize, Serialize};
 
 /// Struct that represents a AutoPay resource
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AncestryResource {
     /// A vector representing the ancestry tree of account addresses.
     pub tree: Vec<AccountAddress>,

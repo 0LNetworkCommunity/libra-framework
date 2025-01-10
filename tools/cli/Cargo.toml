@@ -18,7 +18,6 @@ clap = { workspace = true }
 diem = { workspace = true }
 diem-config = { workspace = true }
 diem-node = { workspace = true }
-diem-vm = { workspace = true }
 libra-config = { workspace = true }
 libra-framework = { workspace = true }
 libra-genesis-tools = { workspace = true }
