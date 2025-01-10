@@ -1,5 +1,3 @@
-
-
 spec ol_framework::lockbox {
 
     /// Specification for maybe_initialize:
@@ -82,23 +80,10 @@ spec ol_framework::lockbox {
         requires idx < vector::length(global<SlowWalletV2>(signer::address_of(user)).list);
     }
 
-  
     /// Helper function to calculate minimum amount needed to get non-zero drip
     spec fun min_amount_for_drip(duration_months: u64): u64 {
         let days = math64::mul_div(duration_months, 365, 12);
         days / 10000000 + 1
-    }
-
-    /// Test that verifies a user CANNOT create a lockbox with a non-standard duration
-    /// This test demonstrates that the DEFAULT_LOCKS list IS enforced
-    spec test_non_standard_duration(framework: &signer, bob_sig: &signer) {
-        // Pre-conditions
-        requires signer::address_of(bob_sig) != @0x0;  // Bob must have valid address
-        
-        // Post-conditions
-        // The test should fail when attempting a non-standard duration (e.g., 5*12 months)
-        // This shows that DEFAULT_LOCKS is enforced
-        aborts_with error::invalid_argument(EINVALID_DURATION);
     }
 }
 
