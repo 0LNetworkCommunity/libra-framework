@@ -1,3 +1,41 @@
+/// # Lockbox Module
+///
+/// The `Lockbox` module is designed to manage time-locked Libra.
+/// This is the implementation of Slow Wallet v2.0
+/// The fundamental change is that the unlocking is done on a percentage basis
+/// rather than a fixed amount per day.
+/// It allows users to lock their assets for a specified period, ensuring that the assets
+/// cannot be accessed or transferred until the daily unlocks have drained the lockbox (the lock duration has expired).
+///
+/// ## Key Concepts
+///
+/// - **Time-Locked Assets**: Assets that are locked for a specific duration and cannot be accessed
+///   until the lock period ends.
+/// - **Lock Periods**: Predefined durations for which assets can be locked. These periods are
+///   represented as a vector of time intervals (in months).
+/// - **Daily Drip**: A mechanism that gradually unlocks assets from the lockbox on a daily basis,
+///   allowing partial access to the locked assets over time.
+///
+/// ## Constants
+///
+/// - `DEFAULT_LOCKS`: A vector of predefined lock periods (in months) that users can choose from.
+///   These periods are: 6 months, 12 months, 24 months, 36 months, 48 months, 96 months,
+///   192 months, 240 months, 288 months, 336 months, and 384 months.
+///
+/// ## Functions
+///
+/// The `Lockbox` module provides functions to:
+/// - Lock assets for a specified period.
+/// - Check the status of locked assets.
+/// - Unlock assets once the lock period has expired.
+/// - Gradually unlock assets on a daily basis through the daily drip mechanism.
+///
+///
+/// This module ensures that assets are securely locked and cannot be accessed until the specified
+/// lock period has expired, providing a mechanism for time-based asset management with gradual
+/// unlocking through the daily drip mechanism.
+
+
 module ol_framework::lockbox {
   use std::error;
   use std::fixed_point32::{Self, FixedPoint32};
@@ -40,7 +78,7 @@ module ol_framework::lockbox {
   /// Duration not in allowed list
   const EINVALID_DURATION: u64 = 9;
 
-  const DEFAULT_LOCKS: vector<u64> = vector[1*12, 2*12, 3*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
+  const DEFAULT_LOCKS: vector<u64> = vector[6, 1*12, 2*12, 3*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
 
   struct Lockbox has key, store {
     locked_coins: Coin<LibraCoin>,
@@ -52,6 +90,12 @@ module ol_framework::lockbox {
 
   struct SlowWalletV2 has key {
     list: vector<Lockbox>
+  }
+
+  // convenience function to get default locks
+  #[view]
+  public fun get_default_locks(): vector<u64> {
+    DEFAULT_LOCKS
   }
 
   // user init lockbox
@@ -81,7 +125,7 @@ module ol_framework::lockbox {
   public(friend) fun new(locked_coins: Coin<LibraCoin>, duration_type: u64): Lockbox {
       // Validate that the duration is in the allowed list
       assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
-      
+
       Lockbox {
         locked_coins,
         duration_type,
