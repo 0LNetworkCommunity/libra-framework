@@ -29,6 +29,7 @@ module diem_framework::randomness {
     use std::vector;
     use diem_framework::system_addresses;
     use diem_framework::transaction_context;
+
     #[test_only]
     use diem_std::debug;
     #[test_only]
@@ -36,6 +37,7 @@ module diem_framework::randomness {
 
     friend diem_framework::block;
     friend ol_framework::musical_chairs;
+    friend ol_framework::sortition;
 
     const INIT_SEED: vector<u8> = b"all your base are belong to us";
 
@@ -292,7 +294,7 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-   fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
+   public (friend) fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
         // event::emit_event(RandomnessGeneratedEvent {});
 
         u64_range_internal(min_incl, max_excl)
