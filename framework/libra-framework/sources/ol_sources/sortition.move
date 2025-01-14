@@ -42,12 +42,15 @@ module ol_framework::sortition {
 
     public fun weighted_sample(weights: vector<u64>, n: u64): vector<u64> {
       let selected_indices = vector::empty();
+      if (n == 0) {
+        return selected_indices
+      };
 
       let i = 0;
       // sample once
       while (i < n) {
         // regenerate the weight after every selection
-        let total_weight  = vector::fold(weights, 0, |acc, x| acc + x);
+        let total_weight = vector::fold(weights, 0, |acc, x| acc + x);
 
         // Step 1: Generate a random number in the range of total_weight
         let random_number = randomness::u64_range(0, total_weight);
@@ -76,10 +79,6 @@ module ol_framework::sortition {
             i = i + 1;
         };
 
-        if (vector::length(&selected_indices) > n) {
-            // trim just in case
-            let _ = vector::trim(&mut selected_indices, n);
-        };
 
         return selected_indices
     }
@@ -96,7 +95,7 @@ module ol_framework::sortition {
         // TODO: check this
 
         let indexes_again = weighted_sample(weights, 3);
-        assert!(vector::length(&indexes) == 3, 7357001);
+        assert!(vector::length(&indexes_again)== 3, 7357001);
 
         // should not be the same
         let res = comparator::compare(&indexes, &indexes_again);
