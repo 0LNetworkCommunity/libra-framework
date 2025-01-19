@@ -110,7 +110,7 @@ module ol_framework::sortition {
     /// # Arguments
     /// * `items` - A mutable reference to a vector of u64 indices.
     /// * `rng` - A random generator instance.
-    public fun shuffle(items: &mut vector<u64>) {
+    public fun shuffle<T>(items: &mut vector<T>) {
       let len = vector::length(items);
       if (len == 0) { return };
 

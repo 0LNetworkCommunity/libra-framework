@@ -2,8 +2,76 @@
 // 0L Module
 // Proof of Fee
 /////////////////////////////////////////////////////////////////////////
-// NOTE: this module replaces NodeWeight.move, which becomes redundant since
-// all validators have equal weight in consensus.
+// Proof of Fee aims to get the lowest possible cost of decentralized consensus, with the minimal sybil resistence required.
+// # Terms
+// Libra blockchain uses a variation of PBFT consensus, which requires
+// stable validator sets. All such blockchains use either Proof of Authority,
+// or Proof of Stake to implement sybil resistance to prevent rapid privilege
+// escalation.
+// PoF is a social and economic game designed specifically for the qualities
+// of PBFT. See the v0 paper at
+// https://docs.openlibra.io/archive/canonical/technical/proof-of-fee-part-1
+// TL;DR validator selection is a public goods problem, where there is no
+// sponsorship for discovering the information of the best validator set.
+// PoS relied on a reputation engine based on economic positions assigned at
+// genesis. There are other reputation games that can be tried for
+// PBFT consensus.
+
+// # Auction for Lowest Cost
+// Prospective validators bid on providing the lowest cost (net rewards)
+// to be a validator in the set. The auction format is a uniform price auction
+// (treasury auction). The bids are not sealed (per v0 of proof of fee).
+// Due to the open nature of the bids some randomness is implemented to prevent
+// repeated shill bidding by an individual bidder, for the benefit of all validators.
+// # Setting Rewards
+// All validators receive the the same reward. The reward is set by
+// the last bidder with the highest reward requested
+// (the bidder who requests the highest net revenue). Every validator
+// receives this same reward.
+// There are a number of qualifications to be a validators
+// # Preventing privilege escalation
+// Similar to PoS which relies on a reputation game by
+// assigning early stake and validator position, PoF uses a simple
+// peer-to-peer "vouch" game as an overlay to mitigate rapid sybil take-over
+// of the validator set.
+// Note: vouching does not require group votes to form the validator list,
+// instead relies on the graph of individual validators. Since blockchains
+// do not implement sufficient graph algorithms natively, a simple search
+// by account ancestry is used to prevent rapid accumulation of validator
+// roles See vouch.move for more detail.
+// # Algorithm
+// 1. Receive bids throughout epoch.
+// During the normal operation of the blockchain prospective validators can
+// bid their net reward. See set_bid(). The number of prospective validators
+// is referred to `m` below.
+// 2. The size of the incoming validator set is determined.
+// Orthogonal to Proof of Fee the validator set size must be calculated first.
+// Libra uses "Musical Chairs" algorithm to do so: see musical_chairs.move
+// First the incoming validators cardinality (number of seats) will be
+// determined. The set size is always smaller than the number of bidders, and
+// in the event of many more prospective validators than seats the set can
+// increase if the previous validator set has performed perfectly. The
+// output here is `n` seats
+// See calculate_final_set_size()
+// 2. Sortition the bids at epoch boundary
+// Next the transition of the epoch, the auction will conclude and
+// results computed.
+// This begins with the sortition of the prospective validator bids, for m bidders, there are n seats a.
+// The lowest cost providers are sampled by the relative "weight" of their
+// requested rewards. Effectively the lowest cost providers have a higher
+// chance to enter the set. Including step will filter shill bids do distort
+// the auction reward (e.g. 100% net reward).
+
+// 3. Next the auction finds the clearing price
+// The clearing price is set by the last bid (most expensive provider).
+// The clearing price sets the reward for all validators in the
+// incoming validator set. The weighted sample for the earlier set is sorted
+// to select clearing price.
+
+// 4. Set constants and return
+// Results of the auction are stored into the root state. See set_history()
+// This module returns the validator set, and the clearing price to calling module, reconfiguration.move.
+
 ///////////////////////////////////////////////////////////////////////////
 
 module ol_framework::proof_of_fee {
@@ -23,6 +91,8 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
+  use ol_framework::sortition;
+
   //use diem_std::debug::print;
 
   friend diem_framework::genesis;
@@ -268,9 +338,38 @@ module ol_framework::proof_of_fee {
     let eligible_validators = validator_universe::get_eligible_validators();
     sort_vals_impl(&eligible_validators, remove_unqualified)
   }
+
+  fun shuffle_and_sample(eligible_validators: vector<address>, n: u64): vector<address> acquires ProofOfFeeAuction {
+    let length = vector::length<address>(&eligible_validators);
+
+    sortition::shuffle<address>(&mut eligible_validators);
+
+    // vector to store each address's node_weight
+    let bids = vector::empty<u64>();
+
+    let k = 0;
+    while (k < length) {
+      let cur_address = *vector::borrow<address>(&eligible_validators, k);
+      let (bid, _expire) = current_bid(cur_address);
+      vector::push_back<u64>(&mut bids, bid);
+      k = k + 1;
+    };
+
+    let sampled_idx = sortition::weighted_sample(bids, n);
+
+    let selected = vector::empty<address>();
+    let i = 0;
+    while (i < vector::length(&sampled_idx)) {
+      let idx = *vector::borrow(&sampled_idx, i);
+      let selected_addr = *vector::borrow(&eligible_validators, idx);
+      vector::push_back(&mut selected, selected_addr);
+      i = i + 1;
+    };
+    return selected
+  }
   // returns two lists: ordered bidder addresss and the list of bids bid
   fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
-    // let eligible_validators = validator_universe::get_eligible_validators();
+
     let length = vector::length<address>(eligible_validators);
 
     // vector to store each address's node_weight
