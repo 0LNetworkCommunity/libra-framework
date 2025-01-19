@@ -31,8 +31,6 @@ module diem_framework::randomness {
     use diem_framework::transaction_context;
 
     #[test_only]
-    use diem_std::debug;
-    #[test_only]
     use diem_std::table_with_length;
 
     friend diem_framework::block;
@@ -256,6 +254,9 @@ module diem_framework::randomness {
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
     public(friend) fun u8_range(min_incl: u8, max_excl: u8): u8 acquires PerBlockRandomness {
+        // let the caller decide how to handle
+        if (max_excl<= min_incl) { return 0 };
+
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u8);
 
@@ -294,8 +295,9 @@ module diem_framework::randomness {
     ///
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
-   public (friend) fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
-        // event::emit_event(RandomnessGeneratedEvent {});
+   public(friend) fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
+        // let the caller decide how to handle
+        if (max_excl<= min_incl) { return 0 };
 
         u64_range_internal(min_incl, max_excl)
     }
@@ -303,7 +305,6 @@ module diem_framework::randomness {
     fun u64_range_internal(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u64);
-
         min_incl + sample
     }
 
@@ -457,8 +458,10 @@ module diem_framework::randomness {
         set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
         // Test cases should always have no bias for any randomness call.
         // assert!(is_unbiasable(), 0);
-        let num = u64_integer();
-        debug::print(&num);
+        let num1 = u64_integer();
+        let num2 = u64_integer();
+        assert!(num1 != num2, 7357001);
+
     }
 
     // #[test_only]

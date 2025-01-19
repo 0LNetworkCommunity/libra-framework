@@ -22,6 +22,7 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
+  use ol_framework::randomness;
 
   // use diem_std::debug::print;
 
@@ -108,7 +109,6 @@ module ol_framework::mock {
 
   #[test_only]
   public fun mock_bids(vals: &vector<address>): (vector<u64>, vector<u64>) {
-    // system_addresses::assert_ol(vm);
     let bids = vector::empty<u64>();
     let expiry = vector::empty<u64>();
     let i = 0;
@@ -138,6 +138,8 @@ module ol_framework::mock {
     system_addresses::assert_ol(root);
     genesis::setup();
     genesis::test_end_genesis(root);
+
+    randomness::initialize_for_testing(root);
 
     let mint_cap = coin_init_minimal(root);
     libra_coin::restore_mint_cap(root, mint_cap);
