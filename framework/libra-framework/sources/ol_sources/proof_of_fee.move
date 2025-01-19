@@ -2,8 +2,87 @@
 // 0L Module
 // Proof of Fee
 /////////////////////////////////////////////////////////////////////////
-// NOTE: this module replaces NodeWeight.move, which becomes redundant since
-// all validators have equal weight in consensus.
+// Proof of Fee aims to get the lowest possible cost of decentralized consensus, with the minimal sybil resistence required.
+// # Terms
+// Libra blockchain uses a variation of PBFT consensus, which requires
+// stable validator sets. All such blockchains use either Proof of Authority,
+// or Proof of Stake to implement sybil resistance to prevent rapid privilege
+// escalation.
+// PoF is a social and economic game designed specifically for the qualities
+// of PBFT. See the v0 paper at
+// https://docs.openlibra.io/archive/canonical/technical/proof-of-fee-part-1
+// TL;DR validator selection is a public goods problem, where there is no
+// sponsorship for discovering the information of the best validator set.
+// PoS relied on a reputation engine based on economic positions assigned at
+// genesis. There are other reputation games that can be tried for
+// PBFT consensus.
+
+// # Auction for Lowest Cost
+// Prospective validators bid on providing the lowest cost (net rewards)
+// to be a validator in the set. The auction format is a uniform price auction
+// (treasury auction). The bids are not sealed (per v0 of proof of fee).
+// Due to the open nature of the bids some randomness is implemented to prevent
+// repeated shill bidding by an individual bidder, for the benefit of all validators.
+// # Setting Rewards
+// All validators receive the the same reward. The reward is set by
+// the last bidder with the highest reward requested
+// (the bidder who requests the highest net revenue). Every validator
+// receives this same reward.
+// There are a number of qualifications to be a validators
+// # Preventing privilege escalation
+// Similar to PoS which relies on a reputation game by
+// assigning early stake and validator position, PoF uses a simple
+// peer-to-peer "vouch" game as an overlay to mitigate rapid sybil take-over
+// of the validator set.
+// Note: vouching does not require group votes to form the validator list,
+// instead relies on the graph of individual validators. Since blockchains
+// do not implement sufficient graph algorithms natively, a simple search
+// by account ancestry is used to prevent rapid accumulation of validator
+// roles See vouch.move for more detail.
+// # Algorithm
+// 1. Get prospective validators and their bids.
+// During the normal operation of the blockchain prospective validators can
+// bid their net reward. See set_bid(). The number of prospective validators
+// is referred to `m` below.
+
+// 2. The size of the incoming validator set is determined.
+// Orthogonal to Proof of Fee the validator set size must be calculated first.
+// Libra uses "Musical Chairs" algorithm to do so: see musical_chairs.move
+// First the incoming validators cardinality (number of seats) will be
+// determined. The set size is always smaller than the number of bidders, and
+// in the event of many more prospective validators than seats the set can
+// increase if the previous validator set has performed perfectly. The
+// output here is `n` seats.
+// In order to make sure that the next epoch does not halt from unprepared
+// validators which are off-line doing operational preparations to join
+// Musical chairs has two steps in seating the `n` seats:
+// a) allowing know performant validators to sit first (up to 2/3 * n)
+// b) let unknown validators sit next.
+// See calculate_final_set_size()
+
+// 3. Pick winners with random sample (sortition)
+// Next the transition of the epoch, the auction will conclude and
+// results computed.
+// This begins with the sortition of the prospective validator bids, for m bidders, there are n seats a.
+// The lowest cost providers are sampled by the relative "weight" of their
+// requested rewards. Effectively the lowest cost providers have a higher
+// chance to enter the set. Including step will filter shill bids do distort
+// the auction reward (e.g. 100% net reward).
+// In this step we additionally check the qualifications of the validator.
+
+// 4. Determine clearing price
+// The clearing price is set by the last bid (most expensive provider).
+// The clearing price sets the reward for all validators in the
+// incoming validator set. The weighted sample for the earlier set is sorted
+// to select clearing price.
+
+// 5. Set results in history state
+// Results of the auction are stored into the root state. See set_history()
+
+// 6. Charge validators and return
+// Incoming validators are charged their entry fee (before they get paid)
+// This module returns the validator set, and the clearing price to calling module, reconfiguration.move.
+
 ///////////////////////////////////////////////////////////////////////////
 
 module ol_framework::proof_of_fee {
@@ -23,6 +102,8 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
+  use ol_framework::sortition;
+
   //use diem_std::debug::print;
 
   friend diem_framework::genesis;
@@ -152,11 +233,11 @@ module ol_framework::proof_of_fee {
   }
 
   /// Consolidates all the logic for the epoch boundary, including:
-  /// 1. Getting the sorted bidders,
-  /// 2. Calculate final validators set size (number of seats to fill),
-  /// 3. Filling the seats,
-  /// 4. Getting a price,
-  /// 5. Finally charging the validators for their bid (everyone pays the lowest)
+  /// 1. Calculate final validators set size (number of seats to fill),
+  /// 2. Sortition: Filling the seats with randomness,
+  /// 3. Getting the clearing price,
+  /// 4. Save history
+  /// 5. Charging the validators for their bid (everyone pays the lowest)
   /// For audit instrumentation returns: final set size, auction winners, all the bidders, (including not-qualified), and all qualified bidders.
   /// We also return the auction entry price (clearing price)
   /// (final_set_size, auction_winners, all_bidders, only_qualified_bidders, actually_paid, entry_fee)
@@ -167,8 +248,12 @@ module ol_framework::proof_of_fee {
   ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
 
+    // 1. Get prospective validators and their bids.
+
     let all_bidders = get_bidders(false);
     let only_qualified_bidders = get_bidders(true);
+
+    // 2. The size of the incoming validator set is determined.
 
     // Calculate the final set size considering the number of compliant validators,
     // number of qualified bidders, and musical chairs set size suggestion
@@ -177,10 +262,16 @@ module ol_framework::proof_of_fee {
       vector::length(&only_qualified_bidders),
       mc_set_size);
 
+    // 3. Pick winners with random sample (sortition)
+    // TODO: sortition
+    let winning_validators = shuffle_and_sample(only_qualified_bidders, final_set_size);
+    // 4. Determine clearing price
+    // 5. Set results in history state
+    // 6. Charge validators and return
     // This is the core of the mechanism, the uniform price auction
     // the winners of the auction will be the validator set.
     // Other lists are created for audit purposes of the BoundaryStatus
-    let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &only_qualified_bidders, outgoing_compliant_set);
+    let (auction_winners, entry_fee, _clearing_bid, _proven, _unproven) = fill_seats_and_get_price(vm, final_set_size, &winning_validators, outgoing_compliant_set);
 
     (auction_winners, all_bidders, only_qualified_bidders, entry_fee)
   }
@@ -258,7 +349,7 @@ module ol_framework::proof_of_fee {
   #[view]
   public fun get_bidders(remove_unqualified: bool): vector<address> acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
-    let (bidders, _) = sort_vals_impl(&eligible_validators, remove_unqualified);
+    let (bidders, _) = sort_auction_bids(&eligible_validators, remove_unqualified);
     bidders
   }
 
@@ -266,11 +357,40 @@ module ol_framework::proof_of_fee {
   // same as get bidders, but returns the bid
   public fun get_bidders_and_bids(remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
     let eligible_validators = validator_universe::get_eligible_validators();
-    sort_vals_impl(&eligible_validators, remove_unqualified)
+    sort_auction_bids(&eligible_validators, remove_unqualified)
   }
-  // returns two lists: ordered bidder addresss and the list of bids bid
-  fun sort_vals_impl(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
-    // let eligible_validators = validator_universe::get_eligible_validators();
+
+  fun shuffle_and_sample(eligible_validators: vector<address>, n: u64): vector<address> acquires ProofOfFeeAuction {
+    let length = vector::length<address>(&eligible_validators);
+
+    sortition::shuffle<address>(&mut eligible_validators);
+
+    // vector to store each address's node_weight
+    let bids = vector::empty<u64>();
+
+    let k = 0;
+    while (k < length) {
+      let cur_address = *vector::borrow<address>(&eligible_validators, k);
+      let (bid, _expire) = current_bid(cur_address);
+      vector::push_back<u64>(&mut bids, bid);
+      k = k + 1;
+    };
+
+    let sampled_idx = sortition::weighted_sample(bids, n);
+
+    let selected = vector::empty<address>();
+    let i = 0;
+    while (i < vector::length(&sampled_idx)) {
+      let idx = *vector::borrow(&sampled_idx, i);
+      let selected_addr = *vector::borrow(&eligible_validators, idx);
+      vector::push_back(&mut selected, selected_addr);
+      i = i + 1;
+    };
+    return selected
+  }
+  // returns two lists: ordered bidder address and the list of bids bid
+  fun sort_auction_bids(eligible_validators: &vector<address>, remove_unqualified: bool): (vector<address>, vector<u64>) acquires ProofOfFeeAuction, ConsensusReward {
+
     let length = vector::length<address>(eligible_validators);
 
     // vector to store each address's node_weight
@@ -298,7 +418,7 @@ module ol_framework::proof_of_fee {
     vector::reverse(&mut filtered_vals);
     vector::reverse(&mut bids);
 
-    // Shuffle duplicates to garantee randomness/fairness
+    // Shuffle duplicates to guarantee randomness/fairness
     address_utils::shuffle_duplicates(&mut filtered_vals, &mut bids);
 
     return (filtered_vals, bids)
@@ -324,8 +444,6 @@ module ol_framework::proof_of_fee {
   public fun calculate_min_vouches_required(set_size: u64): u64 {
     let required = globals::get_validator_vouch_threshold();
 
-    // TODO: set a features switch here
-    //if (false) {
       if (set_size > VAL_BOOT_UP_THRESHOLD) {
         // dynamically increase the amount of social proofing as the
         // validator set increases
@@ -334,7 +452,6 @@ module ol_framework::proof_of_fee {
           globals::get_max_vouches_per_validator() - VOUCH_MARGIN
         );
       };
-    //};
 
     required
   }
@@ -379,7 +496,7 @@ module ol_framework::proof_of_fee {
 
   // The Validator must qualify on a number of metrics:
   // 1. have funds in their Unlocked account to cover bid,
-  // 2. have miniumum viable vouches,
+  // 2. have minimum viable vouches,
   // 3. and not have been jailed in the previous round.
 
   /// Showtime.
@@ -401,17 +518,16 @@ module ol_framework::proof_of_fee {
   ): (vector<address>, u64, u64, vector<address>, vector<address>) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
 
-    // NOTE: this is duplicate work, but we are double checking we are getting a proper sort.
-    let (sorted_vals_by_bid, _) = sort_vals_impl(sorted_vals_by_bid, true);
+    // NOTE: this is call is repetitive, though we use it to remove unqualified
+    // bidders.
+    // TODO: separate qualification loop, from sorting.
+    let (sorted_vals_by_bid, _) = sort_auction_bids(sorted_vals_by_bid, true);
 
-    // Now we can seat the validators based on the algo:
+    // Now we can seat the validators based on the musical chairs algo:
     // A. seat the highest bidding 2/3 proven nodes of previous epoch
     // B. seat the remainder 1/3 of highest bidding validators which may or MA NOT have participated in the previous epoch. Note: We assume jailed validators are not in qualified bidder list anyways, but we should check again
     // The way to achieve this with minimal looping, is by going through the list and adding every bidder, but once the quota of unproven nodes is full, only proven nodes can be added.
 
-    // TODO: include jail reputation
-    // B1. first, seat any vals with jail reputation < 2.
-    // B2. then, if there are still seats, seat the remainder of the unproven vals with any jail reputation.
     let unproven_quota = final_set_size / 3;
     let proposed_validators = vector::empty<address>();
 
@@ -852,7 +968,6 @@ module ol_framework::proof_of_fee {
 
   /// retract bid
   public entry fun pof_retract_bid(sender: signer) acquires ProofOfFeeAuction {
-    // retract a bid
     retract_bid(&sender);
   }
 
