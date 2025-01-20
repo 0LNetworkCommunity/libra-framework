@@ -1,4 +1,7 @@
-//! read-archive
+//! state_snapshot
+
+// legacy code from diem, clippy warnings since 1.80
+#![allow(clippy::doc_lazy_continuation)]
 
 use crate::version_five::{account_blob_v5::AccountStateBlob, hash_value_v5::HashValueV5};
 
