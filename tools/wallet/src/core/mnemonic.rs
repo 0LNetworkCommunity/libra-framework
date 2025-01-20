@@ -222,7 +222,7 @@ impl U11BitWriter {
 const MASKS: [u16; 8] = [0, 0b1, 0b11, 0b111, 0b1111, 0b11111, 0b11_1111, 0b111_1111];
 
 // TODO: update this to hashmap or trie.
-const WORDS: [&str; 2048] = [
+static WORDS: [&str; 2048] = [
     "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd",
     "abuse", "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire",
     "across", "act", "action", "actor", "actress", "actual", "adapt", "add", "addict", "address",

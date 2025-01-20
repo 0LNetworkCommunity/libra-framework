@@ -45,9 +45,8 @@ pub struct AccountStateBlobRecord(HashValueV5, AccountStateBlob);
 ////// SNAPSHOT FILE IO //////
 /// read snapshot manifest file into struct
 pub fn v5_read_from_snapshot_manifest(path: &Path) -> Result<StateSnapshotBackupV5, Error> {
-    let config = std::fs::read_to_string(path).map_err(|e| {
-        format!("Error: cannot read file {:?}, error: {:?}", &path, &e);
-        e
+    let config = std::fs::read_to_string(path).inspect_err(|e| {
+        format!("Error: cannot read file {:?}, error: {:?}", &path, e);
     })?;
 
     let map: StateSnapshotBackupV5 = serde_json::from_str(&config)?;
