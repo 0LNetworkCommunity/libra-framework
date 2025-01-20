@@ -26,9 +26,9 @@ pub enum ValidatorTxs {
         /// validator set, with three decimal places: 1.234 is 123.4%
         bid_pct: Option<f64>,
         #[clap(short, long)]
-        /// Epoch until the bid is valid (will expire in `expiry` + 1). Max 30 epochs
-        expiry: u64,
-        #[clap(long)]
+        /// Epoch until the bid is valid (will expire in `expiry` + 1)
+        epoch_expiry: u64,
+        #[clap(short, long)]
         /// Eliminates the bid. There are only a limited amount of retractions that can happen in an epoch
         retract: bool,
     },
@@ -74,7 +74,7 @@ impl ValidatorTxs {
             ValidatorTxs::Pof {
                 net_reward,
                 bid_pct,
-                expiry,
+                epoch_expiry,
                 retract,
             } => {
                 if *retract {
@@ -89,13 +89,13 @@ impl ValidatorTxs {
                     }
                     ProofOfFeePofUpdateBid {
                         bid: scaled_bid,
-                        epoch_expiry: *expiry,
+                        epoch_expiry: *epoch_expiry,
                     }
                 } else {
                     // Default path is to update based on the expected net reward
                     ProofOfFeePofUpdateBidNetReward {
                         net_reward: *net_reward,
-                        epoch_expiry: *expiry,
+                        epoch_expiry: *epoch_expiry,
                     }
                 }
             }
