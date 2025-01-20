@@ -264,7 +264,7 @@ impl HashValueV5 {
     /// generating basic mock hash values.
     ///
     /// Ex: HashValue::from_u64(0x1234) => HashValue([0, .., 0, 0x12, 0x34])
-    #[cfg(any(test, feature = "fuzzing"))]
+    #[cfg(test)]
     pub fn from_u64(v: u64) -> Self {
         let mut hash = [0u8; Self::LENGTH];
         let bytes = v.to_be_bytes();

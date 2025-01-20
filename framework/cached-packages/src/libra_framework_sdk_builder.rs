@@ -12,7 +12,7 @@
 
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments, clippy::doc_lazy_continuation)]
 use diem_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},

@@ -150,7 +150,6 @@ pub fn write_to_file(result: Vec<(String, String)>, proposal_dir: PathBuf) -> an
 /// ... so that we can then submit it as part of a proposal framework/libra-framework/sources/modified_source/diem_governance.move
 /// ... so that then the VM doesn't complain about its size /diem-move/diem-vm/src/diem_vm_impl.rs
 /// ... and so that when the proposal is approved a third party can execute the source upgrade.
-
 pub fn init_move_dir_wrapper(
     package_dir: PathBuf,
     script_name: &str,
