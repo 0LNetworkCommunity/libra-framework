@@ -67,6 +67,8 @@ module diem_framework::block {
         system_addresses::assert_diem_framework(diem_framework);
         assert!(epoch_interval_microsecs > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
+        reconfiguration::set_epoch_interval(diem_framework, epoch_interval_microsecs);
+
         move_to<BlockResource>(
             diem_framework,
             BlockResource {
@@ -81,7 +83,7 @@ module diem_framework::block {
     /// Update the epoch interval.
     /// Can only be called as part of the Diem governance proposal process established by the DiemGovernance module.
     public(friend) fun update_epoch_interval_microsecs(
-        _diem_framework: &signer,
+        diem_framework: &signer,
         new_epoch_interval: u64,
     ) acquires BlockResource {
         //system_addresses::assert_vm(diem_framework); //TODO: remove after testing fork
@@ -89,7 +91,8 @@ module diem_framework::block {
 
         let block_resource = borrow_global_mut<BlockResource>(@diem_framework);
         let old_epoch_interval = block_resource.epoch_interval;
-        block_resource.epoch_interval = new_epoch_interval;
+
+        reconfiguration::set_epoch_interval(diem_framework, new_epoch_interval);
 
         event::emit_event<UpdateEpochIntervalEvent>(
             &mut block_resource.update_epoch_interval_events,
