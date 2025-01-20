@@ -6,8 +6,8 @@ use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
-    StakeUpdateNetworkAndFullnodeAddresses, ValidatorUniverseRegisterValidator, VouchRevoke,
-    VouchVouchFor,
+    ProofOfFeePofUpdateBidNetReward, StakeUpdateNetworkAndFullnodeAddresses,
+    ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
 };
 use libra_config::validator_registration;
 use libra_types::global_config_dir;
@@ -18,6 +18,9 @@ use std::{fs, path::PathBuf};
 pub enum ValidatorTxs {
     /// Proof-of-Fee auction bidding
     Pof {
+        #[clap(short('r'), long)]
+        /// Estimated net reward you would like to receive each epoch
+        net_reward: u64,
         #[clap(short, long)]
         /// Percentage of the nominal reward you will bid to join the
         /// validator set, with three decimal places: 1.234 is 123.4%
@@ -69,6 +72,7 @@ impl ValidatorTxs {
     pub fn make_payload(&self) -> anyhow::Result<EntryFunctionCall> {
         let p = match self {
             ValidatorTxs::Pof {
+                net_reward,
                 bid_pct,
                 epoch_expiry,
                 retract,
@@ -88,7 +92,11 @@ impl ValidatorTxs {
                         epoch_expiry: *epoch_expiry,
                     }
                 } else {
-                    todo!()
+                    // Default path is to update based on the expected net reward
+                    ProofOfFeePofUpdateBidNetReward {
+                        net_reward: *net_reward,
+                        epoch_expiry: *epoch_expiry,
+                    }
                 }
             }
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {

@@ -12,7 +12,7 @@
 
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments, clippy::doc_lazy_continuation)]
 use diem_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
@@ -94,8 +94,7 @@ pub enum EntryFunctionCall {
 
     /// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
     /// To authorize the rotation, we need two signatures:
-    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
-    /// demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
+    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
     /// - the second signature `cap_update_table` refers to the signature by the new key (that the account owner wants to rotate to) on a
     /// valid `RotationProofChallenge`, demonstrating that the user owns the new private key, and has the authority to update the
     /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
@@ -478,6 +477,12 @@ pub enum EntryFunctionCall {
         epoch_expiry: u64,
     },
 
+    /// update the bid using estimated net reward instead of the internal bid variables
+    ProofOfFeePofUpdateBidNetReward {
+        net_reward: u64,
+        epoch_expiry: u64,
+    },
+
     /// This function initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
     /// init_gov fails gracefully if the governance is already initialized.
     /// init_type will throw errors if the type is already initialized.
@@ -813,6 +818,10 @@ impl EntryFunctionCall {
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
             }
+            ProofOfFeePofUpdateBidNetReward {
+                net_reward,
+                epoch_expiry,
+            } => proof_of_fee_pof_update_bid_net_reward(net_reward, epoch_expiry),
             SafeInitPaymentMultisig { authorities } => safe_init_payment_multisig(authorities),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
@@ -1038,14 +1047,11 @@ pub fn account_revoke_signer_capability(
 /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
 /// To verify these two signatures, we need their corresponding public key and public key scheme: we use `from_scheme` and `from_public_key_bytes`
 /// to verify `cap_rotate_key`, and `to_scheme` and `to_public_key_bytes` to verify `cap_update_table`.
-/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys.
-/// `originating address` refers to an account's original/first address.
-///
+/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys. `originating address` refers to an account's original/first address.
 /// Here is an example attack if we don't ask for the second signature `cap_update_table`:
 /// Alice has rotated her account `addr_a` to `new_addr_a`. As a result, the following entry is created, to help Alice when recovering her wallet:
 /// `OriginatingAddress[new_addr_a]` -> `addr_a`
-/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one.
-/// (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
+/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one. (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
 ///
 /// But Bob likes to mess with Alice.
 /// Bob creates an account `addr_b` and maliciously rotates it to Alice's new address `new_addr_a`. Since we are no longer checking a PoK,
@@ -2169,6 +2175,28 @@ pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPa
     ))
 }
 
+/// update the bid using estimated net reward instead of the internal bid variables
+pub fn proof_of_fee_pof_update_bid_net_reward(
+    net_reward: u64,
+    epoch_expiry: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("proof_of_fee").to_owned(),
+        ),
+        ident_str!("pof_update_bid_net_reward").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&net_reward).unwrap(),
+            bcs::to_bytes(&epoch_expiry).unwrap(),
+        ],
+    ))
+}
+
 /// This function initiates governance for the multisig. It is called by the sponsor address, and is only callable once.
 /// init_gov fails gracefully if the governance is already initialized.
 /// init_type will throw errors if the type is already initialized.
@@ -3137,6 +3165,19 @@ mod decoder {
         }
     }
 
+    pub fn proof_of_fee_pof_update_bid_net_reward(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::ProofOfFeePofUpdateBidNetReward {
+                net_reward: bcs::from_bytes(script.args().first()?).ok()?,
+                epoch_expiry: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn safe_init_payment_multisig(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::SafeInitPaymentMultisig {
@@ -3515,6 +3556,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "proof_of_fee_pof_update_bid".to_string(),
             Box::new(decoder::proof_of_fee_pof_update_bid),
+        );
+        map.insert(
+            "proof_of_fee_pof_update_bid_net_reward".to_string(),
+            Box::new(decoder::proof_of_fee_pof_update_bid_net_reward),
         );
         map.insert(
             "safe_init_payment_multisig".to_string(),
