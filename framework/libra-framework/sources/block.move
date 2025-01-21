@@ -86,7 +86,7 @@ module diem_framework::block {
         diem_framework: &signer,
         new_epoch_interval: u64,
     ) acquires BlockResource {
-        //system_addresses::assert_vm(diem_framework); //TODO: remove after testing fork
+        system_addresses::assert_diem_framework(diem_framework); //TODO: remove after testing fork
         assert!(new_epoch_interval > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
         let block_resource = borrow_global_mut<BlockResource>(@diem_framework);
@@ -94,16 +94,12 @@ module diem_framework::block {
 
         reconfiguration::set_epoch_interval(diem_framework, new_epoch_interval);
 
+        reconfiguration::set_epoch_interval(diem_framework, new_epoch_interval);
+
         event::emit_event<UpdateEpochIntervalEvent>(
             &mut block_resource.update_epoch_interval_events,
             UpdateEpochIntervalEvent { old_epoch_interval, new_epoch_interval },
         );
-    }
-
-    #[view]
-    /// Return epoch interval in seconds.
-    public fun get_epoch_interval_secs(): u64 acquires BlockResource {
-        borrow_global<BlockResource>(@diem_framework).epoch_interval / 1000000
     }
 
     /// Set the metadata for the current block.
@@ -247,16 +243,14 @@ module diem_framework::block {
             };
 
             if (timestamp - reconfiguration::last_reconfiguration_time() >= block_metadata_ref.epoch_interval) {
-                // if (!features::epoch_trigger_enabled() ||
-                // testnet::is_testnet()) {
                 if (testnet::is_testnet()) {
                     epoch_boundary::epoch_boundary(
                         vm,
-                        reconfiguration::get_current_epoch(),
+                        reconfiguration::current_epoch(),
                         round
                     );
                 } else {
-                    epoch_boundary::enable_epoch_trigger(vm, reconfiguration::get_current_epoch());
+                    epoch_boundary::enable_epoch_trigger(vm, reconfiguration::current_epoch());
                 }
             }
     }
@@ -287,8 +281,7 @@ module diem_framework::block {
     }
 
     #[test(diem_framework = @diem_framework, account = @0x123)]
-    //#[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)] //TODO: remove after testing fork
-    #[ignore] //TODO: remove after testing fork
+    #[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)]
     public entry fun test_update_epoch_interval_unauthorized_should_fail(
         diem_framework: signer,
         account: signer,

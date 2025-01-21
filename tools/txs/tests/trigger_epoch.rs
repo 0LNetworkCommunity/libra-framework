@@ -5,7 +5,7 @@ use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::{submit_transaction::Sender, txs_cli_governance::GovernanceTxs};
 /// Test triggering a new epoch
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-#[ignore] // TODO
+// #[ignore] // TODO
 async fn trigger_epoch() -> anyhow::Result<()> {
     // create libra swarm and get app config for the validator
     let mut ls = LibraSmoke::new(Some(1), None)

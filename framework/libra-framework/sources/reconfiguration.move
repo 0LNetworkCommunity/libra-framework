@@ -65,14 +65,6 @@ module diem_framework::reconfiguration {
     const EINVALID_GUID_FOR_EVENT: u64 = 5;
 
 
-    //////// 0L ////////
-    #[view]
-    /// Returns the current epoch number
-    public fun get_current_epoch(): u64 acquires Configuration {
-        let config_ref = borrow_global<Configuration>(@diem_framework);
-        config_ref.epoch
-    }
-
     /// Only called during genesis.
     /// Publishes `Configuration` resource. Can only be invoked by diem framework account, and only a single time in Genesis.
     public(friend) fun initialize(diem_framework: &signer) {
