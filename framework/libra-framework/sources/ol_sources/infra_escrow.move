@@ -107,7 +107,7 @@ module ol_framework::infra_escrow{
     public(friend) fun genesis_coin_validator(framework: &signer, to: address) {
       system_addresses::assert_diem_framework(framework);
       assert!(epoch_helper::get_current_epoch() == 0, EGENESIS_REWARD);
-      let bootstrap_amount = 1_000_000_000; // 1K scaled
+      let bootstrap_amount = 1_000 * 1_000_000; // 1K times scaling
       framework_fund_account(framework, to, bootstrap_amount);
     }
 
@@ -124,15 +124,6 @@ module ol_framework::infra_escrow{
         option::destroy_none(c_opt);
       }
     }
-
-    // #[test_only]
-    // public(friend) fun test_fund_account_from_infra(framework: &signer, to: address, amount: u64) {
-    //   // belt and suspenders
-    //   system_addresses::assert_diem_framework(framework);
-    //   assert!(testnet::is_not_mainnet(), error::invalid_state(EWITHDRAW_NOT_ON_MAINNET));
-
-    //   framework_fund_account(framework, to, amount);
-    // }
 
     #[test_only]
     // test helper to initialize escrow for unit tests which don't do a full genesis
