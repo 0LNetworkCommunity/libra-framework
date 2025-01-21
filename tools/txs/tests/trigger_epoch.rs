@@ -18,7 +18,7 @@ async fn trigger_epoch() -> anyhow::Result<()> {
 
     let before_trigger_epoch_query_res = query_view::get_view(
         &ls.client(),
-        "0x1::reconfiguration::get_current_epoch",
+        "0x1::epoch_helper::get_current_epoch",
         None,
         None,
     )
@@ -41,7 +41,7 @@ async fn trigger_epoch() -> anyhow::Result<()> {
 
     let _before_trigger_epoch_query_res = query_view::get_view(
         &ls.client(),
-        "0x1::reconfiguration::get_current_epoch",
+        "0x1::epoch_helper::get_current_epoch",
         None,
         None,
     )
