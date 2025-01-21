@@ -92,8 +92,12 @@ module diem_framework::block {
         let block_resource = borrow_global_mut<BlockResource>(@diem_framework);
         let old_epoch_interval = block_resource.epoch_interval;
 
-        reconfiguration::set_epoch_interval(diem_framework, new_epoch_interval);
-
+        // NOTE this data is duplicated since block.move
+        // cannot be accessed by other system modules without creating
+        // circular dependencies.
+        // update locally
+        block_resource.epoch_interval = new_epoch_interval;
+        // and set in reconfigurations
         reconfiguration::set_epoch_interval(diem_framework, new_epoch_interval);
 
         event::emit_event<UpdateEpochIntervalEvent>(

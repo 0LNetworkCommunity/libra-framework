@@ -125,12 +125,20 @@ module ol_framework::infra_escrow{
       }
     }
 
-    #[test_only]
-    public(friend) fun test_fund_account_from_infra(framework: &signer, to: address, amount: u64) {
-      // belt and suspenders
-      system_addresses::assert_diem_framework(framework);
-      assert!(testnet::is_not_mainnet(), error::invalid_state(EWITHDRAW_NOT_ON_MAINNET));
+    // #[test_only]
+    // public(friend) fun test_fund_account_from_infra(framework: &signer, to: address, amount: u64) {
+    //   // belt and suspenders
+    //   system_addresses::assert_diem_framework(framework);
+    //   assert!(testnet::is_not_mainnet(), error::invalid_state(EWITHDRAW_NOT_ON_MAINNET));
 
-      framework_fund_account(framework, to, amount);
+    //   framework_fund_account(framework, to, amount);
+    // }
+
+    #[test_only]
+    // test helper to initialize escrow for unit tests which don't do a full genesis
+    public fun init_escrow_with_deposit(framework: &signer, depositor: &signer, amount: u64){
+      pledge_accounts::initialize(framework);
+      initialize(framework);
+      user_pledge_infra(depositor, amount);
     }
 }
