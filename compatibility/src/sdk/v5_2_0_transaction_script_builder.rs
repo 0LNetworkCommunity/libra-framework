@@ -1618,6 +1618,11 @@ pub enum ScriptFunctionCall {
 
     AutopayEnable {},
 
+    BalanceTransfer {
+        destination: AccountAddress,
+        unscaled_value: u64,
+    },
+
     /// # Summary
     /// Burns the transaction fees collected in the `CoinType` currency so that the
     /// Diem association may reclaim the backing coins off-chain. May only be sent
@@ -1771,14 +1776,30 @@ pub enum ScriptFunctionCall {
         amount: u64,
     },
 
+    /// claim a make whole payment, requires the index of the payment
+    /// in the MakeWhole module, which can be found using the
+    /// query_make_whole_payment, which should not be run as part of
+    /// the tx as it is relatively resource intensive (linear search)
+    ClaimMakeWhole {},
+
+    CommunityTransfer {
+        destination: AccountAddress,
+        unscaled_value: u64,
+        memo: Bytes,
+    },
+
     CreateAccUser {
         challenge: Bytes,
         solution: Bytes,
+        difficulty: u64,
+        security: u64,
     },
 
     CreateAccVal {
         challenge: Bytes,
         solution: Bytes,
+        difficulty: u64,
+        security: u64,
         ow_human_name: Bytes,
         op_address: AccountAddress,
         op_auth_key_prefix: Bytes,
@@ -2023,6 +2044,12 @@ pub enum ScriptFunctionCall {
     /// * `Script::rotate_authentication_key_with_recovery_address`
     CreateRecoveryAddress {},
 
+    CreateUserByCoinTx {
+        account: AccountAddress,
+        authkey_prefix: Bytes,
+        unscaled_value: u64,
+    },
+
     /// # Summary
     /// Creates a Validator account. This transaction can only be sent by the Diem
     /// Root account.
@@ -2184,6 +2211,8 @@ pub enum ScriptFunctionCall {
         to_freeze_account: AccountAddress,
     },
 
+    InitVouch {},
+
     /// # Summary
     /// Initializes the Diem consensus config that is stored on-chain.  This
     /// transaction can only be sent from the Diem Root account.
@@ -2210,22 +2239,30 @@ pub enum ScriptFunctionCall {
         sliding_nonce: u64,
     },
 
-    Join {},
-
-    Leave {},
-
     MinerstateCommit {
         challenge: Bytes,
         solution: Bytes,
+        difficulty: u64,
+        security: u64,
     },
 
     MinerstateCommitByOperator {
         owner_address: AccountAddress,
         challenge: Bytes,
         solution: Bytes,
+        difficulty: u64,
+        security: u64,
     },
 
     MinerstateHelper {},
+
+    /// A validator (Alice) can delegate the authority for the operation of an upgrade to another validator (Bob). When Oracle delegation happens, effectively the consensus voting power of Alice, is added to Bob only for the effect of calculating the preference on electing a stdlib binary. Whatever binary Bob proposes, Alice will also propose without needing to be submitting transactions.
+    OlDelegateVote {
+        dest: AccountAddress,
+    },
+
+    /// First Bob must have delegation enabled, which can be done with:
+    OlEnableDelegation {},
 
     OlOracleTx {
         id: u64,
@@ -2239,6 +2276,11 @@ pub enum ScriptFunctionCall {
         sha: AccountAddress,
         ram: AccountAddress,
     },
+
+    /// Alice can remove Bob as the delegate with this function.
+    OlRemoveDelegation {},
+
+    OlRevokeVote {},
 
     /// # Summary
     /// Transfers a given number of coins in a specified currency from one account to another.
@@ -2501,6 +2543,10 @@ pub enum ScriptFunctionCall {
         validator_address: AccountAddress,
     },
 
+    RevokeVouch {
+        val: AccountAddress,
+    },
+
     /// # Summary
     /// Rotates the `account`'s authentication key to the supplied new authentication key. May be sent by any account.
     ///
@@ -2712,6 +2758,12 @@ pub enum ScriptFunctionCall {
     /// * `AccountAdministrationScripts::publish_shared_ed25519_public_key`
     RotateSharedEd25519PublicKey {
         public_key: Bytes,
+    },
+
+    SelfUnjail {},
+
+    SetBurnPref {
+        to_community: bool,
     },
 
     /// # Summary
@@ -3170,6 +3222,14 @@ pub enum ScriptFunctionCall {
     },
 
     ValAddSelf {},
+
+    VouchFor {
+        val: AccountAddress,
+    },
+
+    VoucherUnjail {
+        addr: AccountAddress,
+    },
 }
 
 impl ScriptCall {
@@ -3485,6 +3545,10 @@ impl ScriptFunctionCall {
             ),
             AutopayDisable {} => encode_autopay_disable_script_function(),
             AutopayEnable {} => encode_autopay_enable_script_function(),
+            BalanceTransfer {
+                destination,
+                unscaled_value,
+            } => encode_balance_transfer_script_function(destination, unscaled_value),
             BurnTxnFees { coin_type } => encode_burn_txn_fees_script_function(coin_type),
             BurnWithAmount {
                 token,
@@ -3502,13 +3566,23 @@ impl ScriptFunctionCall {
                 preburn_address,
                 amount,
             } => encode_cancel_burn_with_amount_script_function(token, preburn_address, amount),
+            ClaimMakeWhole {} => encode_claim_make_whole_script_function(),
+            CommunityTransfer {
+                destination,
+                unscaled_value,
+                memo,
+            } => encode_community_transfer_script_function(destination, unscaled_value, memo),
             CreateAccUser {
                 challenge,
                 solution,
-            } => encode_create_acc_user_script_function(challenge, solution),
+                difficulty,
+                security,
+            } => encode_create_acc_user_script_function(challenge, solution, difficulty, security),
             CreateAccVal {
                 challenge,
                 solution,
+                difficulty,
+                security,
                 ow_human_name,
                 op_address,
                 op_auth_key_prefix,
@@ -3519,6 +3593,8 @@ impl ScriptFunctionCall {
             } => encode_create_acc_val_script_function(
                 challenge,
                 solution,
+                difficulty,
+                security,
                 ow_human_name,
                 op_address,
                 op_auth_key_prefix,
@@ -3572,6 +3648,15 @@ impl ScriptFunctionCall {
                 add_all_currencies,
             ),
             CreateRecoveryAddress {} => encode_create_recovery_address_script_function(),
+            CreateUserByCoinTx {
+                account,
+                authkey_prefix,
+                unscaled_value,
+            } => encode_create_user_by_coin_tx_script_function(
+                account,
+                authkey_prefix,
+                unscaled_value,
+            ),
             CreateValidatorAccount {
                 sliding_nonce,
                 new_account_address,
@@ -3599,25 +3684,34 @@ impl ScriptFunctionCall {
                 sliding_nonce,
                 to_freeze_account,
             } => encode_freeze_account_script_function(sliding_nonce, to_freeze_account),
+            InitVouch {} => encode_init_vouch_script_function(),
             InitializeDiemConsensusConfig { sliding_nonce } => {
                 encode_initialize_diem_consensus_config_script_function(sliding_nonce)
             }
-            Join {} => encode_join_script_function(),
-            Leave {} => encode_leave_script_function(),
             MinerstateCommit {
                 challenge,
                 solution,
-            } => encode_minerstate_commit_script_function(challenge, solution),
+                difficulty,
+                security,
+            } => {
+                encode_minerstate_commit_script_function(challenge, solution, difficulty, security)
+            }
             MinerstateCommitByOperator {
                 owner_address,
                 challenge,
                 solution,
+                difficulty,
+                security,
             } => encode_minerstate_commit_by_operator_script_function(
                 owner_address,
                 challenge,
                 solution,
+                difficulty,
+                security,
             ),
             MinerstateHelper {} => encode_minerstate_helper_script_function(),
+            OlDelegateVote { dest } => encode_ol_delegate_vote_script_function(dest),
+            OlEnableDelegation {} => encode_ol_enable_delegation_script_function(),
             OlOracleTx { id, data } => encode_ol_oracle_tx_script_function(id, data),
             OlReconfigBulkUpdateSetup {
                 alice,
@@ -3626,6 +3720,8 @@ impl ScriptFunctionCall {
                 sha,
                 ram,
             } => encode_ol_reconfig_bulk_update_setup_script_function(alice, bob, carol, sha, ram),
+            OlRemoveDelegation {} => encode_ol_remove_delegation_script_function(),
+            OlRevokeVote {} => encode_ol_revoke_vote_script_function(),
             PeerToPeerWithMetadata {
                 currency,
                 payee,
@@ -3666,6 +3762,7 @@ impl ScriptFunctionCall {
                 validator_name,
                 validator_address,
             ),
+            RevokeVouch { val } => encode_revoke_vouch_script_function(val),
             RotateAuthenticationKey { new_key } => {
                 encode_rotate_authentication_key_script_function(new_key)
             }
@@ -3697,6 +3794,8 @@ impl ScriptFunctionCall {
             RotateSharedEd25519PublicKey { public_key } => {
                 encode_rotate_shared_ed25519_public_key_script_function(public_key)
             }
+            SelfUnjail {} => encode_self_unjail_script_function(),
+            SetBurnPref { to_community } => encode_set_burn_pref_script_function(to_community),
             SetGasConstants {
                 sliding_nonce,
                 global_memory_per_byte_cost,
@@ -3797,6 +3896,8 @@ impl ScriptFunctionCall {
                 allow_minting,
             } => encode_update_minting_ability_script_function(currency, allow_minting),
             ValAddSelf {} => encode_val_add_self_script_function(),
+            VouchFor { val } => encode_vouch_for_script_function(val),
+            VoucherUnjail { addr } => encode_voucher_unjail_script_function(addr),
         }
     }
 
@@ -4068,6 +4169,24 @@ pub fn encode_autopay_enable_script_function() -> TransactionPayload {
     ))
 }
 
+pub fn encode_balance_transfer_script_function(
+    destination: AccountAddress,
+    unscaled_value: u64,
+) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("TransferScripts").to_owned(),
+        ),
+        ident_str!("balance_transfer").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&destination).unwrap(),
+            bcs::to_bytes(&unscaled_value).unwrap(),
+        ],
+    ))
+}
+
 /// # Summary
 /// Burns the transaction fees collected in the `CoinType` currency so that the
 /// Diem association may reclaim the backing coins off-chain. May only be sent
@@ -4256,9 +4375,47 @@ pub fn encode_cancel_burn_with_amount_script_function(
     ))
 }
 
+/// claim a make whole payment, requires the index of the payment
+/// in the MakeWhole module, which can be found using the
+/// query_make_whole_payment, which should not be run as part of
+/// the tx as it is relatively resource intensive (linear search)
+pub fn encode_claim_make_whole_script_function() -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("AccountScripts").to_owned(),
+        ),
+        ident_str!("claim_make_whole").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn encode_community_transfer_script_function(
+    destination: AccountAddress,
+    unscaled_value: u64,
+    memo: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("TransferScripts").to_owned(),
+        ),
+        ident_str!("community_transfer").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&destination).unwrap(),
+            bcs::to_bytes(&unscaled_value).unwrap(),
+            bcs::to_bytes(&memo).unwrap(),
+        ],
+    ))
+}
+
 pub fn encode_create_acc_user_script_function(
     challenge: Vec<u8>,
     solution: Vec<u8>,
+    difficulty: u64,
+    security: u64,
 ) -> TransactionPayload {
     TransactionPayload::ScriptFunction(ScriptFunction::new(
         ModuleId::new(
@@ -4270,14 +4427,17 @@ pub fn encode_create_acc_user_script_function(
         vec![
             bcs::to_bytes(&challenge).unwrap(),
             bcs::to_bytes(&solution).unwrap(),
+            bcs::to_bytes(&difficulty).unwrap(),
+            bcs::to_bytes(&security).unwrap(),
         ],
     ))
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn encode_create_acc_val_script_function(
     challenge: Vec<u8>,
     solution: Vec<u8>,
+    difficulty: u64,
+    security: u64,
     ow_human_name: Vec<u8>,
     op_address: AccountAddress,
     op_auth_key_prefix: Vec<u8>,
@@ -4296,6 +4456,8 @@ pub fn encode_create_acc_val_script_function(
         vec![
             bcs::to_bytes(&challenge).unwrap(),
             bcs::to_bytes(&solution).unwrap(),
+            bcs::to_bytes(&difficulty).unwrap(),
+            bcs::to_bytes(&security).unwrap(),
             bcs::to_bytes(&ow_human_name).unwrap(),
             bcs::to_bytes(&op_address).unwrap(),
             bcs::to_bytes(&op_auth_key_prefix).unwrap(),
@@ -4609,6 +4771,26 @@ pub fn encode_create_recovery_address_script_function() -> TransactionPayload {
     ))
 }
 
+pub fn encode_create_user_by_coin_tx_script_function(
+    account: AccountAddress,
+    authkey_prefix: Vec<u8>,
+    unscaled_value: u64,
+) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("AccountScripts").to_owned(),
+        ),
+        ident_str!("create_user_by_coin_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&account).unwrap(),
+            bcs::to_bytes(&authkey_prefix).unwrap(),
+            bcs::to_bytes(&unscaled_value).unwrap(),
+        ],
+    ))
+}
+
 /// # Summary
 /// Creates a Validator account. This transaction can only be sent by the Diem
 /// Root account.
@@ -4821,6 +5003,18 @@ pub fn encode_freeze_account_script_function(
     ))
 }
 
+pub fn encode_init_vouch_script_function() -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("VouchScripts").to_owned(),
+        ),
+        ident_str!("init_vouch").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// # Summary
 /// Initializes the Diem consensus config that is stored on-chain.  This
 /// transaction can only be sent from the Diem Root account.
@@ -4857,44 +5051,24 @@ pub fn encode_initialize_diem_consensus_config_script_function(
     ))
 }
 
-pub fn encode_join_script_function() -> TransactionPayload {
-    TransactionPayload::ScriptFunction(ScriptFunction::new(
-        ModuleId::new(
-            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-            ident_str!("ValidatorScripts").to_owned(),
-        ),
-        ident_str!("join").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-pub fn encode_leave_script_function() -> TransactionPayload {
-    TransactionPayload::ScriptFunction(ScriptFunction::new(
-        ModuleId::new(
-            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-            ident_str!("ValidatorScripts").to_owned(),
-        ),
-        ident_str!("leave").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
 pub fn encode_minerstate_commit_script_function(
     challenge: Vec<u8>,
     solution: Vec<u8>,
+    difficulty: u64,
+    security: u64,
 ) -> TransactionPayload {
     TransactionPayload::ScriptFunction(ScriptFunction::new(
         ModuleId::new(
             AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-            ident_str!("MinerStateScripts").to_owned(),
+            ident_str!("TowerStateScripts").to_owned(),
         ),
         ident_str!("minerstate_commit").to_owned(),
         vec![],
         vec![
             bcs::to_bytes(&challenge).unwrap(),
             bcs::to_bytes(&solution).unwrap(),
+            bcs::to_bytes(&difficulty).unwrap(),
+            bcs::to_bytes(&security).unwrap(),
         ],
     ))
 }
@@ -4903,11 +5077,13 @@ pub fn encode_minerstate_commit_by_operator_script_function(
     owner_address: AccountAddress,
     challenge: Vec<u8>,
     solution: Vec<u8>,
+    difficulty: u64,
+    security: u64,
 ) -> TransactionPayload {
     TransactionPayload::ScriptFunction(ScriptFunction::new(
         ModuleId::new(
             AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-            ident_str!("MinerStateScripts").to_owned(),
+            ident_str!("TowerStateScripts").to_owned(),
         ),
         ident_str!("minerstate_commit_by_operator").to_owned(),
         vec![],
@@ -4915,6 +5091,8 @@ pub fn encode_minerstate_commit_by_operator_script_function(
             bcs::to_bytes(&owner_address).unwrap(),
             bcs::to_bytes(&challenge).unwrap(),
             bcs::to_bytes(&solution).unwrap(),
+            bcs::to_bytes(&difficulty).unwrap(),
+            bcs::to_bytes(&security).unwrap(),
         ],
     ))
 }
@@ -4923,9 +5101,35 @@ pub fn encode_minerstate_helper_script_function() -> TransactionPayload {
     TransactionPayload::ScriptFunction(ScriptFunction::new(
         ModuleId::new(
             AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
-            ident_str!("MinerStateScripts").to_owned(),
+            ident_str!("TowerStateScripts").to_owned(),
         ),
         ident_str!("minerstate_helper").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// A validator (Alice) can delegate the authority for the operation of an upgrade to another validator (Bob). When Oracle delegation happens, effectively the consensus voting power of Alice, is added to Bob only for the effect of calculating the preference on electing a stdlib binary. Whatever binary Bob proposes, Alice will also propose without needing to be submitting transactions.
+pub fn encode_ol_delegate_vote_script_function(dest: AccountAddress) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("OracleScripts").to_owned(),
+        ),
+        ident_str!("ol_delegate_vote").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&dest).unwrap()],
+    ))
+}
+
+/// First Bob must have delegation enabled, which can be done with:
+pub fn encode_ol_enable_delegation_script_function() -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("OracleScripts").to_owned(),
+        ),
+        ident_str!("ol_enable_delegation").to_owned(),
         vec![],
         vec![],
     ))
@@ -4964,6 +5168,31 @@ pub fn encode_ol_reconfig_bulk_update_setup_script_function(
             bcs::to_bytes(&sha).unwrap(),
             bcs::to_bytes(&ram).unwrap(),
         ],
+    ))
+}
+
+/// Alice can remove Bob as the delegate with this function.
+pub fn encode_ol_remove_delegation_script_function() -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("OracleScripts").to_owned(),
+        ),
+        ident_str!("ol_remove_delegation").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn encode_ol_revoke_vote_script_function() -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("OracleScripts").to_owned(),
+        ),
+        ident_str!("ol_revoke_vote").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -5302,6 +5531,18 @@ pub fn encode_remove_validator_and_reconfigure_script_function(
     ))
 }
 
+pub fn encode_revoke_vouch_script_function(val: AccountAddress) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("VouchScripts").to_owned(),
+        ),
+        ident_str!("revoke_vouch").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&val).unwrap()],
+    ))
+}
+
 /// # Summary
 /// Rotates the `account`'s authentication key to the supplied new authentication key. May be sent by any account.
 ///
@@ -5586,6 +5827,30 @@ pub fn encode_rotate_shared_ed25519_public_key_script_function(
     ))
 }
 
+pub fn encode_self_unjail_script_function() -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("ValidatorScripts").to_owned(),
+        ),
+        ident_str!("self_unjail").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn encode_set_burn_pref_script_function(to_community: bool) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("BurnScript").to_owned(),
+        ),
+        ident_str!("set_burn_pref").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&to_community).unwrap()],
+    ))
+}
+
 /// # Summary
 /// Updates the gas constants stored on chain and used by the VM for gas
 /// metering. This transaction can only be sent from the Diem Root account.
@@ -5619,10 +5884,7 @@ pub fn encode_rotate_shared_ed25519_public_key_script_function(
 /// | `Errors::INVALID_ARGUMENT` | `SlidingNonce::ENONCE_TOO_OLD`              | The `sliding_nonce` is too old and it's impossible to determine if it's duplicated or not. |
 /// | `Errors::INVALID_ARGUMENT` | `SlidingNonce::ENONCE_TOO_NEW`              | The `sliding_nonce` is too far in the future.                                              |
 /// | `Errors::INVALID_ARGUMENT` | `SlidingNonce::ENONCE_ALREADY_RECORDED`     | The `sliding_nonce` has been previously recorded.                                          |
-/// | `Errors::REQUIRES_ADDRESS` | `CoreAddresses::EDIEM_ROOT`                 | `account` is not the Diem Root account.
-///                                |
-
-#[allow(clippy::too_many_arguments)]
+/// | `Errors::REQUIRES_ADDRESS` | `CoreAddresses::EDIEM_ROOT`                 | `account` is not the Diem Root account.                                                    |
 pub fn encode_set_gas_constants_script_function(
     sliding_nonce: u64,
     global_memory_per_byte_cost: u64,
@@ -6217,6 +6479,30 @@ pub fn encode_val_add_self_script_function() -> TransactionPayload {
         ident_str!("val_add_self").to_owned(),
         vec![],
         vec![],
+    ))
+}
+
+pub fn encode_vouch_for_script_function(val: AccountAddress) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("VouchScripts").to_owned(),
+        ),
+        ident_str!("vouch_for").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&val).unwrap()],
+    ))
+}
+
+pub fn encode_voucher_unjail_script_function(addr: AccountAddress) -> TransactionPayload {
+    TransactionPayload::ScriptFunction(ScriptFunction::new(
+        ModuleId::new(
+            AccountAddress::new([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]),
+            ident_str!("ValidatorScripts").to_owned(),
+        ),
+        ident_str!("voucher_unjail").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&addr).unwrap()],
     ))
 }
 
@@ -7985,6 +8271,19 @@ fn decode_autopay_enable_script_function(
     }
 }
 
+fn decode_balance_transfer_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::BalanceTransfer {
+            destination: bcs::from_bytes(script.args().first()?).ok()?,
+            unscaled_value: bcs::from_bytes(script.args().get(1)?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
 fn decode_burn_txn_fees_script_function(
     payload: &TransactionPayload,
 ) -> Option<ScriptFunctionCall> {
@@ -8026,6 +8325,30 @@ fn decode_cancel_burn_with_amount_script_function(
     }
 }
 
+fn decode_claim_make_whole_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(_script) = payload {
+        Some(ScriptFunctionCall::ClaimMakeWhole {})
+    } else {
+        None
+    }
+}
+
+fn decode_community_transfer_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::CommunityTransfer {
+            destination: bcs::from_bytes(script.args().first()?).ok()?,
+            unscaled_value: bcs::from_bytes(script.args().get(1)?).ok()?,
+            memo: bcs::from_bytes(script.args().get(2)?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
 fn decode_create_acc_user_script_function(
     payload: &TransactionPayload,
 ) -> Option<ScriptFunctionCall> {
@@ -8033,6 +8356,8 @@ fn decode_create_acc_user_script_function(
         Some(ScriptFunctionCall::CreateAccUser {
             challenge: bcs::from_bytes(script.args().first()?).ok()?,
             solution: bcs::from_bytes(script.args().get(1)?).ok()?,
+            difficulty: bcs::from_bytes(script.args().get(2)?).ok()?,
+            security: bcs::from_bytes(script.args().get(3)?).ok()?,
         })
     } else {
         None
@@ -8046,13 +8371,15 @@ fn decode_create_acc_val_script_function(
         Some(ScriptFunctionCall::CreateAccVal {
             challenge: bcs::from_bytes(script.args().first()?).ok()?,
             solution: bcs::from_bytes(script.args().get(1)?).ok()?,
-            ow_human_name: bcs::from_bytes(script.args().get(2)?).ok()?,
-            op_address: bcs::from_bytes(script.args().get(3)?).ok()?,
-            op_auth_key_prefix: bcs::from_bytes(script.args().get(4)?).ok()?,
-            op_consensus_pubkey: bcs::from_bytes(script.args().get(5)?).ok()?,
-            op_validator_network_addresses: bcs::from_bytes(script.args().get(6)?).ok()?,
-            op_fullnode_network_addresses: bcs::from_bytes(script.args().get(7)?).ok()?,
-            op_human_name: bcs::from_bytes(script.args().get(8)?).ok()?,
+            difficulty: bcs::from_bytes(script.args().get(2)?).ok()?,
+            security: bcs::from_bytes(script.args().get(3)?).ok()?,
+            ow_human_name: bcs::from_bytes(script.args().get(4)?).ok()?,
+            op_address: bcs::from_bytes(script.args().get(5)?).ok()?,
+            op_auth_key_prefix: bcs::from_bytes(script.args().get(6)?).ok()?,
+            op_consensus_pubkey: bcs::from_bytes(script.args().get(7)?).ok()?,
+            op_validator_network_addresses: bcs::from_bytes(script.args().get(8)?).ok()?,
+            op_fullnode_network_addresses: bcs::from_bytes(script.args().get(9)?).ok()?,
+            op_human_name: bcs::from_bytes(script.args().get(10)?).ok()?,
         })
     } else {
         None
@@ -8129,6 +8456,20 @@ fn decode_create_recovery_address_script_function(
     }
 }
 
+fn decode_create_user_by_coin_tx_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::CreateUserByCoinTx {
+            account: bcs::from_bytes(script.args().first()?).ok()?,
+            authkey_prefix: bcs::from_bytes(script.args().get(1)?).ok()?,
+            unscaled_value: bcs::from_bytes(script.args().get(2)?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
 fn decode_create_validator_account_script_function(
     payload: &TransactionPayload,
 ) -> Option<ScriptFunctionCall> {
@@ -8182,6 +8523,14 @@ fn decode_freeze_account_script_function(
     }
 }
 
+fn decode_init_vouch_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(_script) = payload {
+        Some(ScriptFunctionCall::InitVouch {})
+    } else {
+        None
+    }
+}
+
 fn decode_initialize_diem_consensus_config_script_function(
     payload: &TransactionPayload,
 ) -> Option<ScriptFunctionCall> {
@@ -8194,22 +8543,6 @@ fn decode_initialize_diem_consensus_config_script_function(
     }
 }
 
-fn decode_join_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
-    if let TransactionPayload::ScriptFunction(_script) = payload {
-        Some(ScriptFunctionCall::Join {})
-    } else {
-        None
-    }
-}
-
-fn decode_leave_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
-    if let TransactionPayload::ScriptFunction(_script) = payload {
-        Some(ScriptFunctionCall::Leave {})
-    } else {
-        None
-    }
-}
-
 fn decode_minerstate_commit_script_function(
     payload: &TransactionPayload,
 ) -> Option<ScriptFunctionCall> {
@@ -8217,6 +8550,8 @@ fn decode_minerstate_commit_script_function(
         Some(ScriptFunctionCall::MinerstateCommit {
             challenge: bcs::from_bytes(script.args().first()?).ok()?,
             solution: bcs::from_bytes(script.args().get(1)?).ok()?,
+            difficulty: bcs::from_bytes(script.args().get(2)?).ok()?,
+            security: bcs::from_bytes(script.args().get(3)?).ok()?,
         })
     } else {
         None
@@ -8231,6 +8566,8 @@ fn decode_minerstate_commit_by_operator_script_function(
             owner_address: bcs::from_bytes(script.args().first()?).ok()?,
             challenge: bcs::from_bytes(script.args().get(1)?).ok()?,
             solution: bcs::from_bytes(script.args().get(2)?).ok()?,
+            difficulty: bcs::from_bytes(script.args().get(3)?).ok()?,
+            security: bcs::from_bytes(script.args().get(4)?).ok()?,
         })
     } else {
         None
@@ -8242,6 +8579,28 @@ fn decode_minerstate_helper_script_function(
 ) -> Option<ScriptFunctionCall> {
     if let TransactionPayload::ScriptFunction(_script) = payload {
         Some(ScriptFunctionCall::MinerstateHelper {})
+    } else {
+        None
+    }
+}
+
+fn decode_ol_delegate_vote_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::OlDelegateVote {
+            dest: bcs::from_bytes(script.args().first()?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
+fn decode_ol_enable_delegation_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(_script) = payload {
+        Some(ScriptFunctionCall::OlEnableDelegation {})
     } else {
         None
     }
@@ -8269,6 +8628,26 @@ fn decode_ol_reconfig_bulk_update_setup_script_function(
             sha: bcs::from_bytes(script.args().get(3)?).ok()?,
             ram: bcs::from_bytes(script.args().get(4)?).ok()?,
         })
+    } else {
+        None
+    }
+}
+
+fn decode_ol_remove_delegation_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(_script) = payload {
+        Some(ScriptFunctionCall::OlRemoveDelegation {})
+    } else {
+        None
+    }
+}
+
+fn decode_ol_revoke_vote_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(_script) = payload {
+        Some(ScriptFunctionCall::OlRevokeVote {})
     } else {
         None
     }
@@ -8355,6 +8734,16 @@ fn decode_remove_validator_and_reconfigure_script_function(
     }
 }
 
+fn decode_revoke_vouch_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::RevokeVouch {
+            val: bcs::from_bytes(script.args().first()?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
 fn decode_rotate_authentication_key_script_function(
     payload: &TransactionPayload,
 ) -> Option<ScriptFunctionCall> {
@@ -8428,6 +8817,26 @@ fn decode_rotate_shared_ed25519_public_key_script_function(
     if let TransactionPayload::ScriptFunction(script) = payload {
         Some(ScriptFunctionCall::RotateSharedEd25519PublicKey {
             public_key: bcs::from_bytes(script.args().first()?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
+fn decode_self_unjail_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(_script) = payload {
+        Some(ScriptFunctionCall::SelfUnjail {})
+    } else {
+        None
+    }
+}
+
+fn decode_set_burn_pref_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::SetBurnPref {
+            to_community: bcs::from_bytes(script.args().first()?).ok()?,
         })
     } else {
         None
@@ -8608,6 +9017,28 @@ fn decode_update_minting_ability_script_function(
 fn decode_val_add_self_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
     if let TransactionPayload::ScriptFunction(_script) = payload {
         Some(ScriptFunctionCall::ValAddSelf {})
+    } else {
+        None
+    }
+}
+
+fn decode_vouch_for_script_function(payload: &TransactionPayload) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::VouchFor {
+            val: bcs::from_bytes(script.args().first()?).ok()?,
+        })
+    } else {
+        None
+    }
+}
+
+fn decode_voucher_unjail_script_function(
+    payload: &TransactionPayload,
+) -> Option<ScriptFunctionCall> {
+    if let TransactionPayload::ScriptFunction(script) = payload {
+        Some(ScriptFunctionCall::VoucherUnjail {
+            addr: bcs::from_bytes(script.args().first()?).ok()?,
+        })
     } else {
         None
     }
@@ -9047,6 +9478,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
             Box::new(decode_autopay_enable_script_function),
         );
         map.insert(
+            "TransferScriptsbalance_transfer".to_string(),
+            Box::new(decode_balance_transfer_script_function),
+        );
+        map.insert(
             "TreasuryComplianceScriptsburn_txn_fees".to_string(),
             Box::new(decode_burn_txn_fees_script_function),
         );
@@ -9057,6 +9492,14 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
         map.insert(
             "TreasuryComplianceScriptscancel_burn_with_amount".to_string(),
             Box::new(decode_cancel_burn_with_amount_script_function),
+        );
+        map.insert(
+            "AccountScriptsclaim_make_whole".to_string(),
+            Box::new(decode_claim_make_whole_script_function),
+        );
+        map.insert(
+            "TransferScriptscommunity_transfer".to_string(),
+            Box::new(decode_community_transfer_script_function),
         );
         map.insert(
             "AccountScriptscreate_acc_user".to_string(),
@@ -9087,6 +9530,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
             Box::new(decode_create_recovery_address_script_function),
         );
         map.insert(
+            "AccountScriptscreate_user_by_coin_tx".to_string(),
+            Box::new(decode_create_user_by_coin_tx_script_function),
+        );
+        map.insert(
             "AccountCreationScriptscreate_validator_account".to_string(),
             Box::new(decode_create_validator_account_script_function),
         );
@@ -9103,28 +9550,32 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
             Box::new(decode_freeze_account_script_function),
         );
         map.insert(
+            "VouchScriptsinit_vouch".to_string(),
+            Box::new(decode_init_vouch_script_function),
+        );
+        map.insert(
             "SystemAdministrationScriptsinitialize_diem_consensus_config".to_string(),
             Box::new(decode_initialize_diem_consensus_config_script_function),
         );
         map.insert(
-            "ValidatorScriptsjoin".to_string(),
-            Box::new(decode_join_script_function),
-        );
-        map.insert(
-            "ValidatorScriptsleave".to_string(),
-            Box::new(decode_leave_script_function),
-        );
-        map.insert(
-            "MinerStateScriptsminerstate_commit".to_string(),
+            "TowerStateScriptsminerstate_commit".to_string(),
             Box::new(decode_minerstate_commit_script_function),
         );
         map.insert(
-            "MinerStateScriptsminerstate_commit_by_operator".to_string(),
+            "TowerStateScriptsminerstate_commit_by_operator".to_string(),
             Box::new(decode_minerstate_commit_by_operator_script_function),
         );
         map.insert(
-            "MinerStateScriptsminerstate_helper".to_string(),
+            "TowerStateScriptsminerstate_helper".to_string(),
             Box::new(decode_minerstate_helper_script_function),
+        );
+        map.insert(
+            "OracleScriptsol_delegate_vote".to_string(),
+            Box::new(decode_ol_delegate_vote_script_function),
+        );
+        map.insert(
+            "OracleScriptsol_enable_delegation".to_string(),
+            Box::new(decode_ol_enable_delegation_script_function),
         );
         map.insert(
             "OracleScriptsol_oracle_tx".to_string(),
@@ -9133,6 +9584,14 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
         map.insert(
             "ValidatorScriptsol_reconfig_bulk_update_setup".to_string(),
             Box::new(decode_ol_reconfig_bulk_update_setup_script_function),
+        );
+        map.insert(
+            "OracleScriptsol_remove_delegation".to_string(),
+            Box::new(decode_ol_remove_delegation_script_function),
+        );
+        map.insert(
+            "OracleScriptsol_revoke_vote".to_string(),
+            Box::new(decode_ol_revoke_vote_script_function),
         );
         map.insert(
             "PaymentScriptspeer_to_peer_with_metadata".to_string(),
@@ -9159,6 +9618,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
             Box::new(decode_remove_validator_and_reconfigure_script_function),
         );
         map.insert(
+            "VouchScriptsrevoke_vouch".to_string(),
+            Box::new(decode_revoke_vouch_script_function),
+        );
+        map.insert(
             "AccountAdministrationScriptsrotate_authentication_key".to_string(),
             Box::new(decode_rotate_authentication_key_script_function),
         );
@@ -9182,6 +9645,14 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
         map.insert(
             "AccountAdministrationScriptsrotate_shared_ed25519_public_key".to_string(),
             Box::new(decode_rotate_shared_ed25519_public_key_script_function),
+        );
+        map.insert(
+            "ValidatorScriptsself_unjail".to_string(),
+            Box::new(decode_self_unjail_script_function),
+        );
+        map.insert(
+            "BurnScriptset_burn_pref".to_string(),
+            Box::new(decode_set_burn_pref_script_function),
         );
         map.insert(
             "SystemAdministrationScriptsset_gas_constants".to_string(),
@@ -9234,6 +9705,14 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<ScriptFunctionDecoderM
         map.insert(
             "ValidatorScriptsval_add_self".to_string(),
             Box::new(decode_val_add_self_script_function),
+        );
+        map.insert(
+            "VouchScriptsvouch_for".to_string(),
+            Box::new(decode_vouch_for_script_function),
+        );
+        map.insert(
+            "ValidatorScriptsvoucher_unjail".to_string(),
+            Box::new(decode_voucher_unjail_script_function),
         );
         map
     });
