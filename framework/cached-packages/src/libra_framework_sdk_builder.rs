@@ -13,6 +13,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(clippy::too_many_arguments, clippy::doc_lazy_continuation)]
+
 use diem_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
@@ -259,6 +260,10 @@ pub enum EntryFunctionCall {
         multisig_address: AccountAddress,
         id: u64,
     },
+
+    /// testnet helper to allow testnet root account to set flip the boundary bit
+    /// used for testing cli tools for polling and triggering
+    EpochBoundarySmokeEnableTrigger {},
 
     EpochBoundarySmokeTriggerEpoch {},
 
@@ -545,7 +550,7 @@ pub enum EntryFunctionCall {
         friend_account: AccountAddress,
     },
 
-    /// will only succesfully vouch if the two are not related by ancestry
+    /// will only successfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
     VouchVouchFor {
@@ -706,6 +711,7 @@ impl EntryFunctionCall {
                 multisig_address,
                 id,
             } => donor_voice_txs_vote_veto_tx(multisig_address, id),
+            EpochBoundarySmokeEnableTrigger {} => epoch_boundary_smoke_enable_trigger(),
             EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
@@ -1516,6 +1522,23 @@ pub fn donor_voice_txs_vote_veto_tx(
             bcs::to_bytes(&multisig_address).unwrap(),
             bcs::to_bytes(&id).unwrap(),
         ],
+    ))
+}
+
+/// testnet helper to allow testnet root account to set flip the boundary bit
+/// used for testing cli tools for polling and triggering
+pub fn epoch_boundary_smoke_enable_trigger() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("epoch_boundary").to_owned(),
+        ),
+        ident_str!("smoke_enable_trigger").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2385,7 +2408,7 @@ pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
     ))
 }
 
-/// will only succesfully vouch if the two are not related by ancestry
+/// will only successfully vouch if the two are not related by ancestry
 /// prevents spending a vouch that would not be counted.
 /// to add a vouch and ignore this check use insist_vouch
 pub fn vouch_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
@@ -2757,6 +2780,16 @@ mod decoder {
                 multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
                 id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
+        } else {
+            None
+        }
+    }
+
+    pub fn epoch_boundary_smoke_enable_trigger(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::EpochBoundarySmokeEnableTrigger {})
         } else {
             None
         }
@@ -3396,6 +3429,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_voice_txs_vote_veto_tx".to_string(),
             Box::new(decoder::donor_voice_txs_vote_veto_tx),
+        );
+        map.insert(
+            "epoch_boundary_smoke_enable_trigger".to_string(),
+            Box::new(decoder::epoch_boundary_smoke_enable_trigger),
         );
         map.insert(
             "epoch_boundary_smoke_trigger_epoch".to_string(),
