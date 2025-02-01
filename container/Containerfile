@@ -1,0 +1,14 @@
+# Built from https://github.com/rust-lang/docker-rust
+# "latest" has a Debian base
+FROM rust:latest AS builder
+
+# Install build dependencies
+RUN apt update && apt install -y build-essential lld pkg-config libssl-dev libgmp-dev clang
+
+WORKDIR /usr/libra
+COPY . .
+RUN cargo build --release
+
+FROM ubuntu:latest
+
+COPY --from=builder /usr/libra/target/release /usr/local/bin/
