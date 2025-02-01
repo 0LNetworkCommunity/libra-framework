@@ -11,4 +11,4 @@ RUN cargo build --release
 
 FROM ubuntu:latest
 
-COPY --from=builder /usr/libra/target/release /usr/local/bin/
+COPY --from=builder /usr/libra/target/release/libra /usr/libra/target/release/libra-* /usr/local/bin/
