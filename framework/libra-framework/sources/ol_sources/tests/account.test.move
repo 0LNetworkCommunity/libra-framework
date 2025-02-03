@@ -81,8 +81,10 @@ module ol_framework::test_account {
     let bob_addr = @0x1000b;
 
     mock::ol_test_genesis(&framework_sig);
+    // set governance mode
     let gov_mode_id = ol_features_constants::get_governance_mode();
     features::change_feature_flags(&framework_sig, vector::singleton(gov_mode_id), vector::empty());
+
     let mint_cap = libra_coin::extract_mint_cap(&framework_sig);
     ol_account::create_account(&framework_sig, alice_addr);
     ol_account::deposit_coins(alice_addr, coin::test_mint(100, &mint_cap));
