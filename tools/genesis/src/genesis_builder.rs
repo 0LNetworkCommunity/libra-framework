@@ -26,11 +26,11 @@ use diem_types::{
 };
 use diem_vm_genesis::{
     default_gas_schedule,
-    GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
+    GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor code there are two structs separately called the same name with nearly identical fields FML
 };
 use indicatif::ProgressBar;
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
-use libra_framework::release::{self, ReleaseTarget};
+use libra_framework::release::ReleaseTarget;
 use libra_types::{
     core_types::fixtures::TestPersona,
     exports::{ChainId, NamedChain},
@@ -222,7 +222,7 @@ pub fn fetch_genesis_info(
 
     let framework = if let Some(p) = framework_mrb_path {
         // use the local head release
-        release::ReleaseTarget::load_bundle_from_file(p)?
+        ReleaseTarget::load_bundle_from_file(p)?
     } else {
         // get from github
         let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
