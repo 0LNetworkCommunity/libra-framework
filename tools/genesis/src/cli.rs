@@ -1,5 +1,6 @@
 use clap::{Args, Parser, Subcommand};
 use diem_genesis::config::HostAndPort;
+use libra_framework::release::ReleaseTarget;
 
 use crate::{
     genesis_builder, parse_json, testnet_setup,
@@ -48,7 +49,7 @@ impl GenesisCli {
                     github.name_github.to_owned(),
                     github_token,
                     data_path,
-                    github.local_framework,
+                    github.local_framework.to_owned(),
                     &mut recovery,
                     chain_name,
                     None,
@@ -62,9 +63,9 @@ impl GenesisCli {
                     chain_name,
                 )
                 .start_wizard(
-                    github.local_framework,
-                    github.json_legacy.clone(),
-                    github.token_github_file.clone(),
+                    github.local_framework.to_owned(),
+                    github.json_legacy.to_owned(),
+                    github.token_github_file.to_owned(),
                     false,
                 )
                 .await?;
@@ -75,8 +76,16 @@ impl GenesisCli {
                 host_list,
                 json_legacy,
             }) => {
-                testnet_setup::setup(me, host_list, chain_name, data_path, json_legacy.to_owned())
-                    .await?
+                let framework_mrb_path = ReleaseTarget::Head.find_bundle_path().ok();
+                testnet_setup::setup(
+                    me,
+                    host_list,
+                    chain_name,
+                    data_path,
+                    json_legacy.to_owned(),
+                    framework_mrb_path,
+                )
+                .await?
             }
             _ => {}
         }
@@ -99,7 +108,7 @@ struct GithubArgs {
     name_github: String,
     /// uses the local framework build
     #[clap(short, long)]
-    local_framework: bool,
+    local_framework: Option<PathBuf>,
     /// path to file for legacy migration file
     #[clap(short, long)]
     json_legacy: Option<PathBuf>,
@@ -107,6 +116,7 @@ struct GithubArgs {
 
 #[derive(Subcommand)]
 enum Sub {
+    /// build a genesis file from the coordination git repo
     Build {
         /// github args
         #[clap(flatten)]
@@ -116,6 +126,7 @@ enum Sub {
         #[clap(long)]
         drop_list: Option<PathBuf>,
     }, // just do genesis without wizard
+    /// register to the genesis coordination git repository
     Register {
         /// github args
         #[clap(flatten)]
@@ -130,7 +141,7 @@ enum Sub {
         me: TestPersona,
         /// ordered list of dns/ip with port for alice..dave
         /// use 6180 for production validator port
-        #[clap(short, long)]
+        #[clap(long)]
         host_list: Vec<HostAndPort>,
         /// path to file for legacy migration file
         #[clap(short, long)]

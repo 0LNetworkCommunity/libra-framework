@@ -76,7 +76,7 @@ impl GenesisWizard {
     /// start wizard for end-to-end genesis
     pub async fn start_wizard(
         &mut self,
-        use_local_framework: bool,
+        framework_mrb_path: Option<PathBuf>,
         legacy_recovery_path: Option<PathBuf>,
         github_token_path_opt: Option<PathBuf>,
         do_genesis: bool,
@@ -155,7 +155,7 @@ impl GenesisWizard {
                 self.repo_name.clone(),
                 self.github_token.clone(),
                 self.data_path.clone(),
-                use_local_framework,
+                framework_mrb_path,
                 &mut legacy_recovery,
                 self.chain,
                 None,
@@ -416,7 +416,8 @@ async fn test_wizard() {
         None,
         NamedChain::TESTING,
     );
-    wizard.start_wizard(false, None, None, false).await.unwrap();
+
+    wizard.start_wizard(None, None, None, false).await.unwrap();
 }
 
 #[test]
