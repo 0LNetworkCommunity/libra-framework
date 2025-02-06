@@ -1,6 +1,5 @@
 use clap::{Args, Parser, Subcommand};
 use diem_genesis::config::HostAndPort;
-use libra_framework::release::ReleaseTarget;
 
 use crate::{
     genesis_builder, parse_json, testnet_setup,
@@ -74,16 +73,16 @@ impl GenesisCli {
             Some(Sub::Testnet {
                 me,
                 host_list,
+                framework_mrb_path,
                 json_legacy,
             }) => {
-                let framework_mrb_path = ReleaseTarget::Head.find_bundle_path().ok();
                 testnet_setup::setup(
                     me,
                     host_list,
                     chain_name,
                     data_path,
                     json_legacy.to_owned(),
-                    framework_mrb_path,
+                    Some(framework_mrb_path.to_owned()),
                 )
                 .await?
             }
@@ -143,6 +142,9 @@ enum Sub {
         /// use 6180 for production validator port
         #[clap(long)]
         host_list: Vec<HostAndPort>,
+        /// path to the Move framework file, usually ./framework/releases/head.mrb
+        #[clap(short, long)]
+        framework_mrb_path: PathBuf,
         /// path to file for legacy migration file
         #[clap(short, long)]
         json_legacy: Option<PathBuf>,
