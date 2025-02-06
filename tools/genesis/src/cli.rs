@@ -1,13 +1,14 @@
 use clap::{Args, Parser, Subcommand};
+use diem_genesis::config::HostAndPort;
 
 use crate::{
     genesis_builder, parse_json, testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{core_types::fixtures::TestPersona, exports::NamedChain, global_config_dir};
-use std::{fs, net::Ipv4Addr, path::PathBuf};
+use std::{fs, path::PathBuf};
 #[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None, arg_required_else_help = true)]
 /// Generate genesis transactions for testnet and upgrades
 pub struct GenesisCli {
     #[clap(subcommand)]
@@ -71,16 +72,15 @@ impl GenesisCli {
 
             Some(Sub::Testnet {
                 me,
-                ip_list,
+                host_list,
                 json_legacy,
             }) => {
-                testnet_setup::setup(me, ip_list, chain_name, data_path, json_legacy.to_owned())
+                testnet_setup::setup(me, host_list, chain_name, data_path, json_legacy.to_owned())
                     .await?
             }
-            _ => {
-                println!("\nIf you're looking for trouble \nYou came to the right place");
-            }
+            _ => {}
         }
+        println!("\nIf you're looking for trouble \nYou came to the right place\n");
         Ok(())
     }
 }
@@ -128,9 +128,10 @@ enum Sub {
         /// which persona is this machine going to register as
         #[clap(short, long)]
         me: TestPersona,
-        /// list of IP addresses of each persona Alice, Bob, Carol, Dave
+        /// ordered list of dns/ip with port for alice..dave
+        /// use 6180 for production validator port
         #[clap(short, long)]
-        ip_list: Vec<Ipv4Addr>,
+        host_list: Vec<HostAndPort>,
         /// path to file for legacy migration file
         #[clap(short, long)]
         json_legacy: Option<PathBuf>,

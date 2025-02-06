@@ -2,12 +2,12 @@ use crate::{genesis_builder, parse_json};
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_config::validator_config;
 use libra_types::{core_types::fixtures::TestPersona, exports::NamedChain};
-use std::{fs, net::Ipv4Addr, path::PathBuf, thread, time};
+use std::{fs, path::PathBuf, thread, time};
 
 // Sets up the environment for the given test persona.
 pub async fn setup(
     me: &TestPersona,
-    ip_list: &[Ipv4Addr],
+    host_list: &[HostAndPort],
     chain: NamedChain,
     data_path: PathBuf,
     legacy_data_path: Option<PathBuf>,
@@ -22,23 +22,19 @@ pub async fn setup(
 
     // create the local files for my_persona
     let index = me.idx();
-    let format_host_str = format!(
-        "{}:6180",
-        ip_list.get(index).expect("could not get an IP and index")
-    );
+
+    let my_host = host_list.get(index).expect("could not get an IP and index");
+
     println!(
-        "your persona {me:?} is expected to use IP: {}",
-        format_host_str
+        "your persona {me:?} is expected to use network address: {:?}",
+        my_host
     );
-    let my_host: HostAndPort = format_host_str
-        .parse()
-        .expect("could not parse IP address for host");
 
     // Initializes the validator configuration.
     validator_config::initialize_validator(
         Some(data_path.clone()),
         Some(&me.to_string()),
-        my_host,
+        my_host.clone(),
         Some(me.get_persona_mnem()),
         false,
         Some(chain),
@@ -47,30 +43,26 @@ pub async fn setup(
 
     // create validator configurations from fixtures
     // without needing to use a github repo to register and read
-    let val_cfg: Vec<ValidatorConfiguration> = ip_list
+    let val_cfg: Vec<ValidatorConfiguration> = host_list
         .iter()
         .enumerate()
-        .filter_map(|(idx, ip)| {
-            let format_host_str = format!("{}:6180", ip);
-            let host: HostAndPort = format_host_str
-                .parse()
-                .expect("could not parse IP address for host");
+        .filter_map(|(idx, h)| {
             let p = TestPersona::from(idx).ok()?;
-            genesis_builder::testnet_validator_config(&p, &host).ok()
+            genesis_builder::testnet_validator_config(&p, h).ok()
         })
         .collect();
 
     // Determines the path for the recovery data.
-    let p = legacy_data_path.unwrap_or(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/sample_export_recovery.json"),
-    );
-
-    let mut recovery = parse_json::recovery_file_parse(p)?;
+    // NOTE: test fixtures located at ./tests/fixtures/sample_export_recovery.json
+    let mut recovery = if let Some(p) = legacy_data_path {
+        parse_json::recovery_file_parse(p)?
+    } else {
+        vec![]
+    };
 
     // Builds the genesis block with the specified configurations.
     genesis_builder::build(
-        "none".to_string(), // when is testnet is ignored
+        "none".to_string(), // we ignore ceremony coordination for testnet
         "none".to_string(),
         "none".to_string(),
         data_path,
