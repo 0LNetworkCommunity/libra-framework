@@ -15,6 +15,7 @@ pub enum TestPersona {
     Dave,
 }
 
+
 impl FromStr for TestPersona {
     type Err = &'static str;
 
@@ -64,16 +65,14 @@ impl TestPersona {
             TestPersona::Dave => 3,
         }
     }
-    /// Retrieve the mnemonic associated with the persona.
-    pub fn get_persona_mnem(&self) -> String {
-        let path = env!("CARGO_MANIFEST_DIR");
-        let buf = PathBuf::from_str(path)
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("util/fixtures/mnemonic")
-            .join(format!("{}.mnem", &self.to_string()));
-        fs::read_to_string(buf).expect("could not find mnemonic file")
+    pub fn get_persona_mnem(&self)-> String {
+      let s = match self {
+        TestPersona::Alice => "talent sunset lizard pill fame nuclear spy noodle basket okay critic grow sleep legend hurry pitch blanket clerk impose rough degree sock insane purse",
+        TestPersona::Bob => "ring pumpkin cake build jungle cloth bronze aerobic mechanic baby love melt below sight cotton trophy inquiry sugar exhibit sure first match ten clarify",
+        TestPersona::Carol => "giraffe tower toward rapid flower obey piano circle better announce castle when enlist inquiry arrive segment leave develop confirm avoid meat loud fit parent",
+        TestPersona::Dave => "recall october regret kite undo choice outside season business wall quit arrest vacant arrow giggle vote ghost winter hawk soft cheap decide exhaust spare"
+      };
+      s.to_string()
     }
 }
 
