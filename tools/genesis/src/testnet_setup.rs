@@ -25,8 +25,10 @@ pub async fn setup(
     println!("Building genesis config files for a network with:");
     for (i, h) in host_list.iter().enumerate() {
         let character = TestPersona::from(i)?;
+
         let display = format!("{}:{}", h.host, h.port);
         println!("persona: {character} - host: {display}");
+        println!("mnemonic: {}\n", character.get_persona_mnem());
     }
 
     let index = me.idx();
