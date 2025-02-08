@@ -35,6 +35,7 @@ enum Sub {
     Wallet(WalletCli),
     #[clap(subcommand)]
     Ops(ops_cli::OpsTool),
+    /// I just checked in to see what condition my condition was in
     Version,
 }
 
@@ -106,11 +107,12 @@ fn main() -> anyhow::Result<()> {
                     // Display version information
                     Some(Sub::Version) => {
                         println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));
-                        println!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
-                        println!("Git Branch: {}", env!("VERGEN_GIT_BRANCH"));
-                        println!("Git SHA: {}", env!("VERGEN_GIT_SHA"));
+                        println!("build timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
+                        println!("rustc version: {}", env!("VERGEN_RUSTC_SEMVER"));
+                        println!("git branch: {}", env!("VERGEN_GIT_BRANCH"));
+                        println!("git SHA: {}", env!("VERGEN_GIT_SHA"));
                         println!(
-                            "Git Commit Timestamp: {}",
+                            "git commit timestamp: {}",
                             env!("VERGEN_GIT_COMMIT_TIMESTAMP")
                         );
                     }

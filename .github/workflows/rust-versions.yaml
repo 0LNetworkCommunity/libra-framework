@@ -1,0 +1,89 @@
+name: rust-versions
+on:
+  push:
+    tags: # only on releases, not RC, since we've tested already
+      - "[0-9]+.[0-9]+.[0-9]+"
+    branches: ["**"] # glob pattern to allow slash /
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - "release**"
+      - "main**"
+  schedule:
+    - cron: "30 00 * * *"
+
+# TODO: use ci run matrix options
+
+jobs:
+  builds-stable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: install rustfmt clippy
+        shell: bash
+        run: rustup component add rustfmt clippy
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests -- -D warnings
+
+  builds-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: beta
+          override: true
+
+      - name: install rustfmt clippy
+        shell: bash
+        run: rustup component add rustfmt clippy
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests -- -D warnings
+
+  builds-nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - name: install rustfmt clippy
+        shell: bash
+        run: rustup component add rustfmt clippy
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --tests -- -D warnings
