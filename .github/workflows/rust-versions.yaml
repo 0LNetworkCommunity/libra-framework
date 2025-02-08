@@ -30,6 +30,9 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - name: install rustfmt clippy
+        shell: bash
+        run: rustup component add rustfmt clippy
 
       - name: clippy
         uses: actions-rs/cargo@v1
@@ -51,6 +54,10 @@ jobs:
           toolchain: beta
           override: true
 
+      - name: install rustfmt clippy
+        shell: bash
+        run: rustup component add rustfmt clippy
+
       - name: clippy
         uses: actions-rs/cargo@v1
         with:
@@ -70,6 +77,10 @@ jobs:
           profile: minimal
           toolchain: nightly
           override: true
+
+      - name: install rustfmt clippy
+        shell: bash
+        run: rustup component add rustfmt clippy
 
       - name: clippy
         uses: actions-rs/cargo@v1
