@@ -108,7 +108,8 @@ fn main() -> anyhow::Result<()> {
                     Some(Sub::Version) => {
                         println!("LIBRA VERSION {}", env!("CARGO_PKG_VERSION"));
                         println!("build timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
-                        println!("rustc version: {}", env!("VERGEN_RUSTC_SEMVER"));
+                        // TODO:
+                        // println!("rustc version: {}", env!("VERGEN_RUSTC_SEMVER"));
                         println!("git branch: {}", env!("VERGEN_GIT_BRANCH"));
                         println!("git SHA: {}", env!("VERGEN_GIT_SHA"));
                         println!(
