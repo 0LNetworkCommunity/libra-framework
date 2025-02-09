@@ -24,5 +24,11 @@ jobs:
           toolchain: ${{matrix.channel}}
           override: true
 
-      - name: debug build
-        run: cargo b -p libra
+      - name: does it build?
+        run: cargo r -p libra
+
+      - name: does move compile?
+        run: cargo r -p libra -- move test --package-dir ./framework/libra-framework
+
+      - name: does it prove move?
+        run: cargo r -p libra -- move prove --package-dir ./framework/move-stdlib
