@@ -77,7 +77,6 @@ pub async fn setup(
         vec![]
     };
 
-    println!("building genesis blob");
     // Builds the genesis block with the specified configurations.
     genesis_builder::build(
         "none".to_string(), // we ignore ceremony coordination for testnet
