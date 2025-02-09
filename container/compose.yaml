@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   alice:
     #image: ubuntu:22.04
