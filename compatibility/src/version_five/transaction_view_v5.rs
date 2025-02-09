@@ -12,6 +12,9 @@ use hex::FromHex;
 /// This is the output of a JSON API request on the V5 data
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct TransactionViewV5 {
+    // NOTE: added 2025-01-25 for deserialization compatibility with
+    // v5 rescue json archive
+    pub timestamp_usecs: Option<u64>,
     pub version: u64,
     pub transaction: TransactionDataView,
     pub hash: HashValue,

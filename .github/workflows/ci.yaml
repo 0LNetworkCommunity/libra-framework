@@ -320,6 +320,11 @@ jobs:
           cache-all-crates: true
           cache-on-failure: true
 
+      - uses: actions/download-artifact@v4.1.2
+        with:
+          name: framework-build
+          path: framework/
+
       - name: twin
         working-directory: ./testsuites/twin
         run: cargo test --no-fail-fast

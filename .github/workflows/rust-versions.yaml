@@ -1,0 +1,36 @@
+# testing future versions of rust
+name: rust-versions
+on:
+  push:
+    branches: ["ci-bins*"] # glob pattern to allow slash /
+  schedule:
+    - cron: "30 00 * * *"
+
+jobs:
+  builds:
+    strategy:
+      matrix:
+        channel: ["stable", "beta", "nightly"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup env
+        uses: ./.github/actions/build_env
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{matrix.channel}}
+          override: true
+
+      - name: does it build?
+        run: cargo r -p libra -- version
+
+      - name: does move compile?
+        if: always()
+        run: cargo r -p libra -- move test --package-dir ./framework/libra-framework
+
+      - name: does it prove move?
+        if: always()
+        run: cargo r -p libra -- move prove --package-dir ./framework/move-stdlib
