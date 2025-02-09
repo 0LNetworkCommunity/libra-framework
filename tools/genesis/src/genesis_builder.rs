@@ -98,8 +98,8 @@ pub fn build(
         .expect("could not parse dummy root");
 
         let framework = if let Some(p) = framework_mrb_path {
-        // always use a specific release
-        ReleaseTarget::load_bundle_from_file(p)?
+            // always use a specific release
+            ReleaseTarget::load_bundle_from_file(p)?
         } else {
             bail!("we need to know the exact framework .mrb file you'd like to use for testnet. Usually ./framework/release/head.mrb but you'll need to build it first.");
         };
@@ -112,7 +112,7 @@ pub fn build(
             &silly_config(&genesis_config),
         )?
     } else {
-          dbg!(&"hi4");
+        dbg!(&"hi4");
 
         fetch_genesis_info(
             github_owner,
