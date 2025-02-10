@@ -14,10 +14,6 @@ services:
     ports:
       - "8280:8080"
       - "9201:9101"
-    ulimits:
-      nofile:
-        soft: 1048576
-        hard: 1048576
 
   bob:
     #image: ubuntu:22.04
@@ -36,10 +32,6 @@ services:
     ports:
       - "8380:8080"
       - "9301:9101"
-    ulimits:
-      nofile:
-        soft: 1048576
-        hard: 1048576
 
   carol:
     #image: ubuntu:22.04
@@ -58,10 +50,6 @@ services:
     ports:
       - "8480:8080"
       - "9401:9101"
-    ulimits:
-      nofile:
-        soft: 1048576
-        hard: 1048576
         
 networks:
   libra_network:
