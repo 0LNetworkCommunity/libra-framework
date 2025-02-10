@@ -22,7 +22,6 @@ pub fn make_recovery_genesis_from_vec_legacy_recovery(
     genesis_vals: &[Validator],
     framework_release: &ReleaseBundle,
     chain_id: ChainId,
-    // supply_settings: Option<SupplySettings>,
     genesis_config: &GenesisConfiguration,
 ) -> Result<Transaction, Error> {
     // let supply_settings = supply_settings.unwrap_or_default();
