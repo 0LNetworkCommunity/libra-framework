@@ -109,13 +109,13 @@ module ol_framework::libra_coin {
         exists<MintCapStore>(signer::address_of(account))
     }
 
-    /// Only called during genesis to destroy the diem framework account's mint capability once all initial validators
-    /// and accounts have been initialized during genesis.
-    public(friend) fun destroy_mint_cap(diem_framework: &signer) acquires MintCapStore {
-        system_addresses::assert_diem_framework(diem_framework);
-        let MintCapStore { mint_cap } = move_from<MintCapStore>(@diem_framework);
-        coin::destroy_mint_cap(mint_cap);
-    }
+    // /// Only called during genesis to destroy the diem framework account's mint capability once all initial validators
+    // /// and accounts have been initialized during genesis.
+    // public(friend) fun destroy_mint_cap(diem_framework: &signer) acquires MintCapStore {
+    //     system_addresses::assert_diem_framework(diem_framework);
+    //     let MintCapStore { mint_cap } = move_from<MintCapStore>(@diem_framework);
+    //     coin::destroy_mint_cap(mint_cap);
+    // }
 
     // at genesis we need to init the final supply
     // done at genesis_migration

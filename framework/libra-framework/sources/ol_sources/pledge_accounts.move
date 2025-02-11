@@ -57,9 +57,6 @@
         friend ol_framework::genesis_migration;
         friend ol_framework::genesis;
 
-        // #[test_only]
-        // friend ol_framework::mock;
-
         /// no policy at this address
         const ENO_BENEFICIARY_POLICY: u64 = 1;
         /// there is a non zero balance

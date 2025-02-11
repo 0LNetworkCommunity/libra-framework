@@ -11,11 +11,11 @@ spec ol_framework::libra_coin {
         ensures exists<coin::CoinInfo<LibraCoin>>(addr);
     }
 
-    spec destroy_mint_cap {
-        let addr = signer::address_of(diem_framework);
-        aborts_if addr != @diem_framework;
-        aborts_if !exists<MintCapStore>(@diem_framework);
-    }
+    // spec destroy_mint_cap {
+    //     let addr = signer::address_of(diem_framework);
+    //     aborts_if addr != @diem_framework;
+    //     aborts_if !exists<MintCapStore>(@diem_framework);
+    // }
 
     // Test function,not needed verify.
     spec configure_accounts_for_test {
