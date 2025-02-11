@@ -5,7 +5,7 @@ use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_config::validator_config;
 use libra_types::{
     core_types::fixtures::TestPersona,
-    exports::{AccountAddress, NamedChain},
+    exports::{AccountAddress, AuthenticationKey, NamedChain},
     move_resource::{
         cumulative_deposits::LegacyBalanceResourceV6,
         pledge_account::{MyPledgesResource, PledgeAccountResource},
@@ -84,7 +84,7 @@ pub async fn setup(
     } else {
         // this is probably a testnet, we need to minimally start the infra escrow
         // and balance on validators
-        make_dummy_recovery_for_vals(&val_cfg)
+        generate_testnet_state_for_vals(&val_cfg)
     };
 
     // Builds the genesis block with the specified configurations.
@@ -101,11 +101,12 @@ pub async fn setup(
     Ok(())
 }
 
-fn make_dummy_recovery_for_vals(vals: &[ValidatorConfiguration]) -> Vec<LegacyRecoveryV6> {
+fn generate_testnet_state_for_vals(vals: &[ValidatorConfiguration]) -> Vec<LegacyRecoveryV6> {
     let mut recovery: Vec<LegacyRecoveryV6> = vec![];
     for v in vals {
         let mut l = LegacyRecoveryV6 {
             account: Some(v.owner_account_address.into()),
+            auth_key: Some(AuthenticationKey::ed25519(&v.owner_account_public_key)),
             balance: Some(LegacyBalanceResourceV6 {
                 coin: 10_000_000 * 10u64.pow(ONCHAIN_DECIMAL_PRECISION as u32),
             }),
