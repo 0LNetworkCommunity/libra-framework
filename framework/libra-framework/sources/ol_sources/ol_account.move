@@ -808,10 +808,10 @@ module ol_framework::ol_account {
         account::maybe_initialize_duplicate_originating(root);
 
         ////
-        // settings specific to this example, boxes of 10000 at 12, 24, 36 months.
-        let drip_one_years = 27;
+        // settings specific to this example, boxes of 10000 at 12, 24, 48 months.
+        let drip_one_years = 27; // coins per day
         let drip_two_years = 13;
-        let drip_three_years = 9;
+        let drip_four_years = 6;
         ////
 
         let (burn_cap, mint_cap) =
@@ -845,7 +845,7 @@ module ol_framework::ol_account {
 
         // more lockboxes of different durations
         lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 2*12);
-        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 3*12);
+        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 4*12);
 
         // DAY 3 drip with 3 boxes
         self_drip_lockboxes(alice);
@@ -853,7 +853,7 @@ module ol_framework::ol_account {
         let balance_post_three = libra_coin::balance(alice_addr);
         assert!(balance_post_two < balance_post_three, 7357006);
 
-        assert!((balance_post_three - balance_post_two) == (drip_one_years+drip_two_years+drip_three_years), 7357007);
+        assert!((balance_post_three - balance_post_two) == (drip_one_years+drip_two_years+drip_four_years), 7357007);
 
 
         coin::destroy_burn_cap(burn_cap);

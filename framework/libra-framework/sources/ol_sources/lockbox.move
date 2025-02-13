@@ -78,7 +78,7 @@ module ol_framework::lockbox {
   /// Duration not in allowed list
   const EINVALID_DURATION: u64 = 9;
 
-  const LOCK_DURATIONS: vector<u64> = vector[1*12, 2*12, 3*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
+  const LOCK_DURATIONS: vector<u64> = vector[1*12, 2*12, 4*12, 8*12, 12*12, 16*12, 20*12, 24*12];
 
   struct Lockbox has key, store {
     locked_coins: Coin<LibraCoin>,
