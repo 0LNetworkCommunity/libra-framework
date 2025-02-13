@@ -92,11 +92,6 @@ module ol_framework::lockbox {
     list: vector<Lockbox>
   }
 
-  // convenience function to get standard locks
-  #[view]
-  public fun get_lock_duration(): vector<u64> {
-    LOCK_DURATIONS
-  }
 
   // user init lockbox
   fun maybe_initialize(user: &signer) {
@@ -136,27 +131,38 @@ module ol_framework::lockbox {
   }
 
   /// helper to deposit coin: with a mutable borrow of a lockbox, add an owned coin
-  fun deposit(box: &mut Lockbox, more_coins: Coin<LibraCoin>) {
+  fun merge_coins(box: &mut Lockbox, more_coins: Coin<LibraCoin>) {
     libra_coin::merge(&mut box.locked_coins, more_coins);
   }
 
   // Entrypoint for adding or creating a user box, when signed by holder of coins.
-  public(friend) fun add_to_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+  public(friend) fun self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
     maybe_initialize(user);
 
     let user_addr = signer::address_of(user);
     deposit_impl(user_addr, locked_coins, duration_type);
   }
 
+  // for validator rewards and donor voice transactions
+  // requires a signer, which is not used
+  public(friend) fun send_locked_coin(_sender: &signer, user_addr: address, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+    // Validate that the duration is in the allowed list
+    assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+    deposit_impl(user_addr, locked_coins, duration_type);
+  }
+
   // private implementation for adding coins to a users lockbox, or creating it
+  // will abort if the user does not have lockbox enabled
   fun deposit_impl(user_addr: address, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+    // Validate that the duration is in the allowed list
+    assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
     let (found, idx) = idx_by_duration(user_addr, duration_type);
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
 
     if (found) {
       let box = vector::borrow_mut(list, idx);
-      deposit(box, locked_coins);
+      merge_coins(box, locked_coins);
     } else {
       vector::push_back(list, new(locked_coins, duration_type));
     }
@@ -288,9 +294,25 @@ module ol_framework::lockbox {
     fixed_point32::multiply_u64(value, daily_pct)
   }
 
+  //////// VIEWS ////////
+
+  // convenience function to get standard locks
+  #[view]
+  public fun get_lock_durations(): vector<u64> {
+    LOCK_DURATIONS
+  }
+
+
+  #[view]
+  public fun lockbox_initialized(user_addr: address): bool {
+    exists<SlowWalletV2>(user_addr)
+  }
+
   #[view]
   public fun idx_by_duration(user_addr: address, duration_type: u64): (bool, u64) acquires SlowWalletV2 {
-    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    assert!(lockbox_initialized(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+
     let list = &borrow_global<SlowWalletV2>(user_addr).list;
     // NOTE: there should only be one box per duration_type. TBD if there's a different use case to have duplicate lockbox durations.
 
@@ -389,7 +411,7 @@ module ol_framework::lockbox {
 
     let coin = test_setup(framework, 23);
 
-    add_to_or_create_box(bob_sig, coin, 1*12);
+    self_add_or_create_box(bob_sig, coin, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
@@ -408,7 +430,7 @@ module ol_framework::lockbox {
     let coin = test_setup(framework, 123);
     let split_coin = libra_coin::extract(&mut coin, 23);
 
-    add_to_or_create_box(bob_sig, split_coin, 1*12);
+    self_add_or_create_box(bob_sig, split_coin, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
@@ -419,7 +441,7 @@ module ol_framework::lockbox {
     assert!(bal == 23, 7357004);
 
     // remainder of coin should be 100
-    add_to_or_create_box(bob_sig, coin, 1*12);
+    self_add_or_create_box(bob_sig, coin, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
@@ -438,7 +460,7 @@ module ol_framework::lockbox {
 
     // Try to create a lockbox with a non-standard duration (5*12 months)
     // This should fail because 5*12 is not in LOCK_DURATIONS
-    add_to_or_create_box(bob_sig, coin, 5*12);
+    self_add_or_create_box(bob_sig, coin, 5*12);
 
     // These assertions should never be reached because the above call should fail
     let (found, _) = idx_by_duration(bob_addr, 5*12);
@@ -452,7 +474,7 @@ module ol_framework::lockbox {
 
     // Try to create a lockbox with a standard duration (4*12 months)
     // This should succeed because 4*12 is in LOCK_DURATIONS
-    add_to_or_create_box(bob_sig, coin, 4*12);
+    self_add_or_create_box(bob_sig, coin, 4*12);
 
     // Verify the lockbox was created with the standard duration
     let (found, idx) = idx_by_duration(bob_addr, 4*12);

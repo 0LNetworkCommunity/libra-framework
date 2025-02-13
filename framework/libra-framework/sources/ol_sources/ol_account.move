@@ -786,7 +786,7 @@ module ol_framework::ol_account {
 
         let balance_pre = libra_coin::balance(alice_addr);
 
-        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
+        lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
 
         self_drip_lockboxes(alice);
 
@@ -823,7 +823,7 @@ module ol_framework::ol_account {
 
         let balance_pre = libra_coin::balance(alice_addr);
 
-        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
+        lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
 
         // DAY 1 drip with 1 box
         self_drip_lockboxes(alice);
@@ -844,8 +844,8 @@ module ol_framework::ol_account {
         assert!((balance_post_two-balance_post_one) == drip_one_years, 7357005);
 
         // more lockboxes of different durations
-        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 2*12);
-        lockbox::add_to_or_create_box(alice, coin::mint(10000, &mint_cap), 4*12);
+        lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 2*12);
+        lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 4*12);
 
         // DAY 3 drip with 3 boxes
         self_drip_lockboxes(alice);

@@ -17,9 +17,9 @@ spec ol_framework::lockbox {
         ensures result.last_unlock_timestamp == 0;      // No unlocks performed
     }
 
-    /// Specification for add_to_or_create_box:
+    /// Specification for self_add_or_create_box:
     /// Adds coins to an existing box or creates a new one
-    spec add_to_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) {
+    spec self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) {
         // Pre-conditions
         requires signer::address_of(user) != @0x0;  // User must have valid address
 
@@ -69,7 +69,7 @@ spec ol_framework::lockbox {
 
     /// Specification for deposit:
     /// Handles depositing coins into a lockbox
-    spec deposit(box: &mut Lockbox, more_coins: Coin<LibraCoin>) {
+    spec merge_coins(box: &mut Lockbox, more_coins: Coin<LibraCoin>) {
         // Post-conditions
         ensures box.locked_coins.value == old(box.locked_coins.value) + more_coins.value;  // Balance increases by deposited amount
     }
