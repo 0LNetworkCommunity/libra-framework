@@ -18,7 +18,7 @@
 ///
 /// ## Constants
 ///
-/// - `DEFAULT_LOCKS`: A vector of predefined lock periods (in months) that users can choose from.
+/// - `LOCK_DURATIONS`: A vector of predefined lock periods (in months) that users can choose from.
 ///   These periods are: 6 months, 12 months, 24 months, 36 months, 48 months, 96 months,
 ///   192 months, 240 months, 288 months, 336 months, and 384 months.
 ///
@@ -78,7 +78,7 @@ module ol_framework::lockbox {
   /// Duration not in allowed list
   const EINVALID_DURATION: u64 = 9;
 
-  const DEFAULT_LOCKS: vector<u64> = vector[6, 1*12, 2*12, 3*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
+  const LOCK_DURATIONS: vector<u64> = vector[1*12, 2*12, 3*12, 4*12, 8*12, 16*12, 20*12, 24*12, 28*12, 32*12];
 
   struct Lockbox has key, store {
     locked_coins: Coin<LibraCoin>,
@@ -92,10 +92,10 @@ module ol_framework::lockbox {
     list: vector<Lockbox>
   }
 
-  // convenience function to get default locks
+  // convenience function to get standard locks
   #[view]
-  public fun get_default_locks(): vector<u64> {
-    DEFAULT_LOCKS
+  public fun get_lock_duration(): vector<u64> {
+    LOCK_DURATIONS
   }
 
   // user init lockbox
@@ -107,12 +107,12 @@ module ol_framework::lockbox {
     }
   }
 
-  /// Checks if a duration is in the DEFAULT_LOCKS list
+  /// Checks if a duration is in the LOCK_DURATIONS list
   fun is_valid_duration(duration: u64): bool {
     let i = 0;
-    let len = vector::length(&DEFAULT_LOCKS);
+    let len = vector::length(&LOCK_DURATIONS);
     while (i < len) {
-      if (*vector::borrow(&DEFAULT_LOCKS, i) == duration) {
+      if (*vector::borrow(&LOCK_DURATIONS, i) == duration) {
         return true
       };
       i = i + 1;
@@ -253,25 +253,27 @@ module ol_framework::lockbox {
     assert!( duration_to_balance_pre < duration_to_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
   }
 
-  // Sends a portion of a lockbox to a different account which has a slowwalletv2 enabled
-  // In this transfer we check that two users have accounts.
-  // We check that there's no possibility of transferring coins to boxes of
-  // different durations
-  fun checked_transfer_impl(from: &signer, to: address, duration_type: u64, units: u64) acquires SlowWalletV2 {
-    let from_addr = signer::address_of(from);
-    assert!(exists<SlowWalletV2>(from_addr), error::invalid_state(ENOT_INITIALIZED));
-    assert!(exists<SlowWalletV2>(to), error::invalid_state(EDESTINATION_NOT_INIT));
+  // COMMIT NOTE: transfers are not a feature the community wishes to implement
 
-    let (found, idx) = idx_by_duration(from_addr, duration_type);
-    assert!(found, error::invalid_state(ENO_DURATION_FOUND));
+  // // Sends a portion of a lockbox to a different account which has a slowwalletv2 enabled
+  // // In this transfer we check that two users have accounts.
+  // // We check that there's no possibility of transferring coins to boxes of
+  // // different durations
+  // fun checked_transfer_impl(from: &signer, to: address, duration_type: u64, units: u64) acquires SlowWalletV2 {
+  //   let from_addr = signer::address_of(from);
+  //   assert!(exists<SlowWalletV2>(from_addr), error::invalid_state(ENOT_INITIALIZED));
+  //   assert!(exists<SlowWalletV2>(to), error::invalid_state(EDESTINATION_NOT_INIT));
 
-    // borrow a box from the sender, and extract the coins
-    // then deposit in the box of the destination account account.
-    let list = &mut borrow_global_mut<SlowWalletV2>(from_addr).list;
-    let sender_box = vector::borrow_mut(list, idx);
-    let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
-    deposit_impl(to, coins, duration_type);
-  }
+  //   let (found, idx) = idx_by_duration(from_addr, duration_type);
+  //   assert!(found, error::invalid_state(ENO_DURATION_FOUND));
+
+  //   // borrow a box from the sender, and extract the coins
+  //   // then deposit in the box of the destination account account.
+  //   let list = &mut borrow_global_mut<SlowWalletV2>(from_addr).list;
+  //   let sender_box = vector::borrow_mut(list, idx);
+  //   let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
+  //   deposit_impl(to, coins, duration_type);
+  // }
 
   ///////// GETTERS ////////
 
@@ -435,7 +437,7 @@ module ol_framework::lockbox {
     let coin = test_setup(framework, 100);
 
     // Try to create a lockbox with a non-standard duration (5*12 months)
-    // This should fail because 5*12 is not in DEFAULT_LOCKS
+    // This should fail because 5*12 is not in LOCK_DURATIONS
     add_to_or_create_box(bob_sig, coin, 5*12);
 
     // These assertions should never be reached because the above call should fail
@@ -449,7 +451,7 @@ module ol_framework::lockbox {
     let coin = test_setup(framework, 100);
 
     // Try to create a lockbox with a standard duration (4*12 months)
-    // This should succeed because 4*12 is in DEFAULT_LOCKS
+    // This should succeed because 4*12 is in LOCK_DURATIONS
     add_to_or_create_box(bob_sig, coin, 4*12);
 
     // Verify the lockbox was created with the standard duration

@@ -52,19 +52,20 @@ spec ol_framework::lockbox {
         ensures duration_from < duration_to;  // Can only move to longer duration
     }
 
-    /// Specification for checked_transfer_impl:
-    /// Implements safe transfer between two SlowWalletV2 accounts
-    spec checked_transfer_impl(from: &signer, to: address, duration_type: u64, units: u64) {
-        // Pre-conditions
-        requires exists<SlowWalletV2>(signer::address_of(from));  // Sender must have SlowWalletV2
-        requires exists<SlowWalletV2>(to);                        // Receiver must have SlowWalletV2
-        requires units > 0;                                        // Must transfer positive amount
-        requires to != @0x0;                                      // Receiver address must be valid
+    // COMMIT NOTE: transfers are not a feature the community wishes to implement
+    // /// Specification for checked_transfer_impl:
+    // /// Implements safe transfer between two SlowWalletV2 accounts
+    // spec checked_transfer_impl(from: &signer, to: address, duration_type: u64, units: u64) {
+    //     // Pre-conditions
+    //     requires exists<SlowWalletV2>(signer::address_of(from));  // Sender must have SlowWalletV2
+    //     requires exists<SlowWalletV2>(to);                        // Receiver must have SlowWalletV2
+    //     requires units > 0;                                        // Must transfer positive amount
+    //     requires to != @0x0;                                      // Receiver address must be valid
 
-        // Post-conditions
-        ensures units > 0;                                        // Amount remains positive
-        ensures to != @0x0;                                      // Receiver remains valid
-    }
+    //     // Post-conditions
+    //     ensures units > 0;                                        // Amount remains positive
+    //     ensures to != @0x0;                                      // Receiver remains valid
+    // }
 
     /// Specification for deposit:
     /// Handles depositing coins into a lockbox
