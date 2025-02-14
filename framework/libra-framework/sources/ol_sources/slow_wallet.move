@@ -6,7 +6,7 @@
 module ol_framework::slow_wallet {
   // use std::error;
   use std::event;
-  use std::vector;
+  // use std::vector;
   // use std::signer;
   // use diem_framework::system_addresses;
   // use diem_framework::account;
@@ -259,16 +259,13 @@ module ol_framework::slow_wallet {
     // lifecycle. Will deprecate, slowwallet v2 does not use eager unlocking
     // Getter for retrieving the list of slow wallets.
     public fun get_slow_list(): vector<address> {
-      vector::empty<address>()
+      lockbox::get_registry_accounts()
     }
 
-    // TODO: how are we tracking the locked supply?
     #[view]
-    // Getter for retrieving the list of slow wallets.
+    // Getter for retrieving the total locked supply
     public fun get_locked_supply(): u64 {
-      // TODO
-      print(&@0x66601);
-      666
+      lockbox::calc_global_locked()
     }
 
     //////// MIGRATIONS ////////
