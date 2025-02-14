@@ -38,11 +38,13 @@
 
 module ol_framework::lockbox {
   use std::error;
+  use std::event;
   use std::fixed_point32::{Self, FixedPoint32};
   use std::option::{Self, Option};
   use std::signer;
   use std::vector;
-  use diem_framework::coin::Coin;
+  use diem_framework::account;
+  use diem_framework::coin::{Self, Coin};
   use diem_std::math64;
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
@@ -94,8 +96,17 @@ module ol_framework::lockbox {
     last_unlock_timestamp: u64,
   }
 
+  //  emit events on each user's unlock
+  struct UnlockEvent has drop, store {
+    user: address,
+    coins: u64,
+    duration: u64,
+  }
+
   struct SlowWalletV2 has key {
-    list: vector<Lockbox>
+    list: vector<Lockbox>,
+    unlock_events: event::EventHandle<UnlockEvent>,
+
   }
 
 
@@ -103,7 +114,8 @@ module ol_framework::lockbox {
   public(friend) fun maybe_initialize(user: &signer) {
     if (!exists<SlowWalletV2>(signer::address_of(user))) {
       move_to(user, SlowWalletV2 {
-        list: vector::empty()
+        list: vector::empty(),
+        unlock_events: account::new_event_handle<UnlockEvent>(user)
       })
     }
   }
@@ -235,8 +247,25 @@ module ol_framework::lockbox {
 
     let dripped_coins = libra_coin::extract(&mut box.locked_coins, drip_value);
 
+    emit_unlock_event(user_addr, coin::value(&dripped_coins), box.duration_type);
+
     option::some(dripped_coins)
   }
+
+
+    // TODO: create lockbox drip event
+    /// send a drip event notification with the totals of epoch
+    fun emit_unlock_event(user: address, coins: u64, duration: u64) acquires SlowWalletV2 {
+        let state = borrow_global_mut<SlowWalletV2>(user);
+        event::emit_event(
+          &mut state.unlock_events,
+          UnlockEvent {
+              user,
+              coins,
+              duration,
+          },
+      );
+    }
 
   /// drips all lockboxes, callable by ol_account
   public(friend) fun withdraw_drip_all(user: &signer): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
@@ -428,8 +457,6 @@ module ol_framework::lockbox {
 
 
   //////// UNIT TESTS ////////
-  #[test_only]
-  use diem_framework::coin;
 
   #[test_only]
   fun test_setup(framework: &signer, amount: u64): Coin<LibraCoin> {

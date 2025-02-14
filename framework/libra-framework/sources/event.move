@@ -18,7 +18,7 @@ module diem_framework::event {
     friend diem_framework::coin;
     friend diem_framework::block;
 
-    friend ol_framework::slow_wallet;
+    friend ol_framework::lockbox;
     friend ol_framework::reconfiguration;
     friend ol_framework::ol_account;
 

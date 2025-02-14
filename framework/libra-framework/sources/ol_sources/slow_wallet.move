@@ -15,7 +15,7 @@ module ol_framework::slow_wallet {
   use ol_framework::lockbox;
   use ol_framework::libra_coin;
   use ol_framework::testnet;
-  use ol_framework::sacred_cows;
+  // use ol_framework::sacred_cows;
 
   // use diem_std::debug::print;
 
@@ -69,30 +69,30 @@ module ol_framework::slow_wallet {
     /// Users can change their account to slow, by calling the entry function
     /// Warning: this is permanent for the account. There's no way to
     /// reverse a "slow wallet".
-    public entry fun user_set_slow(sig: &signer) acquires SlowWalletList {
+    public entry fun user_set_slow(sig: &signer) {
       set_slow(sig);
     }
 
     /// implementation of setting slow wallet, allows contracts to call.
-    fun set_slow(sig: &signer) acquires SlowWalletList {
+    fun set_slow(sig: &signer) {
       // assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
         lockbox::maybe_initialize(sig);
 
 
-        let addr = signer::address_of(sig);
-        let list = get_slow_list();
-        if (!vector::contains<address>(&list, &addr)) {
-            let s = borrow_global_mut<SlowWalletList>(@ol_framework);
-            vector::push_back(&mut s.list, addr);
-        };
+        // let addr = signer::address_of(sig);
+        // let list = get_slow_list();
+        // if (!vector::contains<address>(&list, &addr)) {
+        //     let s = borrow_global_mut<SlowWalletList>(@ol_framework);
+        //     vector::push_back(&mut s.list, addr);
+        // };
 
         // TODO: Legacy struct to be removed.
-        if (!exists<SlowWallet>(signer::address_of(sig))) {
-          move_to<SlowWallet>(sig, SlowWallet {
-            unlocked: libra_coin::balance(addr),
-            transferred: 0,
-          });
-        }
+        // if (!exists<SlowWallet>(signer::address_of(sig))) {
+        //   move_to<SlowWallet>(sig, SlowWallet {
+        //     unlocked: libra_coin::balance(addr),
+        //     transferred: 0,
+        //   });
+        // }
     }
 
     // TODO: get balance from lockbox
@@ -111,67 +111,67 @@ module ol_framework::slow_wallet {
 
     // TODO: remove from here, lockboxes unlock lazily.
 
-    /// VM causes the slow wallet to unlock by X amount
-    /// @return tuple of 2
-    /// 0: bool, was this successful
-    /// 1: u64, how much was dripped
-    public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
-    SlowWallet, SlowWalletList{
-      system_addresses::assert_ol(vm);
-      let list = get_slow_list();
-      let len = vector::length<address>(&list);
-      if (len == 0) return (false, 0);
-      let accounts_updated: u64 = 0;
-      let i = 0;
-      while (i < len) {
-        let addr = vector::borrow<address>(&list, i);
-        let user_balance = libra_coin::balance(*addr);
-        if (!exists<SlowWallet>(*addr)) continue; // NOTE: formal verifiction caught
-        // this, not sure how it's possible
+    // /// VM causes the slow wallet to unlock by X amount
+    // /// @return tuple of 2
+    // /// 0: bool, was this successful
+    // /// 1: u64, how much was dripped
+    // public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
+    // SlowWallet, SlowWalletList{
+    //   system_addresses::assert_ol(vm);
+    //   let list = get_slow_list();
+    //   let len = vector::length<address>(&list);
+    //   if (len == 0) return (false, 0);
+    //   let accounts_updated: u64 = 0;
+    //   let i = 0;
+    //   while (i < len) {
+    //     let addr = vector::borrow<address>(&list, i);
+    //     let user_balance = libra_coin::balance(*addr);
+    //     if (!exists<SlowWallet>(*addr)) continue; // NOTE: formal verifiction caught
+    //     // this, not sure how it's possible
 
-        let state = borrow_global_mut<SlowWallet>(*addr);
+    //     let state = borrow_global_mut<SlowWallet>(*addr);
 
-        // TODO implement this as a `spec`
-        if ((state.unlocked as u128) + (amount as u128) >= MAX_U64) continue;
+    //     // TODO implement this as a `spec`
+    //     if ((state.unlocked as u128) + (amount as u128) >= MAX_U64) continue;
 
-        let next_unlock = state.unlocked + amount;
-        state.unlocked = if (next_unlock > user_balance) {
-          // the user might have reached the end of the unlock period, and all
-          // is unlocked
-          user_balance
-        } else {
-          next_unlock
-        };
+    //     let next_unlock = state.unlocked + amount;
+    //     state.unlocked = if (next_unlock > user_balance) {
+    //       // the user might have reached the end of the unlock period, and all
+    //       // is unlocked
+    //       user_balance
+    //     } else {
+    //       next_unlock
+    //     };
 
-        // it may be that some accounts were not updated, so we can't report
-        // success unless that was the case.
-        spec {
-          assume accounts_updated + 1 < MAX_U64;
-        };
+    //     // it may be that some accounts were not updated, so we can't report
+    //     // success unless that was the case.
+    //     spec {
+    //       assume accounts_updated + 1 < MAX_U64;
+    //     };
 
-        accounts_updated = accounts_updated + 1;
+    //     accounts_updated = accounts_updated + 1;
 
-        i = i + 1;
-      };
+    //     i = i + 1;
+    //   };
 
-      emit_drip_event(vm, amount, accounts_updated);
-      (accounts_updated==len, amount)
-    }
+    //   emit_drip_event(vm, amount, accounts_updated);
+    //   (accounts_updated==len, amount)
+    // }
 
 
-    // TODO: create lockbox drip event
-    /// send a drip event notification with the totals of epoch
-    fun emit_drip_event(root: &signer, value: u64, users: u64) acquires SlowWalletList {
-        system_addresses::assert_ol(root);
-        let state = borrow_global_mut<SlowWalletList>(@ol_framework);
-        event::emit_event(
-          &mut state.drip_events,
-          DripEvent {
-              value,
-              users,
-          },
-      );
-    }
+    // // TODO: create lockbox drip event
+    // /// send a drip event notification with the totals of epoch
+    // fun emit_drip_event(root: &signer, value: u64, users: u64) acquires SlowWalletList {
+    //     system_addresses::assert_ol(root);
+    //     let state = borrow_global_mut<SlowWalletList>(@ol_framework);
+    //     event::emit_event(
+    //       &mut state.drip_events,
+    //       DripEvent {
+    //           value,
+    //           users,
+    //       },
+    //   );
+    // }
 
     /// wrapper to both attempt to adjust the slow wallet tracker
     /// on the sender and recipient.
@@ -218,15 +218,15 @@ module ol_framework::slow_wallet {
       state.unlocked = state.unlocked + amount;
     }
 
-    // TODO: remove eager unlocking
-    /// Every epoch the system will drip a fixed amount
-    /// @return tuple of 2
-    /// 0: bool, was this successful
-    /// 1: u64, how much was dripped
-    public(friend) fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
-      system_addresses::assert_ol(vm);
-      slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
-    }
+    // // TODO: remove eager unlocking
+    // /// Every epoch the system will drip a fixed amount
+    // /// @return tuple of 2
+    // /// 0: bool, was this successful
+    // /// 1: u64, how much was dripped
+    // public(friend) fun on_new_epoch(vm: &signer): (bool, u64) acquires SlowWallet, SlowWalletList {
+    //   system_addresses::assert_ol(vm);
+    //   // slow_wallet_epoch_drip(vm, sacred_cows::get_slow_drip_const())
+    // }
 
     ///////// GETTERS ////////
 
@@ -258,6 +258,7 @@ module ol_framework::slow_wallet {
       0
     }
 
+    // TODO: deprecate, slowwallet v2 does not use eager unlocking
     #[view]
     // Getter for retrieving the list of slow wallets.
     public fun get_slow_list(): vector<address> acquires SlowWalletList{
@@ -269,6 +270,7 @@ module ol_framework::slow_wallet {
       }
     }
 
+    // TODO: how are we tracking the locked supply?
     #[view]
     // Getter for retrieving the list of slow wallets.
     public fun get_locked_supply(): u64 acquires SlowWalletList, SlowWallet{

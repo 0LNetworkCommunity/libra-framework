@@ -13,7 +13,7 @@ module ol_framework::test_pof {
   use diem_framework::chain_id;
   use std::vector;
 
-  //use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -139,7 +139,10 @@ module ol_framework::test_pof {
     assert!(expires == 10000, 7357002);
 
     // NOT ENOUGH FUNDS WERE UNLOCKED
-    slow_wallet::slow_wallet_epoch_drip(&root, 500);
+    // TODO: give coins to validators for testing
+    print(&@0x666);
+    // slow_wallet::slow_wallet_epoch_drip(&root, 500);
+
     let coin = slow_wallet::unlocked_amount(alice);
 
     // calculate consensus reward
@@ -339,7 +342,9 @@ module ol_framework::test_pof {
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
-    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
+    // TODO: give coins to validators for testing
+    print(&@0x666);
+    // slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
@@ -362,7 +367,9 @@ module ol_framework::test_pof {
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
     mock::pof_default();
 
-    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
+    // TODO: give coins to validators for testing
+    print(&@0x666);
+    // slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
@@ -405,7 +412,10 @@ module ol_framework::test_pof {
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
     proof_of_fee::pof_update_bid(&a_sig, 0, 0);
-    slow_wallet::slow_wallet_epoch_drip(&root, 500000);
+
+    // TODO: give coins to validators for testing
+    print(&@0x666);
+    // slow_wallet::slow_wallet_epoch_drip(&root, 500000);
 
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) != vector::length(&set), 1003);

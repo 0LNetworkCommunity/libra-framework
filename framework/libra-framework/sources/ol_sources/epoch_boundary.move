@@ -21,7 +21,7 @@ module diem_framework::epoch_boundary {
   use ol_framework::fee_maker;
   use ol_framework::migrations;
   use ol_framework::libra_coin;
-  use ol_framework::slow_wallet;
+  // use ol_framework::slow_wallet;
   use ol_framework::match_index;
   use ol_framework::proof_of_fee;
   use ol_framework::infra_escrow;
@@ -316,9 +316,9 @@ module diem_framework::epoch_boundary {
 
     print(&string::utf8(b"slow_wallet::on_new_epoch"));
     // drip coins
-    let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
-    status.slow_wallet_drip_amount = s_amount;
-    status.slow_wallet_drip_success = s_success;
+    // let (s_success, s_amount) = slow_wallet::on_new_epoch(root);
+    // status.slow_wallet_drip_amount = s_amount;
+    // status.slow_wallet_drip_success = s_success;
 
     // ======= THE BOUNDARY =======
     // And to know yourself

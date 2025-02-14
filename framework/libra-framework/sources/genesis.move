@@ -262,7 +262,7 @@ module diem_framework::genesis {
               // TODO: this is for testnet purposes only
               // unlock some of the genesis validators coins so they can issue
               // transactions from epoch 0 in test runners.
-              slow_wallet::slow_wallet_epoch_drip(diem_framework, 100000000);
+              // slow_wallet::slow_wallet_epoch_drip(diem_framework, 100000000);
             };
 
             i = i + 1;
