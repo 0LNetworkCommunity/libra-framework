@@ -175,20 +175,62 @@ module ol_framework::lockbox {
     // TODO: always sort the list by duration_type
   }
 
+
+  fun days_since_last_unlock(box: &Lockbox): u64  {
+    let (start_today, _) = date::todays_start_seconds();
+    date::days_elapsed(box.last_unlock_timestamp, start_today)
+  }
+
+  fun unlock_available_per_box(box: &Lockbox): u64 {
+    let days_unlocking = days_since_last_unlock(box);
+    let daily_drip_value = calc_daily_drip(box);
+    days_unlocking * daily_drip_value
+  }
+
+  fun calc_unlock_from_list(list: &vector<Lockbox>): u64 {
+    let sum = 0;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let this_box = vector::borrow(list, i);
+        sum = sum + unlock_available_per_box(this_box);
+        i = i + 1;
+    };
+    sum
+  }
+
+
+
+  /// balance of all lockboxes
+  fun balance_list(list: &vector<Lockbox>): u64 {
+    let sum = 0;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let this_box = vector::borrow(list, i);
+        sum = sum + libra_coin::value(&this_box.locked_coins);
+        i = i + 1;
+    };
+
+    sum
+  }
+
   // drip one duration
   fun withdraw_drip_impl(user: &signer, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
     let user_addr = signer::address_of(user);
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
     let box = vector::borrow_mut(list, idx);
-    let (start_today, _) = date::start_of_day_seconds();
+    let (start_today, _) = date::todays_start_seconds();
     // abort if tried to drip on same unix day
     assert!(start_today > box.last_unlock_timestamp, error::invalid_state(ENO_DOUBLE_DIPPING));
 
-    let drip_value = calc_daily_drip(box);
+    // calculate the days passed and drip per box
+    let drip_value = unlock_available_per_box(box);
 
     if (drip_value == 0) return option::none();
 
+    // don't update timestamp until there' some balance extracted
     box.last_unlock_timestamp = start_today;
 
     let dripped_coins = libra_coin::extract(&mut box.locked_coins, drip_value);
@@ -366,19 +408,6 @@ module ol_framework::lockbox {
     libra_coin::value(&box.locked_coins)
   }
 
-  /// balance of all lockboxes
-  fun balance_list(list: &vector<Lockbox>): u64 {
-    let sum = 0;
-    let len = vector::length(list);
-    let i = 0;
-    while (i < len) {
-        let el = vector::borrow(list, i);
-        sum = sum + libra_coin::value(&el.locked_coins);
-        i = i + 1;
-    };
-
-    sum
-  }
 
   #[view]
   /// balance of all lockboxes
@@ -387,6 +416,14 @@ module ol_framework::lockbox {
     if (!exists<SlowWalletV2>(user_addr)) return sum;
     let list = &borrow_global<SlowWalletV2>(user_addr).list;
     balance_list(list)
+  }
+
+  #[view]
+  public fun unlocked(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    calc_unlock_from_list(list)
   }
 
 

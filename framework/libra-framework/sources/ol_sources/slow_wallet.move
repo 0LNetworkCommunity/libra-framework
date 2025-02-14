@@ -86,6 +86,7 @@ module ol_framework::slow_wallet {
             vector::push_back(&mut s.list, addr);
         };
 
+        // TODO: Legacy struct to be removed.
         if (!exists<SlowWallet>(signer::address_of(sig))) {
           move_to<SlowWallet>(sig, SlowWallet {
             unlocked: libra_coin::balance(addr),
@@ -94,6 +95,7 @@ module ol_framework::slow_wallet {
         }
     }
 
+    // TODO: get balance from lockbox
     /// helper to get the unlocked and total balance. (unlocked, total)
     public(friend) fun unlocked_and_total(addr: address): (u64, u64) acquires SlowWallet{
       // this is a normal account, so return the normal balance
@@ -106,6 +108,8 @@ module ol_framework::slow_wallet {
       // if the account has no SlowWallet tracker, then everything is unlocked.
       (total, total)
     }
+
+    // TODO: remove from here, lockboxes unlock lazily.
 
     /// VM causes the slow wallet to unlock by X amount
     /// @return tuple of 2
@@ -155,6 +159,7 @@ module ol_framework::slow_wallet {
     }
 
 
+    // TODO: create lockbox drip event
     /// send a drip event notification with the totals of epoch
     fun emit_drip_event(root: &signer, value: u64, users: u64) acquires SlowWalletList {
         system_addresses::assert_ol(root);
@@ -213,6 +218,7 @@ module ol_framework::slow_wallet {
       state.unlocked = state.unlocked + amount;
     }
 
+    // TODO: remove eager unlocking
     /// Every epoch the system will drip a fixed amount
     /// @return tuple of 2
     /// 0: bool, was this successful
@@ -226,7 +232,8 @@ module ol_framework::slow_wallet {
 
     #[view]
     public fun is_slow(addr: address): bool {
-      exists<SlowWallet>(addr)
+      // exists<SlowWallet>(addr)
+      lockbox::lockbox_initialized(addr)
     }
     #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
