@@ -52,6 +52,7 @@ module ol_framework::lockbox {
   friend ol_framework::ol_account;
   friend ol_framework::donor_voice_txs;
   friend ol_framework::rewards;
+  friend ol_framework::slow_wallet;
 
   #[test_only]
   friend ol_framework::test_slow_wallet;
@@ -99,7 +100,7 @@ module ol_framework::lockbox {
 
 
   // user init lockbox
-  fun maybe_initialize(user: &signer) {
+  public(friend) fun maybe_initialize(user: &signer) {
     if (!exists<SlowWalletV2>(signer::address_of(user))) {
       move_to(user, SlowWalletV2 {
         list: vector::empty()

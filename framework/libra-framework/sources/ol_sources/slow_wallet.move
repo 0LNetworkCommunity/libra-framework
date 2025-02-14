@@ -6,13 +6,13 @@
 // the unlocked amount.
 
 module ol_framework::slow_wallet {
-  use std::error;
+  // use std::error;
   use std::event;
   use std::vector;
   use std::signer;
   use diem_framework::system_addresses;
-  // use diem_framework::coin;
   use diem_framework::account;
+  use ol_framework::lockbox;
   use ol_framework::libra_coin;
   use ol_framework::testnet;
   use ol_framework::sacred_cows;
@@ -75,7 +75,9 @@ module ol_framework::slow_wallet {
 
     /// implementation of setting slow wallet, allows contracts to call.
     fun set_slow(sig: &signer) acquires SlowWalletList {
-      assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
+      // assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
+        lockbox::maybe_initialize(sig);
+
 
         let addr = signer::address_of(sig);
         let list = get_slow_list();

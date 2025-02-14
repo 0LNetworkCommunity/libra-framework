@@ -155,7 +155,7 @@ module ol_framework::ol_account {
     }
 
 
-    /// Helper for smoke tests to create acounts.
+    /// Helper for smoke tests to create accounts.
     /// Belt and suspenders
     // TODO: should check chain ID is not mainnet.
     public entry fun create_account(root: &signer, auth_key: address) {
