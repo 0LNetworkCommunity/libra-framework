@@ -49,7 +49,7 @@ module ol_framework::lockbox {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
 
-  // use diem_framework::debug::print;
+  use diem_framework::debug::print;
 
   friend ol_framework::ol_account;
   friend ol_framework::donor_voice_txs;
@@ -155,10 +155,15 @@ module ol_framework::lockbox {
 
   // Entrypoint for adding or creating a user box, when signed by holder of coins.
   public(friend) fun self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+    print(&0x1);
     maybe_initialize(user);
 
     let user_addr = signer::address_of(user);
+    print(&0x2);
+
     deposit_impl(user_addr, locked_coins, duration_type);
+    print(&0x3);
+
   }
 
   // for validator rewards and donor voice transactions
@@ -283,8 +288,11 @@ module ol_framework::lockbox {
 
   /// drips all lockboxes, callable by ol_account
   public(friend) fun withdraw_drip_all(user: &signer): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+    let user_addr = signer::address_of(user);
+    if (!exists<SlowWalletV2>(user_addr)) return option::none();
+
     let list = &mut borrow_global_mut<SlowWalletV2>(signer::address_of(user)).list;
-    assert!(!vector::is_empty(list), ENO_DURATION_FOUND);
+    if (vector::is_empty(list)) return option::none();
 
     let coin_opt = option::none<Coin<LibraCoin>>();
 
@@ -479,7 +487,9 @@ module ol_framework::lockbox {
 
 
 
-  //////// UNIT TESTS ////////
+  //////// TESTS HELPER ////////
+
+
 
   #[test_only]
   fun test_setup(framework: &signer, amount: u64): Coin<LibraCoin> {
@@ -490,6 +500,12 @@ module ol_framework::lockbox {
     c
   }
 
+  //////// TESTS ////////
+  #[test(bob = @0x10002)]
+  fun test_lockbox_init(bob: address) {
+    let bob_sig = account::create_account_for_test(bob);
+    maybe_initialize(&bob_sig);
+  }
 
   #[test(bob_sig = @0x10002)]
   #[expected_failure(abort_code = 196609, location = ol_framework::lockbox)]
@@ -498,13 +514,12 @@ module ol_framework::lockbox {
     let (_,_) = idx_by_duration(bob_addr, 1*12);
   }
 
-  #[test(framework = @0x1, bob_sig = @0x10002)]
-  fun creates_lockbox(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
-    let bob_addr = signer::address_of(bob_sig);
-
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  fun creates_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
     let coin = test_setup(framework, 23);
-
-    self_add_or_create_box(bob_sig, coin, 1*12);
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+    self_add_or_create_box(&bob_sig, coin, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
@@ -517,13 +532,15 @@ module ol_framework::lockbox {
     assert!(balanace_all == 23, 7357005);
   }
 
-  #[test(framework = @0x1, bob_sig = @0x10002)]
-  fun adds_to_lockbox(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
-    let bob_addr = signer::address_of(bob_sig);
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  fun adds_to_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
     let coin = test_setup(framework, 123);
     let split_coin = libra_coin::extract(&mut coin, 23);
 
-    self_add_or_create_box(bob_sig, split_coin, 1*12);
+    self_add_or_create_box(&bob_sig, split_coin, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
@@ -534,7 +551,7 @@ module ol_framework::lockbox {
     assert!(bal == 23, 7357004);
 
     // remainder of coin should be 100
-    self_add_or_create_box(bob_sig, coin, 1*12);
+    self_add_or_create_box(&bob_sig, coin, 1*12);
 
     // see if it exists
     let (found, idx) = idx_by_duration(bob_addr, 1*12);
@@ -545,29 +562,40 @@ module ol_framework::lockbox {
     assert!(bal2 == 123, 7357007);
   }
 
-  #[test(framework = @0x1, bob_sig = @0x10002)]
+  #[test(framework = @0x1, bob_addr = @0x10002)]
   #[expected_failure(abort_code = 65545, location = ol_framework::lockbox)]
-  fun test_non_standard_duration(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
-    let bob_addr = signer::address_of(bob_sig);
+  fun test_non_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+
     let coin = test_setup(framework, 100);
+
+
 
     // Try to create a lockbox with a non-standard duration (5*12 months)
     // This should fail because 5*12 is not in LOCK_DURATIONS
-    self_add_or_create_box(bob_sig, coin, 5*12);
+    self_add_or_create_box(&bob_sig, coin, 5*12);
 
     // These assertions should never be reached because the above call should fail
     let (found, _) = idx_by_duration(bob_addr, 5*12);
     assert!(!found, 7357001);
   }
 
-  #[test(framework = @0x1, bob_sig = @0x10002)]
-  fun test_standard_duration(framework: &signer, bob_sig: &signer) acquires SlowWalletV2 {
-    let bob_addr = signer::address_of(bob_sig);
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  fun test_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+    // use diem_framework::debug::print;
+
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+
     let coin = test_setup(framework, 100);
+    print(&coin);
 
     // Try to create a lockbox with a standard duration (4*12 months)
     // This should succeed because 4*12 is in LOCK_DURATIONS
-    self_add_or_create_box(bob_sig, coin, 4*12);
+    self_add_or_create_box(&bob_sig, coin, 4*12);
+    print(&0x123);
 
     // Verify the lockbox was created with the standard duration
     let (found, idx) = idx_by_duration(bob_addr, 4*12);

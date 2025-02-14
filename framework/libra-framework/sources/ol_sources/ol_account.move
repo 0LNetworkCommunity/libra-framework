@@ -291,8 +291,21 @@ module ol_framework::ol_account {
 
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+        //////// NEW POLICY in V8 ////////
+        // for convenience we unlock what is available in Lockboxes now
+        // and merge with the Account coins
+        let coin_opt = lockbox::withdraw_drip_all(sender);
+        if (option::is_some(&coin_opt)) {
+          let newly_unlocked_coins = option::extract(&mut coin_opt);
+          // deposit to self
+          deposit_coins(signer::address_of(sender), newly_unlocked_coins);
+        };
+        option::destroy_none(coin_opt);
+        //////// end /////////
+
+        // now the balance includes all unlocks from lockbox
         let coin = coin::withdraw<LibraCoin>(sender, amount);
-        // slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
 
         // the outgoing coins should trigger an update on this account
         // order matters here
