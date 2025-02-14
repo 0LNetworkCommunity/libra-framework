@@ -12,7 +12,7 @@ spec ol_framework::lockbox {
     spec new(locked_coins: Coin<LibraCoin>, duration_type: u64): Lockbox {
         // Post-conditions: verify all fields are properly initialized
         ensures result.duration_type == duration_type;  // Duration is set correctly
-        ensures result.lifetime_deposits == 0;          // No deposits yet
+        ensures result.lifetime_deposited == 0;          // No deposits yet
         ensures result.lifetime_unlocked == 0;          // Nothing unlocked yet
         ensures result.last_unlock_timestamp == 0;      // No unlocks performed
     }
@@ -76,9 +76,11 @@ spec ol_framework::lockbox {
 
     /// Specification for withdraw_drip_impl:
     /// Implements the drip withdrawal mechanism
-    spec withdraw_drip_impl(user: &signer, idx: u64): Option<Coin<LibraCoin>> {
-        requires exists<SlowWalletV2>(signer::address_of(user));
-        requires idx < vector::length(global<SlowWalletV2>(signer::address_of(user)).list);
+    spec withdraw_drip_impl(framework: &signer, user_addr: address, idx: u64): Option<Coin<LibraCoin>> {
+        requires signer::address_of(framework) == @0x1; // must be system addresss
+
+        requires exists<SlowWalletV2>(user_addr);
+        requires idx < vector::length(global<SlowWalletV2>(user_addr).list);
     }
 
     /// Helper function to calculate minimum amount needed to get non-zero drip

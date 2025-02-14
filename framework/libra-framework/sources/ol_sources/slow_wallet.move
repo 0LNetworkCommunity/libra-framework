@@ -104,10 +104,10 @@ module ol_framework::slow_wallet {
       // this is a normal account, so return the normal balance
 
       let unlocked = libra_coin::balance(addr);
-      let lockbox = lockbox::balance_all(addr);
+      let lockbox = lockbox::user_balance(addr);
       let total_coin_balance = unlocked + lockbox;
 
-      let unlockable = lockbox::unlockable(addr);
+      let unlockable = lockbox::user_unlockable(addr);
       let available = unlocked + unlockable;
 
       // if the account has no SlowWallet tracker, then everything is unlocked.
@@ -243,7 +243,7 @@ module ol_framework::slow_wallet {
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 {
       let unlocked = libra_coin::balance(addr);
-      let unlockable = lockbox::unlockable(addr);
+      let unlockable = lockbox::user_unlockable(addr);
       unlocked + unlockable
     }
 
@@ -251,7 +251,7 @@ module ol_framework::slow_wallet {
     // TODO: keeping the same name for client compatibility, should be updated
     /// Returns the amount of slow wallet transfers tracked
     public fun transferred_amount(addr: address): u64 {
-      lockbox::lifetime_unlocked(addr)
+      lockbox::user_lifetime_unlocked(addr)
     }
 
     #[view]

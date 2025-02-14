@@ -45,14 +45,16 @@ module ol_framework::lockbox {
   use std::vector;
   use diem_framework::account;
   use diem_framework::coin::{Self, Coin};
+  use diem_framework::system_addresses;
   use diem_std::math64;
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
 
   use diem_framework::debug::print;
 
-  friend ol_framework::ol_account;
   friend ol_framework::donor_voice_txs;
+  friend ol_framework::genesis;
+  friend ol_framework::ol_account;
   friend ol_framework::rewards;
   friend ol_framework::slow_wallet;
 
@@ -88,10 +90,18 @@ module ol_framework::lockbox {
 
   const LOCK_DURATIONS: vector<u64> = vector[1*12, 2*12, 4*12, 8*12, 12*12, 16*12, 20*12, 24*12];
 
+  /// list of all the accounts with lockboxes
+  struct Registry has key, store{
+    accounts: vector<address>,
+    lifetime_deposited: u64,
+    lifetime_unlocked: u64,
+    locked_supply: u64,
+  }
+
   struct Lockbox has key, store {
     locked_coins: Coin<LibraCoin>,
     duration_type: u64,
-    lifetime_deposits: u64,
+    lifetime_deposited: u64,
     lifetime_unlocked: u64,
     last_unlock_timestamp: u64,
   }
@@ -105,18 +115,41 @@ module ol_framework::lockbox {
 
   struct SlowWalletV2 has key {
     list: vector<Lockbox>,
+    // TODO: move to global?
     unlock_events: event::EventHandle<UnlockEvent>,
 
   }
 
 
+  public(friend) fun initialize(framework: &signer) {
+    system_addresses::assert_diem_framework(framework);
+    if (!exists<Registry>(@ol_framework)) {
+      move_to(framework, Registry {
+        accounts: vector::empty(),
+        lifetime_deposited: 0,
+        lifetime_unlocked: 0,
+        locked_supply: 0,
+      })
+    }
+  }
+
+  fun add_to_registry(user: address) acquires Registry {
+    let state = borrow_global_mut<Registry>(@ol_framework);
+    if (!vector::contains(&state.accounts, &user)) {
+      vector::push_back(&mut state.accounts, user);
+    }
+  }
+
   // user init lockbox
-  public(friend) fun maybe_initialize(user: &signer) {
-    if (!exists<SlowWalletV2>(signer::address_of(user))) {
+  public(friend) fun maybe_initialize(user: &signer) acquires Registry {
+    let user_addr = signer::address_of(user);
+    if (!exists<SlowWalletV2>(user_addr)) {
       move_to(user, SlowWalletV2 {
         list: vector::empty(),
         unlock_events: account::new_event_handle<UnlockEvent>(user)
-      })
+      });
+
+      add_to_registry(user_addr);
     }
   }
 
@@ -142,7 +175,7 @@ module ol_framework::lockbox {
       Lockbox {
         locked_coins,
         duration_type,
-        lifetime_deposits: 0,
+        lifetime_deposited: 0,
         lifetime_unlocked: 0,
         last_unlock_timestamp: 0,
       }
@@ -154,7 +187,7 @@ module ol_framework::lockbox {
   }
 
   // Entrypoint for adding or creating a user box, when signed by holder of coins.
-  public(friend) fun self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+  public(friend) fun self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2, Registry {
     print(&0x1);
     maybe_initialize(user);
 
@@ -216,9 +249,7 @@ module ol_framework::lockbox {
     sum
   }
 
-
-
-  /// balance of all lockboxes
+  /// balance of a vector of lockboxes
   fun balance_list(list: &vector<Lockbox>): u64 {
     let sum = 0;
     let len = vector::length(list);
@@ -232,7 +263,7 @@ module ol_framework::lockbox {
     sum
   }
 
-  /// total unlocked over time
+  /// total unlocked over time for a vector of lockboxes
   fun lifetime_unlocked_list(list: &vector<Lockbox>): u64 {
     let sum = 0;
     let len = vector::length(list);
@@ -246,9 +277,9 @@ module ol_framework::lockbox {
     sum
   }
 
-  // drip one duration
-  fun withdraw_drip_impl(user: &signer, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
-    let user_addr = signer::address_of(user);
+  // drip one duration on one account
+  fun withdraw_drip_impl(framework: &signer, user_addr: address, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+    system_addresses::assert_diem_framework(framework);
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
     let box = vector::borrow_mut(list, idx);
@@ -286,12 +317,13 @@ module ol_framework::lockbox {
       );
     }
 
-  /// drips all lockboxes, callable by ol_account
-  public(friend) fun withdraw_drip_all(user: &signer): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
-    let user_addr = signer::address_of(user);
+  /// drips all lockboxes, callable by ol_framework
+  public(friend) fun vm_withdraw_user_unlocked(framework: &signer, user_addr: address): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+    system_addresses::assert_diem_framework(framework);
+
     if (!exists<SlowWalletV2>(user_addr)) return option::none();
 
-    let list = &mut borrow_global_mut<SlowWalletV2>(signer::address_of(user)).list;
+    let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
     if (vector::is_empty(list)) return option::none();
 
     let coin_opt = option::none<Coin<LibraCoin>>();
@@ -299,7 +331,7 @@ module ol_framework::lockbox {
     let len = vector::length(list);
     let i = 0;
     while (i < len) {
-        let box_coins_opt = withdraw_drip_impl(user, i);
+        let box_coins_opt = withdraw_drip_impl(framework, user_addr, i);
         if (option::is_none(&box_coins_opt)) {
           option::destroy_none(box_coins_opt);
           continue
@@ -317,8 +349,43 @@ module ol_framework::lockbox {
 
         i = i + 1;
     };
+    // TODO: emit event
     coin_opt
   }
+
+  // /// drips all lockboxes, callable by ol_account
+  // public(friend) fun withdraw_drip_all(user: &signer): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+  //   let user_addr = signer::address_of(user);
+  //   if (!exists<SlowWalletV2>(user_addr)) return option::none();
+
+  //   let list = &mut borrow_global_mut<SlowWalletV2>(signer::address_of(user)).list;
+  //   if (vector::is_empty(list)) return option::none();
+
+  //   let coin_opt = option::none<Coin<LibraCoin>>();
+
+  //   let len = vector::length(list);
+  //   let i = 0;
+  //   while (i < len) {
+  //       let box_coins_opt = withdraw_drip_impl(user, i);
+  //       if (option::is_none(&box_coins_opt)) {
+  //         option::destroy_none(box_coins_opt);
+  //         continue
+  //       };
+
+  //       let c = option::extract(&mut box_coins_opt);
+  //       option::destroy_none(box_coins_opt);
+
+  //       if (option::is_none(&coin_opt) ){
+  //         option::fill(&mut coin_opt, c);
+  //       } else {
+  //         let all_coins = option::borrow_mut(&mut coin_opt);
+  //         libra_coin::merge(all_coins, c);
+  //       };
+
+  //       i = i + 1;
+  //   };
+  //   coin_opt
+  // }
 
 
   // Shifts a lockbox's amount to a longer duration lockbox.
@@ -334,9 +401,9 @@ module ol_framework::lockbox {
     let (found, idx) = idx_by_duration(user_addr, duration_from);
     assert!(found, error::invalid_state(ENO_DURATION_FOUND));
 
-    let duration_from_balance_pre = balance_duration(user_addr, duration_from);
-    let duration_to_balance_pre = balance_duration(user_addr, duration_to);
-    let all_balances_pre = balance_all(user_addr);
+    let duration_from_balance_pre = balance_per_duration(user_addr, duration_from);
+    let duration_to_balance_pre = balance_per_duration(user_addr, duration_to);
+    let all_balances_pre = user_balance(user_addr);
 
     // withdraw from one duration_from and send to duration_to
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
@@ -344,17 +411,17 @@ module ol_framework::lockbox {
     let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
     deposit_impl(user_addr, coins, duration_to);
 
-    let all_balances_post = balance_all(user_addr);
+    let all_balances_post = user_balance(user_addr);
 
     // balances should never change
     assert!(all_balances_pre == all_balances_post, error::invalid_state(EBALANCES_CHANGED_ON_DELAY));
 
     // origin units should be LOWER
-    let duration_from_balance_post = balance_duration(user_addr, duration_from);
+    let duration_from_balance_post = balance_per_duration(user_addr, duration_from);
     assert!(duration_from_balance_pre > duration_from_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
 
     // destination units should be GREATER
-    let duration_to_balance_post = balance_duration(user_addr, duration_to);
+    let duration_to_balance_post = balance_per_duration(user_addr, duration_to);
     assert!( duration_to_balance_pre < duration_to_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
   }
 
@@ -447,7 +514,7 @@ module ol_framework::lockbox {
 
   #[view]
   /// balance for one duration_type's box
-  public fun balance_duration(user_addr: address, duration_type: u64): u64 acquires SlowWalletV2 {
+  public fun balance_per_duration(user_addr: address, duration_type: u64): u64 acquires SlowWalletV2 {
     if (!exists<SlowWalletV2>(user_addr)) return 0;
     let (found, idx) = idx_by_duration(user_addr, duration_type);
     if (!found) {
@@ -461,8 +528,8 @@ module ol_framework::lockbox {
 
 
   #[view]
-  /// balance of all lockboxes
-  public fun balance_all(user_addr: address): u64 acquires SlowWalletV2 {
+  /// balance of one users lockboxes
+  public fun user_balance(user_addr: address): u64 acquires SlowWalletV2 {
     let sum = 0;
     if (!exists<SlowWalletV2>(user_addr)) return sum;
     let list = &borrow_global<SlowWalletV2>(user_addr).list;
@@ -470,7 +537,7 @@ module ol_framework::lockbox {
   }
 
   #[view]
-  public fun unlockable(user_addr: address): u64 acquires SlowWalletV2 {
+  public fun user_unlockable(user_addr: address): u64 acquires SlowWalletV2 {
     let sum = 0;
     if (!exists<SlowWalletV2>(user_addr)) return sum;
     let list = &borrow_global<SlowWalletV2>(user_addr).list;
@@ -478,12 +545,48 @@ module ol_framework::lockbox {
   }
 
   #[view]
-  public fun lifetime_unlocked(user_addr: address): u64 acquires SlowWalletV2 {
+  public fun user_lifetime_unlocked(user_addr: address): u64 acquires SlowWalletV2 {
     let sum = 0;
     if (!exists<SlowWalletV2>(user_addr)) return sum;
     let list = &borrow_global<SlowWalletV2>(user_addr).list;
     lifetime_unlocked_list(list)
   }
+
+  #[view]
+  public fun get_registry_accounts(): vector<address> acquires Registry {
+    borrow_global<Registry>(@ol_framework).accounts
+  }
+
+  #[view]
+  /// returns a vector of the unlocked balances at each standard duration
+  public fun calc_global_locked(): u64 acquires SlowWalletV2, Registry {
+    let sum = 0;
+    let users = borrow_global<Registry>(@ol_framework).accounts;
+    let i = 0;
+    while (i < vector::length(&users)) {
+      let u = vector::borrow(&users, i);
+      let bal = user_balance(*u);
+      sum = sum + bal;
+      i = i + 1;
+    };
+    sum
+  }
+
+  #[view]
+  /// returns a vector of the unlocked balances at each standard duration
+  public fun calc_global_locked_per_duration(duration_type: u64): u64 acquires SlowWalletV2, Registry {
+    let sum = 0;
+    let users = borrow_global<Registry>(@ol_framework).accounts;
+    let i = 0;
+    while (i < vector::length(&users)) {
+      let u = vector::borrow(&users, i);
+      let bal = balance_per_duration(*u, duration_type);
+      sum = sum + bal;
+      i = i + 1;
+    };
+    sum
+  }
+
 
 
 
@@ -502,7 +605,7 @@ module ol_framework::lockbox {
 
   //////// TESTS ////////
   #[test(bob = @0x10002)]
-  fun test_lockbox_init(bob: address) {
+  fun test_lockbox_init(bob: address) acquires Registry {
     let bob_sig = account::create_account_for_test(bob);
     maybe_initialize(&bob_sig);
   }
@@ -515,7 +618,7 @@ module ol_framework::lockbox {
   }
 
   #[test(framework = @0x1, bob_addr = @0x10002)]
-  fun creates_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+  fun creates_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
     let coin = test_setup(framework, 23);
     // for create account first, because event emitter depends on it
     let bob_sig = account::create_account_for_test(bob_addr);
@@ -526,14 +629,14 @@ module ol_framework::lockbox {
     assert!(found, 7357002);
     assert!(idx == 0, 7357003);
 
-    let balance_one = balance_duration(bob_addr, 1*12);
+    let balance_one = balance_per_duration(bob_addr, 1*12);
     assert!(balance_one == 23, 7357004);
-    let balanace_all = balance_all(bob_addr);
+    let balanace_all = user_balance(bob_addr);
     assert!(balanace_all == 23, 7357005);
   }
 
   #[test(framework = @0x1, bob_addr = @0x10002)]
-  fun adds_to_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+  fun adds_to_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
 
     // for create account first, because event emitter depends on it
     let bob_sig = account::create_account_for_test(bob_addr);
@@ -547,7 +650,7 @@ module ol_framework::lockbox {
     assert!(found, 7357002);
     assert!(idx == 0, 7357003);
 
-    let bal = balance_all(bob_addr);
+    let bal = user_balance(bob_addr);
     assert!(bal == 23, 7357004);
 
     // remainder of coin should be 100
@@ -558,13 +661,13 @@ module ol_framework::lockbox {
     assert!(found, 7357005);
     assert!(idx == 0, 7357006);
 
-    let bal2 = balance_all(bob_addr);
+    let bal2 = user_balance(bob_addr);
     assert!(bal2 == 123, 7357007);
   }
 
   #[test(framework = @0x1, bob_addr = @0x10002)]
   #[expected_failure(abort_code = 65545, location = ol_framework::lockbox)]
-  fun test_non_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+  fun test_non_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
 
     // for create account first, because event emitter depends on it
     let bob_sig = account::create_account_for_test(bob_addr);
@@ -583,7 +686,7 @@ module ol_framework::lockbox {
   }
 
   #[test(framework = @0x1, bob_addr = @0x10002)]
-  fun test_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2 {
+  fun test_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
     // use diem_framework::debug::print;
 
     // for create account first, because event emitter depends on it
@@ -603,7 +706,7 @@ module ol_framework::lockbox {
     assert!(idx == 0, 7357002);
 
     // Verify the balance
-    let balance = balance_duration(bob_addr, 4*12);
+    let balance = balance_per_duration(bob_addr, 4*12);
     assert!(balance == 100, 7357003);
   }
 }

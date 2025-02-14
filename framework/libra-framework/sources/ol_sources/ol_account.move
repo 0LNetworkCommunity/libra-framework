@@ -7,11 +7,10 @@ module ol_framework::ol_account {
     use std::error;
     use std::signer;
     use std::option::{Self, Option};
+    use std::vector;
     use diem_std::from_bcs;
     use diem_std::fixed_point32;
     use diem_std::math64;
-
-
     use ol_framework::ancestry;
     use ol_framework::libra_coin::{Self, LibraCoin};
     use ol_framework::slow_wallet;
@@ -23,10 +22,8 @@ module ol_framework::ol_account {
 
     use diem_std::debug::print;
 
-    #[test_only]
-    use std::vector;
-
     friend ol_framework::donor_voice_txs;
+    friend ol_framework::epoch_boundary;
     friend ol_framework::multi_action;
     friend ol_framework::burn;
     friend ol_framework::safe;
@@ -110,18 +107,7 @@ module ol_framework::ol_account {
     }
 
 
-    #[test_only]
-    /// A wrapper to create a NEW account and register it to receive GAS.
-    public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
-      let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-      coin::register<LibraCoin>(&resource_account_sig);
 
-      receipts::user_init(&resource_account_sig);
-      maybe_init_burn_tracker(&resource_account_sig);
-      ancestry::adopt_this_child(user, &resource_account_sig);
-
-      (resource_account_sig, cap)
-    }
 
     // Deprecation Notice: creating resource accounts are disabled in Libra.
     // Similar methods exist in multi_action::finalize_and_cage) which is
@@ -158,9 +144,9 @@ module ol_framework::ol_account {
     /// Helper for smoke tests to create accounts.
     /// Belt and suspenders
     // TODO: should check chain ID is not mainnet.
-    public entry fun create_account(root: &signer, auth_key: address) {
-        system_addresses::assert_ol(root);
-        create_impl(root, auth_key);
+    public entry fun create_account(framework: &signer, auth_key: address) {
+        system_addresses::assert_ol(framework);
+        create_impl(framework, auth_key);
     }
 
     /// For migrating accounts from a legacy system
@@ -210,27 +196,6 @@ module ol_framework::ol_account {
       b.cumu_burn = cumu_burn;
     }
 
-
-
-
-    #[test_only]
-    /// Batch version of GAS transfer.
-    public entry fun batch_transfer(source: &signer, recipients:
-    vector<address>, amounts: vector<u64>) acquires BurnTracker {
-        let recipients_len = vector::length(&recipients);
-        assert!(
-            recipients_len == vector::length(&amounts),
-            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
-        );
-
-        let i = 0;
-        while (i < recipients_len) {
-            let to = *vector::borrow(&recipients, i);
-            let amount = *vector::borrow(&amounts, i);
-            transfer(source, to, amount);
-            i = i + 1;
-        };
-    }
 
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
@@ -292,17 +257,19 @@ module ol_framework::ol_account {
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
-        //////// NEW POLICY in V8 ////////
-        // for convenience we unlock what is available in Lockboxes now
-        // and merge with the Account coins
-        let coin_opt = lockbox::withdraw_drip_all(sender);
-        if (option::is_some(&coin_opt)) {
-          let newly_unlocked_coins = option::extract(&mut coin_opt);
-          // deposit to self
-          deposit_coins(signer::address_of(sender), newly_unlocked_coins);
-        };
-        option::destroy_none(coin_opt);
-        //////// end /////////
+        // //////// LAZY PATTERN ////////
+        // TODO: evaluate after production run if lazy pattern is
+        // preferable to eager unlocking at epoch boundary
+        // // for convenience we unlock what is available in Lockboxes now
+        // // and merge with the Account coins
+        // let coin_opt = lockbox::withdraw_drip_all(sender);
+        // if (option::is_some(&coin_opt)) {
+        //   let newly_unlocked_coins = option::extract(&mut coin_opt);
+        //   // deposit to self
+        //   deposit_coins(signer::address_of(sender), newly_unlocked_coins);
+        // };
+        // option::destroy_none(coin_opt);
+        // //////// end /////////
 
         // now the balance includes all unlocks from lockbox
         let coin = coin::withdraw<LibraCoin>(sender, amount);
@@ -313,20 +280,6 @@ module ol_framework::ol_account {
         coin
     }
 
-    /// User can call function that drips the lockbox amount.
-    // NOTE: dependency cycling issue. THis module needs to be the caller since libra_coin is a common dependency with lockbox.
-    fun self_drip_lockboxes(sender: &signer) acquires BurnTracker {
-      let addr = signer::address_of(sender);
-      // exit gracefully on no balance, this may be called on epoch_boundary
-      if (lockbox::balance_all(addr) > 0) {
-        let coin_opt = lockbox::withdraw_drip_all(sender);
-        if (option::is_some(&coin_opt)) {
-          let coins = option::extract(&mut coin_opt);
-          deposit_coins(addr, coins);
-        };
-        option::destroy_none(coin_opt);
-      }
-    }
 
     fun maybe_sender_creates_account(sender: &signer, maybe_new_user: address,
     amount: u64) {
@@ -404,18 +357,6 @@ module ol_framework::ol_account {
       (amount_transferred, amount_transferred == amount)
     }
 
-    #[test_only]
-    public fun test_vm_withdraw(vm: &signer, from: address, amount: u64):
-    Option<Coin<LibraCoin>> acquires BurnTracker {
-      system_addresses::assert_ol(vm);
-      // should not halt
-      if (!coin::is_account_registered<LibraCoin>(from)) return option::none();
-      if(amount > libra_coin::balance(from)) return option::none();
-
-      maybe_update_burn_tracker_impl(from);
-      coin::vm_withdraw<LibraCoin>(vm, from, amount)
-
-    }
     /// vm can transfer between account to settle.
     /// THIS FUNCTION CAN BYPASS SLOW WALLET WITHDRAW RESTRICTIONS
     /// used to withdraw and track the withdrawal
@@ -447,6 +388,33 @@ module ol_framework::ol_account {
 
     }
 
+    /// Iterate over all the slow wallets and unlock coins to
+    /// deposit into ordinary coin struct
+    /// @returns tuple of total unlocked and if successful (same as other epoch boundary function signatures)
+    /// 0: if the full iteration was successful
+    /// 1: total unlocked on all accounts in this iteration
+    public(friend) fun epoch_boundary_unlock(framework: &signer): (bool, u64) acquires BurnTracker {
+      system_addresses::assert_diem_framework(framework);
+      let sum = 0;
+      let locked_users = lockbox::get_registry_accounts();
+      let i = 0;
+      while (i < vector::length(&locked_users)) {
+        let u = *vector::borrow(&locked_users, i);
+        let c_opt = lockbox::vm_withdraw_user_unlocked(framework, u);
+
+      if (option::is_some(&c_opt)) {
+          let coin = option::extract(&mut c_opt);
+          let value = coin::value(&coin);
+          sum = sum + value;
+          deposit_coins(u, coin);
+        };
+        option::destroy_none(c_opt);
+
+        i = i + 1;
+      };
+
+      (true, sum)
+    }
     //////// VIEW ////////
 
     #[view]
@@ -688,22 +656,88 @@ module ol_framework::ol_account {
       )
     }
 
+    //////// TEST HELPERS ////////
+    #[test_only]
+    /// A wrapper to create a NEW account and register it to receive GAS.
+    public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
+      let (resource_account_sig, cap) = account::create_resource_account(user, seed);
+      coin::register<LibraCoin>(&resource_account_sig);
+
+      receipts::user_init(&resource_account_sig);
+      maybe_init_burn_tracker(&resource_account_sig);
+      ancestry::adopt_this_child(user, &resource_account_sig);
+
+      (resource_account_sig, cap)
+    }
+
+    #[test_only]
+    public fun test_vm_withdraw(vm: &signer, from: address, amount: u64):
+    Option<Coin<LibraCoin>> acquires BurnTracker {
+      system_addresses::assert_ol(vm);
+      // should not halt
+      if (!coin::is_account_registered<LibraCoin>(from)) return option::none();
+      if(amount > libra_coin::balance(from)) return option::none();
+
+      maybe_update_burn_tracker_impl(from);
+      coin::vm_withdraw<LibraCoin>(vm, from, amount)
+
+    }
+
+    #[test_only]
+    /// Batch version of GAS transfer.
+    public entry fun batch_transfer(source: &signer, recipients:
+    vector<address>, amounts: vector<u64>) acquires BurnTracker {
+        let recipients_len = vector::length(&recipients);
+        assert!(
+            recipients_len == vector::length(&amounts),
+            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
+        );
+
+        let i = 0;
+        while (i < recipients_len) {
+            let to = *vector::borrow(&recipients, i);
+            let amount = *vector::borrow(&amounts, i);
+            transfer(source, to, amount);
+            i = i + 1;
+        };
+    }
+
+    // User can call function that drips the lockbox amount.
+    // NOTE: dependency cycling issue. THis module needs to be the caller since libra_coin is a common dependency with lockbox.
+    #[test_only]
+    fun test_self_drip_lockboxes(framework: &signer, sender: &signer) acquires BurnTracker {
+      system_addresses::assert_diem_framework(framework);
+
+      let addr = signer::address_of(sender);
+      // exit gracefully on no balance, this may be called on epoch_boundary
+      if (lockbox::user_balance(addr) > 0) {
+        let coin_opt = lockbox::vm_withdraw_user_unlocked(framework, addr);
+
+        if (option::is_some(&coin_opt)) {
+          let coins = option::extract(&mut coin_opt);
+          deposit_coins(addr, coins);
+        };
+        option::destroy_none(coin_opt);
+      }
+    }
+
     #[test_only]
     struct FakeCoin {}
 
-    #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
+    //////// UNIT TESTS ////////
+    #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_transfer_ol(framework: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
-        account::maybe_initialize_duplicate_originating(root);
+        account::maybe_initialize_duplicate_originating(framework);
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
 
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
-        libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
-        create_account(root, signer::address_of(alice));
-        create_account(root, bob);
-        create_account(root, carol);
+        libra_coin::test_set_final_supply(framework, 1000); // dummy to prevent fail
+        create_account(framework, signer::address_of(alice));
+        create_account(framework, bob);
+        create_account(framework, carol);
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
         assert!(libra_coin::balance(bob) == 500, 0);
@@ -716,18 +750,18 @@ module ol_framework::ol_account {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
+    #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_transfer_to_resource_account_ol(framework: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
-        libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+        libra_coin::test_set_final_supply(framework, 1000); // dummy to prevent fail
 
         let (resource_account, _) = test_ol_create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
 
-        account::maybe_initialize_duplicate_originating(root);
-        create_account(root, signer::address_of(alice));
+        account::maybe_initialize_duplicate_originating(framework);
+        create_account(framework, signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
         assert!(libra_coin::balance(resource_acc_addr) == 500, 1);
@@ -736,19 +770,19 @@ module ol_framework::ol_account {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
-    public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
+    #[test(framework = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
+    public fun test_batch_transfer(framework: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
-        account::maybe_initialize_duplicate_originating(root);
+        account::maybe_initialize_duplicate_originating(framework);
         let (burn_cap, mint_cap) =
         diem_framework::libra_coin::initialize_for_test(core);
-        libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+        libra_coin::test_set_final_supply(framework, 1000); // dummy to prevent fail
 
-        create_account(root, signer::address_of(from));
+        create_account(framework, signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
-        create_account(root, recipient_1_addr);
-        create_account(root, recipient_2_addr);
+        create_account(framework, recipient_1_addr);
+        create_account(framework, recipient_2_addr);
         coin::deposit(signer::address_of(from), coin::mint(10000, &mint_cap));
         batch_transfer(
             from,
@@ -761,17 +795,17 @@ module ol_framework::ol_account {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    #[test(root = @ol_framework, user = @0x123)]
-    public fun test_set_allow_direct_coin_transfers(root: &signer, user:
+    #[test(framework = @ol_framework, user = @0x123)]
+    public fun test_set_allow_direct_coin_transfers(framework: &signer, user:
     &signer) acquires DirectTransferConfig {
-        account::maybe_initialize_duplicate_originating(root);
+        account::maybe_initialize_duplicate_originating(framework);
         let addr = signer::address_of(user);
-        let (b, m) = libra_coin::initialize_for_test(root);
+        let (b, m) = libra_coin::initialize_for_test(framework);
         coin::destroy_burn_cap(b);
         coin::destroy_mint_cap(m);
-        libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+        libra_coin::test_set_final_supply(framework, 1000); // dummy to prevent fail
 
-        create_account(root, addr);
+        create_account(framework, addr);
         set_allow_direct_coin_transfers(user, true);
         assert!(can_receive_direct_coin_transfers(addr), 0);
         set_allow_direct_coin_transfers(user, false);
@@ -781,27 +815,27 @@ module ol_framework::ol_account {
     }
 
 
-    #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_drip_one_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+    #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_drip_one_lockbox(framework: &signer, alice: &signer, core: &signer) acquires BurnTracker {
         use diem_framework::timestamp;
-        timestamp::set_time_has_started_for_testing(root);
+        timestamp::set_time_has_started_for_testing(framework);
         let then = 1727122878 * 1000000;
         timestamp::update_global_time_for_test(then);
 
-        account::maybe_initialize_duplicate_originating(root);
+        account::maybe_initialize_duplicate_originating(framework);
 
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
-        libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
+        libra_coin::test_set_final_supply(framework, 1000); // dummy to prevent fail
         let alice_addr = signer::address_of(alice);
-        create_account(root, alice_addr);
+        create_account(framework, alice_addr);
         coin::deposit(alice_addr, coin::mint(10000, &mint_cap));
 
         let balance_pre = libra_coin::balance(alice_addr);
 
         lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
 
-        self_drip_lockboxes(alice);
+        test_self_drip_lockboxes(framework, alice);
 
         let balance_post = libra_coin::balance(alice_addr);
         assert!(balance_pre < balance_post, 7357001);
@@ -810,15 +844,15 @@ module ol_framework::ol_account {
         coin::destroy_mint_cap(mint_cap);
     }
 
-    #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
-    public fun test_drip_multi_lockbox(root: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+    #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_drip_multi_lockbox(framework: &signer, alice: &signer, core: &signer) acquires BurnTracker {
         use diem_framework::timestamp;
-        timestamp::set_time_has_started_for_testing(root);
+        timestamp::set_time_has_started_for_testing(framework);
         let then = 1727122878 * 1000000;
         timestamp::update_global_time_for_test(then);
         let one_day_secs = 86400;
 
-        account::maybe_initialize_duplicate_originating(root);
+        account::maybe_initialize_duplicate_originating(framework);
 
         ////
         // settings specific to this example, boxes of 10000 at 12, 24, 48 months.
@@ -829,9 +863,9 @@ module ol_framework::ol_account {
 
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
-        libra_coin::test_set_final_supply(root, 10000); // dummy to prevent fail
+        libra_coin::test_set_final_supply(framework, 10000); // dummy to prevent fail
         let alice_addr = signer::address_of(alice);
-        create_account(root, alice_addr);
+        create_account(framework, alice_addr);
         coin::deposit(alice_addr, coin::mint(10000, &mint_cap));
 
         let balance_pre = libra_coin::balance(alice_addr);
@@ -839,7 +873,7 @@ module ol_framework::ol_account {
         lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
 
         // DAY 1 drip with 1 box
-        self_drip_lockboxes(alice);
+        test_self_drip_lockboxes(framework, alice);
         timestamp::fast_forward_seconds(one_day_secs);
 
 
@@ -848,7 +882,7 @@ module ol_framework::ol_account {
         assert!((balance_post_one-balance_pre) == drip_one_years, 7357002);
 
         // DAY 2 drip with 1 box
-        self_drip_lockboxes(alice);
+        test_self_drip_lockboxes(framework, alice);
         timestamp::fast_forward_seconds(one_day_secs);
 
         let balance_post_two = libra_coin::balance(alice_addr);
@@ -861,7 +895,7 @@ module ol_framework::ol_account {
         lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 4*12);
 
         // DAY 3 drip with 3 boxes
-        self_drip_lockboxes(alice);
+        test_self_drip_lockboxes(framework, alice);
 
         let balance_post_three = libra_coin::balance(alice_addr);
         assert!(balance_post_two < balance_post_three, 7357006);
