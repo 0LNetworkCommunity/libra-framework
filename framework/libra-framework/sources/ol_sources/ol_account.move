@@ -267,7 +267,7 @@ module ol_framework::ol_account {
       assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
       let coin = coin::withdraw_with_capability(cap, amount);
-      slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
+      // slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
 
       // the outgoing coins should trigger an update on this account
       // order matters here
@@ -292,7 +292,7 @@ module ol_framework::ol_account {
         let limit = slow_wallet::unlocked_amount(addr);
         assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
         let coin = coin::withdraw<LibraCoin>(sender, amount);
-        slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
+        // slow_wallet::maybe_track_unlocked_withdraw(addr, amount);
 
         // the outgoing coins should trigger an update on this account
         // order matters here
@@ -385,7 +385,7 @@ module ol_framework::ol_account {
 
       // transfers which use VM authority (e.g. donor directed accounts)
       // should also track the recipient's slow wallet unlock counter.
-      slow_wallet::maybe_track_slow_transfer(from, to, amount_transferred);
+      // slow_wallet::maybe_track_slow_transfer(from, to, amount_transferred);
 
       // how much was actually extracted, and was that equal to the amount expected
       (amount_transferred, amount_transferred == amount)
@@ -426,7 +426,7 @@ module ol_framework::ol_account {
         let value = coin::value<LibraCoin>(coin);
         if (value > 0) {
           maybe_update_burn_tracker_impl(from);
-          slow_wallet::maybe_track_unlocked_withdraw(from, value);
+          // slow_wallet::maybe_track_unlocked_withdraw(from, value);
         }
       };
 
@@ -584,7 +584,7 @@ module ol_framework::ol_account {
     BurnTracker {
         assert!(!account::is_tombstone(to), error::already_exists(ETOMBSTONE));
         assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
+        // slow_wallet::maybe_track_unlocked_deposit(to, coin::value(&coins));
         coin::deposit<LibraCoin>(to, coins);
         // the incoming coins should trigger an update in tracker
         maybe_update_burn_tracker_impl(to);

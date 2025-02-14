@@ -31,7 +31,7 @@ module diem_framework::genesis {
     use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
-    use ol_framework::slow_wallet;
+    // use ol_framework::slow_wallet;
     use ol_framework::libra_coin;
     use ol_framework::infra_escrow;
     use ol_framework::safe;
@@ -144,7 +144,7 @@ module diem_framework::genesis {
 
         validator_universe::initialize(&diem_framework_account);
         proof_of_fee::init_genesis_baseline_reward(&diem_framework_account);
-        slow_wallet::initialize(&diem_framework_account);
+        // slow_wallet::initialize(&diem_framework_account);
         // tower_state::initialize(&diem_framework_account);
         safe::initialize(&diem_framework_account);
         donor_voice::initialize(&diem_framework_account);

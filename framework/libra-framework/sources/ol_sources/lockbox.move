@@ -227,6 +227,20 @@ module ol_framework::lockbox {
     sum
   }
 
+  /// total unlocked over time
+  fun lifetime_unlocked_list(list: &vector<Lockbox>): u64 {
+    let sum = 0;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let this_box = vector::borrow(list, i);
+        sum = sum + this_box.lifetime_unlocked;
+        i = i + 1;
+    };
+
+    sum
+  }
+
   // drip one duration
   fun withdraw_drip_impl(user: &signer, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
     let user_addr = signer::address_of(user);
@@ -448,12 +462,21 @@ module ol_framework::lockbox {
   }
 
   #[view]
-  public fun unlocked(user_addr: address): u64 acquires SlowWalletV2 {
+  public fun unlockable(user_addr: address): u64 acquires SlowWalletV2 {
     let sum = 0;
     if (!exists<SlowWalletV2>(user_addr)) return sum;
     let list = &borrow_global<SlowWalletV2>(user_addr).list;
     calc_unlock_from_list(list)
   }
+
+  #[view]
+  public fun lifetime_unlocked(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    lifetime_unlocked_list(list)
+  }
+
 
 
   //////// UNIT TESTS ////////
