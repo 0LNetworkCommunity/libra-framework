@@ -50,7 +50,7 @@ module ol_framework::lockbox {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
 
-  use diem_framework::debug::print;
+  // use diem_framework::debug::print;
 
   friend ol_framework::donor_voice_txs;
   friend ol_framework::genesis;
@@ -89,6 +89,9 @@ module ol_framework::lockbox {
   const EINVALID_DURATION: u64 = 9;
 
   const LOCK_DURATIONS: vector<u64> = vector[1*12, 2*12, 4*12, 8*12, 12*12, 16*12, 20*12, 24*12];
+
+  // TODO: update this, it's the limit of unlocking range
+  const V8_UPGRADE_TIMESTAMP: u64 = 1727122878;
 
   /// list of all the accounts with lockboxes
   struct Registry has key, store{
@@ -171,13 +174,13 @@ module ol_framework::lockbox {
   public(friend) fun new(locked_coins: Coin<LibraCoin>, duration_type: u64): Lockbox {
       // Validate that the duration is in the allowed list
       assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
-
+      let (midnight, _) = date::todays_start_seconds();
       Lockbox {
         locked_coins,
         duration_type,
         lifetime_deposited: 0,
         lifetime_unlocked: 0,
-        last_unlock_timestamp: 0,
+        last_unlock_timestamp: midnight,
       }
   }
 
@@ -188,15 +191,9 @@ module ol_framework::lockbox {
 
   // Entrypoint for adding or creating a user box, when signed by holder of coins.
   public(friend) fun self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2, Registry {
-    print(&0x1);
     maybe_initialize(user);
-
     let user_addr = signer::address_of(user);
-    print(&0x2);
-
     deposit_impl(user_addr, locked_coins, duration_type);
-    print(&0x3);
-
   }
 
   // for validator rewards and donor voice transactions
@@ -234,6 +231,7 @@ module ol_framework::lockbox {
   fun unlock_available_per_box(box: &Lockbox): u64 {
     let days_unlocking = days_since_last_unlock(box);
     let daily_drip_value = calc_daily_drip(box);
+
     days_unlocking * daily_drip_value
   }
 
@@ -278,20 +276,29 @@ module ol_framework::lockbox {
   }
 
   // drip one duration on one account
+  // TODO: maybe don't pass idx, but a mutable borrow of lockbox
   fun withdraw_drip_impl(framework: &signer, user_addr: address, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
     system_addresses::assert_diem_framework(framework);
 
     let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
     let box = vector::borrow_mut(list, idx);
     let (start_today, _) = date::todays_start_seconds();
-    // abort if tried to drip on same unix day
-    assert!(start_today > box.last_unlock_timestamp, error::invalid_state(ENO_DOUBLE_DIPPING));
+
+    // exit early if tried to drip on same unix day
+    if(start_today <= box.last_unlock_timestamp) {
+      return option::none()
+    };
 
     // calculate the days passed and drip per box
+    let box_value = coin::value(&box.locked_coins);
     let drip_value = unlock_available_per_box(box);
 
     if (drip_value == 0) return option::none();
 
+    // don't try to over draft account
+    if (drip_value >= box_value ) {
+      drip_value = box_value;
+    };
     // don't update timestamp until there' some balance extracted
     box.last_unlock_timestamp = start_today;
 
@@ -334,6 +341,7 @@ module ol_framework::lockbox {
         let box_coins_opt = withdraw_drip_impl(framework, user_addr, i);
         if (option::is_none(&box_coins_opt)) {
           option::destroy_none(box_coins_opt);
+          i = i + 1;
           continue
         };
 
@@ -341,6 +349,7 @@ module ol_framework::lockbox {
         option::destroy_none(box_coins_opt);
 
         if (option::is_none(&coin_opt) ){
+          // in case we are initializing for first time
           option::fill(&mut coin_opt, c);
         } else {
           let all_coins = option::borrow_mut(&mut coin_opt);
@@ -596,6 +605,10 @@ module ol_framework::lockbox {
 
   #[test_only]
   fun test_setup(framework: &signer, amount: u64): Coin<LibraCoin> {
+    use diem_framework::timestamp;
+    initialize(framework);
+    timestamp::set_time_has_started_for_testing(framework);
+
     let (burn_cap, mint_cap) = libra_coin::initialize_for_test(framework);
     let c = coin::test_mint(amount, &mint_cap);
     coin::destroy_mint_cap(mint_cap);
@@ -604,8 +617,9 @@ module ol_framework::lockbox {
   }
 
   //////// TESTS ////////
-  #[test(bob = @0x10002)]
-  fun test_lockbox_init(bob: address) acquires Registry {
+  #[test(framework=@ol_framework, bob = @0x10002)]
+  fun test_lockbox_init(framework: &signer, bob: address) acquires Registry {
+    initialize(framework);
     let bob_sig = account::create_account_for_test(bob);
     maybe_initialize(&bob_sig);
   }
@@ -687,18 +701,15 @@ module ol_framework::lockbox {
 
   #[test(framework = @0x1, bob_addr = @0x10002)]
   fun test_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
-    // use diem_framework::debug::print;
 
     // for create account first, because event emitter depends on it
     let bob_sig = account::create_account_for_test(bob_addr);
 
     let coin = test_setup(framework, 100);
-    print(&coin);
 
     // Try to create a lockbox with a standard duration (4*12 months)
     // This should succeed because 4*12 is in LOCK_DURATIONS
     self_add_or_create_box(&bob_sig, coin, 4*12);
-    print(&0x123);
 
     // Verify the lockbox was created with the standard duration
     let (found, idx) = idx_by_duration(bob_addr, 4*12);

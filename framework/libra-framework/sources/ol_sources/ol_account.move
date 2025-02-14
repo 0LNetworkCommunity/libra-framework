@@ -395,6 +395,7 @@ module ol_framework::ol_account {
     /// 1: total unlocked on all accounts in this iteration
     public(friend) fun epoch_boundary_unlock(framework: &signer): (bool, u64) acquires BurnTracker {
       system_addresses::assert_diem_framework(framework);
+
       let sum = 0;
       let locked_users = lockbox::get_registry_accounts();
       let i = 0;
@@ -402,7 +403,7 @@ module ol_framework::ol_account {
         let u = *vector::borrow(&locked_users, i);
         let c_opt = lockbox::vm_withdraw_user_unlocked(framework, u);
 
-      if (option::is_some(&c_opt)) {
+        if (option::is_some(&c_opt)) {
           let coin = option::extract(&mut c_opt);
           let value = coin::value(&coin);
           sum = sum + value;
@@ -709,8 +710,10 @@ module ol_framework::ol_account {
       system_addresses::assert_diem_framework(framework);
 
       let addr = signer::address_of(sender);
+      let total_unlockable = lockbox::user_unlockable(addr);
+
       // exit gracefully on no balance, this may be called on epoch_boundary
-      if (lockbox::user_balance(addr) > 0) {
+      if (total_unlockable > 0) {
         let coin_opt = lockbox::vm_withdraw_user_unlocked(framework, addr);
 
         if (option::is_some(&coin_opt)) {
@@ -817,10 +820,49 @@ module ol_framework::ol_account {
 
     #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_drip_one_lockbox(framework: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+
         use diem_framework::timestamp;
+
+        lockbox::initialize(framework);
+
         timestamp::set_time_has_started_for_testing(framework);
-        let then = 1727122878 * 1000000;
-        timestamp::update_global_time_for_test(then);
+
+
+        account::maybe_initialize_duplicate_originating(framework);
+
+        let (burn_cap, mint_cap) =
+        ol_framework::libra_coin::initialize_for_test(core);
+        libra_coin::test_set_final_supply(framework, 1000); // dummy to prevent fail
+        let alice_addr = signer::address_of(alice);
+        create_account(framework, alice_addr);
+        coin::deposit(alice_addr, coin::mint(10000, &mint_cap));
+
+        let balance_pre = libra_coin::balance(alice_addr);
+
+        lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
+        // advance 10 days
+        let one_day_secs = 86400;
+        timestamp::fast_forward_seconds(one_day_secs*10);
+
+        test_self_drip_lockboxes(framework, alice);
+
+        let balance_post = libra_coin::balance(alice_addr);
+        assert!(balance_pre < balance_post, 7357001);
+
+        coin::destroy_burn_cap(burn_cap);
+        coin::destroy_mint_cap(mint_cap);
+    }
+
+        #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
+    public fun test_over_unlocked(framework: &signer, alice: &signer, core: &signer) acquires BurnTracker {
+
+        use diem_framework::timestamp;
+
+        lockbox::initialize(framework);
+
+        // make 10 days elapse since prior unlock
+        timestamp::set_time_has_started_for_testing(framework);
+
 
         account::maybe_initialize_duplicate_originating(framework);
 
@@ -835,6 +877,10 @@ module ol_framework::ol_account {
 
         lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
 
+        // advance 1000000 days
+        let one_day_secs = 86400;
+        timestamp::fast_forward_seconds(one_day_secs*1000000);
+
         test_self_drip_lockboxes(framework, alice);
 
         let balance_post = libra_coin::balance(alice_addr);
@@ -847,10 +893,10 @@ module ol_framework::ol_account {
     #[test(framework = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_drip_multi_lockbox(framework: &signer, alice: &signer, core: &signer) acquires BurnTracker {
         use diem_framework::timestamp;
+
+        lockbox::initialize(framework);
+
         timestamp::set_time_has_started_for_testing(framework);
-        let then = 1727122878 * 1000000;
-        timestamp::update_global_time_for_test(then);
-        let one_day_secs = 86400;
 
         account::maybe_initialize_duplicate_originating(framework);
 
@@ -872,9 +918,11 @@ module ol_framework::ol_account {
 
         lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 1*12);
 
+        let one_day_secs = 86400;
+        timestamp::fast_forward_seconds(one_day_secs);
+
         // DAY 1 drip with 1 box
         test_self_drip_lockboxes(framework, alice);
-        timestamp::fast_forward_seconds(one_day_secs);
 
 
         let balance_post_one = libra_coin::balance(alice_addr);
@@ -882,8 +930,8 @@ module ol_framework::ol_account {
         assert!((balance_post_one-balance_pre) == drip_one_years, 7357002);
 
         // DAY 2 drip with 1 box
-        test_self_drip_lockboxes(framework, alice);
         timestamp::fast_forward_seconds(one_day_secs);
+        test_self_drip_lockboxes(framework, alice);
 
         let balance_post_two = libra_coin::balance(alice_addr);
         assert!(balance_post_one < balance_post_two, 7357003);
@@ -895,6 +943,7 @@ module ol_framework::ol_account {
         lockbox::self_add_or_create_box(alice, coin::mint(10000, &mint_cap), 4*12);
 
         // DAY 3 drip with 3 boxes
+        timestamp::fast_forward_seconds(one_day_secs);
         test_self_drip_lockboxes(framework, alice);
 
         let balance_post_three = libra_coin::balance(alice_addr);
