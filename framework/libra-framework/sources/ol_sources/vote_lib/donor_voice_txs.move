@@ -50,10 +50,13 @@ module ol_framework::donor_voice_txs {
     use ol_framework::account::{Self, WithdrawCapability};
     use ol_framework::donor_voice_governance;
     use ol_framework::cumulative_deposits;
+    use ol_framework::lockbox;
+    use ol_framework::pledge_accounts;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
     use ol_framework::donor_voice;
     use ol_framework::slow_wallet;
+
 
     // use diem_std::debug::print;
 
@@ -384,7 +387,9 @@ module ol_framework::donor_voice_txs {
         if (option::is_some(&coin_opt)) {
           let c = option::extract(&mut coin_opt);
           amount_transferred = coin::value(&c);
-          ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
+          // ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
+          lockbox::send_locked_coin(vm, t.tx.payee, c, 4*12);
+
           // update the records (don't copy or drop)
           // print(&state.scheduled);
           // print(&state.paid);
@@ -611,6 +616,11 @@ module ol_framework::donor_voice_txs {
     }
   }
 
+  // When a donor_voice account becomes inactive
+  // the funds become "unmanaged" capital.
+  // the funds by default will also change back to pledged state (unmanaged)
+  // the exception is when the donor_voice account has specific instructions
+  // to distribute pro-rata to the match index.
   /// The VM will call this function to liquidate all Donor Voice
   /// wallets in the queue.
   public(friend) fun vm_liquidate(vm: &signer) acquires Freeze {
@@ -643,15 +653,24 @@ module ol_framework::donor_voice_txs {
             // liquidated to the matching index
             let coin_opt = ol_account::vm_withdraw_unlimited(vm, multisig_address, *amount);
             if (option::is_some(&coin_opt)) {
+
               let c = option::extract(&mut coin_opt);
 
               if (is_liquidate_to_match_index(multisig_address)) {
                 match_index::match_and_recycle(vm, &mut c);
-                option::fill(&mut coin_opt, c);
               } else {
-                // in the ordinary case, where it goes back to the donors
-                ol_account::vm_deposit_coins_locked(vm, *addr, c);
+                // in the ordinary case, where it goes back to a donor pledge
+                // NOTE: in the absence of instructions the pledge is going
+                // back to the general unmanaged pledge (aka "infra escrow").
+                // TODO: there's a risk that many accounts do not have the
+                // infra-escrow pledge enabled. And the VM cannot spoof signatures.
+                // So vm_liquidate will abort in those cases.
+                // There should be a fallback to prevent abort cases.
+                pledge_accounts::vm_add_to_pledge(vm, *addr, @ol_framework, &mut c);
               };
+              // remainders will be burned below
+              option::fill(&mut coin_opt, c);
+
             };
             option::destroy_none(coin_opt);
             k = k + 1;

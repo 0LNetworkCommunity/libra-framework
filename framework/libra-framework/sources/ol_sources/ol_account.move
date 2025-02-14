@@ -590,18 +590,18 @@ module ol_framework::ol_account {
         maybe_update_burn_tracker_impl(to);
     }
 
-    /// for validator rewards and community wallet transfers,
-    /// the SlowWallet.unlocked DOES NOT get updated.
-    public(friend) fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<LibraCoin>) acquires
-    BurnTracker {
-        system_addresses::assert_ol(vm);
-        assert!(!account::is_tombstone(to), error::already_exists(ETOMBSTONE));
-        // prevent vm trying to reach accounts that may not exist
-        assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
-        coin::deposit<LibraCoin>(to, coins);
-        // the incoming coins should trigger an update in tracker
-        maybe_update_burn_tracker_impl(to);
-    }
+    // /// for validator rewards and community wallet transfers,
+    // /// the SlowWallet.unlocked DOES NOT get updated.
+    // public(friend) fun vm_deposit_coins_locked(vm: &signer, to: address, coins: Coin<LibraCoin>) acquires
+    // BurnTracker {
+    //     system_addresses::assert_ol(vm);
+    //     assert!(!account::is_tombstone(to), error::already_exists(ETOMBSTONE));
+    //     // prevent vm trying to reach accounts that may not exist
+    //     assert!(coin::is_account_registered<LibraCoin>(to), error::invalid_state(EACCOUNT_NOT_REGISTERED_FOR_GAS));
+    //     coin::deposit<LibraCoin>(to, coins);
+    //     // the incoming coins should trigger an update in tracker
+    //     maybe_update_burn_tracker_impl(to);
+    // }
 
     // COMMIT NOTE: this function will remain public since it is acceptable to
     // use in tx scripts

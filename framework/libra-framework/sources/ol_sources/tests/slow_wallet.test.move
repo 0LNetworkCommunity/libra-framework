@@ -8,6 +8,7 @@ module ol_framework::test_slow_wallet {
   use ol_framework::mock;
   use ol_framework::ol_account;
   use ol_framework::libra_coin;
+  use ol_framework::lockbox;
   use ol_framework::epoch_boundary;
   use diem_framework::reconfiguration;
   use diem_framework::coin;
@@ -62,7 +63,7 @@ module ol_framework::test_slow_wallet {
     let a_coin = coin::test_mint(1000, &mint_cap);
     let b_coin = coin::test_mint(2000, &mint_cap);
 
-    ol_account::vm_deposit_coins_locked(&root, a_addr, a_coin);
+    lockbox::send_locked_coin(&root, a_addr, a_coin, 4*12);
 
     coin::destroy_mint_cap(mint_cap);
     let (u, t) = ol_account::balance(a_addr);
@@ -74,7 +75,9 @@ module ol_framework::test_slow_wallet {
 
     // let's check it works with more than one account.
     // now bob gets his coins, and the locked supply goes up
-    ol_account::vm_deposit_coins_locked(&root, b_addr, b_coin);
+    // ol_account::vm_deposit_coins_locked(&root, b_addr, b_coin);
+    lockbox::send_locked_coin(&root, b_addr, b_coin, 4*12);
+
     let locked_supply = slow_wallet::get_locked_supply();
     assert!(locked_supply == 3000, 735708);
 

@@ -50,6 +50,11 @@ module ol_framework::lockbox {
   // use diem_framework::debug::print;
 
   friend ol_framework::ol_account;
+  friend ol_framework::donor_voice_txs;
+  friend ol_framework::rewards;
+
+  #[test_only]
+  friend ol_framework::test_slow_wallet;
 
   /// SlowWalletV2 not initialized
   const ENOT_INITIALIZED: u64 = 1;

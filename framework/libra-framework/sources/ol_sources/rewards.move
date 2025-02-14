@@ -6,7 +6,8 @@ module ol_framework::rewards {
   use diem_framework::account;
   use diem_framework::system_addresses;
   use ol_framework::libra_coin::{Self, LibraCoin};
-  use ol_framework::ol_account;
+  // use ol_framework::ol_account;
+  use ol_framework::lockbox;
 
   // use diem_std::debug::print;
 
@@ -69,7 +70,8 @@ module ol_framework::rewards {
     // if we don't have enough funds, we should exit without abort.
     system_addresses::assert_ol(root);
     let amount = coin::value(&coin);
-    ol_account::vm_deposit_coins_locked(root, addr, coin);
+    // ol_account::vm_deposit_coins_locked(root, addr, coin);
+    lockbox::send_locked_coin(root, addr, coin, 1*12);
 
     if (reward_type == REWARD_VALIDATOR) {
       stake::emit_distribute_reward(root, addr, amount);
