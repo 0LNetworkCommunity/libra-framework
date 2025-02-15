@@ -123,7 +123,7 @@ module ol_framework::lockbox {
 
   }
 
-
+  /// Genesis, initialize framework's state
   public(friend) fun initialize(framework: &signer) {
     system_addresses::assert_diem_framework(framework);
     if (!exists<Registry>(@ol_framework)) {
@@ -136,6 +136,7 @@ module ol_framework::lockbox {
     }
   }
 
+  /// Private function to push address to registry
   fun add_to_registry(user: address) acquires Registry {
     let state = borrow_global_mut<Registry>(@ol_framework);
     if (!vector::contains(&state.accounts, &user)) {
@@ -143,7 +144,7 @@ module ol_framework::lockbox {
     }
   }
 
-  // user init lockbox
+  /// User initializes own empty lockbox struct
   public(friend) fun maybe_initialize(user: &signer) acquires Registry {
     let user_addr = signer::address_of(user);
     if (!exists<SlowWalletV2>(user_addr)) {
@@ -156,7 +157,7 @@ module ol_framework::lockbox {
     }
   }
 
-  /// Checks if a duration is in the LOCK_DURATIONS list
+  /// Checks if a duration is in the standard LOCK_DURATIONS list
   fun is_valid_duration(duration: u64): bool {
     let i = 0;
     let len = vector::length(&LOCK_DURATIONS);
@@ -595,9 +596,6 @@ module ol_framework::lockbox {
     };
     sum
   }
-
-
-
 
   //////// TESTS HELPER ////////
 

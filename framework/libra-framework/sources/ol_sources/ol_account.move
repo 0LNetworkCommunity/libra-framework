@@ -657,6 +657,27 @@ module ol_framework::ol_account {
       )
     }
 
+
+    //////// MIGRATIONS ////////
+    /// private function which can only be called at genesis
+    /// must apply the coin split factor.
+    /// TODO: make this private with a public test helper
+    fun genesis_migrate_lockbox(
+      framework: &signer,
+      user_sig: &signer,
+      unlocked_coins: u64, // TODO: chang in Rust to locked coins
+      duration_type: u64,
+    ) acquires BurnTracker {
+      system_addresses::assert_diem_framework(framework);
+      let user_addr = signer::address_of(user_sig);
+      let balance = libra_coin::balance(user_addr);
+      if (balance > unlocked_coins) {
+        let to_lock = balance - unlocked_coins;
+        let coins = withdraw(user_sig, to_lock);
+        lockbox::self_add_or_create_box(user_sig, coins, duration_type);
+      }
+    }
+
     //////// TEST HELPERS ////////
     #[test_only]
     /// A wrapper to create a NEW account and register it to receive GAS.
