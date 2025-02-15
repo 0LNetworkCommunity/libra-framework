@@ -8,7 +8,7 @@ module diem_framework::transaction_fee {
     use std::option::{Self, Option};
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::fee_maker;
-    use ol_framework::slow_wallet;
+    // use ol_framework::slow_wallet;
     use ol_framework::ol_account;
 
     // use diem_std::debug::print;
@@ -184,7 +184,7 @@ module diem_framework::transaction_fee {
         let collected_amount = &mut collected_fees.amount;
         coin::collect_into_aggregatable_coin<LibraCoin>(account, fee, collected_amount);
         // must adjust slow wallet tracker for all transactions
-        slow_wallet::maybe_track_unlocked_withdraw(account, fee);
+        // slow_wallet::maybe_track_unlocked_withdraw(account, fee);
     }
 
     //////// 0L ////////

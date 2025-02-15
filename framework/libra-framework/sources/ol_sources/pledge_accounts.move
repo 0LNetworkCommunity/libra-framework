@@ -53,6 +53,7 @@
 
         //use diem_std::debug::print;
 
+        friend ol_framework::donor_voice_txs;
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;
         friend ol_framework::genesis;
@@ -177,7 +178,7 @@
           }
         }
 
-        fun vm_add_to_pledge(
+        public(friend) fun vm_add_to_pledge(
           vm: &signer,
           pledger: address,
           address_of_beneficiary: address,

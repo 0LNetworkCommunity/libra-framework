@@ -1,0 +1,721 @@
+/// # Lockbox Module
+///
+/// The `Lockbox` module is designed to manage time-locked Libra.
+/// This is the implementation of Slow Wallet v2.0
+/// The fundamental change is that the unlocking is done on a percentage basis
+/// rather than a fixed amount per day.
+/// It allows users to lock their assets for a specified period, ensuring that the assets
+/// cannot be accessed or transferred until the daily unlocks have drained the lockbox (the lock duration has expired).
+///
+/// ## Key Concepts
+///
+/// - **Time-Locked Assets**: Assets that are locked for a specific duration and cannot be accessed
+///   until the lock period ends.
+/// - **Lock Periods**: Predefined durations for which assets can be locked. These periods are
+///   represented as a vector of time intervals (in months).
+/// - **Daily Drip**: A mechanism that gradually unlocks assets from the lockbox on a daily basis,
+///   allowing partial access to the locked assets over time.
+///
+/// ## Constants
+///
+/// - `LOCK_DURATIONS`: A vector of predefined lock periods (in months) that users can choose from.
+///   These periods are: 6 months, 12 months, 24 months, 36 months, 48 months, 96 months,
+///   192 months, 240 months, 288 months, 336 months, and 384 months.
+///
+/// ## Functions
+///
+/// The `Lockbox` module provides functions to:
+/// - Lock assets for a specified period.
+/// - Check the status of locked assets.
+/// - Unlock assets once the lock period has expired.
+/// - Gradually unlock assets on a daily basis through the daily drip mechanism.
+///
+///
+/// This module ensures that assets are securely locked and cannot be accessed until the specified
+/// lock period has expired, providing a mechanism for time-based asset management with gradual
+/// unlocking through the daily drip mechanism.
+
+
+module ol_framework::lockbox {
+  use std::error;
+  use std::event;
+  use std::fixed_point32::{Self, FixedPoint32};
+  use std::option::{Self, Option};
+  use std::signer;
+  use std::vector;
+  use diem_framework::account;
+  use diem_framework::coin::{Self, Coin};
+  use diem_framework::system_addresses;
+  use diem_std::math64;
+  use ol_framework::libra_coin::{Self, LibraCoin};
+  use ol_framework::date;
+
+  // use diem_framework::debug::print;
+
+  friend ol_framework::donor_voice_txs;
+  friend ol_framework::genesis;
+  friend ol_framework::ol_account;
+  friend ol_framework::rewards;
+  friend ol_framework::slow_wallet;
+
+  #[test_only]
+  friend ol_framework::test_slow_wallet;
+
+  /// SlowWalletV2 not initialized
+  const ENOT_INITIALIZED: u64 = 1;
+
+  /// No lockbox of this duration found
+  const ENO_DURATION_FOUND: u64 = 2;
+
+  /// List of durations incomplete
+  const ELIST_INCOMPLETE: u64 = 3;
+
+  /// Tried to drip twice in one day, silly rabbit
+  const ENO_DOUBLE_DIPPING: u64 = 4;
+
+  /// Destination does not have SlowWalletv2 initialized
+  const EDESTINATION_NOT_INIT: u64 = 5;
+
+  /// Can only shift to a later duration to drip slower
+  const EMUST_SHIFT_LATER: u64 = 6;
+
+  /// Total balances should never change when shifting coins to later duration.
+  const EBALANCES_CHANGED_ON_DELAY: u64 = 7;
+
+  /// The locked units for this box duration should have changed.
+  const EDURATION_UNITS_SHOULD_CHANGE: u64 = 8;
+
+  /// Duration not in allowed list
+  const EINVALID_DURATION: u64 = 9;
+
+  const LOCK_DURATIONS: vector<u64> = vector[1*12, 2*12, 4*12, 8*12, 12*12, 16*12, 20*12, 24*12];
+
+  // TODO: update this, it's the limit of unlocking range
+  const V8_UPGRADE_TIMESTAMP: u64 = 1727122878;
+
+  /// list of all the accounts with lockboxes
+  struct Registry has key, store{
+    accounts: vector<address>,
+    lifetime_deposited: u64,
+    lifetime_unlocked: u64,
+    locked_supply: u64,
+  }
+
+  struct Lockbox has key, store {
+    locked_coins: Coin<LibraCoin>,
+    duration_type: u64,
+    lifetime_deposited: u64,
+    lifetime_unlocked: u64,
+    last_unlock_timestamp: u64,
+  }
+
+  //  emit events on each user's unlock
+  struct UnlockEvent has drop, store {
+    user: address,
+    coins: u64,
+    duration: u64,
+  }
+
+  struct SlowWalletV2 has key {
+    list: vector<Lockbox>,
+    // TODO: move to global?
+    unlock_events: event::EventHandle<UnlockEvent>,
+
+  }
+
+  /// Genesis, initialize framework's state
+  public(friend) fun initialize(framework: &signer) {
+    system_addresses::assert_diem_framework(framework);
+    if (!exists<Registry>(@ol_framework)) {
+      move_to(framework, Registry {
+        accounts: vector::empty(),
+        lifetime_deposited: 0,
+        lifetime_unlocked: 0,
+        locked_supply: 0,
+      })
+    }
+  }
+
+  /// Private function to push address to registry
+  fun add_to_registry(user: address) acquires Registry {
+    let state = borrow_global_mut<Registry>(@ol_framework);
+    if (!vector::contains(&state.accounts, &user)) {
+      vector::push_back(&mut state.accounts, user);
+    }
+  }
+
+  /// User initializes own empty lockbox struct
+  public(friend) fun maybe_initialize(user: &signer) acquires Registry {
+    let user_addr = signer::address_of(user);
+    if (!exists<SlowWalletV2>(user_addr)) {
+      move_to(user, SlowWalletV2 {
+        list: vector::empty(),
+        unlock_events: account::new_event_handle<UnlockEvent>(user)
+      });
+
+      add_to_registry(user_addr);
+    }
+  }
+
+  /// Checks if a duration is in the standard LOCK_DURATIONS list
+  fun is_valid_duration(duration: u64): bool {
+    let i = 0;
+    let len = vector::length(&LOCK_DURATIONS);
+    while (i < len) {
+      if (*vector::borrow(&LOCK_DURATIONS, i) == duration) {
+        return true
+      };
+      i = i + 1;
+    };
+    false
+  }
+
+  /// Creates a lockbox. The lockbox cannot be dropped, and so must be
+  /// stored in the same call.
+  public(friend) fun new(locked_coins: Coin<LibraCoin>, duration_type: u64): Lockbox {
+      // Validate that the duration is in the allowed list
+      assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+      let (midnight, _) = date::todays_start_seconds();
+      Lockbox {
+        locked_coins,
+        duration_type,
+        lifetime_deposited: 0,
+        lifetime_unlocked: 0,
+        last_unlock_timestamp: midnight,
+      }
+  }
+
+  /// helper to deposit coin: with a mutable borrow of a lockbox, add an owned coin
+  fun merge_coins(box: &mut Lockbox, more_coins: Coin<LibraCoin>) {
+    libra_coin::merge(&mut box.locked_coins, more_coins);
+  }
+
+  // Entrypoint for adding or creating a user box, when signed by holder of coins.
+  public(friend) fun self_add_or_create_box(user: &signer, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2, Registry {
+    maybe_initialize(user);
+    let user_addr = signer::address_of(user);
+    deposit_impl(user_addr, locked_coins, duration_type);
+  }
+
+  // for validator rewards and donor voice transactions
+  // requires a signer, which is not used
+  public(friend) fun send_locked_coin(_sender: &signer, user_addr: address, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+    // Validate that the duration is in the allowed list
+    assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+    deposit_impl(user_addr, locked_coins, duration_type);
+  }
+
+  // private implementation for adding coins to a users lockbox, or creating it
+  // will abort if the user does not have lockbox enabled
+  fun deposit_impl(user_addr: address, locked_coins: Coin<LibraCoin>, duration_type: u64) acquires SlowWalletV2 {
+    // Validate that the duration is in the allowed list
+    assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+    let (found, idx) = idx_by_duration(user_addr, duration_type);
+
+    let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
+
+    if (found) {
+      let box = vector::borrow_mut(list, idx);
+      merge_coins(box, locked_coins);
+    } else {
+      vector::push_back(list, new(locked_coins, duration_type));
+    }
+    // TODO: always sort the list by duration_type
+  }
+
+
+  fun days_since_last_unlock(box: &Lockbox): u64  {
+    let (start_today, _) = date::todays_start_seconds();
+    date::days_elapsed(box.last_unlock_timestamp, start_today)
+  }
+
+  fun unlock_available_per_box(box: &Lockbox): u64 {
+    let days_unlocking = days_since_last_unlock(box);
+    let daily_drip_value = calc_daily_drip(box);
+
+    days_unlocking * daily_drip_value
+  }
+
+  fun calc_unlock_from_list(list: &vector<Lockbox>): u64 {
+    let sum = 0;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let this_box = vector::borrow(list, i);
+        sum = sum + unlock_available_per_box(this_box);
+        i = i + 1;
+    };
+    sum
+  }
+
+  /// balance of a vector of lockboxes
+  fun balance_list(list: &vector<Lockbox>): u64 {
+    let sum = 0;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let this_box = vector::borrow(list, i);
+        sum = sum + libra_coin::value(&this_box.locked_coins);
+        i = i + 1;
+    };
+
+    sum
+  }
+
+  /// total unlocked over time for a vector of lockboxes
+  fun lifetime_unlocked_list(list: &vector<Lockbox>): u64 {
+    let sum = 0;
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let this_box = vector::borrow(list, i);
+        sum = sum + this_box.lifetime_unlocked;
+        i = i + 1;
+    };
+
+    sum
+  }
+
+  // drip one duration on one account
+  // TODO: maybe don't pass idx, but a mutable borrow of lockbox
+  fun withdraw_drip_impl(framework: &signer, user_addr: address, idx: u64): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+    system_addresses::assert_diem_framework(framework);
+
+    let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
+    let box = vector::borrow_mut(list, idx);
+    let (start_today, _) = date::todays_start_seconds();
+
+    // exit early if tried to drip on same unix day
+    if(start_today <= box.last_unlock_timestamp) {
+      return option::none()
+    };
+
+    // calculate the days passed and drip per box
+    let box_value = coin::value(&box.locked_coins);
+    let drip_value = unlock_available_per_box(box);
+
+    if (drip_value == 0) return option::none();
+
+    // don't try to over draft account
+    if (drip_value >= box_value ) {
+      drip_value = box_value;
+    };
+    // don't update timestamp until there' some balance extracted
+    box.last_unlock_timestamp = start_today;
+
+    let dripped_coins = libra_coin::extract(&mut box.locked_coins, drip_value);
+
+    emit_unlock_event(user_addr, coin::value(&dripped_coins), box.duration_type);
+
+    option::some(dripped_coins)
+  }
+
+
+    // TODO: create lockbox drip event
+    /// send a drip event notification with the totals of epoch
+    fun emit_unlock_event(user: address, coins: u64, duration: u64) acquires SlowWalletV2 {
+        let state = borrow_global_mut<SlowWalletV2>(user);
+        event::emit_event(
+          &mut state.unlock_events,
+          UnlockEvent {
+              user,
+              coins,
+              duration,
+          },
+      );
+    }
+
+  /// drips all lockboxes, callable by ol_framework
+  public(friend) fun vm_withdraw_user_unlocked(framework: &signer, user_addr: address): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+    system_addresses::assert_diem_framework(framework);
+
+    if (!exists<SlowWalletV2>(user_addr)) return option::none();
+
+    let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
+    if (vector::is_empty(list)) return option::none();
+
+    let coin_opt = option::none<Coin<LibraCoin>>();
+
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let box_coins_opt = withdraw_drip_impl(framework, user_addr, i);
+        if (option::is_none(&box_coins_opt)) {
+          option::destroy_none(box_coins_opt);
+          i = i + 1;
+          continue
+        };
+
+        let c = option::extract(&mut box_coins_opt);
+        option::destroy_none(box_coins_opt);
+
+        if (option::is_none(&coin_opt) ){
+          // in case we are initializing for first time
+          option::fill(&mut coin_opt, c);
+        } else {
+          let all_coins = option::borrow_mut(&mut coin_opt);
+          libra_coin::merge(all_coins, c);
+        };
+
+        i = i + 1;
+    };
+    // TODO: emit event
+    coin_opt
+  }
+
+  // /// drips all lockboxes, callable by ol_account
+  // public(friend) fun withdraw_drip_all(user: &signer): Option<Coin<LibraCoin>> acquires SlowWalletV2 {
+  //   let user_addr = signer::address_of(user);
+  //   if (!exists<SlowWalletV2>(user_addr)) return option::none();
+
+  //   let list = &mut borrow_global_mut<SlowWalletV2>(signer::address_of(user)).list;
+  //   if (vector::is_empty(list)) return option::none();
+
+  //   let coin_opt = option::none<Coin<LibraCoin>>();
+
+  //   let len = vector::length(list);
+  //   let i = 0;
+  //   while (i < len) {
+  //       let box_coins_opt = withdraw_drip_impl(user, i);
+  //       if (option::is_none(&box_coins_opt)) {
+  //         option::destroy_none(box_coins_opt);
+  //         continue
+  //       };
+
+  //       let c = option::extract(&mut box_coins_opt);
+  //       option::destroy_none(box_coins_opt);
+
+  //       if (option::is_none(&coin_opt) ){
+  //         option::fill(&mut coin_opt, c);
+  //       } else {
+  //         let all_coins = option::borrow_mut(&mut coin_opt);
+  //         libra_coin::merge(all_coins, c);
+  //       };
+
+  //       i = i + 1;
+  //   };
+  //   coin_opt
+  // }
+
+
+  // Shifts a lockbox's amount to a longer duration lockbox.
+  // the inverse is not possible (moving a longer lockbox to a shorter).
+  // a.k.a shift-back
+  fun delay_impl(user: &signer, duration_from: u64, duration_to: u64, units: u64) acquires SlowWalletV2 {
+    assert!(duration_to > duration_from, error::invalid_argument(EMUST_SHIFT_LATER));
+
+
+    let user_addr = signer::address_of(user);
+    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+
+    let (found, idx) = idx_by_duration(user_addr, duration_from);
+    assert!(found, error::invalid_state(ENO_DURATION_FOUND));
+
+    let duration_from_balance_pre = balance_per_duration(user_addr, duration_from);
+    let duration_to_balance_pre = balance_per_duration(user_addr, duration_to);
+    let all_balances_pre = user_balance(user_addr);
+
+    // withdraw from one duration_from and send to duration_to
+    let list = &mut borrow_global_mut<SlowWalletV2>(user_addr).list;
+    let sender_box = vector::borrow_mut(list, idx);
+    let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
+    deposit_impl(user_addr, coins, duration_to);
+
+    let all_balances_post = user_balance(user_addr);
+
+    // balances should never change
+    assert!(all_balances_pre == all_balances_post, error::invalid_state(EBALANCES_CHANGED_ON_DELAY));
+
+    // origin units should be LOWER
+    let duration_from_balance_post = balance_per_duration(user_addr, duration_from);
+    assert!(duration_from_balance_pre > duration_from_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
+
+    // destination units should be GREATER
+    let duration_to_balance_post = balance_per_duration(user_addr, duration_to);
+    assert!( duration_to_balance_pre < duration_to_balance_post, error::invalid_state(EDURATION_UNITS_SHOULD_CHANGE));
+  }
+
+  // COMMIT NOTE: transfers are not a feature the community wishes to implement
+
+  // // Sends a portion of a lockbox to a different account which has a slowwalletv2 enabled
+  // // In this transfer we check that two users have accounts.
+  // // We check that there's no possibility of transferring coins to boxes of
+  // // different durations
+  // fun checked_transfer_impl(from: &signer, to: address, duration_type: u64, units: u64) acquires SlowWalletV2 {
+  //   let from_addr = signer::address_of(from);
+  //   assert!(exists<SlowWalletV2>(from_addr), error::invalid_state(ENOT_INITIALIZED));
+  //   assert!(exists<SlowWalletV2>(to), error::invalid_state(EDESTINATION_NOT_INIT));
+
+  //   let (found, idx) = idx_by_duration(from_addr, duration_type);
+  //   assert!(found, error::invalid_state(ENO_DURATION_FOUND));
+
+  //   // borrow a box from the sender, and extract the coins
+  //   // then deposit in the box of the destination account account.
+  //   let list = &mut borrow_global_mut<SlowWalletV2>(from_addr).list;
+  //   let sender_box = vector::borrow_mut(list, idx);
+  //   let coins = libra_coin::extract(&mut sender_box.locked_coins, units);
+  //   deposit_impl(to, coins, duration_type);
+  // }
+
+  ///////// GETTERS ////////
+
+  fun get_daily_pct(box: &Lockbox): FixedPoint32 {
+    let days = math64::mul_div(box.duration_type, 365, 12);
+    fixed_point32::create_from_rational(1, days)
+  }
+
+  fun calc_daily_drip(box: &Lockbox): u64  {
+    let daily_pct = get_daily_pct(box);
+    let value = libra_coin::value(&box.locked_coins);
+    fixed_point32::multiply_u64(value, daily_pct)
+  }
+
+  //////// VIEWS ////////
+
+  // convenience function to get standard locks
+  #[view]
+  public fun get_lock_durations(): vector<u64> {
+    LOCK_DURATIONS
+  }
+
+
+  #[view]
+  public fun lockbox_initialized(user_addr: address): bool {
+    exists<SlowWalletV2>(user_addr)
+  }
+
+  #[view]
+  public fun idx_by_duration(user_addr: address, duration_type: u64): (bool, u64) acquires SlowWalletV2 {
+    assert!(lockbox_initialized(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    assert!(is_valid_duration(duration_type), error::invalid_argument(EINVALID_DURATION));
+
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    // NOTE: there should only be one box per duration_type. TBD if there's a different use case to have duplicate lockbox durations.
+
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let el = vector::borrow(list, i);
+        if (el.duration_type == duration_type) {
+            return (true, i)
+        };
+        i = i + 1;
+    };
+
+    (false, 0)
+  }
+
+  #[view]
+  public fun get_list_durations_holding(user_addr: address): vector<u64> acquires SlowWalletV2 {
+    assert!(exists<SlowWalletV2>(user_addr), error::invalid_state(ENOT_INITIALIZED));
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    let all_durations = vector[];
+    let len = vector::length(list);
+    let i = 0;
+    while (i < len) {
+        let el = vector::borrow(list, i);
+        vector::push_back(&mut all_durations, el.duration_type);
+        i = i + 1;
+    };
+    assert!(vector::length(&all_durations) == len, error::invalid_state(ELIST_INCOMPLETE));
+
+    all_durations
+  }
+
+  #[view]
+  /// balance for one duration_type's box
+  public fun balance_per_duration(user_addr: address, duration_type: u64): u64 acquires SlowWalletV2 {
+    if (!exists<SlowWalletV2>(user_addr)) return 0;
+    let (found, idx) = idx_by_duration(user_addr, duration_type);
+    if (!found) {
+      return 0
+    };
+
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    let box = vector::borrow(list, idx);
+    libra_coin::value(&box.locked_coins)
+  }
+
+
+  #[view]
+  /// balance of one users lockboxes
+  public fun user_balance(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    balance_list(list)
+  }
+
+  #[view]
+  public fun user_unlockable(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    calc_unlock_from_list(list)
+  }
+
+  #[view]
+  public fun user_lifetime_unlocked(user_addr: address): u64 acquires SlowWalletV2 {
+    let sum = 0;
+    if (!exists<SlowWalletV2>(user_addr)) return sum;
+    let list = &borrow_global<SlowWalletV2>(user_addr).list;
+    lifetime_unlocked_list(list)
+  }
+
+  #[view]
+  public fun get_registry_accounts(): vector<address> acquires Registry {
+    borrow_global<Registry>(@ol_framework).accounts
+  }
+
+  #[view]
+  /// returns a vector of the unlocked balances at each standard duration
+  public fun calc_global_locked(): u64 acquires SlowWalletV2, Registry {
+    let sum = 0;
+    let users = borrow_global<Registry>(@ol_framework).accounts;
+    let i = 0;
+    while (i < vector::length(&users)) {
+      let u = vector::borrow(&users, i);
+      let bal = user_balance(*u);
+      sum = sum + bal;
+      i = i + 1;
+    };
+    sum
+  }
+
+  #[view]
+  /// returns a vector of the unlocked balances at each standard duration
+  public fun calc_global_locked_per_duration(duration_type: u64): u64 acquires SlowWalletV2, Registry {
+    let sum = 0;
+    let users = borrow_global<Registry>(@ol_framework).accounts;
+    let i = 0;
+    while (i < vector::length(&users)) {
+      let u = vector::borrow(&users, i);
+      let bal = balance_per_duration(*u, duration_type);
+      sum = sum + bal;
+      i = i + 1;
+    };
+    sum
+  }
+
+  //////// TESTS HELPER ////////
+
+
+
+  #[test_only]
+  fun test_setup(framework: &signer, amount: u64): Coin<LibraCoin> {
+    use diem_framework::timestamp;
+    initialize(framework);
+    timestamp::set_time_has_started_for_testing(framework);
+
+    let (burn_cap, mint_cap) = libra_coin::initialize_for_test(framework);
+    let c = coin::test_mint(amount, &mint_cap);
+    coin::destroy_mint_cap(mint_cap);
+    coin::destroy_burn_cap(burn_cap);
+    c
+  }
+
+  //////// TESTS ////////
+  #[test(framework=@ol_framework, bob = @0x10002)]
+  fun test_lockbox_init(framework: &signer, bob: address) acquires Registry {
+    initialize(framework);
+    let bob_sig = account::create_account_for_test(bob);
+    maybe_initialize(&bob_sig);
+  }
+
+  #[test(bob_sig = @0x10002)]
+  #[expected_failure(abort_code = 196609, location = ol_framework::lockbox)]
+  fun lockbox_idx_aborts_when_not_init(bob_sig: &signer) acquires SlowWalletV2 {
+    let bob_addr = signer::address_of(bob_sig);
+    let (_,_) = idx_by_duration(bob_addr, 1*12);
+  }
+
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  fun creates_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
+    let coin = test_setup(framework, 23);
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+    self_add_or_create_box(&bob_sig, coin, 1*12);
+
+    // see if it exists
+    let (found, idx) = idx_by_duration(bob_addr, 1*12);
+    assert!(found, 7357002);
+    assert!(idx == 0, 7357003);
+
+    let balance_one = balance_per_duration(bob_addr, 1*12);
+    assert!(balance_one == 23, 7357004);
+    let balanace_all = user_balance(bob_addr);
+    assert!(balanace_all == 23, 7357005);
+  }
+
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  fun adds_to_lockbox(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
+
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+    let coin = test_setup(framework, 123);
+    let split_coin = libra_coin::extract(&mut coin, 23);
+
+    self_add_or_create_box(&bob_sig, split_coin, 1*12);
+
+    // see if it exists
+    let (found, idx) = idx_by_duration(bob_addr, 1*12);
+    assert!(found, 7357002);
+    assert!(idx == 0, 7357003);
+
+    let bal = user_balance(bob_addr);
+    assert!(bal == 23, 7357004);
+
+    // remainder of coin should be 100
+    self_add_or_create_box(&bob_sig, coin, 1*12);
+
+    // see if it exists
+    let (found, idx) = idx_by_duration(bob_addr, 1*12);
+    assert!(found, 7357005);
+    assert!(idx == 0, 7357006);
+
+    let bal2 = user_balance(bob_addr);
+    assert!(bal2 == 123, 7357007);
+  }
+
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  #[expected_failure(abort_code = 65545, location = ol_framework::lockbox)]
+  fun test_non_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
+
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+
+    let coin = test_setup(framework, 100);
+
+
+
+    // Try to create a lockbox with a non-standard duration (5*12 months)
+    // This should fail because 5*12 is not in LOCK_DURATIONS
+    self_add_or_create_box(&bob_sig, coin, 5*12);
+
+    // These assertions should never be reached because the above call should fail
+    let (found, _) = idx_by_duration(bob_addr, 5*12);
+    assert!(!found, 7357001);
+  }
+
+  #[test(framework = @0x1, bob_addr = @0x10002)]
+  fun test_standard_duration(framework: &signer, bob_addr: address) acquires SlowWalletV2, Registry {
+
+    // for create account first, because event emitter depends on it
+    let bob_sig = account::create_account_for_test(bob_addr);
+
+    let coin = test_setup(framework, 100);
+
+    // Try to create a lockbox with a standard duration (4*12 months)
+    // This should succeed because 4*12 is in LOCK_DURATIONS
+    self_add_or_create_box(&bob_sig, coin, 4*12);
+
+    // Verify the lockbox was created with the standard duration
+    let (found, idx) = idx_by_duration(bob_addr, 4*12);
+    assert!(found, 7357001);
+    assert!(idx == 0, 7357002);
+
+    // Verify the balance
+    let balance = balance_per_duration(bob_addr, 4*12);
+    assert!(balance == 100, 7357003);
+  }
+}
