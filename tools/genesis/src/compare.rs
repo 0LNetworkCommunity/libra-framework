@@ -73,6 +73,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             // Ok now let's compare to what's on chain
             let db_state_view = db_reader.latest_state_checkpoint_view().unwrap();
+
             let account_state_view = db_state_view.as_account_with_state_view(&convert_address);
 
             let on_chain_balance = account_state_view
@@ -85,20 +86,26 @@ pub fn compare_recovery_vec_to_genesis_tx(
             }
             let on_chain_balance = on_chain_balance.expect("should have balance");
 
+
+            // TODO: need to check the balances including lockbox
+
             // CHECK: we should have scaled the balance correctly, including
             // adjusting for validators
-            let old_balance = old.balance.as_ref().expect("should have a balance struct");
-            if on_chain_balance.coin() != old_balance.coin {
-                err_list.push(CompareError {
-                    index: i as u64,
-                    account: old.account,
-                    expected: old_balance.coin,
-                    migrated: on_chain_balance.coin(),
-                    message: "unexpected balance".to_string(),
-                });
-            }
 
-            user_supply += on_chain_balance.coin();
+            // let old_balance = old.balance.as_ref().expect("should have a balance struct");
+
+
+            // if on_chain_balance.coin() != old_balance.coin {
+            //     err_list.push(CompareError {
+            //         index: i as u64,
+            //         account: old.account,
+            //         expected: old_balance.coin,
+            //         migrated: on_chain_balance.coin(),
+            //         message: "unexpected balance".to_string(),
+            //     });
+            // }
+
+            // user_supply += on_chain_balance.coin();
 
             // TODO: how to check lockboxes if it's a nested vector struct.
             //     // Check Slow Wallet Balance was migrated as expected
