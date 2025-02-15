@@ -93,6 +93,8 @@ module ol_framework::lockbox {
   // TODO: update this, it's the limit of unlocking range
   const V8_UPGRADE_TIMESTAMP: u64 = 1727122878;
 
+  const MAX_U64: u128 = 18446744073709551615;
+
   /// list of all the accounts with lockboxes
   struct Registry has key, store{
     accounts: vector<address>,
@@ -596,6 +598,54 @@ module ol_framework::lockbox {
     };
     sum
   }
+
+    #[view]
+    /// Given a balance, selects the closest maturity from a list of options.
+    /// The maturity list is given in years, and we assume 365 days per year.
+    public fun calc_maturity(balance: u64): u64 {
+        let daily_payment: u64 = 35_000;
+
+        // Ensure daily_payment is not zero (avoids division by zero)
+        assert!(daily_payment > 0, error::invalid_argument(1));
+
+        // Compute days required to pay off balance
+        let days_required: u64 = balance / daily_payment;
+
+        // Initialize search for closest maturity
+        let closest_maturity: u64 = *vector::borrow(&LOCK_DURATIONS, 0);
+        let min_diff: u128 = MAX_U64;
+
+        let i = 0;
+        let len = vector::length(&LOCK_DURATIONS);
+        while (i < len) {
+            let maturity_months = *vector::borrow(&LOCK_DURATIONS, i);
+            let maturity_days = (maturity_months * 365)/12;
+
+            let diff = if (days_required > maturity_days) {
+                days_required - maturity_days
+            } else {
+                maturity_days - days_required
+            };
+            let diff = (diff as u128);
+
+            if (diff < min_diff) {
+                closest_maturity = maturity_months;
+                min_diff = diff;
+            };
+
+            i = i + 1;
+        };
+
+        closest_maturity
+    }
+
+  #[test]
+  fun test_pick_maturity() {
+      let balance: u64 = 500_000_000; // Example balance
+      let selected_maturity = calc_maturity(balance);
+      assert!(selected_maturity == 24*12, 0);
+  }
+
 
   //////// TESTS HELPER ////////
 

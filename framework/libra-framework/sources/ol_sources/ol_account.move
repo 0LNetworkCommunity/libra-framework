@@ -665,16 +665,17 @@ module ol_framework::ol_account {
     fun genesis_migrate_lockbox(
       framework: &signer,
       user_sig: &signer,
-      unlocked_coins: u64, // TODO: chang in Rust to locked coins
-      duration_type: u64,
+      // TODO: change in Rust to "locked" coins in for V8 recoveries
+      unlocked_coins: u64,
     ) acquires BurnTracker {
       system_addresses::assert_diem_framework(framework);
       let user_addr = signer::address_of(user_sig);
       let balance = libra_coin::balance(user_addr);
       if (balance > unlocked_coins) {
         let to_lock = balance - unlocked_coins;
+        let maturity = lockbox::calc_maturity(balance);
         let coins = withdraw(user_sig, to_lock);
-        lockbox::self_add_or_create_box(user_sig, coins, duration_type);
+        lockbox::self_add_or_create_box(user_sig, coins, maturity);
       }
     }
 

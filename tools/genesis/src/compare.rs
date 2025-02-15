@@ -100,33 +100,34 @@ pub fn compare_recovery_vec_to_genesis_tx(
 
             user_supply += on_chain_balance.coin();
 
-            // Check Slow Wallet Balance was migrated as expected
-            if let Some(old_slow) = &old.slow_wallet {
-                let new_slow = account_state_view
-                    .get_move_resource::<SlowWalletBalance>()
-                    .expect("should have a slow wallet struct")
-                    .unwrap();
+            // TODO: how to check lockboxes if it's a nested vector struct.
+            //     // Check Slow Wallet Balance was migrated as expected
+            //     if let Some(old_slow) = &old.slow_wallet {
+            //         let new_slow = account_state_view
+            //             .get_move_resource::<SlowWalletBalance>()
+            //             .expect("should have a slow wallet struct")
+            //             .unwrap();
 
-                if new_slow.unlocked != old_slow.unlocked {
-                    err_list.push(CompareError {
-                        index: i as u64,
-                        account: old.account,
-                        expected: old_slow.unlocked,
-                        migrated: new_slow.unlocked,
-                        message: "unexpected slow wallet unlocked".to_string(),
-                    });
-                }
-                // CHECK: the unlocked amount should never be greater than balance
-                if new_slow.unlocked > on_chain_balance.coin() {
-                    err_list.push(CompareError {
-                        index: i as u64,
-                        account: old.account,
-                        expected: new_slow.unlocked,
-                        migrated: on_chain_balance.coin(),
-                        message: "unlocked greater than balance".to_string(),
-                    });
-                }
-            }
+            //         if new_slow.unlocked != old_slow.unlocked {
+            //             err_list.push(CompareError {
+            //                 index: i as u64,
+            //                 account: old.account,
+            //                 expected: old_slow.unlocked,
+            //                 migrated: new_slow.unlocked,
+            //                 message: "unexpected slow wallet unlocked".to_string(),
+            //             });
+            //         }
+            //         // CHECK: the unlocked amount should never be greater than balance
+            //         if new_slow.unlocked > on_chain_balance.coin() {
+            //             err_list.push(CompareError {
+            //                 index: i as u64,
+            //                 account: old.account,
+            //                 expected: new_slow.unlocked,
+            //                 migrated: on_chain_balance.coin(),
+            //                 message: "unlocked greater than balance".to_string(),
+            //             });
+            //         }
+            //     }
         });
     Ok(err_list)
 }
