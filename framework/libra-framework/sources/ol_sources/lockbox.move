@@ -47,6 +47,7 @@ module ol_framework::lockbox {
   use diem_framework::coin::{Self, Coin};
   use diem_framework::system_addresses;
   use diem_std::math64;
+  use ol_framework::sacred_cows;
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
 
@@ -603,7 +604,7 @@ module ol_framework::lockbox {
     /// Given a balance, selects the closest maturity from a list of options.
     /// The maturity list is given in years, and we assume 365 days per year.
     public fun calc_maturity(balance: u64): u64 {
-        let daily_payment: u64 = 35_000;
+        let daily_payment: u64 = sacred_cows::get_slow_drip_const();
 
         // Ensure daily_payment is not zero (avoids division by zero)
         assert!(daily_payment > 0, error::invalid_argument(1));
