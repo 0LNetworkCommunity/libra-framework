@@ -168,7 +168,7 @@ pub fn genesis_migrate_slow_wallet(
             MoveValue::Signer(CORE_CODE_ADDRESS),
             MoveValue::Signer(new_addr_type),
             MoveValue::U64(slow.unlocked),
-            MoveValue::U64(4*12), // TODO duration_type
+            MoveValue::U64(4 * 12), // TODO duration_type
         ]);
 
         exec_function(
