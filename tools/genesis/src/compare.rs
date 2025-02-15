@@ -5,6 +5,7 @@
 
 use crate::{genesis_reader, genesis_reader::total_supply, parse_json, supply::Supply};
 use anyhow::{self, Context};
+use diem_logger::warn;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::{state_view::LatestDbStateCheckpointView, DbReader};
 use diem_types::{account_view::AccountView, transaction::Transaction};
@@ -12,7 +13,10 @@ use indicatif::{ProgressBar, ProgressIterator};
 use libra_backwards_compatibility::legacy_recovery_v6::{self, AccountRole, LegacyRecoveryV6};
 use libra_types::{
     exports::AccountAddress,
-    move_resource::gas_coin::{GasCoinStoreResource, SlowWalletBalance},
+    move_resource::{
+        gas_coin::{GasCoinStoreResource, SlowWalletBalance},
+        lockbox::SlowWalletV2Resource,
+    },
     ol_progress::OLProgress,
 };
 
@@ -45,7 +49,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
     _supply: &Supply,
 ) -> Result<Vec<CompareError>, anyhow::Error> {
     let mut err_list: Vec<CompareError> = vec![];
-    let mut user_supply = 0u64;
+    // let mut user_supply = 0u64;
     let mut r_as_vec = recovery.to_vec();
     legacy_recovery_v6::strip_system_address(&mut r_as_vec);
 
@@ -86,53 +90,34 @@ pub fn compare_recovery_vec_to_genesis_tx(
             }
             let on_chain_balance = on_chain_balance.expect("should have balance");
 
+            let lockbox_balances =
+                match account_state_view.get_move_resource::<SlowWalletV2Resource>() {
+                    Ok(Some(lb)) => {
+                        let sum = lb.list.iter().fold(0, |acc, b| acc + b.locked_coins.value);
+                        sum
+                    }
+                    _ => 0,
+                };
+
+            let onchain_total_balance = on_chain_balance.coin() + lockbox_balances;
+
             // TODO: need to check the balances including lockbox
 
             // CHECK: we should have scaled the balance correctly, including
             // adjusting for validators
 
-            // let old_balance = old.balance.as_ref().expect("should have a balance struct");
+            let old_balance = old.balance.as_ref().expect("should have a balance struct");
 
-            // if on_chain_balance.coin() != old_balance.coin {
-            //     err_list.push(CompareError {
-            //         index: i as u64,
-            //         account: old.account,
-            //         expected: old_balance.coin,
-            //         migrated: on_chain_balance.coin(),
-            //         message: "unexpected balance".to_string(),
-            //     });
-            // }
-
-            // user_supply += on_chain_balance.coin();
-
-            // TODO: how to check lockboxes if it's a nested vector struct.
-            //     // Check Slow Wallet Balance was migrated as expected
-            //     if let Some(old_slow) = &old.slow_wallet {
-            //         let new_slow = account_state_view
-            //             .get_move_resource::<SlowWalletBalance>()
-            //             .expect("should have a slow wallet struct")
-            //             .unwrap();
-
-            //         if new_slow.unlocked != old_slow.unlocked {
-            //             err_list.push(CompareError {
-            //                 index: i as u64,
-            //                 account: old.account,
-            //                 expected: old_slow.unlocked,
-            //                 migrated: new_slow.unlocked,
-            //                 message: "unexpected slow wallet unlocked".to_string(),
-            //             });
-            //         }
-            //         // CHECK: the unlocked amount should never be greater than balance
-            //         if new_slow.unlocked > on_chain_balance.coin() {
-            //             err_list.push(CompareError {
-            //                 index: i as u64,
-            //                 account: old.account,
-            //                 expected: new_slow.unlocked,
-            //                 migrated: on_chain_balance.coin(),
-            //                 message: "unlocked greater than balance".to_string(),
-            //             });
-            //         }
-            //     }
+            if onchain_total_balance != old_balance.coin {
+                warn!("balance error");
+                err_list.push(CompareError {
+                    index: i as u64,
+                    account: old.account,
+                    expected: old_balance.coin,
+                    migrated: on_chain_balance.coin(),
+                    message: "unexpected balance".to_string(),
+                });
+            }
         });
     Ok(err_list)
 }
