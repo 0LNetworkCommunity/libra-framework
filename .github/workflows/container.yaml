@@ -1,0 +1,47 @@
+name: build container
+on:
+  push:
+    branches:
+      # make binaries which may be ahead of releases to use in CI jobs
+      - "ci-bins*"
+    tags: # run this also on release candidates
+      - "[0-9]+.[0-9]+.[0-9]*"
+
+# Note: builds only Intel container at present
+
+jobs:
+  publish:
+    permissions: write-all
+    name: container-build
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/libra-node
+          tags: |
+            type=sha,enable=true,priority=100,prefix=,suffix=,format=long
+
+      - name: Log in to Container Image Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./container/for-registry/Containerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CI_COMMIT_SHA=${{ github.sha }}

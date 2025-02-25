@@ -2,8 +2,7 @@
 
 use crate::query_view::{self, get_view};
 use anyhow::Context;
-use diem_sdk::rest_client::{diem_api_types::ViewRequest, Client};
-use libra_types::type_extensions::client_ext::entry_function_id;
+use diem_sdk::rest_client::Client;
 
 /// Retrieves the current epoch from the blockchain.
 pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
@@ -15,29 +14,7 @@ pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
     Ok(num)
 }
 
-/// helper to get libra balance at a SlowWalletBalance type which shows
-/// total balance and the unlocked balance.
-pub async fn get_tower_difficulty(client: &Client) -> anyhow::Result<(u64, u64)> {
-    let slow_balance_id = entry_function_id("tower_state", "get_difficulty")?;
-    let request = ViewRequest {
-        function: slow_balance_id,
-        type_arguments: vec![],
-        arguments: vec![],
-    };
-
-    let res = client.view(&request, None).await?.into_inner();
-
-    // TODO: Gross.
-    let difficulty: u64 =
-        serde_json::from_value::<String>(res.first().context("no difficulty returned")?.clone())?
-            .parse()?;
-    let security: u64 = serde_json::from_value::<String>(
-        res.get(1).context("no security param returned")?.clone(),
-    )?
-    .parse()?;
-
-    Ok((difficulty, security))
-}
+// COMMIT NOTE: deprecated tower functions
 
 /// Retrieves the ID of the next governance proposal.
 pub async fn get_next_governance_proposal_id(client: &Client) -> anyhow::Result<u64> {
@@ -108,4 +85,13 @@ pub async fn get_height(client: &Client) -> anyhow::Result<u64> {
     let height = value.first().unwrap().parse::<u64>()?;
 
     Ok(height)
+}
+
+/// Retrieves the current blockchain height.
+pub async fn epoch_over_can_trigger(client: &Client) -> anyhow::Result<bool> {
+    let res = get_view(client, "0x1::epoch_boundary::can_trigger", None, None).await?;
+
+    let value: Vec<bool> = serde_json::from_value(res)?;
+
+    Ok(value[0])
 }

@@ -12,8 +12,7 @@
 
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(clippy::too_many_arguments)]
-#![allow(clippy::doc_lazy_continuation)]
+#![allow(clippy::too_many_arguments, clippy::doc_lazy_continuation)]
 
 use diem_types::{
     account_address::AccountAddress,
@@ -96,8 +95,7 @@ pub enum EntryFunctionCall {
 
     /// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
     /// To authorize the rotation, we need two signatures:
-    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
-    /// demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
+    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
     /// - the second signature `cap_update_table` refers to the signature by the new key (that the account owner wants to rotate to) on a
     /// valid `RotationProofChallenge`, demonstrating that the user owns the new private key, and has the authority to update the
     /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
@@ -262,6 +260,10 @@ pub enum EntryFunctionCall {
         multisig_address: AccountAddress,
         id: u64,
     },
+
+    /// testnet helper to allow testnet root account to set flip the boundary bit
+    /// used for testing cli tools for polling and triggering
+    EpochBoundarySmokeEnableTrigger {},
 
     EpochBoundarySmokeTriggerEpoch {},
 
@@ -721,6 +723,7 @@ impl EntryFunctionCall {
                 multisig_address,
                 id,
             } => donor_voice_txs_vote_veto_tx(multisig_address, id),
+            EpochBoundarySmokeEnableTrigger {} => epoch_boundary_smoke_enable_trigger(),
             EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
@@ -1063,14 +1066,11 @@ pub fn account_revoke_signer_capability(
 /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
 /// To verify these two signatures, we need their corresponding public key and public key scheme: we use `from_scheme` and `from_public_key_bytes`
 /// to verify `cap_rotate_key`, and `to_scheme` and `to_public_key_bytes` to verify `cap_update_table`.
-/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys.
-/// `originating address` refers to an account's original/first address.
-///
+/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys. `originating address` refers to an account's original/first address.
 /// Here is an example attack if we don't ask for the second signature `cap_update_table`:
 /// Alice has rotated her account `addr_a` to `new_addr_a`. As a result, the following entry is created, to help Alice when recovering her wallet:
 /// `OriginatingAddress[new_addr_a]` -> `addr_a`
-/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one.
-/// (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
+/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one. (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
 ///
 /// But Bob likes to mess with Alice.
 /// Bob creates an account `addr_b` and maliciously rotates it to Alice's new address `new_addr_a`. Since we are no longer checking a PoK,
@@ -1540,6 +1540,23 @@ pub fn donor_voice_txs_vote_veto_tx(
             bcs::to_bytes(&multisig_address).unwrap(),
             bcs::to_bytes(&id).unwrap(),
         ],
+    ))
+}
+
+/// testnet helper to allow testnet root account to set flip the boundary bit
+/// used for testing cli tools for polling and triggering
+pub fn epoch_boundary_smoke_enable_trigger() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("epoch_boundary").to_owned(),
+        ),
+        ident_str!("smoke_enable_trigger").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2822,6 +2839,16 @@ mod decoder {
         }
     }
 
+    pub fn epoch_boundary_smoke_enable_trigger(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::EpochBoundarySmokeEnableTrigger {})
+        } else {
+            None
+        }
+    }
+
     pub fn epoch_boundary_smoke_trigger_epoch(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3478,6 +3505,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_voice_txs_vote_veto_tx".to_string(),
             Box::new(decoder::donor_voice_txs_vote_veto_tx),
+        );
+        map.insert(
+            "epoch_boundary_smoke_enable_trigger".to_string(),
+            Box::new(decoder::epoch_boundary_smoke_enable_trigger),
         );
         map.insert(
             "epoch_boundary_smoke_trigger_epoch".to_string(),
