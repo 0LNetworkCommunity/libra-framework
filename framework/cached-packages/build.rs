@@ -18,6 +18,7 @@ fn main() {
             prev_dir.join("libra-framework").join("sources").display()
         );
 
+        // TODO: make this run the libra binary if it is found in users $PATH
         ReleaseTarget::Head
             .create_release(
                 false,

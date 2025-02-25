@@ -27,7 +27,8 @@ runs:
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: stable
+        # Provisionally pinning version pre 1.81 sorting changes
+        toolchain: 1.80.1
         override: true
 
     - name: install rustfmt clippy

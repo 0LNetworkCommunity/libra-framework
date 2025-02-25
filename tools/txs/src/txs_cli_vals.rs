@@ -6,8 +6,8 @@ use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
-    StakeUpdateNetworkAndFullnodeAddresses, ValidatorUniverseRegisterValidator, VouchRevoke,
-    VouchVouchFor,
+    ProofOfFeePofUpdateBidNetReward, StakeUpdateNetworkAndFullnodeAddresses,
+    ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
 };
 use libra_config::validator_registration;
 use libra_types::global_config_dir;
@@ -18,13 +18,16 @@ use std::{fs, path::PathBuf};
 pub enum ValidatorTxs {
     /// Proof-of-Fee auction bidding
     Pof {
+        #[clap(short('r'), long)]
+        /// Estimated net reward you would like to receive each epoch
+        net_reward: u64,
         #[clap(short, long)]
         /// Percentage of the nominal reward you will bid to join the
         /// validator set, with three decimal places: 1.234 is 123.4%
-        bid_pct: f64,
+        bid_pct: Option<f64>,
         #[clap(short, long)]
         /// Epoch until the bid is valid (will expire in `expiry` + 1)
-        expiry: u64,
+        epoch_expiry: u64,
         #[clap(short, long)]
         /// Eliminates the bid. There are only a limited amount of retractions that can happen in an epoch
         retract: bool,
@@ -69,15 +72,16 @@ impl ValidatorTxs {
     pub fn make_payload(&self) -> anyhow::Result<EntryFunctionCall> {
         let p = match self {
             ValidatorTxs::Pof {
+                net_reward,
                 bid_pct,
-                expiry: epoch_expiry,
+                epoch_expiry,
                 retract,
             } => {
                 if *retract {
                     ProofOfFeePofRetractBid {}
-                } else {
+                } else if let Some(b) = bid_pct {
                     // TODO: the u64 will truncate, but without rounding it will drop the last digit.
-                    let scaled_bid = (bid_pct * 1000.0).round() as u64; // scale to 10ˆ3.
+                    let scaled_bid = (b * 1000.0).round() as u64; // scale to 10ˆ3.
                     if scaled_bid > 1100 {
                         bail!(
                             "a bid amount at 110.0% or above the epoch's reward, will be rejected"
@@ -85,6 +89,12 @@ impl ValidatorTxs {
                     }
                     ProofOfFeePofUpdateBid {
                         bid: scaled_bid,
+                        epoch_expiry: *epoch_expiry,
+                    }
+                } else {
+                    // Default path is to update based on the expected net reward
+                    ProofOfFeePofUpdateBidNetReward {
+                        net_reward: *net_reward,
                         epoch_expiry: *epoch_expiry,
                     }
                 }

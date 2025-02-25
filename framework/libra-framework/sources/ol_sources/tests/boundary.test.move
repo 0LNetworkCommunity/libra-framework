@@ -3,6 +3,7 @@
 module ol_framework::test_boundary {
   use std::vector;
   use diem_std::bls12381;
+  use diem_std::debug::print;
   use diem_framework::stake;
   use diem_framework::timestamp;
   use diem_framework::reconfiguration;
@@ -20,8 +21,6 @@ module ol_framework::test_boundary {
   use ol_framework::epoch_boundary;
   use ol_framework::block;
   use ol_framework::ol_account;
-
-  use diem_std::debug::print;
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
@@ -388,5 +387,4 @@ module ol_framework::test_boundary {
     diem_governance::trigger_epoch(marlon);
     // aborts
   }
-
 }
