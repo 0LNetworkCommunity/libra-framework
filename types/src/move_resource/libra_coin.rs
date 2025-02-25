@@ -8,6 +8,22 @@ use move_core_types::{
 };
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LibraCoin {
+    pub value: u64,
+}
+
+impl MoveStructType for LibraCoin {
+    const MODULE_NAME: &'static IdentStr = ident_str!("coin");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("Coin");
+
+    fn type_params() -> Vec<TypeTag> {
+        vec![GAS_COIN_TYPE.clone()]
+    }
+}
+
+impl MoveResource for LibraCoin {}
+
 /// The balance resource held under an account.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 // #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
@@ -49,13 +65,6 @@ impl MoveStructType for LibraCoinStoreResource {
 }
 
 impl MoveResource for LibraCoinStoreResource {}
-
-// TODO: This might break reading from API maybe it must be diem_api_types::U64;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LibraCoin {
-    pub value: u64,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlowWalletBalance {

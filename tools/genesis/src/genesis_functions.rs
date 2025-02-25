@@ -168,13 +168,12 @@ pub fn genesis_migrate_slow_wallet(
             MoveValue::Signer(CORE_CODE_ADDRESS),
             MoveValue::Signer(new_addr_type),
             MoveValue::U64(slow.unlocked),
-            MoveValue::U64(slow.transferred),
         ]);
 
         exec_function(
             session,
-            "slow_wallet",
-            "fork_migrate_slow_wallet",
+            "ol_account",
+            "genesis_migrate_lockbox",
             vec![],
             serialized_values,
         );

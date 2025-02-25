@@ -12,8 +12,7 @@
 
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(clippy::too_many_arguments, clippy::doc_lazy_continuation)]
-
+#![allow(clippy::too_many_arguments)]
 use diem_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
@@ -95,7 +94,8 @@ pub enum EntryFunctionCall {
 
     /// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
     /// To authorize the rotation, we need two signatures:
-    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
+    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
+    /// demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
     /// - the second signature `cap_update_table` refers to the signature by the new key (that the account owner wants to rotate to) on a
     /// valid `RotationProofChallenge`, demonstrating that the user owns the new private key, and has the authority to update the
     /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
@@ -449,7 +449,7 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
-    /// Helper for smoke tests to create acounts.
+    /// Helper for smoke tests to create accounts.
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -492,9 +492,9 @@ pub enum EntryFunctionCall {
     },
 
     SlowWalletSmokeTestVmUnlock {
-        user_addr: AccountAddress,
-        unlocked: u64,
-        transferred: u64,
+        _user_addr: AccountAddress,
+        _unlocked: u64,
+        _transferred: u64,
     },
 
     /// Users can change their account to slow, by calling the entry function
@@ -825,10 +825,10 @@ impl EntryFunctionCall {
             } => proof_of_fee_pof_update_bid_net_reward(net_reward, epoch_expiry),
             SafeInitPaymentMultisig { authorities } => safe_init_payment_multisig(authorities),
             SlowWalletSmokeTestVmUnlock {
-                user_addr,
-                unlocked,
-                transferred,
-            } => slow_wallet_smoke_test_vm_unlock(user_addr, unlocked, transferred),
+                _user_addr,
+                _unlocked,
+                _transferred,
+            } => slow_wallet_smoke_test_vm_unlock(_user_addr, _unlocked, _transferred),
             SlowWalletUserSetSlow {} => slow_wallet_user_set_slow(),
             StakeInitializeValidator {
                 consensus_pubkey,
@@ -1048,11 +1048,14 @@ pub fn account_revoke_signer_capability(
 /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
 /// To verify these two signatures, we need their corresponding public key and public key scheme: we use `from_scheme` and `from_public_key_bytes`
 /// to verify `cap_rotate_key`, and `to_scheme` and `to_public_key_bytes` to verify `cap_update_table`.
-/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys. `originating address` refers to an account's original/first address.
+/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys.
+/// `originating address` refers to an account's original/first address.
+///
 /// Here is an example attack if we don't ask for the second signature `cap_update_table`:
 /// Alice has rotated her account `addr_a` to `new_addr_a`. As a result, the following entry is created, to help Alice when recovering her wallet:
 /// `OriginatingAddress[new_addr_a]` -> `addr_a`
-/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one. (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
+/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one.
+/// (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
 ///
 /// But Bob likes to mess with Alice.
 /// Bob creates an account `addr_b` and maliciously rotates it to Alice's new address `new_addr_a`. Since we are no longer checking a PoK,
@@ -2076,7 +2079,7 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
     ))
 }
 
-/// Helper for smoke tests to create acounts.
+/// Helper for smoke tests to create accounts.
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2217,9 +2220,9 @@ pub fn safe_init_payment_multisig(authorities: Vec<AccountAddress>) -> Transacti
 }
 
 pub fn slow_wallet_smoke_test_vm_unlock(
-    user_addr: AccountAddress,
-    unlocked: u64,
-    transferred: u64,
+    _user_addr: AccountAddress,
+    _unlocked: u64,
+    _transferred: u64,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2232,9 +2235,9 @@ pub fn slow_wallet_smoke_test_vm_unlock(
         ident_str!("smoke_test_vm_unlock").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&user_addr).unwrap(),
-            bcs::to_bytes(&unlocked).unwrap(),
-            bcs::to_bytes(&transferred).unwrap(),
+            bcs::to_bytes(&_user_addr).unwrap(),
+            bcs::to_bytes(&_unlocked).unwrap(),
+            bcs::to_bytes(&_transferred).unwrap(),
         ],
     ))
 }
@@ -3194,9 +3197,9 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::SlowWalletSmokeTestVmUnlock {
-                user_addr: bcs::from_bytes(script.args().first()?).ok()?,
-                unlocked: bcs::from_bytes(script.args().get(1)?).ok()?,
-                transferred: bcs::from_bytes(script.args().get(2)?).ok()?,
+                _user_addr: bcs::from_bytes(script.args().first()?).ok()?,
+                _unlocked: bcs::from_bytes(script.args().get(1)?).ok()?,
+                _transferred: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
         } else {
             None

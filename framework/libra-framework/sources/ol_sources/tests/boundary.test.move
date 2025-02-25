@@ -14,7 +14,7 @@ module ol_framework::test_boundary {
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
   use ol_framework::jail;
-  use ol_framework::slow_wallet;
+  // use ol_framework::slow_wallet;
   use ol_framework::vouch;
   use ol_framework::testnet;
   use ol_framework::validator_universe;
@@ -37,7 +37,9 @@ module ol_framework::test_boundary {
     mock::ol_initialize_coin_and_fund_vals(root, 500000, true);
     mock::mock_all_vals_good_performance(root);
     mock::pof_default();
-    slow_wallet::slow_wallet_epoch_drip(root, 500000);
+
+    // TODO: give coins to validators for testing
+    print(&@0x666);
 
     // NOTE: for e2e epoch tests, we need to go into an operating epoch (not 0 or 1). Advance to epoch #2
     reconfiguration::test_helper_increment_epoch_dont_reconfigure(1);

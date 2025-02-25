@@ -9,7 +9,7 @@
 /// transactions on behalf of Owner
 /// Depositors are called Donors, and the app gives depositors
 /// visibility of the transactions, and also limited authority over
-/// specific actions: alterting the Owner and Depositors from
+/// specific actions: alerting the Owner and Depositors from
 /// unauthorized transaction.
 
 /// The DonorVoice Account Lifecycle:
@@ -55,7 +55,7 @@ module ol_framework::donor_voice {
     }
 
 
-    //////// INIT REGISRTY OF DONOR VOICE ACCOUNTS  ////////
+    //////// INIT REGISTRY OF DONOR VOICE ACCOUNTS  ////////
 
     // Donor Voice Accounts are a root security service. So the root account needs to keep a registry of all Donor Voice accounts, using this service.
 

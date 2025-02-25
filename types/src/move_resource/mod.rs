@@ -11,6 +11,7 @@ pub mod fee_maker;
 pub mod gas_coin;
 pub mod jail;
 pub mod libra_coin;
+pub mod lockbox;
 pub mod match_index;
 pub mod ol_account;
 pub mod pledge_account;

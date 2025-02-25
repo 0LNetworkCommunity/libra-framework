@@ -6,6 +6,7 @@ module diem_framework::validator_universe {
   use std::vector;
   use ol_framework::jail;
   use ol_framework::vouch;
+  // use ol_framework::lockbox;
   use diem_framework::stake;
   use diem_framework::system_addresses;
 
@@ -38,17 +39,18 @@ module diem_framework::validator_universe {
   /// Separates the logic of registration from validator election etc. (in stake.move).
   /// This prevents dependency cycling issues, since stake.move is a large module.
   public entry fun register_validator(
-    account: &signer,
+    account_sig: &signer,
     consensus_pubkey: vector<u8>,
     proof_of_possession: vector<u8>,
     network_addresses: vector<u8>,
     fullnode_addresses: vector<u8>,
   ) acquires ValidatorUniverse {
-      stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
-      vouch::init(account);
+      stake::initialize_validator(account_sig, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
+      vouch::init(account_sig);
       // 0L specific,
-      add(account);
-      jail::init(account);
+      add(account_sig);
+      jail::init(account_sig);
+      // lockbox::maybe_initialize(account_sig)
   }
 
   /// This function is called to add validator to the validator universe.

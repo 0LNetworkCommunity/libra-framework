@@ -13,7 +13,7 @@ module ol_framework::mock {
   use diem_framework::transaction_fee;
   use ol_framework::grade;
   use ol_framework::vouch;
-  use ol_framework::slow_wallet;
+  // use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
   use ol_framework::epoch_boundary;
@@ -23,7 +23,7 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -203,7 +203,9 @@ module ol_framework::mock {
     };
 
     if (drip) {
-      slow_wallet::slow_wallet_epoch_drip(root, amount);
+      // TODO: give coins to validators for testing
+      print(&@0x666);
+      // slow_wallet::slow_wallet_epoch_drip(root, amount);
     };
     libra_coin::restore_mint_cap(root, mint_cap);
   }
