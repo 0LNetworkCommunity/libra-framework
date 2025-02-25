@@ -20,6 +20,7 @@ module ol_framework::test_boundary {
   use ol_framework::epoch_boundary;
   use ol_framework::block;
   use ol_framework::ol_account;
+  use ol_framework::ol_features_constants;
 
   use diem_std::debug::print;
 

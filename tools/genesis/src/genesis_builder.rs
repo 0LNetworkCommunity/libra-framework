@@ -26,16 +26,17 @@ use diem_types::{
 };
 use diem_vm_genesis::{
     default_gas_schedule,
-    GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor codethere are two structs separately called the same name with nearly identical fields
+    GenesisConfiguration as VmGenesisGenesisConfiguration, // in vendor code there are two structs separately called the same name with nearly identical fields FML
 };
 use indicatif::ProgressBar;
-use libra_framework::release;
+use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
+use libra_framework::release::ReleaseTarget;
 use libra_types::{
     core_types::fixtures::TestPersona,
     exports::{ChainId, NamedChain},
-    legacy_types::legacy_recovery_v6::LegacyRecoveryV6,
     ol_progress::OLProgress,
 };
+
 use libra_wallet::{
     account_keys::get_keys_from_mnem,
     keys::generate_key_objects_from_legacy,
@@ -71,7 +72,7 @@ pub fn build(
     github_repository: String,
     github_token: String,
     home_path: PathBuf,
-    use_local_framework: bool,
+    framework_mrb_path: Option<PathBuf>,
     legacy_recovery: &mut [LegacyRecoveryV6],
     chain_name: NamedChain,
     testnet_vals: Option<Vec<ValidatorConfiguration>>,
@@ -96,23 +97,33 @@ pub fn build(
         )
         .expect("could not parse dummy root");
 
+        let framework = if let Some(p) = framework_mrb_path {
+            // always use a specific release
+            ReleaseTarget::load_bundle_from_file(p)?
+        } else {
+            bail!("we need to know the exact framework .mrb file you'd like to use for testnet. Usually ./framework/release/head.mrb but you'll need to build it first.");
+        };
+
         GenesisInfo::new(
             ChainId::new(chain_name.id()),
             dummy_root,
             vals,
-            libra_framework::head_release_bundle(),
+            framework,
             &silly_config(&genesis_config),
         )?
     } else {
+        dbg!(&"hi4");
+
         fetch_genesis_info(
             github_owner,
             github_repository,
             github_token,
-            use_local_framework,
+            framework_mrb_path,
             &genesis_config,
             &chain_name,
         )?
     };
+
     println!("building genesis block");
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         legacy_recovery,
@@ -196,7 +207,7 @@ pub fn fetch_genesis_info(
     github_owner: String,
     github_repository: String,
     github_token: String,
-    use_local_framework: bool,
+    framework_mrb_path: Option<PathBuf>,
     genesis_config: &VmGenesisGenesisConfiguration,
     chain_id: &NamedChain,
 ) -> Result<GenesisInfo> {
@@ -219,9 +230,9 @@ pub fn fetch_genesis_info(
     OLProgress::complete("fetched validator configs");
     pb.finish_and_clear();
 
-    let framework = if use_local_framework {
+    let framework = if let Some(p) = framework_mrb_path {
         // use the local head release
-        release::ReleaseTarget::Head.load_bundle()?
+        ReleaseTarget::load_bundle_from_file(p)?
     } else {
         // get from github
         let bytes = base64::decode(client.get_file(FRAMEWORK_NAME)?)?;
@@ -548,12 +559,12 @@ fn test_github_info() {
     use crate::vm::libra_genesis_default;
     let gh_token_path = libra_types::global_config_dir().join("github_token.txt");
     let token = std::fs::read_to_string(gh_token_path).unwrap();
-
+    let framework_mrb_path = ReleaseTarget::Head.find_bundle_path().ok();
     let _genesis_info = fetch_genesis_info(
         "0o-de-lally".to_string(),
         "a-genesis".to_string(),
         token,
-        true,
+        framework_mrb_path,
         &libra_genesis_default(NamedChain::TESTING),
         &NamedChain::TESTING,
     )
@@ -565,13 +576,13 @@ fn test_github_info() {
 fn test_build() {
     let home = libra_types::global_config_dir();
     let token = std::fs::read_to_string(home.join("github_token.txt")).unwrap();
-
+    let framework_mrb_path = ReleaseTarget::Head.find_bundle_path().ok();
     build(
         "0o-de-lally".to_string(),
         "a-genesis".to_string(),
         token,
         home,
-        true,
+        framework_mrb_path,
         &mut [],
         NamedChain::TESTING,
         None,

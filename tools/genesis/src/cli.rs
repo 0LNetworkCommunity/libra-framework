@@ -1,13 +1,14 @@
 use clap::{Args, Parser, Subcommand};
+use diem_genesis::config::HostAndPort;
 
 use crate::{
     genesis_builder, parse_json, testnet_setup,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
 use libra_types::{core_types::fixtures::TestPersona, exports::NamedChain, global_config_dir};
-use std::{fs, net::Ipv4Addr, path::PathBuf};
+use std::{fs, path::PathBuf};
 #[derive(Parser)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, version, about, long_about = None, arg_required_else_help = true)]
 /// Generate genesis transactions for testnet and upgrades
 pub struct GenesisCli {
     #[clap(subcommand)]
@@ -47,7 +48,7 @@ impl GenesisCli {
                     github.name_github.to_owned(),
                     github_token,
                     data_path,
-                    github.local_framework,
+                    github.local_framework.to_owned(),
                     &mut recovery,
                     chain_name,
                     None,
@@ -61,9 +62,9 @@ impl GenesisCli {
                     chain_name,
                 )
                 .start_wizard(
-                    github.local_framework,
-                    github.json_legacy.clone(),
-                    github.token_github_file.clone(),
+                    github.local_framework.to_owned(),
+                    github.json_legacy.to_owned(),
+                    github.token_github_file.to_owned(),
                     false,
                 )
                 .await?;
@@ -71,16 +72,23 @@ impl GenesisCli {
 
             Some(Sub::Testnet {
                 me,
-                ip_list,
+                host_list,
+                framework_mrb_path,
                 json_legacy,
             }) => {
-                testnet_setup::setup(me, ip_list, chain_name, data_path, json_legacy.to_owned())
-                    .await?
+                testnet_setup::setup(
+                    me,
+                    host_list,
+                    chain_name,
+                    data_path,
+                    json_legacy.to_owned(),
+                    Some(framework_mrb_path.to_owned()),
+                )
+                .await?
             }
-            _ => {
-                println!("\nIf you're looking for trouble \nYou came to the right place");
-            }
+            _ => {}
         }
+        println!("\nIf you're looking for trouble \nYou came to the right place\n");
         Ok(())
     }
 }
@@ -99,7 +107,7 @@ struct GithubArgs {
     name_github: String,
     /// uses the local framework build
     #[clap(short, long)]
-    local_framework: bool,
+    local_framework: Option<PathBuf>,
     /// path to file for legacy migration file
     #[clap(short, long)]
     json_legacy: Option<PathBuf>,
@@ -107,6 +115,7 @@ struct GithubArgs {
 
 #[derive(Subcommand)]
 enum Sub {
+    /// build a genesis file from the coordination git repo
     Build {
         /// github args
         #[clap(flatten)]
@@ -116,6 +125,7 @@ enum Sub {
         #[clap(long)]
         drop_list: Option<PathBuf>,
     }, // just do genesis without wizard
+    /// register to the genesis coordination git repository
     Register {
         /// github args
         #[clap(flatten)]
@@ -128,9 +138,13 @@ enum Sub {
         /// which persona is this machine going to register as
         #[clap(short, long)]
         me: TestPersona,
-        /// list of IP addresses of each persona Alice, Bob, Carol, Dave
+        /// ordered list of dns/ip with port for alice..dave
+        /// use 6180 for production validator port
+        #[clap(long)]
+        host_list: Vec<HostAndPort>,
+        /// path to the Move framework file, usually ./framework/releases/head.mrb
         #[clap(short, long)]
-        ip_list: Vec<Ipv4Addr>,
+        framework_mrb_path: PathBuf,
         /// path to file for legacy migration file
         #[clap(short, long)]
         json_legacy: Option<PathBuf>,

@@ -27,18 +27,13 @@ runs:
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.78.0
+        # Provisionally pinning version pre 1.81 sorting changes
+        toolchain: 1.80.1
         override: true
 
     - name: install rustfmt clippy
       shell: bash
       run: rustup component add rustfmt clippy
-
-    - name: also rust cache
-      uses: Swatinem/rust-cache@v2.7.0
-      with:
-        shared-key: "libra"
-        cache-on-failure: "true"
 
     # call own action for libra_cli
     # known issue with needing to hard code the @version
