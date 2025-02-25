@@ -261,6 +261,10 @@ pub enum EntryFunctionCall {
         id: u64,
     },
 
+    /// testnet helper to allow testnet root account to set flip the boundary bit
+    /// used for testing cli tools for polling and triggering
+    EpochBoundarySmokeEnableTrigger {},
+
     EpochBoundarySmokeTriggerEpoch {},
 
     /// Only a Voucher of the validator can flip the unjail bit.
@@ -707,6 +711,7 @@ impl EntryFunctionCall {
                 multisig_address,
                 id,
             } => donor_voice_txs_vote_veto_tx(multisig_address, id),
+            EpochBoundarySmokeEnableTrigger {} => epoch_boundary_smoke_enable_trigger(),
             EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
@@ -1520,6 +1525,23 @@ pub fn donor_voice_txs_vote_veto_tx(
             bcs::to_bytes(&multisig_address).unwrap(),
             bcs::to_bytes(&id).unwrap(),
         ],
+    ))
+}
+
+/// testnet helper to allow testnet root account to set flip the boundary bit
+/// used for testing cli tools for polling and triggering
+pub fn epoch_boundary_smoke_enable_trigger() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("epoch_boundary").to_owned(),
+        ),
+        ident_str!("smoke_enable_trigger").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2766,6 +2788,16 @@ mod decoder {
         }
     }
 
+    pub fn epoch_boundary_smoke_enable_trigger(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::EpochBoundarySmokeEnableTrigger {})
+        } else {
+            None
+        }
+    }
+
     pub fn epoch_boundary_smoke_trigger_epoch(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -3400,6 +3432,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_voice_txs_vote_veto_tx".to_string(),
             Box::new(decoder::donor_voice_txs_vote_veto_tx),
+        );
+        map.insert(
+            "epoch_boundary_smoke_enable_trigger".to_string(),
+            Box::new(decoder::epoch_boundary_smoke_enable_trigger),
         );
         map.insert(
             "epoch_boundary_smoke_trigger_epoch".to_string(),
