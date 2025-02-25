@@ -9,9 +9,9 @@ module diem_framework::epoch_boundary {
   use diem_framework::coin::{Coin};
   use diem_framework::create_signer;
   use diem_framework::reconfiguration;
+  use diem_framework::epoch_helper;
   use diem_framework::transaction_fee;
   use diem_framework::system_addresses;
-  // use ol_framework::jail;
   use ol_framework::safe;
   use ol_framework::burn;
   use ol_framework::stake;
@@ -262,7 +262,7 @@ module diem_framework::epoch_boundary {
     // core_resource account is the the tesnet account with root permissions
     system_addresses::assert_core_resource(core_resource);
     let state = borrow_global_mut<BoundaryBit>(@ol_framework);
-    state.closing_epoch = reconfiguration::get_current_epoch();
+    state.closing_epoch = epoch_helper::get_current_epoch();
     state.ready = true;
   }
 
@@ -274,7 +274,7 @@ module diem_framework::epoch_boundary {
     if (state.ready &&
       // greater than or equal because in case there is an epoch change due to an epoch bump in
       // testnet Twin tools, or a rescue operation.
-      state.closing_epoch <= reconfiguration::get_current_epoch()){
+      state.closing_epoch <= epoch_helper::get_current_epoch()){
       return true
     };
 
