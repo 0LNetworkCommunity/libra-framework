@@ -1,6 +1,7 @@
 
 module ol_framework::ol_features_constants {
     use std::features;
+
     ///////// KEEP COMMENTED ////////
     // NOTE: this feature is deprecated
     // since epoch trigger was an experimental feature
