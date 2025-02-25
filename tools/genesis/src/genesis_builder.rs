@@ -112,8 +112,6 @@ pub fn build(
             &silly_config(&genesis_config),
         )?
     } else {
-        dbg!(&"hi4");
-
         fetch_genesis_info(
             github_owner,
             github_repository,
@@ -130,7 +128,6 @@ pub fn build(
         &gen_info.validators,
         &gen_info.framework,
         gen_info.chain_id,
-        // supply_settings.clone(),
         &genesis_config,
     )?;
 
@@ -211,7 +208,6 @@ pub fn fetch_genesis_info(
     genesis_config: &VmGenesisGenesisConfiguration,
     chain_id: &NamedChain,
 ) -> Result<GenesisInfo> {
-    // let client = git_options.get_client()?;
     let client = Client::new(
         github_owner, // doesn't matter
         github_repository,
@@ -219,7 +215,6 @@ pub fn fetch_genesis_info(
         github_token,
     );
 
-    // let layout: Layout = client.get(Path::new(LAYOUT_FILE))?;
     let l_file = client.get_file(&Path::new(LAYOUT_FILE).display().to_string())?;
     let layout: LibraSimpleLayout = from_yaml(&String::from_utf8(base64::decode(l_file)?)?)?;
     OLProgress::complete("fetched layout file");
