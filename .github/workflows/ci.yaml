@@ -239,7 +239,8 @@ jobs:
 
       - name: Print main last commit message condition
         run: |
-          echo "Main last commit has [breaking]: ${{ env.hasBreakingCommit }}"
+          echo "Main last commit contains text [breaking]: ${{ env.hasBreakingCommit }}"
+
 
       - name: delete fixtures and force rebuild
         working-directory: ./framework/src/upgrade_fixtures/fixtures
@@ -255,7 +256,7 @@ jobs:
 
       - name: upgrade - should be backwards compatible
         # should always run unless we explicitly mark the branch or tag as "breaking"
-        if: ${{ env.hasBreakingCommit == 'false' && !contains(steps.get_branch.outputs.branch, 'breaking/') }}
+        if: ${{ env.hasBreakingCommit == 'false' && env.requiresFullUpgrade == 'false' && !contains(steps.get_branch.outputs.branch, 'breaking/') }}
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
         run: RUST_MIN_STACK=104857600 cargo test compatible_
