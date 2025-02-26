@@ -173,7 +173,7 @@ module ol_framework::proof_of_fee {
 
     let only_qualified_bidders = get_bidders(true);
 
-    // Calculate the final set size considering the number of compliantget_bidders validators,
+    // Calculate the final set size considering the number of compliant bidders,
     // number of qualified bidders, and musical chairs set size suggestion
     let final_set_size = calculate_final_set_size(
       vector::length(outgoing_compliant_set),

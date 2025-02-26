@@ -275,10 +275,6 @@ module ol_framework::mock {
     // Bruce inherits a fortune, all the coins from genesis
     ol_account::deposit_coins(bruce_address, genesis_coins);
 
-    // Bruce mints a fortune
-    // let fortune_mint = coin::test_mint(fortune, &mint_cap);
-    // ol_account::deposit_coins(bruce_address, fortune_mint);
-
     // Bruce funds infra escrow
     infra_escrow::init_escrow_with_deposit(root, &bruce_sig, INFRA_ESCROW_START);
 
@@ -286,39 +282,6 @@ module ol_framework::mock {
 
     mint_cap
   }
-  // #[test_only]
-  // // For unit test, we need to try to initialize the minimal state for
-  // // user transactions. In the case of a unit tests which does a genesis with validators, this will not attempt to re-initialize the state.
-  // fun coin_init_minimal(root: &signer): coin::MintCapability<LibraCoin> {
-  //   system_addresses::assert_ol(root);
-
-  //   let (burn_cap, mint_cap) = libra_coin::initialize_for_test(root);
-  //   coin::destroy_burn_cap(burn_cap);
-
-  //   transaction_fee::initialize_fee_collection_and_distribution(root, 0);
-
-  //   let genesis_mint = coin::test_mint(FINAL_SUPPLY_AT_GENESIS, &mint_cap);
-  //   libra_coin::test_set_final_supply(root, FINAL_SUPPLY_AT_GENESIS);
-  //   assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, ESUPPLY_MISMATCH);
-
-
-  //   // We need to simulate a long running network
-  //   // where the Infra Pledge account accumulated.
-  //   // Here we use Wayne Enterprises as the sole sponsor of the
-  //   // test environment Infra Pedge
-  //   let bruce_address = @0xBA7;
-  //   ol_account::create_account(root, bruce_address);
-  //   // Bruce inherits a fortune, the remainder of genesis mint
-  //   ol_account::deposit_coins(bruce_address, genesis_mint);
-
-  //   // Bruce pledges 37B to infra escrow
-  //   let bruce = account::create_signer_for_test(bruce_address);
-  //   pledge_accounts::user_pledge(&bruce, @ol_framework, INFRA_ESCROW_START);
-
-  //   assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, ESUPPLY_MISMATCH);
-
-  //   mint_cap
-  // }
 
   #[test_only]
   public fun personas(): vector<address> {
