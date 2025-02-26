@@ -15,7 +15,6 @@ module ol_framework::ol_features_constants {
     //     features::is_enabled(EPOCH_TRIGGER_ENABLED)
     // }
 
-
     /// GOVERNANCE MODE
     /// Certain transactions are disabled during deliberation and
     /// execution of on-chain hot upgrades.

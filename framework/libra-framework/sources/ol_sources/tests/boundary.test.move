@@ -22,7 +22,6 @@ module ol_framework::test_boundary {
   use ol_framework::block;
   use ol_framework::ol_account;
 
-
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;
   const Carol: address = @0x1000c;
@@ -388,5 +387,4 @@ module ol_framework::test_boundary {
     diem_governance::trigger_epoch(marlon);
     // aborts
   }
-
 }
