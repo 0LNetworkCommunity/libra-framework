@@ -81,7 +81,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 .expect("should have move resource");
 
             if on_chain_balance.is_none() {
-                println!("account without a balance struct: {}", &convert_address);
+                warn!("account without a balance struct: {}", &convert_address);
                 return;
             }
             let on_chain_balance = on_chain_balance.expect("should have balance");
