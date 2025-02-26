@@ -50,7 +50,6 @@ fn test_correct_supply_arithmetic_all() {
     //     .unwrap();
     ////////////////////////////////////////
 
-
     // audit
     match compare::compare_recovery_vec_to_genesis_tx(
         &mut user_accounts,
@@ -115,7 +114,6 @@ fn test_drop_all() {
 
     // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
-
 
     let dead_acct = dead.account.unwrap();
     // Ok now let's compare to what's on chain
