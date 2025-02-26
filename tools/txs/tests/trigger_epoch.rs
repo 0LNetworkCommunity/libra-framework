@@ -82,7 +82,7 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
 
     let before_trigger_epoch_query_res = query_view::get_view(
         &ls.client(),
-        "0x1::reconfiguration::get_current_epoch",
+        "0x1::epoch_helper::get_current_epoch",
         None,
         None,
     )
@@ -115,11 +115,11 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
 
     std::thread::sleep(Duration::from_secs(20));
 
-    // now the backround service should succeed in triggering epoch.
+    // now the background service should succeed in triggering epoch.
 
     let after_trigger_epoch_query_res = query_view::get_view(
         &ls.client(),
-        "0x1::reconfiguration::get_current_epoch",
+        "0x1::epoch_helper::get_current_epoch",
         None,
         None,
     )
