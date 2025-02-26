@@ -1,6 +1,7 @@
 
 module ol_framework::ol_features_constants {
     use std::features;
+
     ///////// KEEP COMMENTED ////////
     // NOTE: this feature is deprecated
     // since epoch trigger was an experimental feature
@@ -13,7 +14,6 @@ module ol_framework::ol_features_constants {
     // public fun epoch_trigger_enabled(): bool {
     //     features::is_enabled(EPOCH_TRIGGER_ENABLED)
     // }
-
 
     /// GOVERNANCE MODE
     /// Certain transactions are disabled during deliberation and
