@@ -6,13 +6,7 @@ use diem_sdk::rest_client::Client;
 
 /// Retrieves the current epoch from the blockchain.
 pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
-    let res = get_view(
-        client,
-        "0x1::reconfiguration::get_current_epoch",
-        None,
-        None,
-    )
-    .await?;
+    let res = get_view(client, "0x1::epoch_helper::get_current_epoch", None, None).await?;
 
     let value: Vec<String> = serde_json::from_value(res)?;
     let num = value.first().unwrap().parse::<u64>()?;
