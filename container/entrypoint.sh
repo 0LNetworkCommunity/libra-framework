@@ -2,6 +2,7 @@
 set -e
 
 # Install dependencies silently
+apt update
 apt install -y curl
 
 # Display version
