@@ -14,6 +14,8 @@ module ol_framework::ancestry {
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
     /// no ancestry tree state on chain, this is probably a migration bug.
     const ENO_ANCESTRY_TREE: u64 = 2;
+    /// ancestor account not in user tree.
+    const ENOT_ANCESTOR: u64 = 3;
 
     struct Ancestry has key {
       // the full tree back to genesis set
@@ -67,6 +69,28 @@ module ol_framework::ancestry {
       assert!(exists<Ancestry>(addr), ENO_ANCESTRY_TREE);
 
       *&borrow_global<Ancestry>(addr).tree
+    }
+
+
+
+    #[view]
+    /// Getter to see if a account exists in a tree (direct ancestor)
+    public fun is_in_tree(ancestor: address, user: address): bool acquires Ancestry {
+      let (found, _idx) = vector::index_of(&get_tree(user), &ancestor);
+      found
+    }
+
+    /// get the degree (hops) between two accounts
+    /// if they are related. Assumes ancestor is in the tree of User.
+    fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
+      let user_tree = get_tree(user);
+      let len = vector::length(&user_tree);
+      assert!(len == 0, error::invalid_state(ENO_ANCESTRY_TREE));
+      let (found, idx) = vector::index_of(&user_tree, &ancestor);
+      if (!found) {
+        return option::none()
+      };
+      return option::some(vector::length(&user_tree) - idx)
     }
 
     /// helper function to check on transactions (e.g. vouch) if accounts are related
