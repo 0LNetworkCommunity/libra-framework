@@ -9,6 +9,7 @@ module ol_framework::ancestry {
     friend ol_framework::vouch;
     friend ol_framework::ol_account;
     friend ol_framework::community_wallet_init;
+    friend ol_framework::vouch_score;
 
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
@@ -82,7 +83,7 @@ module ol_framework::ancestry {
 
     /// get the degree (hops) between two accounts
     /// if they are related. Assumes ancestor is in the tree of User.
-    fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
+    public(friend) fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
       let user_tree = get_tree(user);
       let len = vector::length(&user_tree);
       assert!(len == 0, error::invalid_state(ENO_ANCESTRY_TREE));

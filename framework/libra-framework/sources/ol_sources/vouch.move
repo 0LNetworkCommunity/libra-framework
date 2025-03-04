@@ -319,6 +319,7 @@ module ol_framework::vouch {
     }
 
     #[view]
+    /// @return (vector of buddies, vector of epoch when vouched)
     public fun get_received_vouches(acc: address): (vector<address>, vector<u64>) acquires ReceivedVouches {
       if (!exists<ReceivedVouches>(acc)) {
         return (vector::empty(), vector::empty())
