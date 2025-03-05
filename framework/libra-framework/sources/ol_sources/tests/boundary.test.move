@@ -86,21 +86,26 @@ module ol_framework::test_boundary {
 
     // all validators were compliant, should be +1 of the 10 vals
     assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
+
     // all vals had winning bids, but it was less than the seats on offer
-    assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357003);
-    // all of the auction winners became the validators ulitmately
-    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
+    let winners = epoch_boundary::get_auction_winners();
+    assert!(vector::length(&winners) == 9, 7357003);
+    // all of the auction winners became the validators ultimately
+    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 9, 7357004);
+
 
     // check vals rewards received and bid fees collected
-    // balance + reward - fee = 500_000 + 1_000_000 - 10_000 = 1_490_000
-    vector::for_each(vals, |addr| {
+    // NOTE the clearing bid in this example is not the last validator, but the 9th = 2_000
+    // balance + reward - fee = 500_000 + 1_000_000 - 2_000 = 1_498_000
+    vector::for_each(winners, |addr| {
       let (_unlocked, total) = ol_account::balance(addr);
-      assert!(total == 1_499_000, 7357005);
+      assert!(total == 1_498_000, 7357005);
     });
 
     // check subsidy for new rewards and fees collected
-    // fees collected = 10 * 1_000_000 + 10 * 1_000 = 10_010_000
-    assert!(transaction_fee::system_fees_collected() == 10_010_000, 7357006);
+    // validators = 9
+    // fees collected = 9 * 1_000_000 + 9 * 2_000 = 9_018_000
+    assert!(transaction_fee::system_fees_collected() == 9018000, 7357006);
   }
 
   // #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
@@ -289,7 +294,7 @@ module ol_framework::test_boundary {
     // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
     // all vals had winning bids, but it was less than the seats on offer
     assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357003);
-    // all of the auction winners became the validators ulitmately
+    // all of the auction winners became the validators ultimately
     assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
   }
 

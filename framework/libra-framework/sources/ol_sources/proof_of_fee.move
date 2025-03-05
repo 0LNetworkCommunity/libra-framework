@@ -332,17 +332,14 @@ module ol_framework::proof_of_fee {
   public fun calculate_min_vouches_required(set_size: u64): u64 {
     let required = globals::get_validator_vouch_threshold();
 
-    // TODO: set a features switch here
-    //if (false) {
-      if (set_size > VAL_BOOT_UP_THRESHOLD) {
-        // dynamically increase the amount of social proofing as the
-        // validator set increases
-        required = math64::min(
-          (set_size / 10) + 1, // formula to get the min vouches required after bootup
-          globals::get_max_vouches_per_validator() - VOUCH_MARGIN
-        );
-      };
-    //};
+    if (set_size > 21) {
+      // dynamically increase the amount of social proofing as the
+      // validator set increases
+      required = math64::min(
+        (set_size / 10) + 1, // formula to get the min vouches required after bootup
+        globals::get_max_vouches_per_validator() - VOUCH_MARGIN
+      );
+    };
 
     required
   }
