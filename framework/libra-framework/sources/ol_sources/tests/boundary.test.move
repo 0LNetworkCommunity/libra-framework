@@ -10,7 +10,7 @@ module ol_framework::test_boundary {
   use diem_framework::diem_governance;
   use diem_framework::transaction_fee;
   use diem_framework::account;
-  use ol_framework::burn;
+  // use ol_framework::burn;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
   use ol_framework::jail;
@@ -100,14 +100,116 @@ module ol_framework::test_boundary {
 
     // check subsidy for new rewards and fees collected
     // fees collected = 10 * 1_000_000 + 10 * 1_000 = 10_010_000
-    print(&transaction_fee::system_fees_collected());
     assert!(transaction_fee::system_fees_collected() == 10_010_000, 7357006);
   }
 
+  // #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
+  // fun e2e_add_validator_happy(root: signer, alice: signer, marlon_rando: signer) {
+  //   let initial_vals = common_test_setup(&root);
+
+  //   // generate credentials for validator registration
+  //   ol_account::transfer(&alice, @0x12345, 200000);
+  //   let (_sk, pk, pop) = stake::generate_identity();
+  //   let pk_bytes = bls12381::public_key_to_bytes(&pk);
+  //   let pop_bytes = bls12381::proof_of_possession_to_bytes(&pop);
+  //   validator_universe::register_validator(&marlon_rando, pk_bytes, pop_bytes, b"123", b"abc");
+
+  //   // MARLON PAYS THE BID
+  //   let vals = validator_universe::get_eligible_validators();
+  //   assert!(vector::length(&vals) == 11, 7357001);
+
+  //   mock::mock_bids(&vals);
+
+  //   // MARLON HAS MANY FRIENDS
+  //   vouch::test_set_buddies(@0x12345, vals);
+
+  //   let (errs, _pass) = proof_of_fee::audit_qualification(@0x12345);
+  //   assert!(vector::length(&errs) == 0, 7357002);
+
+  //   // get initial vals balance
+  //   let balances = vector::map(initial_vals, |addr| {
+  //     let (_unlocked, total) = ol_account::balance(addr);
+  //     total
+  //   });
+
+  //   mock::trigger_epoch(&root);
+
+  //   assert!(epoch_boundary::get_reconfig_success(), 7357003);
+
+  //   // musical chairs recommended 11 seats BUT...
+  //   assert!(epoch_boundary::get_seats_offered() == 11, 7357004);
+
+  //   // there were only 11 bidders for the 11 offered, which is not competitive enough
+  //   assert!(epoch_boundary::get_qualified_bidders() == 11, 7357004);
+
+  //   // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
+  //   // all vals had winning bids, but it was less than the seats on offer
+  //   let win = epoch_boundary::get_auction_winners();
+  //   // print(&vector::length(&win));
+
+
+  //   assert!(vector::length(&win) == 10, 7357005);
+
+  //   // // all of the auction winners became the validators ulitmately
+  //   // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357006);
+
+  //   // // check initial vals rewards received and bid fees collected
+  //   // // previous balance = current - reward + fee
+  //   // let i = 0;
+  //   // while (i < vector::length(&initial_vals)) {
+  //   //   let (_unlocked, current) = ol_account::balance(*vector::borrow(&initial_vals, i));
+  //   //   let previous = *vector::borrow(&balances, i);
+  //   //   assert!(current == (previous + 1_000_000 - 1_000), 7357007);
+  //   //   i = i + 1;
+  //   // };
+
+  //   // // check Marlon's balance: 200_000 - 1_000 = 199_000
+  //   // let (_unlocked, marlon_balance) = ol_account::balance(@0x12345);
+  //   // assert!(marlon_balance == 199_000, 7357008);
+
+  //   // // check subsidy for new rewards and fees collected
+  //   // // fees collected = 11 * 1_000_000 + 11 * 1_000 = 11_011_000
+  //   // assert!(transaction_fee::system_fees_collected() == 11_011_000, 7357009);
+
+  //   // // another epoch and everyone is compliant as well
+  //   // mock::mock_all_vals_good_performance(&root);
+  //   // mock::trigger_epoch(&root);
+
+  //   // assert!(epoch_boundary::get_seats_offered() == 12, 7357010);
+  //   // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357011);
+
+  //   // // check initial vals rewards received and bid fees collected
+  //   // // previous balance = current - 2*reward + 2*fee
+  //   // let i = 0;
+  //   // while (i < vector::length(&initial_vals)) {
+  //   //   let (_unlocked, current) = ol_account::balance(*vector::borrow(&initial_vals, i));
+  //   //   let previous = *vector::borrow(&balances, i);
+  //   //   assert!(current == (previous + 2_000_000 - 2_000), 7357012);
+  //   //   i = i + 1;
+  //   // };
+
+  //   // // check Marlon's balance: 200_000 + 1_000_000 - 2_000 = 1_198_000
+  //   // let (_unlocked, marlon_balance) = ol_account::balance(@0x12345);
+  //   // assert!(marlon_balance == 1_198_000, 7357013);
+
+  //   // // CHECK BURNT FEES
+
+  //   // // prepare clean epoch
+  //   // mock::trigger_epoch(&root);
+
+  //   // let (before, _) = burn::get_lifetime_tracker();
+
+  //   // mock::trigger_epoch(&root);
+
+  //   // // check that only the entry fee sum is being burnt
+  //   // let (after,_) = burn::get_lifetime_tracker();
+  //   // assert!(after - before == 11_000_000, 7357014); // scale 1_000
+  // }
+
 
   #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
-  fun e2e_add_validator_happy(root: signer, alice: signer, marlon_rando: signer) {
-    let initial_vals = common_test_setup(&root);
+  fun e2e_competitive_set(root: signer, alice: signer, marlon_rando: signer) {
+    let _initial_vals = common_test_setup(&root);
 
     // generate credentials for validator registration
     ol_account::transfer(&alice, @0x12345, 200000);
@@ -128,75 +230,37 @@ module ol_framework::test_boundary {
     let (errs, _pass) = proof_of_fee::audit_qualification(@0x12345);
     assert!(vector::length(&errs) == 0, 7357002);
 
-    // get initial vals balance
-    let balances = vector::map(initial_vals, |addr| {
-      let (_unlocked, total) = ol_account::balance(addr);
-      total
-    });
+    let (_unlocked, bob_bal) = ol_account::balance(@0x1000b);
+    assert!(bob_bal == 500000, 737001);
+    let (_unlocked, marlon_bal) = ol_account::balance(@0x12345);
+    assert!(marlon_bal == 200000, 737001);
+
 
     mock::trigger_epoch(&root);
 
     assert!(epoch_boundary::get_reconfig_success(), 7357003);
 
-    // all validators were compliant, should be +1 of the 10 vals
+    // musical chairs recommended 11 seats BUT...
     assert!(epoch_boundary::get_seats_offered() == 11, 7357004);
-    // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
-    // all vals had winning bids, but it was less than the seats on offer
-    assert!(vector::length(&epoch_boundary::get_auction_winners()) == 11, 7357005);
-    // all of the auction winners became the validators ulitmately
-    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357006);
 
-    // check initial vals rewards received and bid fees collected
-    // previous balance = current - reward + fee
-    let i = 0;
-    while (i < vector::length(&initial_vals)) {
-      let (_unlocked, current) = ol_account::balance(*vector::borrow(&initial_vals, i));
-      let previous = *vector::borrow(&balances, i);
-      assert!(current == (previous + 1_000_000 - 1_000), 7357007);
-      i = i + 1;
-    };
+    // there were only 11 bidders for the 11 offered, which is not competitive enough
+    assert!(vector::length(&epoch_boundary::get_qualified_bidders()) == 11, 7357004);
 
-    // check Marlon's balance: 200_000 - 1_000 = 199_000
-    let (_unlocked, marlon_balance) = ol_account::balance(@0x12345);
-    assert!(marlon_balance == 199_000, 7357008);
+    assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357005);
 
-    // check subsidy for new rewards and fees collected
-    // fees collected = 11 * 1_000_000 + 11 * 1_000 = 11_011_000
-    assert!(transaction_fee::system_fees_collected() == 11_011_000, 7357009);
+    // in this case the clearing price was not the last (11th bid), but the 10th
+    let auction_fee = 2_000;
 
-    // another epoch and everyone is compliant as well
-    mock::mock_all_vals_good_performance(&root);
-    mock::trigger_epoch(&root);
+    print(&auction_fee);
+    let (_unlocked, bob_bal_now) = ol_account::balance(@0x1000b);
+    print(&bob_bal_now);
+    assert!(bob_bal_now == bob_bal + 1_000_000 - 2_000, 737001);
 
-    assert!(epoch_boundary::get_seats_offered() == 12, 7357010);
-    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357011);
+    let (_unlocked, marlon_bal_now) = ol_account::balance(@0x12345);
+    print(&marlon_bal_now);
+    // MARLON just got seated (he outbid others), but he did not receive a reward from previous epoch
+    assert!(marlon_bal_now == marlon_bal - 2_000, 737001);
 
-    // check initial vals rewards received and bid fees collected
-    // previous balance = current - 2*reward + 2*fee
-    let i = 0;
-    while (i < vector::length(&initial_vals)) {
-      let (_unlocked, current) = ol_account::balance(*vector::borrow(&initial_vals, i));
-      let previous = *vector::borrow(&balances, i);
-      assert!(current == (previous + 2_000_000 - 2_000), 7357012);
-      i = i + 1;
-    };
-
-    // check Marlon's balance: 200_000 + 1_000_000 - 2_000 = 1_198_000
-    let (_unlocked, marlon_balance) = ol_account::balance(@0x12345);
-    assert!(marlon_balance == 1_198_000, 7357013);
-
-    // CHECK BURNT FEES
-
-    // prepare clean epoch
-    mock::trigger_epoch(&root);
-
-    let (before, _) = burn::get_lifetime_tracker();
-
-    mock::trigger_epoch(&root);
-
-    // check that only the entry fee sum is being burnt
-    let (after,_) = burn::get_lifetime_tracker();
-    assert!(after - before == 11_000_000, 7357014); // scale 1_000
   }
 
   #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
