@@ -85,7 +85,7 @@ module ol_framework::test_boundary {
     assert!(epoch_boundary::get_reconfig_success(), 7357001);
 
     // all validators were compliant, should be +1 of the 10 vals
-    assert!(epoch_boundary::get_seats_offered() == 11, 7357002);
+    assert!(epoch_boundary::get_max_seats_offered() == 11, 7357002);
 
     // all vals had winning bids, but it was less than the seats on offer
     let winners = epoch_boundary::get_auction_winners();
@@ -142,7 +142,7 @@ module ol_framework::test_boundary {
   //   assert!(epoch_boundary::get_reconfig_success(), 7357003);
 
   //   // musical chairs recommended 11 seats BUT...
-  //   assert!(epoch_boundary::get_seats_offered() == 11, 7357004);
+  //   assert!(epoch_boundary::get_max_seats_offered() == 11, 7357004);
 
   //   // there were only 11 bidders for the 11 offered, which is not competitive enough
   //   assert!(epoch_boundary::get_qualified_bidders() == 11, 7357004);
@@ -180,7 +180,7 @@ module ol_framework::test_boundary {
   //   // mock::mock_all_vals_good_performance(&root);
   //   // mock::trigger_epoch(&root);
 
-  //   // assert!(epoch_boundary::get_seats_offered() == 12, 7357010);
+  //   // assert!(epoch_boundary::get_max_seats_offered() == 12, 7357010);
   //   // assert!(vector::length(&epoch_boundary::get_actual_vals()) == 11, 7357011);
 
   //   // // check initial vals rewards received and bid fees collected
@@ -246,7 +246,7 @@ module ol_framework::test_boundary {
     assert!(epoch_boundary::get_reconfig_success(), 7357003);
 
     // musical chairs recommended 11 seats BUT...
-    assert!(epoch_boundary::get_seats_offered() == 11, 7357004);
+    assert!(epoch_boundary::get_max_seats_offered() == 11, 7357004);
 
     // there were only 11 bidders for the 11 offered, which is not competitive enough
     assert!(vector::length(&epoch_boundary::get_qualified_bidders()) == 11, 7357004);
@@ -282,20 +282,35 @@ module ol_framework::test_boundary {
 
     let vals = validator_universe::get_eligible_validators();
     assert!(vector::length(&vals) == 11, 7357000);
+
+    // HOWEVER there are not sufficient bidders with vouches
+    // marlon has no vouches
+    let (qualified, _) = proof_of_fee::get_bidders_and_bids(true);
+    print(&vector::length(&qualified));
+    assert!(vector::length(&qualified) == 10, 7357000);
+
+
     mock::mock_bids(&vals);
 
     mock::trigger_epoch(&root);
 
     assert!(epoch_boundary::get_reconfig_success(), 7357002);
 
-    // all validators were compliant, should be +1 of the 10 vals
-    assert!(epoch_boundary::get_seats_offered() == 11, 7357003);
+    // all outgoing validators were compliant, max recommended should be +1 of the 10 vals
+    assert!(epoch_boundary::get_max_seats_offered() == 11, 7357003);
+
+    // HOWEVER there are 10 bidders ONLY, so we restrict the supply of seats.
+    // down to 9.
+
+    assert!(epoch_boundary::get_filled_seats() == 9, 7357004);
 
     // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
-    // all vals had winning bids, but it was less than the seats on offer
-    assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357003);
+    // all vals had winning bids
+    // but the number of bidders was equal to the seats, and
+    // to make it competitive, we the seats offered were 9
+    assert!(vector::length(&epoch_boundary::get_auction_winners()) == 9, 7357005);
     // all of the auction winners became the validators ultimately
-    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 10, 7357004);
+    assert!(vector::length(&epoch_boundary::get_actual_vals()) == 9, 7357006);
   }
 
   #[test(root = @ol_framework)]
@@ -388,12 +403,15 @@ module ol_framework::test_boundary {
     // trigger epoch
     mock::trigger_epoch(root);
 
+    assert!(epoch_boundary::get_filled_seats() == 9, 7357001);
+
     // check subsidy increased by 5%
     // fees collected = entry fee + reward * 105%
-    // entry fee = 100 * 10 = 1_000
-    // reward = 1050 * 10 = 10_500
-    // fees collected = 11_500
-    assert!(transaction_fee::system_fees_collected() == 11_500, 7357001);
+    // entry fee = 100 * 9 = 900
+    // reward = 1050 * 9 = 10_500
+    // fees collected = 10_350
+
+    assert!(transaction_fee::system_fees_collected() == 10_350, 7357002);
   }
 
   #[test(root = @ol_framework)]
@@ -417,13 +435,14 @@ module ol_framework::test_boundary {
 
     // trigger epoch
     mock::trigger_epoch(root);
+    assert!(epoch_boundary::get_filled_seats() == 9, 7357001);
 
     // check subsidy decreased by 5%
     // fees collected = entry fee + reward * 95%
-    // entry fee = 97_000 * 10 = 970_000
-    // reward = 95_000 * 10 = 950_000
-    // fees collected = 1_920_000
-    assert!(transaction_fee::system_fees_collected() == 1_920_000, 7357001);
+    // entry fee = 97_000 * 10 = 873_000
+    // reward = 95_000 * 10 = 855_000
+    // fees collected = 1_728_000
+    assert!(transaction_fee::system_fees_collected() == 1_728_000, 7357002);
   }
 
   #[test(root = @ol_framework, marlon = @0x12345)]
