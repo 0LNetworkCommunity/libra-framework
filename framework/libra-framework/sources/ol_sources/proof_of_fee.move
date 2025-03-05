@@ -23,7 +23,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
-  //use diem_std::debug::print;
+  use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
@@ -37,12 +37,12 @@ module ol_framework::proof_of_fee {
   const GENESIS_BASELINE_REWARD: u64 = 1_000_000;
   /// Number of vals needed before PoF becomes competitive for
   /// performant nodes as well
-  const VAL_BOOT_UP_THRESHOLD: u64 = 21;
+  const VAL_BOOT_UP_THRESHOLD: u64 = 4;
   /// This figure is experimental and a different percentage may be finalized
   /// after some experience in the wild. Additionally it could be dynamic
   /// based on another function or simply randomized within a range
   /// (as originally proposed in this feature request)
-  const PCT_REDUCTION_FOR_COMPETITION: u64 = 10; // 10%
+  const PCT_COMPETITIVENESS: u64 = 10; // 10%
   /// Upper bound threshold for bid percentages.
   const BID_UPPER_BOUND: u64 = 0950; // 95%
   /// Lower bound threshold for bid percentages.
@@ -163,7 +163,7 @@ module ol_framework::proof_of_fee {
   public(friend) fun end_epoch(
     vm: &signer,
     outgoing_compliant_set: &vector<address>,
-    mc_set_size: u64 // musical chairs set size suggestion
+    max_recommended_size: u64 // musical chairs set size suggestion
   ): (vector<address>, vector<address>, vector<address>, u64) acquires ProofOfFeeAuction, ConsensusReward {
     system_addresses::assert_ol(vm);
 
@@ -172,10 +172,9 @@ module ol_framework::proof_of_fee {
 
     // Calculate the final set size considering the number of compliant validators,
     // number of qualified bidders, and musical chairs set size suggestion
-    let final_set_size = calculate_final_set_size(
-      vector::length(outgoing_compliant_set),
+    let final_set_size = competitive_set_size(
       vector::length(&only_qualified_bidders),
-      mc_set_size);
+      max_recommended_size);
 
     // This is the core of the mechanism, the uniform price auction
     // the winners of the auction will be the validator set.
@@ -207,28 +206,37 @@ module ol_framework::proof_of_fee {
   // If we have more qualified bidders than the threshold, we should limit the final set size
   // to 90% of the qualified bidders to ensure that vals will compete for seats.
 
-  fun calculate_final_set_size(
-    outgoing_compliant: u64,
+  fun competitive_set_size(
     qualified_bidders: u64,
-    mc_set_size: u64 // musical chairs set size suggestion
+    max_recommended_size: u64 // musical chairs set size suggestion
   ): u64 {
-    // 1. Boot Up
-    if (
-      outgoing_compliant < VAL_BOOT_UP_THRESHOLD &&
-      outgoing_compliant > 2
-    ) {
-      return math64::min(outgoing_compliant + (outgoing_compliant/2 - 1), VAL_BOOT_UP_THRESHOLD)
+    print(&max_recommended_size);
+    // Belt and suspenders
+    // if the musical chairs suggestion is below 4, the practical minimum for BFT, then return 4.
+    if (max_recommended_size < VAL_BOOT_UP_THRESHOLD) {
+      return VAL_BOOT_UP_THRESHOLD
     };
 
-    // 2. Competitive Set
-    if (mc_set_size >= VAL_BOOT_UP_THRESHOLD && qualified_bidders >= VAL_BOOT_UP_THRESHOLD) {
-      let seats_to_remove = qualified_bidders * PCT_REDUCTION_FOR_COMPETITION / 100;
+    // Ensure competitiveness
+    // We want to target there being x% more bidders than seats available.
+    //
+    // If the count of bidders is LESS THAN OR EQUAL recommended set size,
+    // then it's not a competitive set, and we should DECREASE the set size
+    // (according to the max recommendation from musical_chairs)
+    let competitive_threshold = max_recommended_size * (1 + (PCT_COMPETITIVENESS/100));
+    print(&competitive_threshold);
+
+    if (qualified_bidders <= competitive_threshold) {
+      print(&@0x12);
+      print(&qualified_bidders);
+      let seats_to_remove = (qualified_bidders * PCT_COMPETITIVENESS) / 100;
+      print(&seats_to_remove);
       let max_qualified = qualified_bidders - seats_to_remove;
-      // do note increase beyond musical chairs suggestion and competitive set size
-      return math64::min(max_qualified, mc_set_size)
+      // check that we DO NOT increase beyond musical chairs recommendation OR competitive set size
+      return math64::min(max_qualified, max_recommended_size)
     };
 
-    mc_set_size
+    max_recommended_size
   }
 
   /// The fees are charged seperate from the auction and seating loop
@@ -324,17 +332,14 @@ module ol_framework::proof_of_fee {
   public fun calculate_min_vouches_required(set_size: u64): u64 {
     let required = globals::get_validator_vouch_threshold();
 
-    // TODO: set a features switch here
-    //if (false) {
-      if (set_size > VAL_BOOT_UP_THRESHOLD) {
-        // dynamically increase the amount of social proofing as the
-        // validator set increases
-        required = math64::min(
-          (set_size / 10) + 1, // formula to get the min vouches required after bootup
-          globals::get_max_vouches_per_validator() - VOUCH_MARGIN
-        );
-      };
-    //};
+    if (set_size > 21) {
+      // dynamically increase the amount of social proofing as the
+      // validator set increases
+      required = math64::min(
+        (set_size / 10) + 1, // formula to get the min vouches required after bootup
+        globals::get_max_vouches_per_validator() - VOUCH_MARGIN
+      );
+    };
 
     required
   }
@@ -1166,138 +1171,41 @@ module ol_framework::proof_of_fee {
   // Calculate Final Set Size tests
 
   #[test]
-  fun test_calculate_final_set_size_boot_up_happy_day() {
-    // Happy Day: test complete boot up with plenty qualified bidders over multiple epochs
-    // having validators always compliant
+  fun test_competitive_set_size_math() {
+    // Testing we are making the validator set competitive
+    // and checking for failure cases.
 
-    // Epoch 1
-    let outgoing_compliant = 0;
+    // not competitive
     let qualified_bidders = 100;
-    let mc_set_size = 4;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
+    let max_recommended_size = 100;
+    let result = competitive_set_size(qualified_bidders, max_recommended_size);
+    diem_std::debug::print(&result);
+    assert!(result == 90, 7357025);
+
+
+    // happy case
+    // many more bidders than the lowest threshold
+    let qualified_bidders = 100;
+    let max_recommended_size = 50;
+    let result = competitive_set_size(qualified_bidders, max_recommended_size);
+    assert!(result == 50, 7357023);
+
+    // near failure case
+    // many more bidders than the lowest threshold
+    let qualified_bidders = 100;
+    let max_recommended_size = 4;
+    let result = competitive_set_size(qualified_bidders, max_recommended_size);
     assert!(result == 4, 7357023);
 
-    // Epoch 2
-    outgoing_compliant = 4;
-    mc_set_size = 5;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // 4 + (4/2 - 1) = 5
-    assert!(result == 5, 7357024);
-
-    // Epoch 3
-    outgoing_compliant = 5;
-    mc_set_size = 6;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // 5 + (5/2 - 1) = 6
-    assert!(result == 6, 7357025);
-
-    // Epoch 4
-    outgoing_compliant = 6;
-    mc_set_size = 7;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // 6 + (6/2 - 1) = 8
-    assert!(result == 8, 7357026);
-
-    // Epoch 5
-    outgoing_compliant = 8;
-    mc_set_size = 9;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // 8 + (8/2 - 1) = 11
-    assert!(result == 11, 7357027);
-
-    // Epoch 6
-    outgoing_compliant = 11;
-    mc_set_size = 12;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // 11 + (11/2 - 1) = 15
-    assert!(result == 15, 7357028);
-
-    // Epoch 6
-    outgoing_compliant = 15;
-    mc_set_size = 16;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // 15 + (15/2 - 1) = 21
-    // min (21, 21)
-    assert!(result == 21, 7357028);
-
-    // Epoch 7 - Boot up ended
-    outgoing_compliant = 21;
-    mc_set_size = 22;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // min(22, 100*90%) = 22
-    assert!(result == 22, 7357029);
-  }
-
-  #[test]
-  fun test_calculate_final_set_size_boot_up_threshold() {
+    // catch failure mode, somehow recommended size is below 4
     let qualified_bidders = 100;
-
-    // Test boot up increases maximum set size to 21
-    let outgoing_compliant = 20;
-    let mc_set_size = 20;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    assert!(result == 21, 7357030);
-
-    // Test set size stays at 21
-    outgoing_compliant = 21;
-    mc_set_size = 21;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    assert!(result == 21, 7357030);
-
-    // Test set size increases to 22
-    outgoing_compliant = 22;
-    mc_set_size = 22;
-    result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // min (22, 100*90%) = 22
-    assert!(result == 22, 7357030);
+    let max_recommended_size = 2;
+    let result = competitive_set_size(qualified_bidders, max_recommended_size);
+    assert!(result == 4, 7357024);
   }
 
-  #[test]
-  fun test_calculate_final_set_size_competitive_set_no_changes() {
-    let outgoing_compliant = 21;
-    let qualified_bidders = 40;
-    let mc_set_size = 21;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    assert!(result == 21, 7357030);
-  }
-
-  #[test]
-  fun test_calculate_final_set_size_competitive_set_increases() {
-    let outgoing_compliant = 30;
-    let qualified_bidders = 40;
-    let mc_set_size = 31;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    assert!(result == 31, 7357030);
-  }
-
-  #[test]
-  fun test_calculate_final_set_size_competitive_set_decreases() {
-    let outgoing_compliant = 50;
-    let qualified_bidders = 50;
-    let mc_set_size = 50;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    assert!(result == 45, 7357030);
-  }
-
-  #[test]
-  fun test_calculate_final_set_size_competitive_set_decreases_to_boot_up() {
-    let outgoing_compliant = 21;
-    let qualified_bidders = 21;
-    let mc_set_size = 21;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // min(21, 21*90%) = 19
-    assert!(result == 19, 7357030);
-
-    let outgoing_compliant = 21;
-    let qualified_bidders = 20;
-    let mc_set_size = 21;
-    let result = calculate_final_set_size(outgoing_compliant, qualified_bidders, mc_set_size);
-    // mc value
-    assert!(result == 21, 7357030);
-  }
 
   // Tests for calculate_reward_adjustment
-
   #[test]
   public fun cra_nominal_reward_zero() {
     let median_history = vector::empty<u64>();
