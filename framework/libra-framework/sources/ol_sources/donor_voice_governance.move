@@ -3,7 +3,7 @@
   /// This module includes controllers for initializing tallies for
   /// 1. Donors Vetoing specific transactions.
   /// 2. Donors periodically re-authorizing the mandate of the account owners program.
-  /// 3. Donors voting on liquidation of the account.
+  /// 3. Donors voting on liquidation of the account, regardless of the activity of the account.
 
 
   /// For each Donor Voice account there are Donors.
@@ -28,12 +28,14 @@ module ol_framework::donor_voice_governance {
     use ol_framework::cumulative_deposits;
     use diem_framework::account;
     use ol_framework::epoch_helper;
+    use ol_framework::donor_voice_reauth;
     use std::vector;
     // use ol_framework::debug::print;
 
     friend ol_framework::donor_voice;
     friend ol_framework::donor_voice_txs;
 
+    //// ERROR CODES
     /// Is not a donor to this account
     const ENOT_A_DONOR: u64 = 1;
     /// No ballot found under that GUID
@@ -41,9 +43,10 @@ module ol_framework::donor_voice_governance {
     /// A proposal already exists with this data
     const EDUPLICATE_PROPOSAL: u64 = 3;
 
-    /// STATIC
+    /// CONSTANTS
     /// Global window for mandatory
     const AUTHORIZE_WINDOW: u64 = 2;
+
 
     /// Data struct to store all the governance Ballots for vetoes
     /// allows for a generic type of Governance action, using the Participation Vote Poll type to keep track of ballots
@@ -60,20 +63,18 @@ module ol_framework::donor_voice_governance {
     struct Liquidate has drop, store {}
 
     /// GovAction type for authorization
-    struct DonorAuthorized has drop, store {
-      timestamp: u64,
-    }
+    struct Reauth has drop, store {}
 
 
-    public(friend) fun init_donor_governance(dv_account: &signer) {
-      let addr = signer::address_of(dv_account);
+    public(friend) fun init_donor_governance(dv_signer: &signer) {
+      let addr = signer::address_of(dv_signer);
 
       if (!exists<Governance<TurnoutTally<Veto>>>(addr)) {
         let veto = Governance<TurnoutTally<Veto>> {
             tracker: ballot::new_tracker()
         };
 
-        move_to(dv_account, veto);
+        move_to(dv_signer, veto);
       };
 
       if (!exists<Governance<TurnoutTally<Liquidate>>>(addr)) {
@@ -82,17 +83,19 @@ module ol_framework::donor_voice_governance {
             tracker: ballot::new_tracker()
         };
 
-        move_to(dv_account, liquidate);
+        move_to(dv_signer, liquidate);
       };
 
-      if (!exists<Governance<TurnoutTally<DonorAuthorized>>>(addr)) {
+      if (!exists<Governance<TurnoutTally<Reauth>>>(addr)) {
 
-        let liquidate = Governance<TurnoutTally<Liquidate>> {
+        let reauth = Governance<TurnoutTally<Reauth>> {
             tracker: ballot::new_tracker()
         };
 
-        move_to(dv_account, liquidate);
-      }
+        move_to(dv_signer, reauth);
+      };
+
+      donor_voice_reauth::maybe_init(dv_signer);
     }
 
     /// For a Donor Voice account get the total number of votes enrolled from reading the Cumulative tracker.
@@ -100,19 +103,16 @@ module ol_framework::donor_voice_governance {
       cumulative_deposits::get_cumulative_deposits(dv_account)
     }
 
+
     #[view]
     /// view function to check that a user account is a Donor for a Donor Voice account.
     public fun check_is_donor(dv_account: address, user: address): bool {
       get_user_donations(dv_account, user) > 0
     }
 
-    public(friend) fun assert_authorized(sig: &signer, dv_account: address) {
+    public(friend) fun assert_is_voter(sig: &signer, dv_account: address) {
       let user = signer::address_of(sig);
       assert!(check_is_donor(dv_account, user), error::permission_denied(ENOT_A_DONOR));
-    }
-
-    fun is_authorized(user: address, dv_account: address):bool {
-      check_is_donor(dv_account, user)
     }
 
     /// For an individual donor, get the amount of votes that they can cast, based on their cumulative donations to the Donor Voice account.
@@ -134,27 +134,43 @@ module ol_framework::donor_voice_governance {
       turnout_tally::vote<Veto>(user, ballot, uid, veto_tx, user_votes)
     }
 
-  /// Liquidation tally only. The handler for liquidation exists in Donor Voice, where a tx script will call it.
-  public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
-    assert_authorized(donor, multisig_address);
-    let state = borrow_global_mut<Governance<TurnoutTally<Liquidate>>>(multisig_address);
-    // for liquidation there is only ever one proposal, which never expires
-    // so always taket the first one from pending.
-    let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
+    /// Liquidation tally only. The handler for liquidation exists in Donor Voice, where a tx script will call it.
+    public(friend) fun vote_reauthorize(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
+      assert_is_voter(donor, multisig_address);
+      let state = borrow_global_mut<Governance<TurnoutTally<Reauth>>>(multisig_address);
+      // In a Reauth vote there is only ever one proposal at a time.
+      let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
 
-    if (vector::is_empty(pending_list)) {
-      return option::none<bool>()
-    };
+      if (vector::is_empty(pending_list)) {
+        return option::none<bool>()
+      };
 
-    let ballot = vector::borrow_mut(pending_list, 0);
-    let ballot_guid = ballot::get_ballot_id(ballot);
-    let tally_state = ballot::get_type_struct_mut(ballot);
-    let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
+      let ballot = vector::borrow_mut(pending_list, 0);
+      let ballot_guid = ballot::get_ballot_id(ballot);
+      let tally_state = ballot::get_type_struct_mut(ballot);
+      let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
 
-    turnout_tally::vote(donor, tally_state, &ballot_guid, true, user_weight)
-  }
+      turnout_tally::vote(donor, tally_state, &ballot_guid, true, user_weight)
+    }
 
+    /// Liquidation tally only. The handler for liquidation exists in Donor Voice, where a tx script will call it.
+    public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
+      assert_is_voter(donor, multisig_address);
+      let state = borrow_global_mut<Governance<TurnoutTally<Liquidate>>>(multisig_address);
+      // Like reauth in liquidation there is only ever one proposal at a time.
+      let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
 
+      if (vector::is_empty(pending_list)) {
+        return option::none<bool>()
+      };
+
+      let ballot = vector::borrow_mut(pending_list, 0);
+      let ballot_guid = ballot::get_ballot_id(ballot);
+      let tally_state = ballot::get_type_struct_mut(ballot);
+      let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
+
+      turnout_tally::vote(donor, tally_state, &ballot_guid, true, user_weight)
+    }
 
     //////// API ////////
 
@@ -164,7 +180,7 @@ module ol_framework::donor_voice_governance {
 
     public(friend) fun veto_by_id(user: &signer, proposal_guid: &guid::ID): Option<bool> acquires Governance {
       let dv_account = guid::id_creator_address(proposal_guid);
-      assert_authorized(user, dv_account);
+      assert_is_voter(user, dv_account);
 
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(dv_account);
 
@@ -177,7 +193,7 @@ module ol_framework::donor_voice_governance {
 
     public(friend) fun sync_ballot_and_tx_expiration(user: &signer, proposal_guid: &guid::ID, epoch_deadline: u64) acquires Governance {
       let dv_account = guid::id_creator_address(proposal_guid);
-      assert_authorized(user, dv_account);
+      assert_is_voter(user, dv_account);
 
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(dv_account);
 
@@ -188,6 +204,7 @@ module ol_framework::donor_voice_governance {
 
     }
 
+    /// TX HELPERS
     /// only Donor Voice can call this. The veto and liquidate handlers need
     /// to be located there. So users should not call functions here.
     public(friend) fun propose_veto(
@@ -205,6 +222,14 @@ module ol_framework::donor_voice_governance {
     ): guid::ID acquires Governance {
       let data = Liquidate {};
       propose_gov<Liquidate>(cap, data, epochs_duration)
+    }
+
+    public(friend) fun propose_reauth(
+      cap: &account::GUIDCapability,
+      epochs_duration: u64
+    ): guid::ID acquires Governance {
+      let data = Reauth {};
+      propose_gov<Reauth>(cap, data, epochs_duration)
     }
 
     /// a private function to propose a ballot for a veto. This is called by a verified donor.
@@ -259,7 +284,7 @@ module ol_framework::donor_voice_governance {
       true
     }
 
-    // with a known transaction uid, scan all the pending vetos to see if there is a veto for that transaction, and what the index is.
+    // with a known transaction uid, scan all the pending vetoes to see if there is a veto for that transaction, and what the index is.
     // NOTE: what is being returned is a different ID, that of the proposal to veto
     public(friend) fun find_tx_veto_id(tx_id: guid::ID): (bool, guid::ID) acquires Governance {
       // let proposal_guid = guid::create_id(dv_account, id);
@@ -283,7 +308,7 @@ module ol_framework::donor_voice_governance {
 
     //////// GETTERS ////////
     #[view]
-    // for a transaction UID return if the address and proposal ID have any vetos. guid::ID is destructured for view functions
+    // for a transaction UID return if the address and proposal ID have any vetoes. guid::ID is destructured for view functions
     public fun tx_has_veto(dv_account: address, id: u64): bool acquires Governance {
       let uid = guid::create_id(dv_account, id);
       let (found, _) = find_tx_veto_id(uid);
@@ -306,8 +331,16 @@ module ol_framework::donor_voice_governance {
     }
 
     #[view]
-    public fun is_liquidation_propsed(dv_account: address): bool acquires Governance {
+    public fun is_liquidation_proposed(dv_account: address): bool acquires Governance {
       let state = borrow_global_mut<Governance<TurnoutTally<Liquidate>>>(dv_account);
+      let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      vector::length(list_pending) > 0
+    }
+
+    #[view]
+    public fun is_reauth_proposed(dv_account: address): bool acquires Governance {
+      let state = borrow_global_mut<Governance<TurnoutTally<Reauth>>>(dv_account);
       let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
 
       vector::length(list_pending) > 0

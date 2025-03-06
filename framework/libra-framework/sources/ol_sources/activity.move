@@ -23,4 +23,14 @@ module ol_framework::activity {
     state.timestamp = timestamp;
 
   }
+
+  #[view]
+  /// get the last activity timestamp of a user
+  public fun get_last_activity_usecs(user: address): u64 acquires Activity {
+    if (exists<Activity>(user)) {
+      let state = borrow_global<Activity>(user);
+      return state.timestamp
+    };
+    0
+  }
 }

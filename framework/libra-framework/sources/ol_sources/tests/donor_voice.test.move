@@ -707,7 +707,7 @@ module ol_framework::test_donor_voice {
       // Dave proposes to liquidate the account.
       donor_voice_txs::test_propose_liquidation(dave, donor_voice_address);
 
-      assert!(donor_voice_governance::is_liquidation_propsed(donor_voice_address), 7357004);
+      assert!(donor_voice_governance::is_liquidation_proposed(donor_voice_address), 7357004);
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
@@ -790,7 +790,7 @@ module ol_framework::test_donor_voice {
       // Dave proposes to liquidate the account.
       donor_voice_txs::test_propose_liquidation(dave, donor_voice_address);
 
-      assert!(donor_voice_governance::is_liquidation_propsed(donor_voice_address), 7357004);
+      assert!(donor_voice_governance::is_liquidation_proposed(donor_voice_address), 7357004);
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
