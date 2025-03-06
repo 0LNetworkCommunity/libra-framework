@@ -3,6 +3,7 @@
 
 
 module ol_framework::donor_voice_reauth {
+    use std::error;
     use std::signer;
     use std::timestamp;
     use diem_framework::account;
@@ -10,6 +11,11 @@ module ol_framework::donor_voice_reauth {
 
     friend ol_framework::donor_voice_txs;
     friend ol_framework::donor_voice_governance;
+
+    /// ERROR CODES
+
+    /// Donor Voice account has not been reauthorized and the donor authorization expired.
+    const EDONOR_VOICE_AUTHORITY_EXPIRED: u64 = 0;
 
     /// CONSTANTS
     /// Seconds in one year
@@ -42,6 +48,11 @@ module ol_framework::donor_voice_reauth {
 
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.timestamp = now;
+    }
+
+
+    public(friend) fun assert_authorized(dv_account: address) {
+      assert!(is_authorized(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
     }
 
     #[view]

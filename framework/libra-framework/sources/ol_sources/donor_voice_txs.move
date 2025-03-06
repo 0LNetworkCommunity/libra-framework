@@ -221,7 +221,10 @@ module ol_framework::donor_voice_txs {
       value: u64,
       description: vector<u8>
     ): guid::ID acquires TxSchedule {
+
       assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
+
+      donor_voice_reauth::assert_authorized(multisig_address);
 
       assert!(slow_wallet::is_slow(payee), error::invalid_argument(EPAYEE_NOT_SLOW));
 
@@ -863,6 +866,7 @@ module ol_framework::donor_voice_txs {
     value: u64,
     description: vector<u8>
   )  acquires TxSchedule {
+    donor_voice_reauth::assert_authorized(multisig_address);
     propose_payment(&auth, multisig_address, payee, value, description);
   }
 
