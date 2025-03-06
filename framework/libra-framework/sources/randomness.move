@@ -29,8 +29,7 @@ module diem_framework::randomness {
     use std::vector;
     use diem_framework::system_addresses;
     use diem_framework::transaction_context;
-    #[test_only]
-    use diem_std::debug;
+
     #[test_only]
     use diem_std::table_with_length;
 
@@ -455,8 +454,7 @@ module diem_framework::randomness {
         set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
         // Test cases should always have no bias for any randomness call.
         // assert!(is_unbiasable(), 0);
-        let num = u64_integer();
-        debug::print(&num);
+        let _num = u64_integer();
     }
 
     // #[test_only]
