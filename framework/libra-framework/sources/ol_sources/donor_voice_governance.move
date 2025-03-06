@@ -1,5 +1,9 @@
 
   /// Donor Voice account governance. See documentation at Donor Voice.move
+  /// This module includes controllers for initializing tallies for
+  /// 1. Donors Vetoing specific transactions.
+  /// 2. Donors periodically re-authorizing the mandate of the account owners program.
+  /// 3. Donors voting on liquidation of the account.
 
 
   /// For each Donor Voice account there are Donors.
@@ -7,8 +11,12 @@
   /// The Donor Voice account also has a tracker for the Cumulative amount of funds that have been sent to this account.
   /// We will use the lifetime cumulative amounts sent as the total amount of votes that can be cast (voter enrollment).
 
-  /// The voting on a veto of a transaction or an outright liquidation of the account is done by the Donors.
-  /// The voting mechanism is a TurnoutTally. Such votes ajust the threshold for passing a vote based on the actual turnout. I.e. The fewer people that vote, the higher the threshold to reach consensus. But a vote is not scuttled if the turnout is low. See more details in the TurnoutTally.move module.
+  /// VOTERS
+  /// The voting on a veto of a transaction, reauthorization of mandate, or an outright liquidation of the account is done by the Donors.
+
+  /// TALLY
+  /// The voting mechanism is a TurnoutTally. Such votes adjust the threshold for passing a vote based on the actual turnout. I.e., the fewer people that vote, the higher the threshold to reach consensus. But a vote is not scuttled if the turnout is low. See more details in the TurnoutTally.move module.
+
 module ol_framework::donor_voice_governance {
     use std::error;
     use std::signer;
@@ -33,21 +41,29 @@ module ol_framework::donor_voice_governance {
     /// A proposal already exists with this data
     const EDUPLICATE_PROPOSAL: u64 = 3;
 
+    /// STATIC
+    /// Global window for mandatory
+    const AUTHORIZE_WINDOW: u64 = 2;
 
-
-    /// Data struct to store all the governance Ballots for vetos
+    /// Data struct to store all the governance Ballots for vetoes
     /// allows for a generic type of Governance action, using the Participation Vote Poll type to keep track of ballots
     struct Governance<T> has key {
       tracker: BallotTracker<T>,
     }
 
-    /// this is a GovAction type for veto
+    /// GovAction type for veto
     struct Veto has drop, store {
       guid: guid::ID,
     }
 
-    /// this is a GovAction type for liquidation
+    /// GovAction type for liquidation
     struct Liquidate has drop, store {}
+
+    /// GovAction type for authorization
+    struct DonorAuthorized has drop, store {
+      timestamp: u64,
+    }
+
 
     public(friend) fun init_donor_governance(dv_account: &signer) {
       let addr = signer::address_of(dv_account);
@@ -61,6 +77,15 @@ module ol_framework::donor_voice_governance {
       };
 
       if (!exists<Governance<TurnoutTally<Liquidate>>>(addr)) {
+
+        let liquidate = Governance<TurnoutTally<Liquidate>> {
+            tracker: ballot::new_tracker()
+        };
+
+        move_to(dv_account, liquidate);
+      };
+
+      if (!exists<Governance<TurnoutTally<DonorAuthorized>>>(addr)) {
 
         let liquidate = Governance<TurnoutTally<Liquidate>> {
             tracker: ballot::new_tracker()

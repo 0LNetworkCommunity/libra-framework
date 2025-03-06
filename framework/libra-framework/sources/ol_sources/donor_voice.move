@@ -12,12 +12,12 @@
 /// specific actions: alerting the Owner and Depositors from
 /// unauthorized transaction.
 
-/// The DonorVoice Account Lifecycle:
+/// The DonorVoice transaction Lifecycle:
 /// Proxy Authorities use a MultiSig to schedule ->
 /// Once scheduled the Donors use a TurnoutTally to Veto ->
 /// Epoch boundary: transaction executes when the VM reads the Schedule struct at the epoch boundary, and issues payment.
 
-/// By creating a TxSchedule wallet you are providing certain restrictions and guarantees to the users that interact with this wallet.
+/// By creating a DonorVoice wallet you are providing certain restrictions and guarantees to the users that interact with this wallet.
 
 /// 1. The wallet's contents is property of the owner. The owner is free to issue transactions which change the state of the wallet, including transferring funds. There are however time, and veto policies.
 
@@ -32,6 +32,16 @@
 /// 6. The donors can vote to liquidate a frozen TxSchedule account. The result will depend on the configuration of the TxSchedule account from when it was initialized: the funds by default return to the end user who was the donor.
 
 /// 7. Third party contracts can wrap the Donor Voice wallet. The outcomes of the votes can be returned to a handler in a third party contract For example, liquidation of a frozen account is programmable: a handler can be coded to determine the outcome of the Donor Voice wallet. See in CommunityWallets the funds return to the InfrastructureEscrow side-account of the user.
+
+/// 8. Reauthorization.
+/// Periodically, Donor Voice accounts, (a.k.a Community Wallets) must
+/// be re-authorized by their donors.
+/// Community wallets may become inactive for a number of reasons,
+/// We assume two cases:
+/// a. Inactivity: Donor Voice accounts without any transactions activity in the prior
+/// year need to be reauthorized. The module activity.move tracks this
+/// with a timestamp.
+/// b. Mandatory: All accounts irrespective of activity need to be reauthorized every X years (AUTHORIZE_WINDOW in the code).
 
 module ol_framework::donor_voice {
     use std::vector;
