@@ -1,4 +1,3 @@
-
 /// Donor Voice wallets is a service of the chain.
 /// Any address can voluntarily turn their account into a Donor Voice account.
 
@@ -23,7 +22,7 @@
 
 /// 2. All transfers out of the account are timed. Meaning, they will execute automatically after a set period of time passes. The VM address triggers these events at each epoch boundary. The purpose of the delayed transfers is that the transaction can be paused for analysis, and eventually rejected by the donors of the wallet.
 
-/// 3. Every pending transaction can be "vetoed". Each veto delays the finalizing of the transaction, to allow more time for analysis. Each veto adds one day/epoch to the transaction PER DAY THAT A VETO OCCURS. That is, two vetos happening in the same day, only extend the vote by one day. If a sufficient number of Donors vote on the Veto, then the transaction will be rejected. Since TxSchedule has an expiration time, as does ParticipationVote, each time there is a veto, the deadlines for both are synchronized, based on the new TxSchedule expiration time.
+/// 3. Every pending transaction can be "vetoed". Each veto delays the finalizing of the transaction, to allow more time for analysis. Each veto adds one day/epoch to the transaction PER DAY THAT A VETO OCCURS. That is, two vetoes happening in the same day, only extend the vote by one day. If a sufficient number of Donors vote on the Veto, then the transaction will be rejected. Since TxSchedule has an expiration time, as does ParticipationVote, each time there is a veto, the deadlines for both are synchronized, based on the new TxSchedule expiration time.
 
 /// 4. After three consecutive transaction rejections, the account will become frozen. The funds remain in the account but no operations are available until the Donors, un-freeze the account.
 
@@ -56,9 +55,6 @@ module ol_framework::donor_voice_txs {
     use ol_framework::match_index;
     use ol_framework::donor_voice;
     use ol_framework::slow_wallet;
-
-
-    use diem_std::debug::print;
 
     friend ol_framework::community_wallet_init;
     friend ol_framework::epoch_boundary;
@@ -154,7 +150,7 @@ module ol_framework::donor_voice_txs {
       cumulative_deposits::init_cumulative_deposits(sponsor);
 
       // we are setting liquidation to match_index as false by default
-      // the user can send another transacton to change this.
+      // the user can send another transaction to change this.
       let liquidate_to_match_index = false;
       structs_init(sponsor, liquidate_to_match_index);
       make_multi_action(sponsor);
@@ -165,7 +161,7 @@ module ol_framework::donor_voice_txs {
       if (!donor_voice::is_root_init()) return;
 
       // exit gracefully in migration cases
-      // if Freeze exists everthing else is likely created
+      // if Freeze exists everything else is likely created
       if (exists<Freeze>(signer::address_of(sig))) return;
 
       move_to<Freeze>(
@@ -358,14 +354,9 @@ module ol_framework::donor_voice_txs {
       let list = &mut state.scheduled;
       let split_point = vector::stable_partition<TimedTransfer>(list, |e| {
         let e: &TimedTransfer = e;
-        // &tt.deadline > epoch
-        // print(&tt.uid);
-        print(&e.deadline);
-        print(&epoch);
+
         e.deadline > epoch
       });
-     print(&split_point);
-    //  vector::empty()
       vector::trim(&mut state.scheduled, split_point)
     }
 
@@ -379,7 +370,6 @@ module ol_framework::donor_voice_txs {
       let i = 0;
 
       let due_list = filter_scheduled_due(state, epoch);
-      print(&due_list);
 
       // find all Txs scheduled prior to this epoch.
       let len = vector::length(&due_list);
@@ -401,13 +391,7 @@ module ol_framework::donor_voice_txs {
           amount_transferred = coin::value(&c);
           ol_account::vm_deposit_coins_locked(vm, t.tx.payee, c);
           // update the records (don't copy or drop)
-          print(&state.scheduled);
-          print(&state.paid);
-
-
           vector::push_back(&mut state.paid, t);
-          print(&state.scheduled);
-          print(&state.paid);
         } else {
           // if it could not be paid because of low balance,
           // place it back on the scheduled list
@@ -716,6 +700,7 @@ module ol_framework::donor_voice_txs {
     testnet::assert_testnet(vm);
     make_donor_voice(sig);
     multi_action::propose_offer_internal(sig, initial_authorities, option::none());
+    donor_voice_reauth::test_set_authorized(vm, signer::address_of(sig));
   }
 
   #[view]
@@ -853,8 +838,6 @@ module ol_framework::donor_voice_txs {
     let f = borrow_global_mut<Freeze>(signer::address_of(sponsor));
     f.liquidate_to_match_index = liquidate_to_match_index;
   }
-
-
 
   //////// TX HELPER ////////
 

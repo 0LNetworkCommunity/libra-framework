@@ -1,4 +1,3 @@
-
 /// Donor Voice wallets is a service of the chain.
 /// Any address can voluntarily turn their account into a Donor Voice account.
 
@@ -23,7 +22,7 @@
 
 /// 2. All transfers out of the account are timed. Meaning, they will execute automatically after a set period of time passes. The VM address triggers these events at each epoch boundary. The purpose of the delayed transfers is that the transaction can be paused for analysis, and eventually rejected by the donors of the wallet.
 
-/// 3. Every pending transaction can be "vetoed". Each veto delays the finalizing of the transaction, to allow more time for analysis. Each veto adds one day/epoch to the transaction PER DAY THAT A VETO OCCURs. That is, two vetos happening in the same day, only extend the vote by one day. If a sufficient number of Donors vote on the Veto, then the transaction will be rejected. Since TxSchedule has an expiration time, as does ParticipationVote, each time there is a veto, the deadlines for both are synchronized, based on the new TxSchedule expiration time.
+/// 3. Every pending transaction can be "vetoed". Each veto delays the finalizing of the transaction, to allow more time for analysis. Each veto adds one day/epoch to the transaction PER DAY THAT A VETO OCCURs. That is, two vetoes happening in the same day, only extend the vote by one day. If a sufficient number of Donors vote on the Veto, then the transaction will be rejected. Since TxSchedule has an expiration time, as does ParticipationVote, each time there is a veto, the deadlines for both are synchronized, based on the new TxSchedule expiration time.
 
 /// 4. After three consecutive transaction rejections, the account will become frozen. The funds remain in the account but no operations are available until the Donors, un-freeze the account.
 
@@ -129,10 +128,10 @@ module ol_framework::donor_voice {
       }
     }
 
-  #[view]
-  /// list of accounts that are pending liquidation after a successful vote to liquidate
-  public fun get_liquidation_queue(): vector<address> acquires Registry{
-    let f = borrow_global<Registry>(@ol_framework);
-    *&f.liquidation_queue
-  }
+    #[view]
+    /// list of accounts that are pending liquidation after a successful vote to liquidate
+    public fun get_liquidation_queue(): vector<address> acquires Registry{
+      let f = borrow_global<Registry>(@ol_framework);
+      *&f.liquidation_queue
+    }
 }
