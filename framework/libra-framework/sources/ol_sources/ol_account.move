@@ -251,8 +251,7 @@ module ol_framework::ol_account {
     // transfer with capability, and do appropriate checks on both sides, and
     // track the slow wallet
     // NOTE: this requires that the account exists, since the SENDER signature is not used
-    fun transfer_with_capability(cap: &WithdrawCapability, recipient:
-    address, amount: u64) acquires BurnTracker {
+    public(friend) fun transfer_with_capability(cap: &WithdrawCapability, recipient: address, amount: u64) acquires BurnTracker {
       if(!account::exists_at(recipient)) return; // exit without abort,
       // since this might be called by the 0x0 at an epoch boundary.
       let payer = account::get_withdraw_cap_address(cap);

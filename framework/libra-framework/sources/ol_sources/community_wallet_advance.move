@@ -19,11 +19,12 @@
 
 module ol_framework::community_wallet_advance {
   use std::error;
-  // use std::signer;
+  use std::signer;
+  use std::timestamp;
   use std::vector;
   use std::guid::{Self, GUID, ID};
-  use diem_framework::account::{Self, WithdrawCapability};
-  use diem_framework::coin::{Coin};
+  use diem_framework::account::{Self, GUIDCapability, WithdrawCapability};
+  use diem_framework::coin::{Self, Coin};
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{LibraCoin};
 
@@ -56,21 +57,26 @@ module ol_framework::community_wallet_advance {
   /// This is just a tracker,
   /// coins themselves are kept in the default CoinStore struct
   /// so that balances can easily be calculated
-  struct AdvanceFunds has key {
-    coins_available: u64
+  struct Credit has key {
+    credit_available: u64,
+    payment_history: vector<Payment>
   }
 
-  /// For Global state, so we can easily query
-  /// all CW advance loans
+  struct Payment has key, store {
+    timestamp_usecs: u64,
+    coins: u64,
+  }
+
+  /// keep all loans in global state, so we can easily query
   struct EndowmentAdvanceRegistry has key {
-    list: vector<AdvanceLoan>,
+    list: vector<LetterOfCredit>,
   }
   /// unit of loan
-  struct AdvanceLoan has key, store {
+  struct LetterOfCredit has key, store {
     id: GUID,
     cw: address,
     amount: u64,
-    due_date: u64,
+    due_timestamp_usecs: u64,
     repaid: bool,
   }
 
@@ -78,10 +84,21 @@ module ol_framework::community_wallet_advance {
   public fun initialize(framework_sig: &signer) {
     if (!exists<EndowmentAdvanceRegistry>(@diem_framework)) {
       move_to<EndowmentAdvanceRegistry>(framework_sig, EndowmentAdvanceRegistry{
-        list: vector::empty<AdvanceLoan>()
+        list: vector::empty<LetterOfCredit>()
       });
     }
   }
+
+  /// Initialize the loan feature for a community wallet
+  public fun init_user(dv_account: &signer) {
+    if (!exists<Credit>(signer::address_of(dv_account))) {
+      move_to<Credit>(dv_account, Credit{
+        credit_available: 0,
+        payment_history: vector::empty(),
+      });
+    }
+  }
+
 
   /// find the list of loans taken by an address, and return the vector of GUID for each
   public fun find_loans_by_address(dv_account: address): vector<ID> acquires EndowmentAdvanceRegistry {
@@ -103,23 +120,6 @@ module ol_framework::community_wallet_advance {
     ids
   }
 
-  // /// Find the loans taken by an address
-  // public fun borrow_mut_loans_by_address(dv_account: address): &mut vector<AdvanceLoan> {
-  //   let registry = borrow_global_mut<EndowmentAdvanceRegistry>(@diem_framework);
-  //   let loans = vector::empty<AdvanceLoan>();
-
-
-  //   vector::filter(&mut registry.list, |loan| {
-  //     if (loan.cw == dv_account) {
-  //     vector::push_back(&mut loans, loan);
-  //     }
-  //   });
-  //   if (vector::is_empty(&loans)) {
-  //     error::invalid_argument(E_LOAN_NOT_FOUND);
-  //   };
-  //   loans
-  // }
-
   /// Find idx of loan by GUID
   fun loan_idx_by_guid(id: ID): u64 acquires EndowmentAdvanceRegistry {
     let list = &mut borrow_global_mut<EndowmentAdvanceRegistry>(@diem_framework).list;
@@ -139,26 +139,34 @@ module ol_framework::community_wallet_advance {
 
 
   /// Withdraw funds from advance funds
-  public fun withdraw_funds(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires AdvanceFunds {
+  // TODO: unclear if this is needed for programmatic sending
+  fun withdraw_funds(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires Credit {
     assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
     let payer = account::get_withdraw_cap_address(cap);
-    let advance_funds = borrow_global_mut<AdvanceFunds>(payer);
-    let limit = advance_funds.coins_available;
+    let advance_funds = borrow_global_mut<Credit>(payer);
+    let limit = advance_funds.credit_available;
     if (amount > limit) {
       error::invalid_argument(EINSUFFICIENT_FUNDS);
     };
-    advance_funds.coins_available = limit - amount;
+    advance_funds.credit_available = limit - amount;
     ol_account::withdraw_with_capability(cap, amount)
   }
 
-
-  // /// Initialize the loan feature for a community wallet
-  // public fun initialize(account: &signer) {
-  //   // Implementation goes here
-  // }
+  public fun transfer_from_advance(cap: &WithdrawCapability, recipient: address, amount: u64) acquires Credit {
+    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
+    let payer = account::get_withdraw_cap_address(cap);
+    let advance_funds = borrow_global_mut<Credit>(payer);
+    let limit = advance_funds.credit_available;
+    if (amount > limit) {
+      error::invalid_argument(EINSUFFICIENT_FUNDS);
+    };
+    advance_funds.credit_available = limit - amount;
+    ol_account::transfer_with_capability(cap, recipient, amount);
+  }
 
   /// Management requests loan from actively managed community wallet
-  public fun request_advance(cap: &WithdrawCapability, amount: u64) acquires EndowmentAdvanceRegistry, AdvanceFunds {
+  /// belt and suspenders requires both capabilities.
+  public fun request_advance(cap: &WithdrawCapability, guid_capability: &GUIDCapability, amount: u64) acquires EndowmentAdvanceRegistry, Credit {
     let account_address = account::get_withdraw_cap_address(cap);
     let (_, total_balance) = ol_account::balance(account_address);
 
@@ -174,41 +182,91 @@ module ol_framework::community_wallet_advance {
       error::invalid_argument(ENEW_BALANCE_WOULD_EXCEED_CREDIT_LIMIT);
     };
 
-    let advance_funds = borrow_global_mut<AdvanceFunds>(account_address);
+    let advance_funds = borrow_global_mut<Credit>(account_address);
 
-    advance_funds.coins_available = advance_funds.coins_available + amount;
+    advance_funds.credit_available = advance_funds.credit_available + amount;
 
+    let loan_doc = LetterOfCredit {
+      id: account::create_guid_with_capability(guid_capability),
+      cw: account_address,
+      amount: amount,
+      due_timestamp_usecs: timestamp::now_seconds() + 31536000, // 1 year from now
+      repaid: false
+    };
+
+    let state = borrow_global_mut<EndowmentAdvanceRegistry>(@diem_framework);
+    vector::push_back(&mut state.list, loan_doc);
   }
 
-  // public fun send_from_unlocked(account: &signer, amount: u64) {
-  //   // Implementation goes here
-  // }
 
-  // /// Repay a loan to the community wallet
-  // public fun repay_loan(cap: &account::GUIDCapability, coin: Coin<LibraCoin>) {
-  //   // Implementation goes here
-  // }
+  #[view]
+  /// Check if any loan is overdue
+  public fun is_loan_overdue(dv_account: address): bool acquires EndowmentAdvanceRegistry {
+    let list = &borrow_global<EndowmentAdvanceRegistry>(@diem_framework).list;
+    let current_time = timestamp::now_seconds();
 
-  // #[view]
-  // /// Check if a loan is overdue
-  // public fun is_loan_overdue(dv_account: address): bool {
-  //   // Implementation goes here
-  //   false
-  // }
+    let i = 0;
+    while (i < vector::length(list)) {
+      let el = vector::borrow(list, i);
+      if (el.cw == dv_account && !el.repaid && el.due_timestamp_usecs < current_time) {
+        return true
+      };
+      i = i + 1;
+    };
+    false
+  }
 
-  // /// Disable the community wallet if the loan is overdue
-  // fun deauthorize(cap: &account::GUIDCapability) {
-  //   // TODO: link to donor_voice_reauth.move when merged
-  //   // Implementation goes here
-  // }
+  /// Disable the community wallet if the loan is overdue
+  // callable by anyone
+  public entry fun maybe_deauthorize(dv_account: address) acquires EndowmentAdvanceRegistry {
+    if (is_loan_overdue(dv_account)){
+      // TODO: call donor_voice_reauthorize when it is merged
+    }
+  }
 
-  // /// Service the loan with new donations
-  // public fun maybe_service_loan_with_donations(account: &signer, donation_amount: u64) {
-  //   // Implementation goes here
-  // }
+  /// Service the loan with new coins
+  public fun service_loan_with_coin(dv_address: address, coins: Coin<LibraCoin>) acquires Credit {
+    let state = borrow_global_mut<Credit>(dv_address);
+    let payment_receipt = Payment {
+      timestamp_usecs: timestamp::now_seconds(),
+      coins: coin::value(&coins),
+    };
+    vector::push_back(&mut state.payment_history, payment_receipt);
+    ol_account::deposit_coins(dv_address, coins);
+  }
 
-  /// Total borrowed
-  public fun total_borrowed(account: address): u64 acquires EndowmentAdvanceRegistry {
+  /// finds the oldest unpaid letter of credit
+  /// returns the id, and the balance amount
+  fun find_oldest_loan_id(dv_account: address): (ID, u64) acquires EndowmentAdvanceRegistry {
+    let ids = find_loans_by_address(dv_account);
+    let oldest_loan_id = vector::borrow(&ids, 0);
+    let oldest_loan_idx = loan_idx_by_guid(*oldest_loan_id);
+    let oldest_loan_amount = 0;
+
+    let oldest_due_timestamp_usecs = { // new scope to drop the borrow
+      let oldest_loan = vector::borrow(&borrow_global<EndowmentAdvanceRegistry>(@diem_framework).list, oldest_loan_idx);
+      oldest_loan.due_timestamp_usecs
+    };
+
+    let i = 1;
+    while (i < vector::length(&ids)) {
+      let loan_id = vector::borrow(&ids, i);
+      let loan_idx = loan_idx_by_guid(*loan_id);
+      let loan = vector::borrow(&borrow_global<EndowmentAdvanceRegistry>(@diem_framework).list, loan_idx);
+      if (loan.due_timestamp_usecs < oldest_due_timestamp_usecs) {
+      oldest_loan_id = loan_id;
+      oldest_due_timestamp_usecs = loan.due_timestamp_usecs;
+      oldest_loan_amount = loan.amount;
+      };
+      i = i + 1;
+    };
+
+    (*oldest_loan_id, oldest_loan_amount)
+  }
+
+  #[view]
+  /// Total borrowed by account
+  public fun total_credit_requested(account: address): u64 acquires EndowmentAdvanceRegistry {
     let loans = find_loans_by_address(account);
     let total = 0;
     let i = 0;
@@ -222,10 +280,11 @@ module ol_framework::community_wallet_advance {
     total
   }
 
-  /// Calculate the total outstanding loans compared to the balance in AdvanceFunds struct
-  public fun total_outstanding_balance(account: address): u64 acquires EndowmentAdvanceRegistry, AdvanceFunds {
-    let advance_funds = borrow_global<AdvanceFunds>(account);
-    let total_borrowed = total_borrowed(account);
-    advance_funds.coins_available - total_borrowed
+  #[view]
+  /// Calculate the total outstanding loans compared to the balance in Credit struct
+  public fun total_outstanding_balance(account: address): u64 acquires EndowmentAdvanceRegistry, Credit {
+    let advance_funds = borrow_global<Credit>(account);
+    let total_credit_requested = total_credit_requested(account);
+    advance_funds.credit_available - total_credit_requested
   }
 }
