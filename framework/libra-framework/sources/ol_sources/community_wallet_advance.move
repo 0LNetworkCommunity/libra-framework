@@ -19,34 +19,45 @@
 
 module ol_framework::community_wallet_advance {
   use std::error;
-  use std::signer;
+  // use std::signer;
   use std::vector;
   use std::guid::{Self, GUID, ID};
+  use diem_framework::account::{Self, WithdrawCapability};
   use diem_framework::coin::{Coin};
-  use ol_framework::libra_coin::{Self, LibraCoin};
+  use ol_framework::ol_account;
+  use ol_framework::libra_coin::{LibraCoin};
 
   /// Error code indicating that the account does not have enough funds to complete the transaction.
-  const E_INSUFFICIENT_FUNDS: u64 = 1;
+  const EINSUFFICIENT_FUNDS: u64 = 1;
 
   /// Error code indicating that the specified loan could not be found.
-  const E_LOAN_NOT_FOUND: u64 = 2;
+  const ELOAN_NOT_FOUND: u64 = 2;
 
   /// Error code indicating that the loan has already been repaid.
-  const E_LOAN_ALREADY_REPAID: u64 = 3;
+  const ELOAN_ALREADY_REPAID: u64 = 3;
 
   /// Error code indicating that the loan is overdue.
-  const E_LOAN_OVERDUE: u64 = 4;
+  const ELOAN_OVERDUE: u64 = 4;
 
   /// Error code indicating that the yearly limit for loans has been exceeded.
-  const E_YEARLY_LIMIT_EXCEEDED: u64 = 5;
+  const ECREDIT_LIMIT_EXCEEDED: u64 = 5;
+
+  /// The new request would exceed the credit limit
+  const ENEW_BALANCE_WOULD_EXCEED_CREDIT_LIMIT: u64 = 6;
 
   /// Error code indicating that the operation is not authorized.
-  const E_UNAUTHORIZED: u64 = 6;
+  const EUNAUTHORIZED: u64 = 7;
+
+  /// Trying to transfer a zero amount
+  const EAMOUNT_IS_ZERO: u64 = 8;
 
   /// State on the community wallet account,
   /// representing loaned unlocked coins
+  /// This is just a tracker,
+  /// coins themselves are kept in the default CoinStore struct
+  /// so that balances can easily be calculated
   struct AdvanceFunds has key {
-    coins: Coin<LibraCoin>
+    coins_available: u64
   }
 
   /// For Global state, so we can easily query
@@ -87,7 +98,7 @@ module ol_framework::community_wallet_advance {
     };
 
     if (vector::is_empty(&ids)) {
-      error::invalid_argument(E_LOAN_NOT_FOUND);
+      error::invalid_argument(ELOAN_NOT_FOUND);
     };
     ids
   }
@@ -122,16 +133,22 @@ module ol_framework::community_wallet_advance {
       i = i + 1;
     };
     // nothing found
-    assert!(false, error::invalid_argument(E_LOAN_NOT_FOUND));
+    assert!(false, error::invalid_argument(ELOAN_NOT_FOUND));
     i // noop
   }
 
 
   /// Withdraw funds from advance funds
-  public fun withdraw_funds(account: &signer, amount: u64): Coin<LibraCoin> acquires AdvanceFunds {
-    let advance_funds = borrow_global_mut<AdvanceFunds>(signer::address_of(account));
-    let coins = &mut advance_funds.coins;
-    libra_coin::extract(coins, amount)
+  public fun withdraw_funds(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires AdvanceFunds {
+    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
+    let payer = account::get_withdraw_cap_address(cap);
+    let advance_funds = borrow_global_mut<AdvanceFunds>(payer);
+    let limit = advance_funds.coins_available;
+    if (amount > limit) {
+      error::invalid_argument(EINSUFFICIENT_FUNDS);
+    };
+    advance_funds.coins_available = limit - amount;
+    ol_account::withdraw_with_capability(cap, amount)
   }
 
 
@@ -140,12 +157,28 @@ module ol_framework::community_wallet_advance {
   //   // Implementation goes here
   // }
 
-  // /// Management requests loan from actively managed community wallet
-  // public fun request_loan(cap: &WithdrawCapability, amount: u64) {
-      // ol_account::withdraw_with_capability(cap, amount)
+  /// Management requests loan from actively managed community wallet
+  public fun request_advance(cap: &WithdrawCapability, amount: u64) acquires EndowmentAdvanceRegistry, AdvanceFunds {
+    let account_address = account::get_withdraw_cap_address(cap);
+    let (_, total_balance) = ol_account::balance(account_address);
 
-  //   // Implementation goes here
-  // }
+    let total_loaned = total_outstanding_balance(account_address);
+
+    let credit_limit = total_balance / 100; // 1% of the balance
+
+    if (total_loaned > credit_limit) {
+      error::invalid_argument(ECREDIT_LIMIT_EXCEEDED);
+    };
+
+    if (total_loaned + amount > credit_limit) {
+      error::invalid_argument(ENEW_BALANCE_WOULD_EXCEED_CREDIT_LIMIT);
+    };
+
+    let advance_funds = borrow_global_mut<AdvanceFunds>(account_address);
+
+    advance_funds.coins_available = advance_funds.coins_available + amount;
+
+  }
 
   // public fun send_from_unlocked(account: &signer, amount: u64) {
   //   // Implementation goes here
@@ -174,21 +207,25 @@ module ol_framework::community_wallet_advance {
   //   // Implementation goes here
   // }
 
-  // /// Total borrowed
-  // public fun total_borrowed(account: address): u64 {
-  //   let loans = find_loans_by_address(signer::address_of(account));
-  //   let mut total_loaned = 0;
-  //   vector::for_each(&loans, |loan| {
-  //     total_loaned = total_loaned + loan.amount;
-  //   });
-  //   total_loaned
-  // }
+  /// Total borrowed
+  public fun total_borrowed(account: address): u64 acquires EndowmentAdvanceRegistry {
+    let loans = find_loans_by_address(account);
+    let total = 0;
+    let i = 0;
+    while (i < vector::length(&loans)) {
+      let loan_id = vector::borrow(&loans, i);
+      let loan_idx = loan_idx_by_guid(*loan_id);
+      let loan = vector::borrow(&borrow_global<EndowmentAdvanceRegistry>(@diem_framework).list, loan_idx);
+      total = total + loan.amount;
+      i = i + 1;
+    };
+    total
+  }
 
-  // /// Calculate the total outstanding loans compared to the balance in AdvanceFunds struct
-  // public fun total_outstanding_balance(account: address): u64 {
-  //   let total_loaned = total_borrowed(account);
-  //   let advance_funds = borrow_global<AdvanceFunds>(account);
-  //   let balance = coin::balance(&advance_funds.coins);
-  //   total_loaned - balance
-  // }
+  /// Calculate the total outstanding loans compared to the balance in AdvanceFunds struct
+  public fun total_outstanding_balance(account: address): u64 acquires EndowmentAdvanceRegistry, AdvanceFunds {
+    let advance_funds = borrow_global<AdvanceFunds>(account);
+    let total_borrowed = total_borrowed(account);
+    advance_funds.coins_available - total_borrowed
+  }
 }
