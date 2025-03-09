@@ -857,7 +857,7 @@ module ol_framework::donor_voice_txs {
     }
   }
 
-  /// Entry functiont to vote the veto.
+  /// Entry functions to vote the veto.
   public entry fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
     let tx_uid = guid::create_id(multisig_address, id);
     let (found, veto_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);

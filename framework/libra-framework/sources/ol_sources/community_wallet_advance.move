@@ -80,7 +80,7 @@ module ol_framework::community_wallet_advance {
 
 
   /// Initialize the loan feature for a community wallet
-  public fun init_user(dv_account: &signer) {
+  public fun initialize(dv_account: &signer) {
     if (!exists<CreditScore>(signer::address_of(dv_account))) {
       move_to<CreditScore>(dv_account, CreditScore{
         balance_outstanding: 0,
@@ -88,7 +88,7 @@ module ol_framework::community_wallet_advance {
         last_withdrawal_usecs: 0,
         lifetime_withdrawals: 0,
         last_deposit_amount: 0,
-        last_deposit_usecs: 0,
+        last_deposit_usecs: timestamp::now_seconds(), // don't assume delinquent if not initialized
         lifetime_deposits: 0,
       });
     }
@@ -97,7 +97,7 @@ module ol_framework::community_wallet_advance {
   /// check if amount withdrawn will be below credit limit
   fun can_withdraw_amount(dv_account: address, amount: u64):bool acquires CreditScore {
     assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
-    assert!(is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
+    assert!(!is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
     let available = total_credit_available(dv_account);
     available > amount
   }
@@ -111,10 +111,8 @@ module ol_framework::community_wallet_advance {
   }
 
   public fun transfer_credit(cap: &WithdrawCapability, recipient: address, amount: u64) acquires CreditScore {
-    let dv_account = account::get_withdraw_cap_address(cap);
-    can_withdraw_amount(dv_account, amount);
-    log_withdrawal(dv_account, amount);
-    ol_account::transfer_with_capability(cap, recipient, amount);
+    let coins = withdraw_credit(cap, amount);
+    ol_account::deposit_coins(recipient, coins);
   }
 
   /// Service the loan with new coins
@@ -164,6 +162,11 @@ module ol_framework::community_wallet_advance {
   // TODO: need to check amount of payment history in the last year, but we're not tracking individual payments.
   public fun is_delinquent(dv_account: address): bool acquires CreditScore {
     let cs_state = borrow_global<CreditScore>(dv_account);
+    // never withdrawn
+    if (cs_state.lifetime_withdrawals == 0 ||
+      cs_state.last_withdrawal == 0
+    ){ return false };
+
     let current_time = timestamp::now_seconds();
 
     let year_after_last_deposit = cs_state.last_deposit_usecs + 31536000;
