@@ -28,6 +28,7 @@ module ol_framework::community_wallet_advance {
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{LibraCoin};
 
+  //////// ERROR CODES ////////
   /// Error code indicating that the account does not have enough funds to complete the transaction.
   const EINSUFFICIENT_FUNDS: u64 = 1;
 
@@ -52,6 +53,18 @@ module ol_framework::community_wallet_advance {
   /// Trying to transfer a zero amount
   const EAMOUNT_IS_ZERO: u64 = 8;
 
+  /// Trying to overpay the balance outstanding
+  const EOVERPAYING: u64 = 9;
+
+  /// math error when trying to update credit score
+  const ELOG_MATH_ERR: u64 = 10;
+
+  //////// CONSTANTS ////////
+  /// What basis points of the CW account balance
+  /// is available to extend credit.
+  /// 1000
+  const BPS_BALANCE_CREDIT_LINE: u64 = 50; // 0.50%
+
   /// State on the community wallet account,
   /// representing loaned unlocked coins
   /// This is just a tracker,
@@ -60,6 +73,19 @@ module ol_framework::community_wallet_advance {
   struct Credit has key {
     credit_available: u64,
     payment_history: vector<Payment>
+  }
+
+  struct CreditScore has key {
+    // current balance outstanding
+    balance_outstanding: u64,
+    // timestamp of last usage
+    last_withdrawal_usecs: u64,
+    // timestamp of deposit
+    last_deposit_usecs: u64,
+    // credit utilization
+    lifetime_withdrawals: u64,
+    // serviced the loan
+    lifetime_deposits: u64,
   }
 
   struct Payment has key, store {
@@ -95,6 +121,16 @@ module ol_framework::community_wallet_advance {
       move_to<Credit>(dv_account, Credit{
         credit_available: 0,
         payment_history: vector::empty(),
+      });
+    };
+
+    if (!exists<CreditScore>(signer::address_of(dv_account))) {
+      move_to<CreditScore>(dv_account, CreditScore{
+        balance_outstanding: 0,
+        last_withdrawal_usecs: 0,
+        last_deposit_usecs: 0,
+        lifetime_withdrawals: 0,
+        lifetime_deposits: 0,
       });
     }
   }
@@ -137,10 +173,69 @@ module ol_framework::community_wallet_advance {
     i // noop
   }
 
+  /// checks if the current outstanding balance is below credit limit
+  fun credit_available(dv_account: address): u64 acquires CreditScore {
+    let cs = borrow_global_mut<CreditScore>(dv_account);
+    let usage = cs.balance_outstanding;
 
+    let (_, total_balance) = ol_account::balance(dv_account);
+    if (usage > total_balance) {
+      return 0
+    };
+
+    let limit = (total_balance * BPS_BALANCE_CREDIT_LINE) / 10000;
+
+    if (usage > limit ) {
+      return 0
+    };
+
+    limit - usage
+  }
+
+  /// check if amount withdrawn will be below credit limit
+  fun can_withdraw_amount(dv_account: address, amount: u64):bool acquires CreditScore {
+    assert!(is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
+
+    let available = credit_available(dv_account);
+    available > amount
+  }
   /// Withdraw funds from advance funds
   // TODO: unclear if this is needed for programmatic sending
-  fun withdraw_funds(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires Credit {
+  fun withdraw_funds(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires CreditScore {
+    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
+    let dv_account = account::get_withdraw_cap_address(cap);
+    can_withdraw_amount(dv_account, amount);
+    log_withdrawal(dv_account, amount);
+    ol_account::withdraw_with_capability(cap, amount)
+  }
+
+  fun log_withdrawal(dv_account: address, amount: u64) acquires CreditScore {
+    let cs_state = borrow_global_mut<CreditScore>(dv_account);
+    cs_state.last_withdrawal_usecs = timestamp::now_seconds();
+    cs_state.balance_outstanding = cs_state.balance_outstanding + amount;
+    cs_state.lifetime_withdrawals = cs_state.lifetime_withdrawals + amount;
+    // TODO: get a specific error for this check
+    // shouldn't be in a situation where deposits are greater than withdrawals
+    assert!(cs_state.lifetime_withdrawals >= cs_state.lifetime_deposits, error::invalid_state(ELOG_MATH_ERR));
+    // the lifetime withdrawn should be equal or greater to the current balance outstanding
+    assert!(cs_state.lifetime_withdrawals >= cs_state.balance_outstanding, error::invalid_state(ELOG_MATH_ERR));
+  }
+
+  fun log_deposit(dv_account: address, amount: u64) acquires CreditScore {
+    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
+
+    let cs_state = borrow_global_mut<CreditScore>(dv_account);
+    cs_state.last_deposit_usecs = timestamp::now_seconds();
+    assert!(cs_state.balance_outstanding > amount, error::invalid_argument(EOVERPAYING));
+    cs_state.balance_outstanding = cs_state.balance_outstanding - amount;
+    cs_state.lifetime_deposits = cs_state.lifetime_deposits + amount;
+
+    // shouldn't be in a situation where deposits are greater than withdrawals
+    assert!(cs_state.lifetime_withdrawals >= cs_state.lifetime_deposits, error::invalid_state(ELOG_MATH_ERR));
+  }
+  /// Withdraw funds from advance funds
+  // TODO: unclear if this is needed for programmatic sending
+  fun withdraw_funds_depr(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires Credit {
     assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
     let payer = account::get_withdraw_cap_address(cap);
     let advance_funds = borrow_global_mut<Credit>(payer);
@@ -196,6 +291,18 @@ module ol_framework::community_wallet_advance {
 
     let state = borrow_global_mut<EndowmentAdvanceRegistry>(@diem_framework);
     vector::push_back(&mut state.list, loan_doc);
+  }
+
+
+  #[view]
+  /// Has the CW account made a payment in the last year
+  public fun is_delinquent(dv_account: address): bool acquires CreditScore {
+    let cs_state = borrow_global<CreditScore>(dv_account);
+    let current_time = timestamp::now_seconds();
+
+    let year_after_last_deposit = cs_state.last_deposit_usecs + 31536000;
+    // still within one year window
+    current_time < year_after_last_deposit
   }
 
 
