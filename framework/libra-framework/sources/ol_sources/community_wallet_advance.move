@@ -52,7 +52,7 @@ module ol_framework::community_wallet_advance {
   const ELOG_MATH_ERR: u64 = 10;
 
   //////// CONSTANTS ////////
-  /// What basis points of the CW account balance
+  /// How many basis points of the CW account balance
   /// is available to extend credit.
   /// 1000
   const BPS_BALANCE_CREDIT_LINE: u64 = 50; // 0.50%
