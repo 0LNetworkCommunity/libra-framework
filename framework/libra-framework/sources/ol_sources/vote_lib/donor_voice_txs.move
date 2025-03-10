@@ -80,7 +80,6 @@ module ol_framework::donor_voice_txs {
     const ENO_VETO_ID_FOUND: u64 = 6;
     /// No enum for this number
     const EPAYEE_NOT_SLOW: u64 = 7;
-
     /// Governance mode: chain has restricted Donor Voice transactions while upgrades are executed.
     const EGOVERNANCE_MODE: u64 = 8;
 
@@ -215,7 +214,8 @@ module ol_framework::donor_voice_txs {
       multisig_address: address,
       payee: address,
       value: u64,
-      description: vector<u8>
+      description: vector<u8>,
+      _advance: bool,
     ): guid::ID acquires TxSchedule {
       assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
 
@@ -234,7 +234,7 @@ module ol_framework::donor_voice_txs {
 
       let (passed, withdraw_cap_opt) = multi_action::vote_with_id<Payment>(sender, &uid, multisig_address);
 
-      let tx = multi_action::extract_proposal_data(multisig_address, &uid);
+      let tx: Payment = multi_action::extract_proposal_data(multisig_address, &uid);
 
       if (passed && option::is_some(&withdraw_cap_opt)) {
         schedule(option::borrow(&withdraw_cap_opt), tx, &uid);
@@ -247,20 +247,23 @@ module ol_framework::donor_voice_txs {
     }
 
     #[test_only]
-    /// Returns the GUID of the transfer.
+    /// NOTE: this is needed because tests requires the the GUID of the transfer.
     public(friend) fun test_propose_payment(
       sender: &signer,
       multisig_address: address,
       payee: address,
       value: u64,
-      description: vector<u8>
+      description: vector<u8>,
+      advance: bool,
     ): guid::ID acquires TxSchedule {
+
       propose_payment(
       sender,
       multisig_address,
       payee,
       value,
-      description)
+      description,
+      advance)
     }
 
     /// Private function which handles the logic of adding a new timed transfer
@@ -842,9 +845,10 @@ module ol_framework::donor_voice_txs {
     multisig_address: address,
     payee: address,
     value: u64,
-    description: vector<u8>
+    description: vector<u8>,
+    advance: bool
   )  acquires TxSchedule {
-    propose_payment(&auth, multisig_address, payee, value, description);
+    propose_payment(&auth, multisig_address, payee, value, description, advance);
   }
 
 

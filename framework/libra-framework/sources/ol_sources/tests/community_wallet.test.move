@@ -14,7 +14,7 @@
     use std::signer;
     use std::vector;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     /// Set up a sample community wallet with 2/3 sigs
     fun test_cw_setup(community: &signer, alice: &signer, bob: &signer, carol: &signer) {
@@ -124,7 +124,7 @@
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         // bob propose payment
-        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol", false);
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -135,7 +135,7 @@
         assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
 
         // dave votes the payment and it is approved.
-        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
+        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol", false);
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
