@@ -68,14 +68,14 @@ module ol_framework::secret_bid {
 
   /// Transaction entry function for committing bid
   public entry fun commit(user: &signer, digest: vector<u8>) acquires CommittedBid {
-    // don't allow commiting within reveal window
+    // don't allow committing within reveal window
     assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
     commit_entry_fee_impl(user, digest);
   }
 
   /// Transaction entry function for revealing bid
   public entry fun reveal(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
-    // don't allow commiting within reveal window
+    // don't allow committing within reveal window
     assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
     reveal_entry_fee_impl(user, pk, entry_fee, signed_msg);
   }
@@ -130,7 +130,7 @@ module ol_framework::secret_bid {
     commitment
   }
 
-  /// user sends transaction  which takes the committed signed message
+  /// user sends transaction which takes the committed signed message
   /// submits the public key used to sign message, which we compare to the authentication key.
   /// we use the epoch as the sequence number, so that messages are different on each submission.
   public fun reveal_entry_fee_impl(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
@@ -225,13 +225,7 @@ module ol_framework::secret_bid {
   #[view]
   /// get the current bid, and exclude bids that are stale
   public fun current_revealed_bid(user: address): u64 acquires CommittedBid {
-    // // if we are not in reveal window this information will be confusing.
-    // assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-
-    // let state = borrow_global<CommittedBid>(user);
-    // assert!(state.commit_epoch == epoch_helper::get_current_epoch(), error::invalid_state(EBID_EXPIRED));
-
-    // state.reveal_entry_fee
+    // if we are not in reveal window this information will be confusing.
     get_bid_unchecked(user)
   }
 

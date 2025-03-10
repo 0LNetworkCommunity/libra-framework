@@ -1,9 +1,13 @@
-// use crate::bid_commit_reveal::PofBidArgs;
-use crate::stream::epoch_tickle_poll::epoch_tickle_poll;
+
+use crate::stream::{
+  bid_commit_reveal::PofBidArgs,
+  epoch_tickle_poll::epoch_tickle_poll
+};
 use crate::submit_transaction::Sender as LibraSender;
 use diem_logger::prelude::{error, info};
 use diem_types::transaction::TransactionPayload;
-use std::process::exit;
+use libra_types::core_types::app_cfg::AppCfg;
+use libra_types::exports::Ed25519PrivateKey;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
@@ -17,23 +21,22 @@ pub enum StreamTxs {
         delay: Option<u64>,
     },
     /// Submit secret PoF bids in background, and reveal when window opens
-    PofBid,
+    ValBid(PofBidArgs),
 }
 
 impl StreamTxs {
-    pub fn start(&self, send: Arc<Mutex<LibraSender>>) {
+    pub fn start(&self, send: Arc<Mutex<LibraSender>>, _app_cfg: &AppCfg) {
         let (tx, rx) = init_channel();
-        let client = send.lock().unwrap().client().clone();
-        let stream_service = listen(rx, send);
+        let stream_service = listen(rx, send.clone());
 
         match &self {
             StreamTxs::EpochTickle { delay } => {
                 println!("EpochTickle entry");
-                epoch_tickle_poll(tx, client, delay.unwrap_or(60));
+                epoch_tickle_poll(tx, send, delay.unwrap_or(60));
             }
-            _ => {
-                println!("no service specified");
-                exit(1);
+            StreamTxs::ValBid(args) => {
+
+              dbg!(&args);
             }
         };
 

@@ -221,7 +221,7 @@ impl TxsCli {
             Some(TxsSub::Community(comm_txs)) => comm_txs.run(&mut send).await,
             Some(TxsSub::Stream(stream_txs)) => {
                 let arc_send = Arc::new(Mutex::new(send));
-                stream_txs.start(arc_send);
+                stream_txs.start(arc_send, &app_cfg);
                 Ok(())
             }
             _ => {
