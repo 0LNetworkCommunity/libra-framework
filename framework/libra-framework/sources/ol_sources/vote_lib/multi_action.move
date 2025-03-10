@@ -1042,17 +1042,17 @@ module ol_framework::multi_action {
         };
     }
 
-  #[test_only]
-  /// get the withdraw capability for testing
-  public fun danger_test_get_withdraw_capability(vm: &signer, sig: &signer): Option<WithdrawCapability> acquires Governance {
-    use ol_framework::testnet;
-    testnet::assert_testnet(vm);
-    let multisig_address = signer::address_of(sig);
-    let ms = borrow_global_mut<Governance>(multisig_address);
+  // #[test_only]
+  // /// get the withdraw capability for testing
+  // public fun danger_test_get_withdraw_capability(vm: &signer, sig: &signer): Option<WithdrawCapability> acquires Governance {
+  //   use ol_framework::testnet;
+  //   testnet::assert_testnet(vm);
+  //   let multisig_address = signer::address_of(sig);
+  //   let ms = borrow_global_mut<Governance>(multisig_address);
 
-    let c = option::extract(&mut ms.withdraw_capability);
-    option::some(c)
-  }
+  //   let c = option::extract(&mut ms.withdraw_capability);
+  //   option::some(c)
+  // }
 
     // TODO: remove this function after offer migration is completed
     #[test_only]

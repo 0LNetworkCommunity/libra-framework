@@ -7,10 +7,13 @@
     use ol_framework::community_wallet_init;
     use ol_framework::donor_voice_txs;
     use ol_framework::multi_action;
-    use diem_framework::multisig_account;
     use ol_framework::mock;
     use ol_framework::ol_account;
     use ol_framework::ancestry;
+
+    use diem_framework::account;
+    use diem_framework::multisig_account;
+
     use std::signer;
     use std::vector;
 
@@ -344,11 +347,10 @@
       let d = community_wallet_advance::is_delinquent(comm_addr);
       assert!(!d, 7357003);
 
-      let cap_opt = multi_action::danger_test_get_withdraw_capability(root, community);
-      let cap = std::option::extract(&mut cap_opt);
+      let cap = account::create_guid_capability(community);
 
       // community wallet transfers an amount to alice
-      community_wallet_advance::transfer_credit(&cap, @0x1000a, 10000);
+      community_wallet_advance::transfer_credit(root, &cap, @0x1000a, 10000);
 
       let (_, comm_balance) = ol_account::balance(comm_addr);
       let (_, alice_balance) = ol_account::balance(@0x1000a);
@@ -370,7 +372,7 @@
       assert!(bal > bal_before, 7357009);
 
       // restore
-      std::option::fill(&mut cap_opt, cap);
-      multi_action::maybe_restore_withdraw_cap(cap_opt);
+      // std::option::fill(&mut cap_opt, cap);
+      // multi_action::maybe_restore_withdraw_cap(cap_opt);
     }
 }

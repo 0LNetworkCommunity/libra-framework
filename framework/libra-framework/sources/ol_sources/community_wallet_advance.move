@@ -21,11 +21,15 @@ module ol_framework::community_wallet_advance {
   use std::error;
   use std::signer;
   use std::timestamp;
-  use diem_framework::account::{Self, WithdrawCapability};
+  use diem_framework::account::{Self, GUIDCapability};
   use diem_framework::coin::{Coin};
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{Self, LibraCoin};
 
+  friend ol_framework::donor_voice_txs;
+
+  #[test_only]
+  friend ol_framework::test_community_wallet;
   /// Error code indicating that the loan is overdue.
   const ELOAN_OVERDUE: u64 = 4;
 
@@ -101,18 +105,15 @@ module ol_framework::community_wallet_advance {
     let available = total_credit_available(dv_account);
     available > amount
   }
-  /// Withdraw funds from advance funds
-  // TODO: unclear if this is needed for programmatic sending
-  fun withdraw_credit(cap: &WithdrawCapability, amount: u64): Coin<LibraCoin> acquires CreditScore {
-    let dv_account = account::get_withdraw_cap_address(cap);
+  /// Only can be called on epoch boundary as part of the donor_voice_txs.move authorization flow.
+  /// Will withdraw funds and track the logger
+  public(friend) fun transfer_credit(framework_sig: &signer, guid_cap: &GUIDCapability, recipient: address, amount: u64): u64 acquires CreditScore {
+    let dv_account = account::get_guid_capability_address(guid_cap);
     can_withdraw_amount(dv_account, amount);
     log_withdrawal(dv_account, amount);
-    ol_account::withdraw_with_capability(cap, amount)
-  }
-
-  public fun transfer_credit(cap: &WithdrawCapability, recipient: address, amount: u64) acquires CreditScore {
-    let coins = withdraw_credit(cap, amount);
-    ol_account::deposit_coins(recipient, coins);
+    ol_account::vm_transfer(framework_sig, dv_account, recipient, amount);
+    // TODO: check if there is any possibility of partial amount sent
+    amount
   }
 
   /// Service the loan with new coins

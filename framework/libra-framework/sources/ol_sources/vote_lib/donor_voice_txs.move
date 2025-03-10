@@ -43,6 +43,7 @@ module ol_framework::donor_voice_txs {
     use diem_framework::system_addresses;
     use diem_framework::coin;
     use ol_framework::ballot;
+    use ol_framework::community_wallet_advance;
     use ol_framework::epoch_helper;
     use ol_framework::ol_account;
     use ol_framework::ol_features_constants;
@@ -71,7 +72,7 @@ module ol_framework::donor_voice_txs {
     /// User is not a donor and cannot vote on this account
     const ENOT_AUTHORIZED_TO_VOTE: u64 = 2;
     /// Could not find a pending transaction by this GUID
-    const ENO_PEDNING_TRANSACTION_AT_UID: u64 = 3;
+    const ENO_PENDING_TRANSACTION_AT_UID: u64 = 3;
     /// No enum for this number
     const ENOT_VALID_STATE_ENUM: u64 = 4;
     /// No enum for this number
@@ -380,6 +381,10 @@ module ol_framework::donor_voice_txs {
         let this_transfer_value = handle_slow_wallet_payment(vm, &t);
         // check success
         if  (this_transfer_value > 0) {
+          // if there's a single transaction that gets approved, then the consecutive rejection counter (for freezing the account) is reset
+          let multisig_address = guid::id_creator_address(&t.uid);
+          reset_rejection_counter(vm, multisig_address);
+
           // update the records (hot potato, can't copy or drop)
           vector::push_back(&mut state.paid, t);
 
@@ -400,7 +405,10 @@ module ol_framework::donor_voice_txs {
     /// Default payment mode, sends fund to a slow wallet
     /// @returns: u64
     /// -  the total amount able to transfer (including account limits)
-    fun handle_slow_wallet_payment(vm: &signer, t: &TimedTransfer): u64 acquires Freeze {
+    fun handle_slow_wallet_payment(vm: &signer, t: &TimedTransfer): u64 {
+        // should't be here, belt and suspenders without aborting epoch boundary
+        if (t.tx.is_advance) { return 0 };
+
         // make a slow payment
         let multisig_address = guid::id_creator_address(&t.uid);
         // if the account is a community wallet, then we assume
@@ -415,18 +423,23 @@ module ol_framework::donor_voice_txs {
         };
         option::destroy_none(coin_opt);
 
-        // if there's a single transaction that gets approved, then the consecutive rejection counter (for freezing the account) is reset
-        reset_rejection_counter(vm, multisig_address);
-
         amount_transferred
     }
 
-    /// handles the payment in the case of unlocked coins
-    /// for admin purposes, using the credit limit.
+    /// handles the payment in the case of unlocked advanced/loaned coins.
+    /// Intended for minor admin purposes, using the credit limit.
     /// see more: donor_voice_advance.move
-    fun handle_advance_unlocked_payment() {
+    fun handle_advance_unlocked_payment(vm: &signer, t: &TimedTransfer): u64 acquires TxSchedule {
+      // should't be here, belt and suspenders without aborting epoch boundary
+      if (!t.tx.is_advance) { return 0 };
+      let multisig_address = guid::id_creator_address(&t.uid);
 
+      let state = borrow_global<TxSchedule>(multisig_address);
+      let amount_transferred = community_wallet_advance::transfer_credit(vm, &state.guid_capability, t.tx.payee, t.tx.value);
+
+      amount_transferred
     }
+
 
     #[test_only]
     public(friend) fun find_by_deadline(multisig_address: address, epoch: u64): vector<guid::ID> acquires TxSchedule {
@@ -473,7 +486,7 @@ module ol_framework::donor_voice_txs {
     if (option::is_none(&veto_is_approved)) return;
 
     // check is scheduled
-    assert!(is_scheduled(multisig_address, tx_uid), error::invalid_state(ENO_PEDNING_TRANSACTION_AT_UID));
+    assert!(is_scheduled(multisig_address, tx_uid), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
 
     if (*option::borrow(&veto_is_approved)) {
       // if the veto passes, freeze the account
@@ -503,7 +516,7 @@ module ol_framework::donor_voice_txs {
   // removed from proposed list.
   fun reject(uid: &guid::ID)  acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(uid);
-    assert!(is_scheduled(multisig_address, uid), error::invalid_state(ENO_PEDNING_TRANSACTION_AT_UID));
+    assert!(is_scheduled(multisig_address, uid), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
 
     let c = borrow_global_mut<TxSchedule>(multisig_address);
 
@@ -567,7 +580,7 @@ module ol_framework::donor_voice_txs {
   fun get_pending_timed_transfer_mut(state: &mut TxSchedule, uid: &guid::ID): &mut TimedTransfer {
     let (found, i) = schedule_status(state, uid, scheduled_enum());
 
-    assert!(found, error::invalid_argument(ENO_PEDNING_TRANSACTION_AT_UID));
+    assert!(found, error::invalid_argument(ENO_PENDING_TRANSACTION_AT_UID));
     vector::borrow_mut<TimedTransfer>(&mut state.scheduled, i)
   }
 
