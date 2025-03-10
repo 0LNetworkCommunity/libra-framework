@@ -51,7 +51,7 @@
         use diem_framework::coin;
         use diem_framework::system_addresses;
 
-        //use diem_std::debug::print;
+
 
         friend ol_framework::infra_escrow;
         friend ol_framework::genesis_migration;

@@ -23,7 +23,7 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
 
-  // use diem_std::debug::print;
+
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;

@@ -36,7 +36,7 @@ module ol_framework::multi_action {
     use ol_framework::epoch_helper;
     use ol_framework::community_wallet;
 
-    // use diem_std::debug::print;
+
 
     friend ol_framework::community_wallet_init;
     friend ol_framework::donor_voice_txs;

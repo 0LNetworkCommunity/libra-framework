@@ -14,7 +14,7 @@ module ol_framework::community_wallet_init {
     use ol_framework::match_index;
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_advance;
-    // use diem_std::debug::print;
+
 
     #[test_only]
     friend ol_framework::test_community_wallet;

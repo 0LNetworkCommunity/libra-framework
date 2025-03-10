@@ -50,7 +50,7 @@
     #[test_only]
     friend ol_framework::turnout_tally_demo;
 
-    // use diem_std::debug::print;
+
 
     /// The ballot has already been completed.
     const ECOMPLETED: u64 = 1;

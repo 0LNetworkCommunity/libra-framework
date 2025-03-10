@@ -1,5 +1,5 @@
 module diem_framework::genesis {
-    // use diem_std::debug::print;
+
 
     use std::error;
     use std::vector;

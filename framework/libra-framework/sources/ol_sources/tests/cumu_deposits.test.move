@@ -7,7 +7,7 @@ module ol_framework::test_cumu_deposits {
     use ol_framework::receipts;
     use ol_framework::mock;
     // use std::vector;
-    // use diem_std::debug::print;
+
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun cumu_deposits_init(root: &signer, alice: &signer) {

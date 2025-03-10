@@ -8,7 +8,7 @@ module ol_framework::rewards {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::ol_account;
 
-  // use diem_std::debug::print;
+
 
   friend diem_framework::epoch_boundary;
 

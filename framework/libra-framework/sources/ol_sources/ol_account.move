@@ -21,7 +21,7 @@ module ol_framework::ol_account {
     use ol_framework::community_wallet;
     use ol_framework::donor_voice;
 
-    use diem_std::debug::print;
+
 
     #[test_only]
     use std::vector;
@@ -184,17 +184,11 @@ module ol_framework::ol_account {
         let auth_key_as_address = from_bcs::to_address(auth_key);
         let lookup_addr = account::get_originating_address(auth_key_as_address);
 
-        let sig_addr = signer::address_of(&new_signer);
-        if (lookup_addr != sig_addr) {
-          // print(&lookup_addr);
-          print(&sig_addr);
-        };
-
         // TODO: create migration path for duplicates
-        // assert!(
-        //   lookup_addr == signer::address_of(&new_signer),
-        //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
-        // );
+        assert!(
+          lookup_addr == signer::address_of(&new_signer),
+          error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
+        );
         coin::register<LibraCoin>(&new_signer);
         maybe_init_burn_tracker(&new_signer);
         new_signer

@@ -19,7 +19,7 @@ module ol_framework::receipts {
   use diem_framework::system_addresses;
   use diem_framework::timestamp;
 
-  // use diem_std::debug::print;
+
 
   friend ol_framework::ol_account;
 

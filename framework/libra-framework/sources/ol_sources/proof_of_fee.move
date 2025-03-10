@@ -23,7 +23,7 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
-  //use diem_std::debug::print;
+
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;

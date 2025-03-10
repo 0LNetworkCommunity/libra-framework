@@ -14,7 +14,7 @@ module ol_framework::grade {
 
     friend ol_framework::musical_chairs;
 
-    // use diem_std::debug::print;
+
 
     /// what threshold of failed props should the network allow
     /// one validator before jailing?

@@ -6,7 +6,7 @@ module ol_framework::test_last_goodbye {
   use diem_framework::stake;
   use std::vector;
 
-  // use diem_std::debug::print;
+
 
   #[test(framework = @ol_framework, vm = @0x0, _alice = @0x1000a, bob = @0x1000b)]
   fun last_goodbye_meta(framework: &signer, vm: &signer, _alice: &signer, bob: &signer) {

@@ -5,7 +5,7 @@ module ol_framework::vouch_migration {
   use diem_framework::create_signer::create_signer;
   use ol_framework::vouch;
 
-  // use diem_std::debug::print;
+
 
   #[test_only]
   friend ol_framework::test_vouch_migration;

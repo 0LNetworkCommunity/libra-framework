@@ -57,7 +57,7 @@ module ol_framework::donor_voice_txs {
     use ol_framework::donor_voice;
     use ol_framework::slow_wallet;
 
-    // use diem_std::debug::print;
+
 
     friend ol_framework::community_wallet_init;
     friend ol_framework::epoch_boundary;

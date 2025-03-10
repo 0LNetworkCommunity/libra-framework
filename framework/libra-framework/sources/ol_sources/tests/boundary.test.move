@@ -3,7 +3,6 @@
 module ol_framework::test_boundary {
   use std::vector;
   use diem_std::bls12381;
-  use diem_std::debug::print;
   use diem_framework::stake;
   use diem_framework::timestamp;
   use diem_framework::reconfiguration;
@@ -100,7 +99,6 @@ module ol_framework::test_boundary {
 
     // check subsidy for new rewards and fees collected
     // fees collected = 10 * 1_000_000 + 10 * 1_000 = 10_010_000
-    print(&transaction_fee::system_fees_collected());
     assert!(transaction_fee::system_fees_collected() == 10_010_000, 7357006);
   }
 

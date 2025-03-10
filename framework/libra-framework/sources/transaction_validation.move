@@ -12,7 +12,7 @@ module diem_framework::transaction_validation {
 
     use ol_framework::libra_coin::{Self, LibraCoin};
     use ol_framework::activity;
-    // use diem_std::debug::print;
+
 
     friend diem_framework::genesis;
 

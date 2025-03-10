@@ -54,7 +54,7 @@ module ol_framework::safe {
   use ol_framework::system_addresses;
   use ol_framework::transaction_fee;
 
-  // use diem_std::debug::print;
+
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;

@@ -17,7 +17,7 @@
     use std::signer;
     use std::vector;
 
-    // use diem_std::debug::print;
+
 
     /// Set up a sample community wallet with 2/3 sigs
     fun test_cw_setup(community: &signer, alice: &signer, bob: &signer, carol: &signer) {

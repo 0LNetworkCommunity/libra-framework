@@ -16,7 +16,7 @@ module ol_framework::test_burn {
   use std::option;
   use std::fixed_point32;
 
-  // use diem_std::debug::print;
+
 
   #[test(root = @ol_framework, alice = @0x1000a)]
   fun burn_reduces_supply(root: &signer, alice: &signer) {

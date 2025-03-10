@@ -5,7 +5,7 @@ module ol_framework::test_vouch {
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
 
-  // use diem_std::debug::print;
+
 
   // Happy Day scenarios
 
