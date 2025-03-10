@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use libra_types::exports::Client;
 use std::borrow::BorrowMut;
 use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 use std::thread;
 
@@ -60,17 +62,17 @@ impl PofBidData {
 
 }
 
-pub fn commit_reveal_poll(mut tx: Sender<TransactionPayload>, client: Client, delay_secs: u64, app_cfg: AppCfg) {
-    println!("polling epoch boundary");
+pub fn commit_reveal_poll(mut tx: Sender<TransactionPayload>, sender: Arc<Mutex<LibraSender>>, delay_secs: u64, app_cfg: AppCfg) {
+    println!("commit reveal bidding");
     let handle = thread::spawn(move || loop {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
-
+        let client = sender.lock().unwrap().client().clone();
         // TODO: make the client borrow instead of clone
         let res = rt.block_on(libra_query::chain_queries::within_commit_reveal_window(
-            &client.clone(),
+            &client,
         ));
 
         match res {

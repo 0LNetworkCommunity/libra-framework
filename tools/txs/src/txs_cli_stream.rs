@@ -35,7 +35,10 @@ impl StreamTxs {
                 epoch_tickle_poll(tx, send, delay.unwrap_or(60));
             }
             StreamTxs::ValBid(args) => {
+              let la = &send.lock().unwrap().local_account;
 
+              let pubk = la.public_key();
+              dbg!(&pubk);
               dbg!(&args);
             }
         };
