@@ -40,7 +40,7 @@ module ol_framework::test_reconfiguration {
 
     let _subsidy = transaction_fee::system_fees_collected();
 
-    // run ol reconfiguration
+    ///////// NEW EPOCH ////////
     mock::trigger_epoch(&root);
 
     let _infra = infra_escrow::infra_escrow_balance();
@@ -48,22 +48,25 @@ module ol_framework::test_reconfiguration {
 
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 5, 7357005);
-    // let alice_bal = libra_coin::balance(@0x1000a);
     let (_unlocked, alice_bal) = ol_account::balance(@0x1000a);
 
     let (_, entry_fee, _,  _ ) = proof_of_fee::get_consensus_reward();
     // need to check that the user paid an PoF entry fee for next epoch.
     // which means the balance will be the nominal reward, net of the PoF clearing price bid
-    assert!(alice_bal == (reward_one - entry_fee), 7357006);
+    let alice_balance_post_epoch_1 = (reward_one - entry_fee);
+    assert!(alice_bal == alice_balance_post_epoch_1, 7357006);
 
-    // test new subsidy
-    let (reward_two, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
-    let _new_budget = reward_two * 5;
+    ///////// NEW EPOCH ////////
+    // try one more epoch same conditions
+    mock::mock_all_vals_good_performance(&root);
+    mock::trigger_epoch(&root);
 
-    diem_std::debug::print(&reward_two);
+    let (reward_two, entry_fee_two, _, _ ) = proof_of_fee::get_consensus_reward();
 
-    let _subsidy = transaction_fee::system_fees_collected();
-    assert!(false, 0);
+    let (_unlocked, alice_bal_now) = ol_account::balance(@0x1000a);
+    assert!(alice_bal_now > alice_bal, 7357007);
+    assert!(alice_balance_post_epoch_1 == (reward_two - entry_fee_two), 7357007);
+    assert!(alice_bal_now == alice_balance_post_epoch_1 + reward_two - entry_fee_two, 7357008);
   }
 
   #[test(root = @ol_framework)]
