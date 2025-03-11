@@ -1,0 +1,22 @@
+{
+  "rust-analyzer.cargo.buildScripts.enable": false,
+  "rust-analyzer.restartServerOnConfigChange": true,
+  "rust-analyzer.debug.engine": "vadimcn.vscode-lldb",
+  "rust-analyzer.debug.openDebugPane": true,
+  "rust-analyzer.runnables.extraEnv": {
+    "DIEM_FORGE_NODE_BIN_PATH": "/root/.cargo/bin/diem-node"
+  },
+  "rust-analyzer.server.extraEnv": {
+    "DIEM_FORGE_NODE_BIN_PATH": "/root/.cargo/bin/diem-node"
+  },
+  "rust-analyzer.checkOnSave": false,
+  "rust-analyzer.check.noDefaultFeatures": false,
+  "rust-analyzer.cargo.buildScripts.useRustcWrapper": false,
+  "rust-analyzer.cargo.extraEnv": {
+    "RUSTC_WRAPPER": "sccache"
+  },
+  "rust-analyzer.check.extraArgs": [
+    "RUSTC_WRAPPER=sccache"
+  ],
+  "rust-analyzer.check.overrideCommand": "build"
+}
