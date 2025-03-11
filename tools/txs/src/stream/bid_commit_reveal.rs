@@ -1,9 +1,11 @@
 use crate::submit_transaction::Sender as LibraSender;
 use diem_logger::info;
+use diem_sdk::crypto::SigningKey;
 use diem_types::transaction::TransactionPayload;
 use libra_cached_packages::libra_stdlib;
 use libra_query::chain_queries;
 use libra_types::core_types::app_cfg::AppCfg;
+use libra_types::exports::{Ed25519PrivateKey, Ed25519PublicKey};
 use serde::{Deserialize, Serialize};
 use libra_types::exports::Client;
 use std::borrow::BorrowMut;
@@ -54,11 +56,11 @@ impl PofBidData {
     Ok(())
   }
 
-  // fn sign_bcs_bytes(&self, public_key) -> anyhow::Result<Vec<u8>> {
-  //   let bcs = self.to_bcs();
-
-  //   Ok(bcs)
-  // }
+  fn sign_bcs_bytes(&self, private_key: Ed25519PrivateKey) -> anyhow::Result<Vec<u8>> {
+    let bcs = self.to_bcs()?;
+    let signed = private_key.sign_arbitrary_message(&bcs);
+    Ok(signed.to_bytes().to_vec())
+  }
 
 }
 
@@ -91,4 +93,11 @@ pub fn commit_reveal_poll(mut tx: Sender<TransactionPayload>, sender: Arc<Mutex<
         thread::sleep(Duration::from_secs(delay_secs));
     });
     handle.join().expect("cannot poll for epoch boundary");
+}
+
+
+#[test]
+fn encode_signed_message() {
+  let pk = PrivateKey::from_bytes(hex::decode("74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b"));
+  dbg!(&pk);
 }

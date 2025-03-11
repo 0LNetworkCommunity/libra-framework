@@ -37,7 +37,7 @@ impl StreamTxs {
             StreamTxs::ValBid(args) => {
               let la = &send.lock().unwrap().local_account;
 
-              let pubk = la.public_key();
+              let pubk = hex::encode(la.private_key().to_bytes());
               dbg!(&pubk);
               dbg!(&args);
             }
