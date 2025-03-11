@@ -96,7 +96,6 @@ pub async fn epoch_over_can_trigger(client: &Client) -> anyhow::Result<bool> {
     Ok(value[0])
 }
 
-
 /// Retrieves the current blockchain height.
 pub async fn within_commit_reveal_window(client: &Client) -> anyhow::Result<bool> {
     let res = get_view(client, "0x1::secret_bid::in_reveal_window", None, None).await?;

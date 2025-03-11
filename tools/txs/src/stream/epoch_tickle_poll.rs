@@ -4,13 +4,17 @@ use diem_types::transaction::TransactionPayload;
 use libra_cached_packages::libra_stdlib;
 use libra_types::exports::Client;
 use std::borrow::BorrowMut;
-use std::sync::Mutex;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
-pub fn epoch_tickle_poll(mut tx: Sender<TransactionPayload>, sender: Arc<Mutex<LibraSender>>, delay_secs: u64) {
+pub fn epoch_tickle_poll(
+    mut tx: Sender<TransactionPayload>,
+    sender: Arc<Mutex<LibraSender>>,
+    delay_secs: u64,
+) {
     println!("polling epoch boundary");
 
     let handle = thread::spawn(move || loop {
