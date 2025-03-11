@@ -2,8 +2,6 @@
 use crate::submit_transaction::Sender as LibraSender;
 use diem_logger::prelude::{error, info};
 use diem_types::transaction::TransactionPayload;
-use libra_types::core_types::app_cfg::AppCfg;
-use libra_types::exports::Ed25519PrivateKey;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};

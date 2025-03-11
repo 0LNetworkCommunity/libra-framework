@@ -1,19 +1,23 @@
 use crate::submit_transaction::Sender as LibraSender;
-use diem_logger::info;
+use diem_logger::{debug, error};
 use diem_sdk::crypto::SigningKey;
+use diem_sdk::types::LocalAccount;
 use diem_types::transaction::TransactionPayload;
 use libra_cached_packages::libra_stdlib;
 use libra_query::chain_queries;
 use libra_types::core_types::app_cfg::AppCfg;
 use libra_types::exports::Client;
-use libra_types::exports::{Ed25519PrivateKey, Ed25519PublicKey};
-use serde::{Deserialize, Serialize};
+
+// use libra_types::exports::{Ed25519PrivateKey, Ed25519PublicKey};
 use std::borrow::BorrowMut;
+use serde::{Deserialize, Serialize};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
+
+
 
 #[derive(clap::Args, Debug)]
 pub struct PofBidArgs {
@@ -62,12 +66,12 @@ impl PofBidData {
     }
 
     fn encode_commit_tx_payload(&self, keys: &LocalAccount) -> TransactionPayload {
-        let digest = self.sign_bcs_bytes(keys);
+        let digest = self.sign_bcs_bytes(keys).expect("could not sign bytes");
         libra_stdlib::secret_bid_commit(digest)
     }
 
     fn encode_reveal_tx_payload(&self, keys: &LocalAccount) -> TransactionPayload {
-        let digest = self.sign_bcs_bytes(keys);
+        let digest = self.sign_bcs_bytes(keys).unwrap();
 
         libra_stdlib::secret_bid_reveal(
             keys.public_key().to_bytes().to_vec(),
@@ -77,30 +81,30 @@ impl PofBidData {
     }
 }
 
-pub fn commit_reveal_poll(
+pub async fn commit_reveal_poll(
     mut tx: Sender<TransactionPayload>,
     sender: Arc<Mutex<LibraSender>>,
     entry_fee: u64,
     delay_secs: u64,
-    app_cfg: AppCfg,
-) {
+    _app_cfg: AppCfg,
+) -> anyhow::Result<()>{
     println!("commit reveal bid: {}", entry_fee);
-    let bid = PofBidData::new(entry_fee);
+    let mut bid = PofBidData::new(entry_fee);
 
     loop {
         thread::sleep(Duration::from_secs(delay_secs));
         let client = sender.lock().unwrap().client().clone(); // release the mutex
 
         // check what epoch we are in
-        bid.update_epoch().await(client);
-        // info!("bid: {:?}", &bid);
-        let must_reveal = libra_query::chain_queries::within_commit_reveal_window(client).await?;
+        let _ = bid.update_epoch(&client).await;
+        debug!("bid: {:?}", &bid);
+        let must_reveal = libra_query::chain_queries::within_commit_reveal_window(&client).await?;
 
-        let la = sender.lock().unwrap().local_account.clone();
+        let la = &sender.lock().unwrap().local_account;
         let tx_payload = if must_reveal {
-            bid.encode_reveal_tx_payload(&la);
+            bid.encode_reveal_tx_payload(&la)
         } else {
-            bid.encode_commit_tx_payload(&la);
+            bid.encode_commit_tx_payload(&la)
         };
 
         // send to channel
@@ -112,10 +116,33 @@ pub fn commit_reveal_poll(
     }
 }
 
-#[test]
-fn encode_signed_message() {
-    let pk = PrivateKey::from_bytes(hex::decode(
-        "74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
-    ));
-    dbg!(&pk);
-}
+// #[cfg(test)]
+// fn test_local_account() -> LocalAccount {
+//   use libra_types::exports::AccountAddress;
+//   use diem_sdk::types::AccountKey;
+//   use diem_sdk::crypto::ed25519::PrivateKey;
+
+//   let pk = PrivateKey::from_bytes(hex::decode(
+//       "74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+//   ));
+//   let account_key = AccountKey::from_private_key(pk);
+//   LocalAccount::new(
+//     AccountAddress::from_hex_literal("74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b").unwrap(), account_key, 0)
+// }
+
+// // #[test]
+// // fn encode_signed_message() {
+// //     let pk = PrivateKey::from_bytes(hex::decode(
+// //         "74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+// //     ));
+// //     dbg!(&pk);
+// // }
+
+// #[test]
+// fn sign_bid() {
+//   let bid = PofBidData::new(11);
+//   let la = test_local_account();
+//   let sig = bid.sign_bcs_bytes(&la).unwrap();
+//   let pubkey = la.public_key();
+//   // pubkey.verify_message(&sig);
+// }

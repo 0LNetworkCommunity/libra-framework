@@ -1,12 +1,6 @@
-use crate::stream::{bid_commit_reveal::PofBidArgs, epoch_tickle_poll::epoch_tickle_poll};
+use crate::stream::{channel, bid_commit_reveal::PofBidArgs, epoch_tickle_poll::epoch_tickle_poll};
 use crate::submit_transaction::Sender as LibraSender;
-use diem_logger::prelude::{error, info};
-use diem_types::transaction::TransactionPayload;
-use libra_types::core_types::app_cfg::AppCfg;
-use libra_types::exports::Ed25519PrivateKey;
-use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
 
 #[derive(clap::Subcommand)]
 pub enum StreamTxs {
@@ -21,9 +15,9 @@ pub enum StreamTxs {
 }
 
 impl StreamTxs {
-    pub fn start(&self, send: Arc<Mutex<LibraSender>>, _app_cfg: &AppCfg) {
-        let (tx, rx) = init_channel();
-        let stream_service = listen(rx, send.clone());
+    pub fn start(&self, send: Arc<Mutex<LibraSender>>) {
+        let (tx, rx) = channel::init_channel();
+        let stream_service = channel::listen(rx, send.clone());
 
         match &self {
             StreamTxs::EpochTickle { delay } => {

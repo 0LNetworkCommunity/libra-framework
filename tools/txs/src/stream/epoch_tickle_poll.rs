@@ -2,7 +2,6 @@ use crate::submit_transaction::Sender as LibraSender;
 use diem_logger::info;
 use diem_types::transaction::TransactionPayload;
 use libra_cached_packages::libra_stdlib;
-use libra_types::exports::Client;
 use std::borrow::BorrowMut;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
