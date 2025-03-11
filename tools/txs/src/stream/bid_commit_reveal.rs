@@ -7,23 +7,22 @@ use diem_sdk::types::LocalAccount;
 use diem_types::transaction::TransactionPayload;
 use libra_cached_packages::libra_stdlib;
 use libra_query::chain_queries;
-use libra_types::core_types::app_cfg::AppCfg;
 use libra_types::exports::Client;
 use serde::{Deserialize, Serialize};
 use std::borrow::BorrowMut;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::thread;
 use std::time::Duration;
 
 #[derive(clap::Args, Debug)]
 pub struct PofBidArgs {
     #[clap(short, long)]
+    /// bid amount for validator net reward
     pub net_reward: u64,
-
     #[clap(short, long)]
-    pub test_private_key: Option<String>,
+    /// seconds to wait between retries
+    pub delay: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -88,17 +87,16 @@ pub async fn commit_reveal_poll(
     sender: Arc<Mutex<LibraSender>>,
     entry_fee: u64,
     delay_secs: u64,
-    _app_cfg: AppCfg,
 ) -> anyhow::Result<()> {
     println!("commit reveal bid: {}", entry_fee);
     let mut bid = PofBidData::new(entry_fee);
 
     loop {
-        thread::sleep(Duration::from_secs(delay_secs));
-        let client = sender.lock().unwrap().client().clone(); // release the mutex
+        let client = sender.lock().unwrap().client().clone(); // releases the mutex
 
         // check what epoch we are in
         let _ = bid.update_epoch(&client).await;
+        dbg!(&bid);
         debug!("bid: {:?}", &bid);
         let must_reveal = libra_query::chain_queries::within_commit_reveal_window(&client).await?;
 
@@ -115,6 +113,7 @@ pub async fn commit_reveal_poll(
             // Don't abort on error
             Err(e) => error!("transaction fails with message: {:?}\ncontinuing...", e),
         };
+        tokio::time::sleep(Duration::from_secs(delay_secs)).await;
     }
 }
 

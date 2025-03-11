@@ -1,4 +1,5 @@
 use crate::submit_transaction::Sender as LibraSender;
+use diem_logger::debug;
 use diem_logger::prelude::{error, info};
 use diem_types::transaction::TransactionPayload;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -31,7 +32,7 @@ pub(crate) fn listen(
                             .sync_sign_submit_wait(payload)
                         {
                             Ok(r) => {
-                                info!("tx success: {:?}", r);
+                                debug!("tx success: {:?}", r);
                                 busy = false;
                             }
                             Err(e) => {
