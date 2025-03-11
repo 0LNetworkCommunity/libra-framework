@@ -1,4 +1,4 @@
-use crate::stream::{channel, bid_commit_reveal::PofBidArgs, epoch_tickle_poll::epoch_tickle_poll};
+use crate::stream::{bid_commit_reveal::PofBidArgs, channel, epoch_tickle_poll::epoch_tickle_poll};
 use crate::submit_transaction::Sender as LibraSender;
 use std::sync::{Arc, Mutex};
 

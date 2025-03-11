@@ -1,5 +1,7 @@
 use crate::submit_transaction::Sender as LibraSender;
 use diem_logger::{debug, error};
+use diem_sdk::crypto::ed25519::Ed25519Signature;
+use diem_sdk::crypto::Signature;
 use diem_sdk::crypto::SigningKey;
 use diem_sdk::types::LocalAccount;
 use diem_types::transaction::TransactionPayload;
@@ -7,17 +9,13 @@ use libra_cached_packages::libra_stdlib;
 use libra_query::chain_queries;
 use libra_types::core_types::app_cfg::AppCfg;
 use libra_types::exports::Client;
-
-// use libra_types::exports::{Ed25519PrivateKey, Ed25519PublicKey};
-use std::borrow::BorrowMut;
 use serde::{Deserialize, Serialize};
+use std::borrow::BorrowMut;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
-
-
 
 #[derive(clap::Args, Debug)]
 pub struct PofBidArgs {
@@ -59,15 +57,19 @@ impl PofBidData {
         Ok(())
     }
 
-    fn sign_bcs_bytes(&self, keys: &LocalAccount) -> anyhow::Result<Vec<u8>> {
+    fn sign_bcs_bytes(&self, keys: &LocalAccount) -> anyhow::Result<Ed25519Signature> {
         let bcs = self.to_bcs()?;
         let signed = keys.private_key().sign_arbitrary_message(&bcs);
-        Ok(signed.to_bytes().to_vec())
+        assert!(
+            signed.verify_arbitrary_msg(&bcs, keys.public_key()).is_ok(),
+            "cannot verify signed message"
+        );
+        Ok(signed)
     }
 
     fn encode_commit_tx_payload(&self, keys: &LocalAccount) -> TransactionPayload {
         let digest = self.sign_bcs_bytes(keys).expect("could not sign bytes");
-        libra_stdlib::secret_bid_commit(digest)
+        libra_stdlib::secret_bid_commit(digest.to_bytes().to_vec())
     }
 
     fn encode_reveal_tx_payload(&self, keys: &LocalAccount) -> TransactionPayload {
@@ -76,7 +78,7 @@ impl PofBidData {
         libra_stdlib::secret_bid_reveal(
             keys.public_key().to_bytes().to_vec(),
             self.entry_fee,
-            digest,
+            digest.to_bytes().to_vec(),
         )
     }
 }
@@ -87,7 +89,7 @@ pub async fn commit_reveal_poll(
     entry_fee: u64,
     delay_secs: u64,
     _app_cfg: AppCfg,
-) -> anyhow::Result<()>{
+) -> anyhow::Result<()> {
     println!("commit reveal bid: {}", entry_fee);
     let mut bid = PofBidData::new(entry_fee);
 
@@ -102,9 +104,9 @@ pub async fn commit_reveal_poll(
 
         let la = &sender.lock().unwrap().local_account;
         let tx_payload = if must_reveal {
-            bid.encode_reveal_tx_payload(&la)
+            bid.encode_reveal_tx_payload(la)
         } else {
-            bid.encode_commit_tx_payload(&la)
+            bid.encode_commit_tx_payload(la)
         };
 
         // send to channel
@@ -116,33 +118,32 @@ pub async fn commit_reveal_poll(
     }
 }
 
-// #[cfg(test)]
-// fn test_local_account() -> LocalAccount {
-//   use libra_types::exports::AccountAddress;
-//   use diem_sdk::types::AccountKey;
-//   use diem_sdk::crypto::ed25519::PrivateKey;
+#[cfg(test)]
+fn test_local_account() -> LocalAccount {
+    use diem_sdk::crypto::ed25519::Ed25519PrivateKey;
+    use diem_sdk::crypto::ValidCryptoMaterialStringExt;
+    use diem_sdk::types::AccountKey;
+    use libra_types::exports::AccountAddress;
 
-//   let pk = PrivateKey::from_bytes(hex::decode(
-//       "74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
-//   ));
-//   let account_key = AccountKey::from_private_key(pk);
-//   LocalAccount::new(
-//     AccountAddress::from_hex_literal("74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b").unwrap(), account_key, 0)
-// }
+    let pk = Ed25519PrivateKey::from_encoded_string(
+        "74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
+    )
+    .unwrap();
+    let account_key = AccountKey::from_private_key(pk);
+    LocalAccount::new(
+        AccountAddress::from_bytes(account_key.public_key().to_bytes()).unwrap(),
+        account_key,
+        0,
+    )
+}
 
-// // #[test]
-// // fn encode_signed_message() {
-// //     let pk = PrivateKey::from_bytes(hex::decode(
-// //         "74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b",
-// //     ));
-// //     dbg!(&pk);
-// // }
+#[test]
+fn sign_bid() {
+    let bid = PofBidData::new(11);
+    let la = test_local_account();
+    let sig = bid.sign_bcs_bytes(&la).expect("could not sign");
+    let pubkey = la.public_key();
+    let msg = bid.to_bcs().unwrap();
 
-// #[test]
-// fn sign_bid() {
-//   let bid = PofBidData::new(11);
-//   let la = test_local_account();
-//   let sig = bid.sign_bcs_bytes(&la).unwrap();
-//   let pubkey = la.public_key();
-//   // pubkey.verify_message(&sig);
-// }
+    assert!(sig.verify_arbitrary_msg(&msg, pubkey).is_ok());
+}

@@ -1,4 +1,3 @@
-
 use crate::submit_transaction::Sender as LibraSender;
 use diem_logger::prelude::{error, info};
 use diem_types::transaction::TransactionPayload;
@@ -43,9 +42,9 @@ pub(crate) fn listen(
                     }
                 }
                 Err(_) => {
-                  error!("could not parse channel message received, aborting");
-                  break
-                },
+                    error!("could not parse channel message received, aborting");
+                    break;
+                }
             };
         }
     })
