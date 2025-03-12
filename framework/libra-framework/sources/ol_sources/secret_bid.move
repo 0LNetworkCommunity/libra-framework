@@ -214,8 +214,8 @@ module ol_framework::secret_bid {
     // get the timestamp
     let remaining_secs = reconfiguration::get_remaining_epoch_secs();
     let window = if (testnet::is_testnet()) {
-      // ten secs
-      10
+      // 20 secs
+      20
     } else {
       // five mins
       60*5

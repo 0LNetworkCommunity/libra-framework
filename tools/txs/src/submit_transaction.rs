@@ -212,7 +212,6 @@ impl Sender {
         println!("transaction sent");
         self.response = Some(r.clone());
         spin.finish_and_clear();
-        // debug!("{:?}", &r);
         OLProgress::complete("transaction success");
         Ok(r)
     }

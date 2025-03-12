@@ -1,6 +1,8 @@
 use crate::submit_transaction::Sender as LibraSender;
+use diem_logger::error;
 use diem_logger::info;
 use diem_sdk::crypto::ed25519::Ed25519Signature;
+use diem_sdk::crypto::HashValue;
 use diem_sdk::crypto::Signature;
 use diem_sdk::crypto::SigningKey;
 use diem_sdk::types::LocalAccount;
@@ -62,19 +64,29 @@ impl PofBidData {
         Ok(signed)
     }
 
-    fn encode_commit_tx_payload(&self, keys: &LocalAccount) -> TransactionPayload {
-        let digest = self.sign_bcs_bytes(keys).expect("could not sign bytes");
-        libra_stdlib::secret_bid_commit(digest.to_bytes().to_vec())
+    fn create_hash_bytes(&self, keys: &LocalAccount) -> anyhow::Result<Vec<u8>> {
+        let sig = self.sign_bcs_bytes(keys).expect("could not sign bytes");
+
+        make_commit_hash(self.entry_fee, self.epoch, sig.to_bytes().to_vec())
     }
 
-    fn encode_reveal_tx_payload(&self, keys: &LocalAccount) -> TransactionPayload {
-        let digest = self.sign_bcs_bytes(keys).unwrap();
+    fn encode_commit_tx_payload(&self, keys: &LocalAccount) -> anyhow::Result<TransactionPayload> {
+        let digest = self.create_hash_bytes(keys)?;
+        let payload = libra_stdlib::secret_bid_commit(digest);
+        Ok(payload)
+    }
 
-        libra_stdlib::secret_bid_reveal(
+    // In the reveal we simply show the signature and
+    // open bid info. On the MoveVM side the hash is recreated
+    // so that it should match the commit
+    fn encode_reveal_tx_payload(&self, keys: &LocalAccount) -> anyhow::Result<TransactionPayload> {
+        let sig = self.sign_bcs_bytes(keys)?;
+        let payload = libra_stdlib::secret_bid_reveal(
             keys.public_key().to_bytes().to_vec(),
             self.entry_fee,
-            digest.to_bytes().to_vec(),
-        )
+            sig.to_bytes().to_vec(),
+        );
+        Ok(payload)
     }
 }
 
@@ -95,20 +107,48 @@ pub async fn commit_reveal_poll(
         let _ = bid.update_epoch(&client).await;
         let must_reveal = libra_query::chain_queries::within_commit_reveal_window(&client).await?;
 
-
         let la = &sender.local_account;
-        let payload = if must_reveal {
+        if must_reveal {
             info!("must reveal bid");
-            bid.encode_reveal_tx_payload(la)
+            let payload = bid.encode_reveal_tx_payload(la)?;
+            // don't abort if we are trying too eager!
+            match sender.sign_submit_wait(payload).await {
+                Ok(_) => info!("successfully revealed bid"),
+                Err(e) => error!(
+                    "could not reveal bid: message {}\ncontinuing...",
+                    e.to_string()
+                ),
+            }
         } else {
             info!("sending sealed bid");
-            bid.encode_commit_tx_payload(la)
+            let payload = bid.encode_commit_tx_payload(la)?;
+            match sender.sign_submit_wait(payload).await {
+                Ok(_) => info!("successfully committed bid"),
+                Err(e) => error!(
+                    "could not commit bid: message {}\ncontinuing...",
+                    e.to_string()
+                ),
+            }
         };
 
-        // send to channel
-        sender.sign_submit_wait(payload).await?;
         tokio::time::sleep(Duration::from_secs(delay_secs)).await;
     }
+}
+
+/// produces a hash by combining the bid and the signed bid.
+/// On the move side there is an equivalent function at: secret_bid.move
+pub fn make_commit_hash(
+    entry_fee: u64,
+    epoch: u64,
+    mut signed_message: Vec<u8>,
+) -> anyhow::Result<Vec<u8>> {
+    let bid = PofBidData { entry_fee, epoch };
+
+    let mut bid_bytes = bcs::to_bytes(&bid)?;
+    bid_bytes.append(&mut signed_message);
+    let commitment = HashValue::sha3_256_of(&bid_bytes);
+
+    Ok(commitment.to_vec())
 }
 
 #[cfg(test)]
