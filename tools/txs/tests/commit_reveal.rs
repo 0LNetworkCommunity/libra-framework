@@ -43,17 +43,15 @@ async fn background_commit_reveal() -> anyhow::Result<()> {
     // create a Sender using the validator's app config
     let val_app_cfg = ls.first_account_app_cfg()?;
     let mut validator_sender = Sender::from_app_cfg(&val_app_cfg, None).await?;
-    // let wrapped_sender = Arc::new(Mutex::new(validator_sender));
 
     // run the txs tool in background in stream mode
-    // run the txs tool in background in stream
 
     tokio::spawn(async move {
-        commit_reveal_cmd.start(&mut validator_sender).await?;
+        commit_reveal_cmd.start(&mut validator_sender).await.unwrap();
     });
 
     // //////// FLIP BIT ////////
-    std::thread::sleep(Duration::from_secs(20));
+    std::thread::sleep(Duration::from_secs(60));
 
     // helper_set_enable_trigger(&mut ls).await;
 
@@ -78,22 +76,22 @@ async fn background_commit_reveal() -> anyhow::Result<()> {
     Ok(())
 }
 
-// helper for the testnet root to enable epoch boundary trigger
-async fn helper_set_enable_trigger(ls: &mut LibraSmoke) {
-    let mut public_info = ls.swarm.diem_public_info();
+// // helper for the testnet root to enable epoch boundary trigger
+// async fn helper_set_enable_trigger(ls: &mut LibraSmoke) {
+//     let mut public_info = ls.swarm.diem_public_info();
 
-    let payload = public_info
-        .transaction_factory()
-        .payload(libra_stdlib::epoch_boundary_smoke_enable_trigger());
+//     let payload = public_info
+//         .transaction_factory()
+//         .payload(libra_stdlib::epoch_boundary_smoke_enable_trigger());
 
-    let enable_trigger_tx = public_info
-        .root_account()
-        .sign_with_transaction_builder(payload);
+//     let enable_trigger_tx = public_info
+//         .root_account()
+//         .sign_with_transaction_builder(payload);
 
-    public_info
-        .client()
-        .submit_and_wait(&enable_trigger_tx)
-        .await
-        .expect("could not send demo tx");
-    println!("testnet root account enables epoch trigger");
-}
+//     public_info
+//         .client()
+//         .submit_and_wait(&enable_trigger_tx)
+//         .await
+//         .expect("could not send demo tx");
+//     println!("testnet root account enables epoch trigger");
+// }

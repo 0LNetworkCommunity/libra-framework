@@ -1,5 +1,5 @@
 use crate::submit_transaction::Sender as LibraSender;
-use diem_logger::debug;
+use diem_logger::info;
 use diem_sdk::crypto::ed25519::Ed25519Signature;
 use diem_sdk::crypto::Signature;
 use diem_sdk::crypto::SigningKey;
@@ -88,16 +88,20 @@ pub async fn commit_reveal_poll(
     let client = sender.client().clone();
 
     loop {
+        let secs = libra_query::chain_queries::secs_remaining_in_epoch(&client).await?;
+        info!("seconds remaining in epoch {secs}");
+
         // check what epoch we are in
         let _ = bid.update_epoch(&client).await;
-        dbg!(&bid);
-        debug!("bid: {:?}", &bid);
         let must_reveal = libra_query::chain_queries::within_commit_reveal_window(&client).await?;
+
 
         let la = &sender.local_account;
         let payload = if must_reveal {
+            info!("must reveal bid");
             bid.encode_reveal_tx_payload(la)
         } else {
+            info!("sending sealed bid");
             bid.encode_commit_tx_payload(la)
         };
 
