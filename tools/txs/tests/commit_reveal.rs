@@ -1,7 +1,7 @@
 //! test commit reveal
 use libra_query::query_view;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_txs::stream::bid_commit_reveal::PofBidArgs;
+use libra_txs::stream::bid_commit_reveal::{self, PofBidArgs};
 use libra_txs::{submit_transaction::Sender, txs_cli_stream::StreamTxs};
 use std::time::Duration;
 
@@ -38,7 +38,7 @@ async fn background_commit_reveal() -> anyhow::Result<()> {
     // so we create it directly and attempt to run it.
     let commit_reveal_cmd = StreamTxs::ValBid(PofBidArgs {
         net_reward: test_bid_amount,
-        delay: Some(5),
+        delay: Some(2), // Try to submit every 2 seconds in this test
     });
     // create a Sender using the validator's app config
     let val_app_cfg = ls.first_account_app_cfg()?;
@@ -56,18 +56,19 @@ async fn background_commit_reveal() -> anyhow::Result<()> {
     });
 
     // WAIT FOR END OF EPOCH chain_id==4 is 30 secs
-    std::thread::sleep(Duration::from_secs(30));
+    // reveal window happens 15 seconds before end of epoch
+    std::thread::sleep(Duration::from_secs(20));
     h.abort();
 
-    match libra_query::chain_queries::validator_committed_bid(&client, validator_addr).await {
+    match bid_commit_reveal::validator_committed_bid(&client, validator_addr).await {
         Ok(onchain_bid) => {
+            dbg!(&onchain_bid);
             assert!(test_bid_amount == onchain_bid, "incorrect bid found");
             println!("Validator committed bid successfully.");
+            return Ok(());
         }
         Err(e) => {
-            assert!(false, "Failed to commit bid: {:?}", e);
+            panic!("Failed to reveal bid: {:?}", e);
         }
     }
-
-    Ok(())
 }

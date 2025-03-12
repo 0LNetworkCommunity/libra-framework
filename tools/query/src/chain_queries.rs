@@ -3,7 +3,7 @@
 use crate::query_view::{self, get_view};
 use anyhow::Context;
 use diem_sdk::rest_client::Client;
-use libra_types::exports::AccountAddress;
+
 /// Retrieves the current epoch from the blockchain.
 pub async fn get_epoch(client: &Client) -> anyhow::Result<u64> {
     let res = get_view(client, "0x1::epoch_helper::get_current_epoch", None, None).await?;
@@ -112,21 +112,6 @@ pub async fn secs_remaining_in_epoch(client: &Client) -> anyhow::Result<u64> {
         "0x1::reconfiguration::get_remaining_epoch_secs",
         None,
         None,
-    )
-    .await?;
-
-    let value: Vec<String> = serde_json::from_value(res)?;
-    let secs = value.first().unwrap().parse::<u64>()?;
-
-    Ok(secs)
-}
-
-pub async fn validator_committed_bid(client: &Client, val: AccountAddress) -> anyhow::Result<u64> {
-    let res = get_view(
-        client,
-        "0x1::secret_bid::get_bid_unchecked",
-        None,
-        Some(val.to_hex_literal()),
     )
     .await?;
 

@@ -44,8 +44,10 @@ module ol_framework::secret_bid {
   const EINVALID_BID_SIGNATURE: u64 = 2;
   /// Must reveal bid in same epoch as committed
   const EMISMATCH_EPOCH: u64 = 3;
-  /// Must submit bid before reveal window opens, and reveal bid only after.
-  const ENOT_IN_REVEAL_WINDOW: u64 = 4;
+  /// Must commit a bid before reveal window opens.
+  const ETOO_LATE_TO_COMMIT: u64 = 4;
+  /// Can only reveal bid within reveal window.
+  const ECANT_REVEAL_YET: u64 = 4;
   /// Bad Alice, the reveal does not match the commit
   const ECOMMIT_DIGEST_NOT_EQUAL: u64 = 5;
   /// Bid is for different epoch, expired
@@ -53,8 +55,10 @@ module ol_framework::secret_bid {
 
   struct CommittedBid has key {
     reveal_entry_fee: u64,
+    reveal_epoch: u64,
     entry_fee_history: vector<u64>, // keep previous 7 days bids
     commit_digest: vector<u8>,
+    // the epoch receiving commits
     commit_epoch: u64,
   }
 
@@ -74,14 +78,14 @@ module ol_framework::secret_bid {
   /// Transaction entry function for committing bid
   public entry fun commit(user: &signer, digest: vector<u8>) acquires CommittedBid {
     // don't allow committing within reveal window
-    assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+    assert!(!in_reveal_window(), error::invalid_state(ETOO_LATE_TO_COMMIT));
     commit_entry_fee_impl(user, digest);
   }
 
   /// Transaction entry function for revealing bid
   public entry fun reveal(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
     // don't allow committing within reveal window
-    assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+    assert!(in_reveal_window(), error::invalid_state(ECANT_REVEAL_YET));
     reveal_entry_fee_impl(user, pk, entry_fee, signed_msg);
   }
 
@@ -91,6 +95,7 @@ module ol_framework::secret_bid {
     if (!is_init(signer::address_of(user))) {
       move_to<CommittedBid>(user, CommittedBid {
         reveal_entry_fee: 0,
+        reveal_epoch: 0,
         entry_fee_history: vector::empty(),
         commit_digest: vector::empty(),
         commit_epoch: 0,
@@ -158,6 +163,7 @@ module ol_framework::secret_bid {
     assert!(comparator::is_equal(&comparator::compare(&commitment, &state.commit_digest)), error::invalid_argument(ECOMMIT_DIGEST_NOT_EQUAL));
 
     state.reveal_entry_fee = entry_fee;
+    state.reveal_epoch = epoch;
   }
 
   fun check_signature(account_public_key_bytes: vector<u8>, signed_message_bytes: vector<u8>, bid_message: Bid) {
@@ -214,8 +220,8 @@ module ol_framework::secret_bid {
     // get the timestamp
     let remaining_secs = reconfiguration::get_remaining_epoch_secs();
     let window = if (testnet::is_testnet()) {
-      // 20 secs
-      20
+      // 15 secs, half of the short 30 sec epoch
+      15
     } else {
       // five mins
       60*5
@@ -239,24 +245,23 @@ module ol_framework::secret_bid {
     get_bid_unchecked(user)
   }
 
-   /// Find the most recent epoch the validator has placed a bid on.
-  public(friend) fun latest_epoch_bid(user: address): u64 acquires CommittedBid {
+  #[view]
+  /// Find the most recent epoch the validator has placed a bid on.
+  public fun latest_epoch_bid(user: address): u64 acquires CommittedBid {
     let state = borrow_global<CommittedBid>(user);
     state.commit_epoch
   }
 
+  #[view]
+  /// Find the most recent epoch the validator has revealed a bid for
+  public fun latest_epoch_revealed(user: address): u64 acquires CommittedBid {
+    let state = borrow_global<CommittedBid>(user);
+    state.reveal_epoch
+  }
   /// does the user have a current bid
   public(friend) fun has_valid_bid(user: address): bool acquires CommittedBid {
     let state = borrow_global<CommittedBid>(user);
     state.commit_epoch == epoch_helper::get_current_epoch()
-  }
-
-  /// will abort if bid is not valid
-  fun assert_valid_bid(user: address) acquires CommittedBid {
-    // if we are not in reveal window this information will be confusing.
-    assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-
-    assert!(has_valid_bid(user), error::invalid_state(EBID_EXPIRED));
   }
 
   #[view]
@@ -276,9 +281,11 @@ module ol_framework::secret_bid {
     if (!exists<CommittedBid>(user_addr)) {
       move_to(user, CommittedBid {
         reveal_entry_fee,
+        reveal_epoch: commit_epoch,
         entry_fee_history: vector[0],
         commit_digest: vector[0],
         commit_epoch,
+
       });
     } else {
       let state = borrow_global_mut<CommittedBid>(user_addr);

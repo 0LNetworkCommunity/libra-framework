@@ -9,6 +9,8 @@ use diem_sdk::types::LocalAccount;
 use diem_types::transaction::TransactionPayload;
 use libra_cached_packages::libra_stdlib;
 use libra_query::chain_queries;
+use libra_query::query_view::get_view;
+use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -100,16 +102,17 @@ pub async fn commit_reveal_poll(
     let client = sender.client().clone();
 
     loop {
-        let secs = libra_query::chain_queries::secs_remaining_in_epoch(&client).await?;
-        info!("seconds remaining in epoch {secs}");
-
         // check what epoch we are in
         let _ = bid.update_epoch(&client).await;
-        let must_reveal = libra_query::chain_queries::within_commit_reveal_window(&client).await?;
+        let reveal_window_open = chain_queries::within_commit_reveal_window(&client).await?;
+        let last_epoch_revealed =
+            validator_last_epoch_revealed(&client, sender.local_account.address()).await?;
+        let must_reveal = last_epoch_revealed != bid.epoch && reveal_window_open;
 
         let la = &sender.local_account;
         if must_reveal {
             info!("must reveal bid");
+
             let payload = bid.encode_reveal_tx_payload(la)?;
             // don't abort if we are trying too eager!
             match sender.sign_submit_wait(payload).await {
@@ -119,8 +122,11 @@ pub async fn commit_reveal_poll(
                     e.to_string()
                 ),
             }
-        } else {
-            info!("sending sealed bid");
+        } else if !reveal_window_open {
+            info!("sending secret bid");
+            let secs = chain_queries::secs_remaining_in_epoch(&client).await?;
+            info!("seconds remaining in epoch {secs}");
+
             let payload = bid.encode_commit_tx_payload(la)?;
             match sender.sign_submit_wait(payload).await {
                 Ok(_) => info!("successfully committed bid"),
@@ -130,7 +136,8 @@ pub async fn commit_reveal_poll(
                 ),
             }
         };
-
+        // NOTE: it's possible the user sets a delay that is longer than the
+        // reveal window
         tokio::time::sleep(Duration::from_secs(delay_secs)).await;
     }
 }
@@ -179,4 +186,37 @@ fn sign_bid() {
     let msg = bid.to_bcs().unwrap();
 
     assert!(sig.verify_arbitrary_msg(&msg, pubkey).is_ok());
+}
+
+pub async fn validator_committed_bid(client: &Client, val: AccountAddress) -> anyhow::Result<u64> {
+    let res = get_view(
+        client,
+        "0x1::secret_bid::get_bid_unchecked",
+        None,
+        Some(val.to_hex_literal()),
+    )
+    .await?;
+
+    let value: Vec<String> = serde_json::from_value(res)?;
+    let secs = value.first().unwrap().parse::<u64>()?;
+
+    Ok(secs)
+}
+
+pub async fn validator_last_epoch_revealed(
+    client: &Client,
+    val: AccountAddress,
+) -> anyhow::Result<u64> {
+    let res = get_view(
+        client,
+        "0x1::secret_bid::latest_epoch_revealed",
+        None,
+        Some(val.to_hex_literal()),
+    )
+    .await?;
+
+    let value: Vec<String> = serde_json::from_value(res)?;
+    let secs = value.first().unwrap().parse::<u64>()?;
+
+    Ok(secs)
 }
