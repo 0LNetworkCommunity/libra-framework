@@ -3,10 +3,7 @@ use diem_logger::info;
 use libra_cached_packages::libra_stdlib;
 use std::time::Duration;
 
-pub async fn epoch_tickle_poll(
-    sender: &mut LibraSender,
-    delay_secs: u64,
-) -> anyhow::Result<()> {
+pub async fn epoch_tickle_poll(sender: &mut LibraSender, delay_secs: u64) -> anyhow::Result<()> {
     println!("polling epoch boundary");
     let client = sender.client().clone();
     loop {
@@ -17,7 +14,6 @@ pub async fn epoch_tickle_poll(
                 let payload = libra_stdlib::diem_governance_trigger_epoch();
 
                 sender.sign_submit_wait(payload).await?;
-
             }
             _ => {
                 info!("Not ready to call epoch.")

@@ -22,12 +22,7 @@ impl StreamTxs {
                 epoch_tickle_poll(libra_sender, delay.unwrap_or(60)).await?;
             }
             StreamTxs::ValBid(args) => {
-                commit_reveal_poll(
-                    libra_sender,
-                    args.net_reward,
-                    args.delay.unwrap_or(60),
-                )
-                .await?;
+                commit_reveal_poll(libra_sender, args.net_reward, args.delay.unwrap_or(60)).await?;
             }
         }
         Ok(())

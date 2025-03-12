@@ -1,9 +1,9 @@
 //! test commit reveal
-use std::time::Duration;
 use libra_query::query_view;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_txs::stream::bid_commit_reveal::PofBidArgs;
 use libra_txs::{submit_transaction::Sender, txs_cli_stream::StreamTxs};
+use std::time::Duration;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 /// Test triggering a new epoch
@@ -49,7 +49,10 @@ async fn background_commit_reveal() -> anyhow::Result<()> {
     // run the txs tool in background in stream mode
 
     let h = tokio::spawn(async move {
-        commit_reveal_cmd.start(&mut validator_sender).await.unwrap();
+        commit_reveal_cmd
+            .start(&mut validator_sender)
+            .await
+            .unwrap();
     });
 
     // WAIT FOR END OF EPOCH chain_id==4 is 30 secs

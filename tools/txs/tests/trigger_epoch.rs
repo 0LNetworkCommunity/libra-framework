@@ -68,7 +68,7 @@ async fn sync_trigger_epoch() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test (flavor = "multi_thread", worker_threads = 2)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 /// Test triggering a new epoch
 // Scenario: We want to trigger a new epoch using the TriggerEpoch command
 // We will assume that triggering an epoch is an operation that we can test in a single node testnet
@@ -105,9 +105,11 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
     // run the txs tool in background in stream
 
     tokio::spawn(async move {
-        trigger_epoch_cmd.start(&mut validator_sender).await.unwrap();
+        trigger_epoch_cmd
+            .start(&mut validator_sender)
+            .await
+            .unwrap();
     });
-
 
     //////// FLIP BIT ////////
     std::thread::sleep(Duration::from_secs(10));
