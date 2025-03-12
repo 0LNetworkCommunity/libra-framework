@@ -1,5 +1,5 @@
 use crate::submit_transaction::Sender as LibraSender;
-use diem_logger::{debug, error};
+use diem_logger::debug;
 use diem_sdk::crypto::ed25519::Ed25519Signature;
 use diem_sdk::crypto::Signature;
 use diem_sdk::crypto::SigningKey;
@@ -9,10 +9,6 @@ use libra_cached_packages::libra_stdlib;
 use libra_query::chain_queries;
 use libra_types::exports::Client;
 use serde::{Deserialize, Serialize};
-use std::borrow::BorrowMut;
-use std::sync::mpsc::Sender;
-use std::sync::Arc;
-use std::sync::Mutex;
 use std::time::Duration;
 
 #[derive(clap::Args, Debug)]
@@ -83,36 +79,30 @@ impl PofBidData {
 }
 
 pub async fn commit_reveal_poll(
-    mut tx: Sender<TransactionPayload>,
-    sender: Arc<Mutex<LibraSender>>,
+    sender: &mut LibraSender,
     entry_fee: u64,
     delay_secs: u64,
 ) -> anyhow::Result<()> {
     println!("commit reveal bid: {}", entry_fee);
     let mut bid = PofBidData::new(entry_fee);
+    let client = sender.client().clone();
 
     loop {
-        let client = sender.lock().unwrap().client().clone(); // releases the mutex
-
         // check what epoch we are in
         let _ = bid.update_epoch(&client).await;
         dbg!(&bid);
         debug!("bid: {:?}", &bid);
         let must_reveal = libra_query::chain_queries::within_commit_reveal_window(&client).await?;
 
-        let la = &sender.lock().unwrap().local_account;
-        let tx_payload = if must_reveal {
+        let la = &sender.local_account;
+        let payload = if must_reveal {
             bid.encode_reveal_tx_payload(la)
         } else {
             bid.encode_commit_tx_payload(la)
         };
 
         // send to channel
-        match tx.borrow_mut().send(tx_payload.clone()) {
-            Ok(_) => debug!("success with payload: {:?}", tx_payload),
-            // Don't abort on error
-            Err(e) => error!("transaction fails with message: {:?}\ncontinuing...", e),
-        };
+        sender.sign_submit_wait(payload).await?;
         tokio::time::sleep(Duration::from_secs(delay_secs)).await;
     }
 }

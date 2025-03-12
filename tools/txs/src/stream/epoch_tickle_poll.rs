@@ -10,7 +10,6 @@ pub async fn epoch_tickle_poll(
     println!("polling epoch boundary");
     let client = sender.client().clone();
     loop {
-        // TODO: make the client borrow instead of clone
         let res = libra_query::chain_queries::epoch_over_can_trigger(&client).await;
 
         match res {
@@ -19,9 +18,6 @@ pub async fn epoch_tickle_poll(
 
                 sender.sign_submit_wait(payload).await?;
 
-                // tx.borrow_mut()
-                //     .send(func)
-                //     .expect("could not send message to channel");
             }
             _ => {
                 info!("Not ready to call epoch.")
