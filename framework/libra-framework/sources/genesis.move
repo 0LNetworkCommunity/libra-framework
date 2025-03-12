@@ -137,6 +137,12 @@ module diem_framework::genesis {
 
         chain_id::initialize(&diem_framework_account, chain_id);
         reconfiguration::initialize(&diem_framework_account);
+        // 0L: force testing environments to have short epochs
+        // TODO this should be solved at the SwarmBuilder level
+        // but requires change to vendors.
+        if (chain_id == 4) {
+          epoch_interval_microsecs = 1_000_000 * 30;
+        };
         block::initialize(&diem_framework_account, epoch_interval_microsecs);
         state_storage::initialize(&diem_framework_account);
         randomness::initialize(&diem_framework_account);
