@@ -1,6 +1,4 @@
 //! test trigger epoch
-
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use diem_forge::Swarm;
@@ -102,13 +100,12 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
     let trigger_epoch_cmd = StreamTxs::EpochTickle { delay: Some(5) };
     // create a Sender using the validator's app config
     let val_app_cfg = ls.first_account_app_cfg()?;
-    let validator_sender = Sender::from_app_cfg(&val_app_cfg, None).await?;
-    let wrapped_sender = Arc::new(Mutex::new(validator_sender));
+    let mut validator_sender = Sender::from_app_cfg(&val_app_cfg, None).await?;
 
     // run the txs tool in background in stream
 
     tokio::spawn(async move {
-        trigger_epoch_cmd.start(wrapped_sender).await;
+        trigger_epoch_cmd.start(&mut validator_sender).await.unwrap();
     });
 
 

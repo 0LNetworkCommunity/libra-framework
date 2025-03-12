@@ -18,7 +18,6 @@ use libra_types::{
 };
 use libra_wallet::account_keys::{get_keys_from_mnem, get_keys_from_prompt};
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
 use url::Url;
 
 #[derive(Parser)]
@@ -220,8 +219,8 @@ impl TxsCli {
             Some(TxsSub::User(user_txs)) => user_txs.run(&mut send).await,
             Some(TxsSub::Community(comm_txs)) => comm_txs.run(&mut send).await,
             Some(TxsSub::Stream(stream_txs)) => {
-                let arc_send = Arc::new(Mutex::new(send));
-                stream_txs.start(arc_send).await;
+                // let arc_send = Arc::new(Mutex::new(send));
+                stream_txs.start(&mut send).await?;
                 Ok(())
             }
             _ => {
