@@ -61,7 +61,6 @@ pub fn get_account_from_prompt() -> (AuthenticationKey, AccountAddress, WalletLi
 
 #[test]
 fn wallet() {
-    // use diem_wallet::Mnemonic;
     let mut wallet = WalletLibrary::new();
 
     let (auth_key, child_number) = wallet.new_address().expect("Could not generate address");

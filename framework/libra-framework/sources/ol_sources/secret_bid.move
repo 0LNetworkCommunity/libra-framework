@@ -10,13 +10,13 @@ module ol_framework::secret_bid {
   use std::hash;
   use std::signer;
   use std::vector;
+  use diem_std::debug::print;
 
   use diem_std::ed25519;
   use diem_std::comparator;
   use diem_framework::epoch_helper;
   use diem_framework::reconfiguration;
   use diem_framework::system_addresses;
-
   use ol_framework::testnet;
   use ol_framework::address_utils;
 
@@ -24,7 +24,12 @@ module ol_framework::secret_bid {
   friend ol_framework::proof_of_fee;
 
   #[test_only]
+  use diem_std::ed25519::SecretKey;
+  #[test_only]
   use diem_framework::account;
+  #[test_only]
+  use diem_std::from_bcs;
+
 
   #[test_only]
   friend ol_framework::test_boundary;
@@ -36,11 +41,13 @@ module ol_framework::secret_bid {
   /// User bidding not initialized
   const ECOMMIT_BID_NOT_INITIALIZED: u64 = 1;
   /// Invalid signature on bid message
-  const EINVALID_SIGNATURE: u64 = 2;
+  const EINVALID_BID_SIGNATURE: u64 = 2;
   /// Must reveal bid in same epoch as committed
   const EMISMATCH_EPOCH: u64 = 3;
-  /// Must submit bid before reveal window opens, and reveal bid only after.
-  const ENOT_IN_REVEAL_WINDOW: u64 = 4;
+  /// Must commit a bid before reveal window opens.
+  const ETOO_LATE_TO_COMMIT: u64 = 4;
+  /// Can only reveal bid within reveal window.
+  const ECANT_REVEAL_YET: u64 = 4;
   /// Bad Alice, the reveal does not match the commit
   const ECOMMIT_DIGEST_NOT_EQUAL: u64 = 5;
   /// Bid is for different epoch, expired
@@ -48,8 +55,10 @@ module ol_framework::secret_bid {
 
   struct CommittedBid has key {
     reveal_entry_fee: u64,
+    reveal_epoch: u64,
     entry_fee_history: vector<u64>, // keep previous 7 days bids
     commit_digest: vector<u8>,
+    // the epoch receiving commits
     commit_epoch: u64,
   }
 
@@ -68,15 +77,15 @@ module ol_framework::secret_bid {
 
   /// Transaction entry function for committing bid
   public entry fun commit(user: &signer, digest: vector<u8>) acquires CommittedBid {
-    // don't allow commiting within reveal window
-    assert!(!in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+    // don't allow committing within reveal window
+    assert!(!in_reveal_window(), error::invalid_state(ETOO_LATE_TO_COMMIT));
     commit_entry_fee_impl(user, digest);
   }
 
   /// Transaction entry function for revealing bid
   public entry fun reveal(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
-    // don't allow commiting within reveal window
-    assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
+    // don't allow committing within reveal window
+    assert!(in_reveal_window(), error::invalid_state(ECANT_REVEAL_YET));
     reveal_entry_fee_impl(user, pk, entry_fee, signed_msg);
   }
 
@@ -86,6 +95,7 @@ module ol_framework::secret_bid {
     if (!is_init(signer::address_of(user))) {
       move_to<CommittedBid>(user, CommittedBid {
         reveal_entry_fee: 0,
+        reveal_epoch: 0,
         entry_fee_history: vector::empty(),
         commit_digest: vector::empty(),
         commit_epoch: 0,
@@ -130,7 +140,7 @@ module ol_framework::secret_bid {
     commitment
   }
 
-  /// user sends transaction  which takes the committed signed message
+  /// user sends transaction which takes the committed signed message
   /// submits the public key used to sign message, which we compare to the authentication key.
   /// we use the epoch as the sequence number, so that messages are different on each submission.
   public fun reveal_entry_fee_impl(user: &signer, pk: vector<u8>, entry_fee: u64, signed_msg: vector<u8>) acquires CommittedBid {
@@ -153,6 +163,7 @@ module ol_framework::secret_bid {
     assert!(comparator::is_equal(&comparator::compare(&commitment, &state.commit_digest)), error::invalid_argument(ECOMMIT_DIGEST_NOT_EQUAL));
 
     state.reveal_entry_fee = entry_fee;
+    state.reveal_epoch = epoch;
   }
 
   fun check_signature(account_public_key_bytes: vector<u8>, signed_message_bytes: vector<u8>, bid_message: Bid) {
@@ -160,7 +171,10 @@ module ol_framework::secret_bid {
 
     // confirm that the signature bytes belong to the message (the Bid struct)
     let sig = ed25519::new_signature_from_bytes(signed_message_bytes);
-    assert!(ed25519::signature_verify_strict_t(&sig, &pubkey, bid_message), error::invalid_argument(EINVALID_SIGNATURE));
+    print(&@0x111);
+    print(&bid_message);
+    let bid_bytes = bcs::to_bytes(&bid_message);
+    assert!(ed25519::signature_verify_strict(&sig, &pubkey, bid_bytes), error::invalid_argument(EINVALID_BID_SIGNATURE));
 
     /////////
     // NOTE: previously we would check if the public key for the signed message
@@ -188,9 +202,11 @@ module ol_framework::secret_bid {
     (addr, bids)
   }
 
-  ///////// GETTERS ////////
 
-  public(friend) fun get_bid_unchecked(user: address): u64 acquires CommittedBid {
+
+  ///////// GETTERS ////////
+  #[view]
+  public fun get_bid_unchecked(user: address): u64 acquires CommittedBid {
     let state = borrow_global<CommittedBid>(user);
 
     state.reveal_entry_fee
@@ -204,8 +220,8 @@ module ol_framework::secret_bid {
     // get the timestamp
     let remaining_secs = reconfiguration::get_remaining_epoch_secs();
     let window = if (testnet::is_testnet()) {
-      // ten secs
-      10
+      // 15 secs, half of the short 30 sec epoch
+      15
     } else {
       // five mins
       60*5
@@ -225,34 +241,27 @@ module ol_framework::secret_bid {
   #[view]
   /// get the current bid, and exclude bids that are stale
   public fun current_revealed_bid(user: address): u64 acquires CommittedBid {
-    // // if we are not in reveal window this information will be confusing.
-    // assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-
-    // let state = borrow_global<CommittedBid>(user);
-    // assert!(state.commit_epoch == epoch_helper::get_current_epoch(), error::invalid_state(EBID_EXPIRED));
-
-    // state.reveal_entry_fee
+    // if we are not in reveal window this information will be confusing.
     get_bid_unchecked(user)
   }
 
-   /// Find the most recent epoch the validator has placed a bid on.
-  public(friend) fun latest_epoch_bid(user: address): u64 acquires CommittedBid {
+  #[view]
+  /// Find the most recent epoch the validator has placed a bid on.
+  public fun latest_epoch_bid(user: address): u64 acquires CommittedBid {
     let state = borrow_global<CommittedBid>(user);
     state.commit_epoch
   }
 
+  #[view]
+  /// Find the most recent epoch the validator has revealed a bid for
+  public fun latest_epoch_revealed(user: address): u64 acquires CommittedBid {
+    let state = borrow_global<CommittedBid>(user);
+    state.reveal_epoch
+  }
   /// does the user have a current bid
   public(friend) fun has_valid_bid(user: address): bool acquires CommittedBid {
     let state = borrow_global<CommittedBid>(user);
     state.commit_epoch == epoch_helper::get_current_epoch()
-  }
-
-  /// will abort if bid is not valid
-  fun assert_valid_bid(user: address) acquires CommittedBid {
-    // if we are not in reveal window this information will be confusing.
-    assert!(in_reveal_window(), error::invalid_state(ENOT_IN_REVEAL_WINDOW));
-
-    assert!(has_valid_bid(user), error::invalid_state(EBID_EXPIRED));
   }
 
   #[view]
@@ -272,9 +281,11 @@ module ol_framework::secret_bid {
     if (!exists<CommittedBid>(user_addr)) {
       move_to(user, CommittedBid {
         reveal_entry_fee,
+        reveal_epoch: commit_epoch,
         entry_fee_history: vector[0],
         commit_digest: vector[0],
         commit_epoch,
+
       });
     } else {
       let state = borrow_global_mut<CommittedBid>(user_addr);
@@ -284,104 +295,97 @@ module ol_framework::secret_bid {
 
   }
 
-  #[test]
-  fun test_sign_message() {
-      use diem_std::from_bcs;
+  #[test_only]
+  // helper to set get a signature for a Bid type
+  fun sign_bid_struct(sk: &SecretKey, bid: &Bid): vector<u8> {
+      let msg_bytes = bcs::to_bytes(bid);
+      let to_sig = ed25519::sign_arbitrary_bytes(sk, msg_bytes);
 
-      let (new_sk, new_pk) = ed25519::generate_keys();
-      let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
-      let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
-      let new_addr = from_bcs::to_address(new_auth_key);
-      let _alice = account::create_account_for_test(new_addr);
-
-      let message = Bid {
-        entry_fee: 0,
-        epoch: 0,
-      };
-
-      let to_sig = ed25519::sign_struct(&new_sk, copy message);
-      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
-      // end set-up
-
-      // yes repetitive, but following the same workflow
-      let sig_again = ed25519::new_signature_from_bytes(sig_bytes);
-
-      assert!(ed25519::signature_verify_strict_t<Bid>(&sig_again, &new_pk_unvalidated, message), error::invalid_argument(EINVALID_SIGNATURE));
-
-
+      ed25519::signature_to_bytes(&to_sig)
   }
 
   #[test]
-  fun test_check_signature() {
-      use diem_std::from_bcs;
-
+  fun test_sign_arbitrary_message() {
       let (new_sk, new_pk) = ed25519::generate_keys();
       let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
-      let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
-      let new_addr = from_bcs::to_address(new_auth_key);
-      let _alice = account::create_account_for_test(new_addr);
+
+      let bid = Bid {
+        entry_fee: 0,
+        epoch: 0,
+      };
+
+      let signed_message_bytes = sign_bid_struct(&new_sk, &bid);
+      let sig = ed25519::new_signature_from_bytes(signed_message_bytes);
+
+      // encoding directly should yield the same bytes as in signed_message_bytes
+      let encoded = bcs::to_bytes(&bid);
+
+      assert!(ed25519::signature_verify_strict(&sig, &new_pk_unvalidated, encoded), error::invalid_argument(EINVALID_BID_SIGNATURE));
+  }
+
+#[test]
+// sanity test the Signature type vs the bytes
+fun test_round_trip_sig_type() {
+      let (new_sk, new_pk) = ed25519::generate_keys();
+      let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
 
       let message = Bid {
         entry_fee: 0,
         epoch: 0,
       };
+      let msg_bytes = bcs::to_bytes(&message);
 
-      let to_sig = ed25519::sign_struct(&new_sk, copy message);
+      let to_sig = ed25519::sign_arbitrary_bytes(&new_sk, copy msg_bytes);
       let sig_bytes = ed25519::signature_to_bytes(&to_sig);
-      // end set-up
+      // should equal to_sig above
+      let sig_should_be_same = ed25519::new_signature_from_bytes(sig_bytes);
+      let res = comparator::compare(&to_sig, &sig_should_be_same);
+      assert!(comparator::is_equal(&res), 7357001);
 
-      // yes repetitive, but following the same workflow
-      let sig_again = ed25519::new_signature_from_bytes(sig_bytes);
 
-      assert!(ed25519::signature_verify_strict_t<Bid>(&sig_again, &new_pk_unvalidated, copy message), error::invalid_argument(EINVALID_SIGNATURE));
-
+      assert!(ed25519::signature_verify_strict(&sig_should_be_same, &new_pk_unvalidated, copy msg_bytes), error::invalid_argument(EINVALID_BID_SIGNATURE));
+}
+  #[test]
+  fun test_check_signature_happy() {
+      let (new_sk, new_pk) = ed25519::generate_keys();
+      let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
-      check_signature(pk_bytes, sig_bytes, message);
+      let bid = Bid {
+        entry_fee: 0,
+        epoch: 0,
+      };
 
+      let signed_message_bytes = sign_bid_struct(&new_sk, &bid);
+
+      check_signature(pk_bytes, signed_message_bytes, bid);
   }
 
   #[test]
   #[expected_failure(abort_code = 65538, location = Self)]
-  fun test_check_signature_sad() {
-      use diem_std::from_bcs;
+  fun wrong_key_sad() {
+      let (_wrong_sk, wrong_pk) = ed25519::generate_keys();
+      let wrong_pk_unvalidated = ed25519::public_key_to_unvalidated(&wrong_pk);
+      let wrong_pk_bytes = ed25519::unvalidated_public_key_to_bytes(&wrong_pk_unvalidated);
+
 
       let (new_sk, new_pk) = ed25519::generate_keys();
       let new_pk_unvalidated = ed25519::public_key_to_unvalidated(&new_pk);
-      let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
-      let new_addr = from_bcs::to_address(new_auth_key);
-      let _alice = account::create_account_for_test(new_addr);
+      let _good_pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
-      let message = Bid {
+      let bid = Bid {
         entry_fee: 0,
         epoch: 0,
       };
 
-      let to_sig = ed25519::sign_struct(&new_sk, copy message);
-      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
-      // end set-up
+      let signed_message_bytes = sign_bid_struct(&new_sk, &bid);
 
-      // yes repetitive, but following the same workflow
-      let sig_again = ed25519::new_signature_from_bytes(sig_bytes);
-
-      assert!(ed25519::signature_verify_strict_t<Bid>(&sig_again, &new_pk_unvalidated, copy message), error::invalid_argument(EINVALID_SIGNATURE));
-
-      let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
-
-      let message = Bid {
-        entry_fee: 2, // incorrect
-        epoch: 0,
-      };
-
-      check_signature(pk_bytes, sig_bytes, message);
-
+      check_signature(wrong_pk_bytes, signed_message_bytes, bid);
   }
 
 
   #[test(framework = @0x1)]
   fun test_commit_message(framework: &signer) acquires CommittedBid {
-      use diem_std::from_bcs;
-
       let this_epoch = 1;
       epoch_helper::test_set_epoch(framework, this_epoch);
 
@@ -390,16 +394,17 @@ module ol_framework::secret_bid {
       let new_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&new_pk_unvalidated);
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
+
       let entry_fee = 5;
       let epoch = 0;
 
-      let message = Bid {
+      let bid = Bid {
         entry_fee,
         epoch,
       };
 
-      let to_sig = ed25519::sign_struct(&new_sk, copy message);
-      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      // let to_sig = ed25519::sign_arbitrary_bytes(&new_sk, copy message);
+      let sig_bytes = sign_bid_struct(&new_sk, &bid);
       let digest = make_hash(entry_fee, epoch, sig_bytes);
       // end set-up
 
@@ -408,8 +413,6 @@ module ol_framework::secret_bid {
 
   #[test(framework = @0x1)]
   fun test_reveal(framework: &signer) acquires CommittedBid {
-      use diem_std::from_bcs;
-
       let epoch = 1;
       epoch_helper::test_set_epoch(framework, epoch);
 
@@ -419,13 +422,12 @@ module ol_framework::secret_bid {
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
       let entry_fee = 5;
-      let message = Bid {
+      let bid = Bid {
         entry_fee,
         epoch,
       };
 
-      let to_sig = ed25519::sign_struct(&new_sk, copy message);
-      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      let sig_bytes = sign_bid_struct(&new_sk, &bid);
       let digest = make_hash(entry_fee, epoch, sig_bytes);
       // end set-up
 
@@ -433,15 +435,14 @@ module ol_framework::secret_bid {
 
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
-      check_signature(pk_bytes, sig_bytes, message);
+      check_signature(pk_bytes, sig_bytes, bid);
 
       reveal_entry_fee_impl(&alice, pk_bytes, 5, sig_bytes);
   }
 
   #[test(framework = @0x1)]
   #[expected_failure(abort_code = 65538, location = Self)]
-  fun test_reveal_sad_wrong_epoch(framework: &signer) acquires CommittedBid {
-      use diem_std::from_bcs;
+  fun test_reveal_bad_epoch(framework: &signer) acquires CommittedBid {
       let epoch = 1;
       epoch_helper::test_set_epoch(framework, epoch);
 
@@ -451,15 +452,12 @@ module ol_framework::secret_bid {
       let new_addr = from_bcs::to_address(new_auth_key);
       let alice = account::create_account_for_test(new_addr);
       let entry_fee = 5;
-      let wrong_epoch = 100;
-
-      let message = Bid {
+      let bid = Bid {
         entry_fee,
-        epoch: wrong_epoch, // wrong epoch, we are at 1
+        epoch,
       };
 
-      let to_sig = ed25519::sign_struct(&new_sk, copy message);
-      let sig_bytes = ed25519::signature_to_bytes(&to_sig);
+      let sig_bytes = sign_bid_struct(&new_sk, &bid);
       let digest = make_hash(entry_fee, epoch, sig_bytes);
       // end set-up
 
@@ -467,9 +465,9 @@ module ol_framework::secret_bid {
 
       let pk_bytes = ed25519::unvalidated_public_key_to_bytes(&new_pk_unvalidated);
 
-      check_signature(pk_bytes, sig_bytes, message);
+      check_signature(pk_bytes, sig_bytes, bid);
 
-      reveal_entry_fee_impl(&alice, pk_bytes, 5, sig_bytes);
+      reveal_entry_fee_impl(&alice, pk_bytes, 10, sig_bytes);
   }
 
   #[test(framework = @0x1, alice = @0x10001, bob = @0x10002, carol = @0x10003)]

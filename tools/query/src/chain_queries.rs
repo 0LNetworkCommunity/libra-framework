@@ -95,3 +95,28 @@ pub async fn epoch_over_can_trigger(client: &Client) -> anyhow::Result<bool> {
 
     Ok(value[0])
 }
+
+/// Retrieves if we are within the commit reveal window
+pub async fn within_commit_reveal_window(client: &Client) -> anyhow::Result<bool> {
+    let res = get_view(client, "0x1::secret_bid::in_reveal_window", None, None).await?;
+
+    let value: Vec<bool> = serde_json::from_value(res)?;
+
+    Ok(value[0])
+}
+
+/// Time remaining in epoch
+pub async fn secs_remaining_in_epoch(client: &Client) -> anyhow::Result<u64> {
+    let res = get_view(
+        client,
+        "0x1::reconfiguration::get_remaining_epoch_secs",
+        None,
+        None,
+    )
+    .await?;
+
+    let value: Vec<String> = serde_json::from_value(res)?;
+    let secs = value.first().unwrap().parse::<u64>()?;
+
+    Ok(secs)
+}

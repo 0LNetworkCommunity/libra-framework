@@ -137,6 +137,12 @@ module diem_framework::genesis {
 
         chain_id::initialize(&diem_framework_account, chain_id);
         reconfiguration::initialize(&diem_framework_account);
+        // 0L: force testing environments to have short epochs
+        // TODO this should be solved at the SwarmBuilder level
+        // but requires change to vendors.
+        if (chain_id == 4) {
+          epoch_interval_microsecs = 1_000_000 * 30;
+        };
         block::initialize(&diem_framework_account, epoch_interval_microsecs);
         state_storage::initialize(&diem_framework_account);
         randomness::initialize(&diem_framework_account);
@@ -146,7 +152,6 @@ module diem_framework::genesis {
         validator_universe::initialize(&diem_framework_account);
         proof_of_fee::init_genesis_baseline_reward(&diem_framework_account);
         slow_wallet::initialize(&diem_framework_account);
-        // tower_state::initialize(&diem_framework_account);
         safe::initialize(&diem_framework_account);
         donor_voice::initialize(&diem_framework_account);
         epoch_boundary::initialize(&diem_framework_account);
@@ -160,7 +165,7 @@ module diem_framework::genesis {
 
         let zero_x_two_sig = create_signer(@0x2);
         sacred_cows::init(&zero_x_two_sig);
-        // end 0L
+        //////// end 0L /////////
 
         timestamp::set_time_has_started(&diem_framework_account);
     }
@@ -181,8 +186,6 @@ module diem_framework::genesis {
         diem_framework: &signer,
         core_resources_auth_key: vector<u8>,
     ) {
-        // let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
-
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
 

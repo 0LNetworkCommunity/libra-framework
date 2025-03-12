@@ -212,7 +212,6 @@ impl Sender {
         println!("transaction sent");
         self.response = Some(r.clone());
         spin.finish_and_clear();
-        // debug!("{:?}", &r);
         OLProgress::complete("transaction success");
         Ok(r)
     }
@@ -251,6 +250,7 @@ impl Sender {
         &mut self,
         signed_trans: &SignedTransaction,
     ) -> anyhow::Result<TransactionOnChainData> {
+        debug!("signed tx payload: {:?}", &signed_trans.payload());
         let pending_trans = self.client.submit(signed_trans).await?.into_inner();
 
         info!("pending tx hash: {}", &pending_trans.hash.to_string());

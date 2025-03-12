@@ -1,6 +1,4 @@
 //! test trigger epoch
-
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use diem_forge::Swarm;
@@ -70,7 +68,7 @@ async fn sync_trigger_epoch() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 /// Test triggering a new epoch
 // Scenario: We want to trigger a new epoch using the TriggerEpoch command
 // We will assume that triggering an epoch is an operation that we can test in a single node testnet
@@ -102,11 +100,16 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
     let trigger_epoch_cmd = StreamTxs::EpochTickle { delay: Some(5) };
     // create a Sender using the validator's app config
     let val_app_cfg = ls.first_account_app_cfg()?;
-    let validator_sender = Sender::from_app_cfg(&val_app_cfg, None).await?;
-    let wrapped_sender = Arc::new(Mutex::new(validator_sender));
+    let mut validator_sender = Sender::from_app_cfg(&val_app_cfg, None).await?;
 
-    // run the txs tool in background in stream mode
-    std::thread::spawn(move || trigger_epoch_cmd.start(wrapped_sender));
+    // run the txs tool in background in stream
+
+    tokio::spawn(async move {
+        trigger_epoch_cmd
+            .start(&mut validator_sender)
+            .await
+            .unwrap();
+    });
 
     //////// FLIP BIT ////////
     std::thread::sleep(Duration::from_secs(10));
@@ -136,6 +139,8 @@ async fn background_trigger_epoch() -> anyhow::Result<()> {
 
 // helper for the testnet root to enable epoch boundary trigger
 async fn helper_set_enable_trigger(ls: &mut LibraSmoke) {
+    println!("enable trigger");
+
     let mut public_info = ls.swarm.diem_public_info();
 
     let payload = public_info
@@ -151,5 +156,5 @@ async fn helper_set_enable_trigger(ls: &mut LibraSmoke) {
         .submit_and_wait(&enable_trigger_tx)
         .await
         .expect("could not send demo tx");
-    println!("testnet root account enables epoch trigger");
+    println!("testnet root account sets epoch boundary trigger");
 }

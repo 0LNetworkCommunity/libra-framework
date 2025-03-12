@@ -1,12 +1,6 @@
-// use crate::bid_commit_reveal::PofBidArgs;
-use crate::stream::epoch_tickle_poll::epoch_tickle_poll;
+use crate::stream::bid_commit_reveal::commit_reveal_poll;
+use crate::stream::{bid_commit_reveal::PofBidArgs, epoch_tickle_poll::epoch_tickle_poll};
 use crate::submit_transaction::Sender as LibraSender;
-use diem_logger::prelude::{error, info};
-use diem_types::transaction::TransactionPayload;
-use std::process::exit;
-use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
 
 #[derive(clap::Subcommand)]
 pub enum StreamTxs {
@@ -17,67 +11,20 @@ pub enum StreamTxs {
         delay: Option<u64>,
     },
     /// Submit secret PoF bids in background, and reveal when window opens
-    PofBid,
+    ValBid(PofBidArgs),
 }
 
 impl StreamTxs {
-    pub fn start(&self, send: Arc<Mutex<LibraSender>>) {
-        let (tx, rx) = init_channel();
-        let client = send.lock().unwrap().client().clone();
-        let stream_service = listen(rx, send);
-
+    pub async fn start(&self, libra_sender: &mut LibraSender) -> anyhow::Result<()> {
         match &self {
             StreamTxs::EpochTickle { delay } => {
                 println!("EpochTickle entry");
-                epoch_tickle_poll(tx, client, delay.unwrap_or(60));
+                epoch_tickle_poll(libra_sender, delay.unwrap_or(60)).await?;
             }
-            _ => {
-                println!("no service specified");
-                exit(1);
+            StreamTxs::ValBid(args) => {
+                commit_reveal_poll(libra_sender, args.net_reward, args.delay.unwrap_or(60)).await?;
             }
-        };
-
-        stream_service
-            .join()
-            .expect("could not complete tasks in stream");
-    }
-}
-
-pub(crate) fn init_channel() -> (Sender<TransactionPayload>, Receiver<TransactionPayload>) {
-    mpsc::channel::<TransactionPayload>()
-}
-
-#[allow(unused_assignments)]
-pub(crate) fn listen(
-    rx: Receiver<TransactionPayload>,
-    send: Arc<Mutex<LibraSender>>,
-) -> JoinHandle<()> {
-    thread::spawn(move || {
-        let mut busy = false;
-
-        while !busy {
-            match rx.recv() {
-                Ok(payload) => {
-                    info!("Tx: {:?}", payload);
-                    if !busy {
-                        busy = true;
-                        match send
-                            .lock()
-                            .expect("could not access Sender client")
-                            .sync_sign_submit_wait(payload)
-                        {
-                            Ok(_r) => {
-                                busy = false;
-                            }
-                            Err(e) => {
-                                error!("transaction failed: {:?}", &e);
-                                break;
-                            }
-                        };
-                    }
-                }
-                Err(_) => break,
-            };
         }
-    })
+        Ok(())
+    }
 }
