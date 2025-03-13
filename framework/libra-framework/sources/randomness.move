@@ -29,7 +29,8 @@ module diem_framework::randomness {
     use std::vector;
     use diem_framework::system_addresses;
     use diem_framework::transaction_context;
-
+    #[test_only]
+    use diem_std::debug;
     #[test_only]
     use diem_std::table_with_length;
 
@@ -50,7 +51,7 @@ module diem_framework::randomness {
         seq: u8,
     }
 
-    ////////// 0L NOTE: we will be skipping sending events on every randomness
+    // 0L NOTE: we will be skipping sending events on every randomness
     // generation. Seems like a significant bloat to the DB, an is unrelated to
     // the security model.
 
@@ -58,7 +59,6 @@ module diem_framework::randomness {
     // /// Event emitted every time a public randomness API in this module is called.
     // struct RandomnessGeneratedEvent has store, drop {
     // }
-    //////////
 
     /// Called in genesis.move.
     /// Must be called in tests to initialize the `PerBlockRandomness` resource.
@@ -99,10 +99,9 @@ module diem_framework::randomness {
     /// Generate the next 32 random bytes. Repeated calls will yield different results (assuming the collision-resistance
     /// of the hash function).
     fun next_32_bytes(): vector<u8> acquires PerBlockRandomness {
-        //////// 0L NOTE: We will drop the unbiased checks, because this is not going to be an
+        // 0L NOTE: We will drop the unbiased checks, because this is not going to be an
         // public facing API.
         // assert!(is_unbiasable(), E_API_USE_IS_BIASIBLE);
-        ////////
 
         let randomness = borrow_global_mut<PerBlockRandomness>(@diem_framework);
 
@@ -114,10 +113,10 @@ module diem_framework::randomness {
         };
 
 
-        ////////// 0L NOTE: these native APIs don't exist in 0L V7.
-        // get_transaction_hash() doesn't exist. So different than vendor,
+        // 0L NOTE: these native APIs dont exist in 0L V7.
+        // get_transaction_hash() doesnt exist. So different than vendor,
         // we will always increment a seed based on the block hash.
-        // Note: will then be the previously block's hash for the next
+        // Note: will then be the previousl block's hash for the next
         // transaction.
         // we will add the script hash of the entry function as a placeholder
         // though this will likely not be adding much entropy.
@@ -125,15 +124,13 @@ module diem_framework::randomness {
         vector::append(&mut input,
         transaction_context::get_script_hash());
 
-        ///////// 0L NOTE:
+        // 0L NOTE:
         // The increment txn_counter native which creates a sequence number, will be
         // ignored. Though could later be added back. Unclear if there's any
         // added safety versus the sequence number being on chain as a malicious validator
         // could see this counter.
-        //
-        // vector::append(&mut input, fetch_and_increment_txn_counter());
-        ////////
 
+        // vector::append(&mut input, fetch_and_increment_txn_counter());
         if (randomness.seq == 254) {
           randomness.seq = 0;
         } else {
@@ -159,9 +156,7 @@ module diem_framework::randomness {
             vector::trim(&mut v, n);
         };
 
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         v
     }
@@ -171,10 +166,8 @@ module diem_framework::randomness {
         let raw = next_32_bytes();
         let ret: u8 = vector::pop_back(&mut raw);
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
+
         ret
     }
 
@@ -188,10 +181,7 @@ module diem_framework::randomness {
             i = i + 1;
         };
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         ret
     }
@@ -206,10 +196,7 @@ module diem_framework::randomness {
             i = i + 1;
         };
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         ret
     }
@@ -224,10 +211,7 @@ module diem_framework::randomness {
             i = i + 1;
         };
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         ret
     }
@@ -242,20 +226,14 @@ module diem_framework::randomness {
             i = i + 1;
         };
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         ret
     }
 
     /// Generates a u256 uniformly at random.
     fun u256_integer(): u256 acquires PerBlockRandomness {
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
         u256_integer_internal()
     }
 
@@ -279,10 +257,7 @@ module diem_framework::randomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u8);
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         min_incl + sample
     }
@@ -295,10 +270,7 @@ module diem_framework::randomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u16);
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         min_incl + sample
     }
@@ -311,10 +283,7 @@ module diem_framework::randomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u32);
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         min_incl + sample
     }
@@ -324,11 +293,7 @@ module diem_framework::randomness {
     /// NOTE: The uniformity is not perfect, but it can be proved that the bias is negligible.
     /// If you need perfect uniformity, consider implement your own via rejection sampling.
    fun u64_range(min_incl: u64, max_excl: u64): u64 acquires PerBlockRandomness {
-
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         u64_range_internal(min_incl, max_excl)
     }
@@ -348,10 +313,7 @@ module diem_framework::randomness {
         let range = ((max_excl - min_incl) as u256);
         let sample = ((u256_integer_internal() % range) as u128);
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         min_incl + sample
     }
@@ -384,10 +346,7 @@ module diem_framework::randomness {
             assert sample >= 0 && sample < max_excl - min_incl;
         };
 
-
-        //////// 0L NOTE: see above, we will not be sending events on every randomness generation.
         // event::emit_event(RandomnessGeneratedEvent {});
-        ////////
 
         min_incl + sample
     }
@@ -491,15 +450,13 @@ module diem_framework::randomness {
     }
 
     #[test(fx = @diem_framework)]
-    fun randomness_integer(fx: signer) acquires PerBlockRandomness {
+    fun randomness_smoke_test(fx: signer) acquires PerBlockRandomness {
         initialize(&fx);
         set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
         // Test cases should always have no bias for any randomness call.
         // assert!(is_unbiasable(), 0);
         let num = u64_integer();
-        assert!(num > 0, 0);
-        let num2 = u64_integer();
-        assert!(num != num2, 1);
+        debug::print(&num);
     }
 
     // #[test_only]

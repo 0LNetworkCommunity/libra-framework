@@ -5,7 +5,6 @@
 
 use crate::{genesis_reader, genesis_reader::total_supply, parse_json, supply::Supply};
 use anyhow::{self, Context};
-use diem_logger::warn;
 use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::{state_view::LatestDbStateCheckpointView, DbReader};
 use diem_types::{account_view::AccountView, transaction::Transaction};
@@ -81,7 +80,7 @@ pub fn compare_recovery_vec_to_genesis_tx(
                 .expect("should have move resource");
 
             if on_chain_balance.is_none() {
-                warn!("account without a balance struct: {}", &convert_address);
+                println!("account without a balance struct: {}", &convert_address);
                 return;
             }
             let on_chain_balance = on_chain_balance.expect("should have balance");
@@ -109,15 +108,13 @@ pub fn compare_recovery_vec_to_genesis_tx(
                     .unwrap();
 
                 if new_slow.unlocked != old_slow.unlocked {
-                    warn!("DEPRECATION NOTICE. This check will not be valid in v8. Slow wallet balance migration is not equal. Account: {}", old.account.unwrap().to_hex_literal());
-                    // TODO: deprecate in v8
-                    // err_list.push(CompareError {
-                    //     index: i as u64,
-                    //     account: old.account,
-                    //     expected: old_slow.unlocked,
-                    //     migrated: new_slow.unlocked,
-                    //     message: "unexpected slow wallet unlocked".to_string(),
-                    // });
+                    err_list.push(CompareError {
+                        index: i as u64,
+                        account: old.account,
+                        expected: old_slow.unlocked,
+                        migrated: new_slow.unlocked,
+                        message: "unexpected slow wallet unlocked".to_string(),
+                    });
                 }
                 // CHECK: the unlocked amount should never be greater than balance
                 if new_slow.unlocked > on_chain_balance.coin() {
