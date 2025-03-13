@@ -51,8 +51,6 @@ module ol_framework::lockbox {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::date;
 
-  // use diem_framework::debug::print;
-
   friend ol_framework::donor_voice_txs;
   friend ol_framework::genesis;
   friend ol_framework::ol_account;
@@ -640,10 +638,24 @@ module ol_framework::lockbox {
         closest_maturity
     }
 
-  #[test]
-  fun test_pick_maturity() {
-      let balance: u64 = 500_000_000; // Example balance
+  #[test (cow = @0x2)]
+  fun test_pick_maturity(cow: &signer) {
+      ol_framework::sacred_cows::init(cow);
+      let balance: u64 = 35_000 * 1_000_000; // Example balance and scaling
       let selected_maturity = calc_maturity(balance);
+      // 35_000 balance falls within the 1 year bucket
+      assert!(selected_maturity == 1*12, 0);
+
+      let balance: u64 = 50_000_000 * 1_000_000; // Example balance and scaling
+      let selected_maturity = calc_maturity(balance);
+
+      // 50m balance falls within the 4 year bucket
+      assert!(selected_maturity == 4*12, 0);
+
+      let balance: u64 = 500_000_000 * 1_000_000; // Example balance and scaling
+      let selected_maturity = calc_maturity(balance);
+
+      // 50m balance falls within the 24 year bucket
       assert!(selected_maturity == 24*12, 0);
   }
 

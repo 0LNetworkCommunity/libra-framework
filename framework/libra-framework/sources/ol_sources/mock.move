@@ -22,8 +22,7 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
-
-  use diem_std::debug::print;
+  use ol_framework::testnet;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -93,7 +92,8 @@ module ol_framework::mock {
 
   //////// PROOF OF FEE ////////
   #[test_only]
-  public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
+  public fun pof_default(framework: &signer): (vector<address>, vector<u64>, vector<u64>){
+    testnet::assert_testnet(framework);
 
     let vals = stake::get_current_validators();
 
@@ -179,8 +179,9 @@ module ol_framework::mock {
   }
 
   #[test_only]
+  // Place unlocked coins in all of the validator account.
   public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64,
-  drip: bool) {
+  _drip: bool) { // commit note: deprecate `drip`
     system_addresses::assert_ol(root);
 
     let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
@@ -198,15 +199,13 @@ module ol_framework::mock {
 
       let b = libra_coin::balance(*addr);
       assert!(b == amount, 0001);
+      // commit note: for mocking we are going to just deposit unlocked coins
+      // we can test lockboxes elsewhere.
 
       i = i + 1;
     };
 
-    if (drip) {
-      // TODO: give coins to validators for testing
-      print(&@0x666);
-      // slow_wallet::slow_wallet_epoch_drip(root, amount);
-    };
+
     libra_coin::restore_mint_cap(root, mint_cap);
   }
 
@@ -352,7 +351,7 @@ module ol_framework::mock {
     // will assert! case_1
     mock_case_1(&root, *addr);
 
-    pof_default();
+    pof_default(&root);
 
     // will assert! case_4
     mock_case_4(&root, *addr);
@@ -385,7 +384,7 @@ module ol_framework::mock {
     // Scenario: unit testing that pof_default results in a usable auction
     let n_vals = 5;
     let vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
-    pof_default();
+    pof_default(root);
 
     proof_of_fee::fill_seats_and_get_price(root, n_vals, &vals, &vals);
 

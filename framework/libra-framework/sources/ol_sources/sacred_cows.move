@@ -94,6 +94,9 @@ module ol_framework::sacred_cows {
 
   friend diem_framework::genesis;
 
+  #[test_only]
+  friend ol_framework::lockbox;
+
   //////// ERROR CODES ////////
   /// Something sneaky is going on.
   const EHANDS_OFF_MY_COW: u64 = 0;

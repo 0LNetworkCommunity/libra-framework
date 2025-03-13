@@ -22,7 +22,7 @@ module ol_framework::test_reconfiguration {
   fun reconfig_reward_happy_case(root: signer) {
     let vals = mock::genesis_n_vals(&root, 5);
 
-    mock::pof_default();
+    mock::pof_default(&root);
     assert!(vector::length(&vals) == 5, 7357001);
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 5, 7357002);
@@ -83,8 +83,8 @@ module ol_framework::test_reconfiguration {
   #[test(root = @ol_framework)]
   fun drop_non_performing(root: signer) {
     let _vals = mock::genesis_n_vals(&root, 5);
-    // mock::ol_initialize_coin(&root);
-    mock::pof_default();
+    mock::ol_initialize_coin_and_fund_vals(&root, 5555 * 1_000_000, false);
+    mock::pof_default(&root);
     assert!(libra_coin::balance(@0x1000a) == 0, 7357000);
 
     // NOTE: epoch 0 and 1 are a special case, we don't run performance grades on that one. Need to move two epochs ahead
@@ -129,7 +129,7 @@ module ol_framework::test_reconfiguration {
       let vals = mock::genesis_n_vals(&root, 5);
       // mock::ol_initialize_coin(&root);
 
-      mock::pof_default();
+      mock::pof_default(&root);
 
       // validators did not perform.
       let i = 0;

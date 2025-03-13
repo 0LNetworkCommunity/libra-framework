@@ -128,34 +128,41 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun audit_no_funds (root: signer) {
     let set = mock::genesis_n_vals(&root, 4);
+    mock::ol_initialize_coin_and_fund_vals(&root, 5555 * 1_000_000, false);
+    mock::pof_default(&root);
+
     let alice = *vector::borrow(&set, 0);
+    let bob = *vector::borrow(&set, 1);
 
     assert!(!jail::is_jailed(alice), 7357001);
     let a_sig = account::create_signer_for_test(alice);
 
     proof_of_fee::pof_update_bid(&a_sig, 100, 10000); // 10 pct
     let (bid, expires) = proof_of_fee::current_bid(alice);
-    assert!(bid == 100, 7357001);
-    assert!(expires == 10000, 7357002);
+    assert!(bid == 100, 7357002);
+    assert!(expires == 10000, 7357003);
 
-    // NOT ENOUGH FUNDS WERE UNLOCKED
-    // TODO: give coins to validators for testing
-    print(&@0x666);
-    // slow_wallet::slow_wallet_epoch_drip(&root, 500);
-
+    // alice empties her account
     let coin = slow_wallet::unlocked_amount(alice);
+    ol_framework::ol_account::transfer(&a_sig, bob, coin);
+    let coin = slow_wallet::unlocked_amount(alice);
+    assert!(coin == 0, 7357004);
 
     // calculate consensus reward
     proof_of_fee::fill_seats_and_get_price(&root, 4, &set, &set);
 
     let (r, _, _, _) = proof_of_fee::get_consensus_reward();
+
     let bid_cost = (bid * r) / 1000;
     assert!(coin < bid_cost, 7357005);
 
-    // should NOT pass audit.
+    // alice should NOT pass audit.
     let (err, pass) = proof_of_fee::audit_qualification(alice);
     assert!(*vector::borrow(&err, 0) == 17, 7357006);
     assert!(!pass, 7357007);
+    // double check bob is ok however
+    let (_err, pass) = proof_of_fee::audit_qualification(bob);
+    assert!(pass, 7357008);
   }
 
   #[test(root = @ol_framework)]
@@ -230,7 +237,7 @@ module ol_framework::test_pof {
       i = i + 1;
     };
     // mock_good_bid(&root, alice);
-    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default(&root);
     let sorted = proof_of_fee::get_bidders(false);
 
     let len = vector::length(&sorted);
@@ -245,7 +252,7 @@ module ol_framework::test_pof {
   #[test(root= @ol_framework)]
   fun sorted_vals_none_qualify(root: signer) {
     let vals = mock::genesis_n_vals(&root, 4);
-    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default(&root);
     // calculate the auction
     proof_of_fee::fill_seats_and_get_price(&root, 4, &vals, &vals);
 
@@ -277,10 +284,10 @@ module ol_framework::test_pof {
     let alice = vector::borrow(&set, 0);
     jail::jail(&root, *alice);
 
-    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default(&root);
 
 
-    // let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    // let (val_universe, _their_bids, _their_expiry) = mock::pof_default(&root);
     let sorted = proof_of_fee::get_bidders(false);
     let len = vector::length(&sorted);
     assert!(len == vector::length(&val_universe), 1000);
@@ -301,7 +308,7 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 4);
     mock::ol_initialize_coin_and_fund_vals(&root, 10000, true);
 
-    let (val_universe, _their_bids, _their_expiry) = mock::pof_default();
+    let (val_universe, _their_bids, _their_expiry) = mock::pof_default(&root);
 
     let len = vector::length(&set);
     let i = 0;
@@ -340,11 +347,7 @@ module ol_framework::test_pof {
     let set = mock::genesis_n_vals(&root, 5);
     let len = vector::length(&set);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
-    mock::pof_default();
-
-    // TODO: give coins to validators for testing
-    print(&@0x666);
-    // slow_wallet::slow_wallet_epoch_drip(&root, 500000);
+    mock::pof_default(&root);
 
     let sorted = proof_of_fee::get_bidders(true);
     assert!(vector::length(&sorted) == vector::length(&set), 1003);
@@ -365,7 +368,7 @@ module ol_framework::test_pof {
   fun fill_seats_happy_and_noop_thermostat(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
-    mock::pof_default();
+    mock::pof_default(&root);
 
     // TODO: give coins to validators for testing
     print(&@0x666);
@@ -401,13 +404,13 @@ module ol_framework::test_pof {
   // the desired validator set is the same size as the universe.
   // All validators in the universe are properly configured
   // All validators performed perfectly in the previous epoch.
-  // They have all placed bids, per TestFixtures::pof_default().
+  // They have all placed bids, per TestFixtures::pof_default(root).
 
   #[test(root = @ol_framework)]
   fun fill_seats_few_bidders(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
-    mock::pof_default();
+    mock::pof_default(&root);
 
     // Ok now EVE changes her mind. Will force the bid to expire.
     let a_sig = account::create_signer_for_test(*vector::borrow(&set, 4));
@@ -440,7 +443,7 @@ module ol_framework::test_pof {
   }
 
 // Scenario: We have 5 validators but only 3 seats in the set.
-// They have all placed bids, per TestFixtures::pof_default().
+// They have all placed bids, per TestFixtures::pof_default(root).
 // The lowest bidders Alice and Bob, will be excluded.
 
 // For all lists we are using the validators in the ValidatorUniverse
@@ -451,7 +454,7 @@ module ol_framework::test_pof {
   #[test(root = @ol_framework)]
   fun fill_seats_many_bidders(root: signer) {
     let set = mock::genesis_n_vals(&root, 5);
-    mock::pof_default();
+    mock::pof_default(&root);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
 
     let sorted = proof_of_fee::get_bidders(true);
@@ -481,7 +484,7 @@ module ol_framework::test_pof {
 
   // Scenario: Here we have 6 validators and 6 seats, but only 4 come
   // from the previous epoch.
-  // They have all placed bids, per TestFixtures::pof_default().
+  // They have all placed bids, per TestFixtures::pof_default(root).
 
   // However Alice and Bob have not been in the last epoch's set.
   // So we consider them "unproven".
@@ -506,7 +509,7 @@ module ol_framework::test_pof {
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
-    mock::pof_default();
+    mock::pof_default(&root);
 
 
     let sorted = proof_of_fee::get_bidders(true);
@@ -544,7 +547,7 @@ module ol_framework::test_pof {
   // from the previous epoch (proven).
   // This time Eve and Frank are "unproven nodes", they also happen
   // to have the highest bids.
-  // They have all placed bids, per TestFixtures::pof_default().
+  // They have all placed bids, per TestFixtures::pof_default(root).
 
   // At 4 seats, we only have space for 1 unproven node.
   // It should be Frank that gets seated.
@@ -564,7 +567,7 @@ module ol_framework::test_pof {
     // we need 6 seats so that we can have 4 proven, and 2 unproven slots
     let set = mock::genesis_n_vals(&root, 6);
     mock::ol_initialize_coin_and_fund_vals(&root, 500000, true);
-    mock::pof_default();
+    mock::pof_default(&root);
 
     let sorted = proof_of_fee::get_bidders(true);
 

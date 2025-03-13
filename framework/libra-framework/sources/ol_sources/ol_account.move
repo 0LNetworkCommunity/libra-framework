@@ -37,6 +37,8 @@ module ol_framework::ol_account {
     friend ol_framework::test_multi_action;
     #[test_only]
     friend ol_framework::test_slow_wallet;
+    #[test_only]
+    friend ol_framework::mock;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -295,7 +297,8 @@ module ol_framework::ol_account {
     // actual implementation to allow for capability
     fun transfer_checks(payer: address, recipient: address, amount: u64) {
         let limit = slow_wallet::unlocked_amount(payer);
-        assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+        print(&limit);
+        assert!(amount <= limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         // community wallets cannot use ol_transfer, they have a dedicated workflow
         assert!(!community_wallet::is_init(payer),
@@ -725,6 +728,26 @@ module ol_framework::ol_account {
         };
     }
 
+
+    // #[test_only]
+    // /// used by mock.move for testing purposes when we need a specific amount of unlocked coins in an account for testing.
+    // public(friend) fun slow_wallet_epoch_drip(framework: &signer, user: address, amount: u64) acquires BurnTracker {
+
+    //   system_addresses::assert_diem_framework(framework);
+
+    //   let total_unlockable = lockbox::user_unlockable(user);
+
+    //   // exit gracefully on no balance, this may be called on epoch_boundary
+    //   if (total_unlockable > 0) {
+    //     let coin_opt = lockbox::vm_withdraw_user_unlocked(framework, user);
+
+    //     if (option::is_some(&coin_opt)) {
+    //       let coins = option::extract(&mut coin_opt);
+    //       deposit_coins(user, coins);
+    //     };
+    //     option::destroy_none(coin_opt);
+    //   }
+    // }
     // User can call function that drips the lockbox amount.
     // NOTE: dependency cycling issue. THis module needs to be the caller since libra_coin is a common dependency with lockbox.
     #[test_only]

@@ -143,7 +143,9 @@ module ol_framework::vouch {
 
       // this fee is paid to the system, cannot be reclaimed
       let price = get_vouch_price();
+      print(&price);
       if (price > 0) {
+        print(&20001);
         let vouch_cost = ol_account::withdraw(grantor, price);
         transaction_fee::user_pay_fee(grantor, vouch_cost);
       };

@@ -5,7 +5,7 @@ module ol_framework::test_vouch {
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   // Happy Day scenarios
 
@@ -13,7 +13,7 @@ module ol_framework::test_vouch {
   fun vouch_for_unrelated(root: &signer, alice: &signer, carol: &signer) {
     // create vals without vouches
     mock::create_vals(root, 3, false);
-    vouch::set_vouch_price(root, 0);
+    mock::ol_initialize_coin_and_fund_vals(root, 5555 * 1_000_000, false);
 
     // check that no vouches exist
     vector::for_each(vector[@0x1000a, @0x1000b, @0x1000c], |addr| {
@@ -125,39 +125,58 @@ module ol_framework::test_vouch {
   }
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
-  fun update_vouch(root: &signer, alice: &signer) {
+  fun update_vouch_happy(root: &signer, alice: &signer) {
     // create vals without vouches
     mock::create_vals(root, 2, false);
-    vouch::set_vouch_price(root, 0);
+    // validators need funds to be able to vouch.
+    // give some and unlock some
+    mock::ol_initialize_coin_and_fund_vals(root, 55555 * 1_000_000, true);
 
+    print(&1000);
+    let (unlocked_now, bal_now) = ol_framework::ol_account::balance(@0x1000a);
+    print(&unlocked_now);
+    print(&bal_now);
     // alice vouches for bob
     vouch::vouch_for(alice, @0x1000b);
 
+    print(&1001);
+
     // check alice
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
-    assert!(given_vouches == vector[@0x1000b], 73570005);
-    assert!(given_epochs == vector[0], 73570006);
+    assert!(given_vouches == vector[@0x1000b], 73570001);
+    assert!(given_epochs == vector[0], 73570002);
+    print(&1002);
 
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
-    assert!(received_vouches == vector[@0x1000a], 73570007);
-    assert!(received_epochs == vector[0], 73570008);
+    assert!(received_vouches == vector[@0x1000a], 73570003);
+    assert!(received_epochs == vector[0], 73570004);
+
+    print(&1003);
 
     // fast forward to epoch 1
     mock::trigger_epoch(root);
+    print(&1004);
 
+    let (unlocked_now, bal_now) = ol_framework::ol_account::balance(@0x1000a);
+    print(&unlocked_now);
+    print(&bal_now);
+    let price_now = vouch::get_vouch_price();
+    assert!(price_now > 0, 73570005);
+    print(&price_now);
     // alice vouches for bob again
     vouch::vouch_for(alice, @0x1000b);
+    print(&1005);
 
     // check alice
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
-    assert!(given_vouches == vector[@0x1000b], 73570005);
-    assert!(given_epochs == vector[1], 73570006);
+    assert!(given_vouches == vector[@0x1000b], 73570006);
+    assert!(given_epochs == vector[1], 73570007);
 
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
-    assert!(received_vouches == vector[@0x1000a], 73570007);
-    assert!(received_epochs == vector[1], 73570008);
+    assert!(received_vouches == vector[@0x1000a], 73570008);
+    assert!(received_epochs == vector[1], 73570009);
   }
 
   // Sad Day scenarios
