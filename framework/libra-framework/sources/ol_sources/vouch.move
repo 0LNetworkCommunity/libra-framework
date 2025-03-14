@@ -140,6 +140,19 @@ module ol_framework::vouch {
       }
     }
 
+    // a user should not be able to give more vouches than valid
+    // vouches received. An allowance of +1 more than the
+    // current given vouches allows a vouch to be given before received
+    fun assert_max_vouches(grantor_acc: address) acquires GivenVouches, ReceivedVouches {
+      // check if the grantor has already reached the limit of vouches
+      let (given_vouches, _) = get_given_vouches(grantor_acc);
+      let (received_vouches, _) = get_received_vouches(grantor_acc);
+      assert!(
+        vector::length(&given_vouches) <= (vector::length(&received_vouches) + 1),
+        error::invalid_state(EMAX_LIMIT_GIVEN)
+      );
+    }
+
     fun vouch_impl(grantor: &signer, friend_account: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchPrice {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
@@ -152,12 +165,7 @@ module ol_framework::vouch {
         ancestry::assert_unrelated(grantor_acc, friend_account);
       };
 
-      // check if the grantor has already reached the limit of vouches
-      let (given_vouches, _) = get_given_vouches(grantor_acc);
-      assert!(
-        vector::length(&given_vouches) < BASE_MAX_VOUCHES,
-        error::invalid_state(EMAX_LIMIT_GIVEN)
-      );
+      assert_max_vouches(grantor_acc);
 
       // are these validators?
       // TODO: refactor validator_vouch into own module
