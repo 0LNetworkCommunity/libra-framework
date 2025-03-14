@@ -534,8 +534,13 @@ module diem_framework::epoch_boundary {
   }
 
   #[view]
-  public fun get_seats_offered():u64 acquires BoundaryStatus {
+  public fun get_max_seats_offered():u64 acquires BoundaryStatus {
     borrow_global<BoundaryStatus>(@ol_framework).incoming_seats_offered
+  }
+
+  #[view]
+  public fun get_filled_seats():u64 acquires BoundaryStatus {
+    borrow_global<BoundaryStatus>(@ol_framework).incoming_filled_seats
   }
 
   #[test_only]

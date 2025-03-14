@@ -20,6 +20,8 @@ module ol_framework::musical_chairs {
   /// We can't evaluate the performance of validators
   /// when there are too few rounds committed
   const MINIMUM_ROUNDS_PER_EPOCH: u64 = 1000;
+  /// The percentage of validators failing, which we tolerate when considering the network performant
+  const FAILURE_TOLERANCE_PCT: u64 = 5;
 
   struct Chairs has key {
     // The number of chairs in the game
@@ -30,7 +32,7 @@ module ol_framework::musical_chairs {
 
   // With musical chairs we are trying to estimate
   // the number of nodes which the network can support
-  // BFT has upperbounds in the low hundreds, but we
+  // BFT has an upper bound in the low hundreds, but we
   // don't need to hard code it.
   // There also needs to be an upper bound so that there is some
   // competition among validators.
@@ -76,7 +78,7 @@ module ol_framework::musical_chairs {
   /// get the number of seats in the game
   /// returns the list of compliant validators and the number of seats
   /// we should offer in the next epoch
-  /// (compliant_vals, seats_offered)
+  /// @returns (compliant_vals, seats_offered)
   public(friend) fun stop_the_music(
     vm: &signer,
     epoch: u64,
@@ -130,9 +132,9 @@ module ol_framework::musical_chairs {
       current_seats_offered + 1
     } else {
       let non_compliance_pct = fixed_point32::multiply_u64(100, fail_ratio);
-      if (non_compliance_pct > 5) {
+      if (non_compliance_pct > FAILURE_TOLERANCE_PCT) {
         // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in the next epoch.
-        // See below find_safe_set_size, how we determine what that number should be
+        // So we just offer the number of compliant nodes.
         num_compliant_vals
       } else {
         // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
@@ -140,7 +142,8 @@ module ol_framework::musical_chairs {
       }
     };
 
-    // Catch failure mode mostly for genesis, or testnets
+    // Catch failure mode where there isn't a minimum of 4 validators
+    //  mostly for genesis, or testnets, but also a backstop for catastrophic failure modes.
     if (new_seats_offered < 4) {
       4
     } else {
@@ -202,7 +205,7 @@ module ol_framework::musical_chairs {
   // Check for genesis, upgrade or recovery mode scenarios
   // if we are at genesis or otherwise at start of an epoch and don't
   // have a sufficient amount of history to evaluate nodes
-  // we might reduce the validator set too agressively.
+  // we might reduce the validator set too aggressively.
   // Musical chairs should not evaluate performance with less than 1000 rounds
   // created on mainnet,
   // there's something else very wrong in that case.
