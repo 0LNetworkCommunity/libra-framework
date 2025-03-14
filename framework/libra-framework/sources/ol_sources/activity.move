@@ -12,8 +12,6 @@ module ol_framework::activity {
     onboarding_usecs: u64,
   }
 
-  struct Founder has key {}
-
   public(friend) fun increment(user_sig: &signer, timestamp: u64) acquires Activity {
     // migrate old accounts
     // catch the case of existing "founder" accounts from prior to V8
@@ -31,7 +29,6 @@ module ol_framework::activity {
         onboarding_usecs: 0, // also how we identify pre-V8 "founder account",
       });
 
-      move_to<Founder>(user_sig, Founder {});
   }
 
   public(friend) fun maybe_onboard(user_sig: &signer){
@@ -53,6 +50,12 @@ module ol_framework::activity {
       let state = borrow_global<Activity>(user);
       return state.last_touch_usecs > 0
     };
+    // I was beat, incomplete
+    // I've been had, I was sad and blue
+    // But you made me feel
+    // Yeah, you made me feel
+    // Shiny and new
+
     false
   }
 
@@ -82,7 +85,9 @@ module ol_framework::activity {
   #[view]
   // If the account is a founder/pre-v8 account has been migrated
   // then it would have an onboarding timestamp of 0
-  public fun is_founder(user: address): bool {
-    exists<Founder>(user)
+  public fun is_prehistoric(user: address): bool acquires Activity {
+    let state = borrow_global<Activity>(user);
+    state.onboarding_usecs == 0
   }
+
 }
