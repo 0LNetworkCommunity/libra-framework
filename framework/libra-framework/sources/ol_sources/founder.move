@@ -2,8 +2,9 @@
 /// Maintains the version number for the blockchain.
 module ol_framework::founder {
   use std::signer;
+  use ol_framework::vouch_score;
 
-  // friend diem_framework::vouch;
+  friend diem_framework::vouch_txs;
   friend ol_framework::filo_migration;
 
   struct Founder has key {
@@ -18,9 +19,15 @@ module ol_framework::founder {
     }
   }
 
-  public(friend) fun self_set_friendly(user_sig: &signer) acquires Founder {
-    let f = borrow_global_mut<Founder>(signer::address_of(user_sig));
-    f.has_human_friends = true;
+  // DANGER: open to any friend function
+  public(friend) fun maybe_set_friendly_founder(user: address) acquires Founder {
+    if (
+      is_founder(user) &&
+      vouch_score::is_voucher_score_valid(user)
+    ) {
+      let f = borrow_global_mut<Founder>(user);
+      f.has_human_friends = true;
+    }
   }
 
   #[view]
