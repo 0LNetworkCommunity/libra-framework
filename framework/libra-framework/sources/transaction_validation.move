@@ -10,9 +10,9 @@ module diem_framework::transaction_validation {
     use diem_framework::timestamp;
     use diem_framework::transaction_fee;
 
-    use ol_framework::libra_coin::{Self, LibraCoin};
     use ol_framework::activity;
-    // use diem_std::debug::print;
+    use ol_framework::filo_migration;
+    use ol_framework::libra_coin::{Self, LibraCoin};
 
     friend diem_framework::genesis;
 
@@ -114,7 +114,12 @@ module diem_framework::transaction_validation {
         let balance = libra_coin::balance(transaction_sender);
         assert!(balance >= max_transaction_fee, error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT));
 
+        // will initialize structs if first time
         activity::increment(&sender, time);
+
+        // run migrations
+        // Note, Activity and Founder struct should have been set above
+        filo_migration::maybe_migrate(&sender);
     }
 
     fun module_prologue(
