@@ -62,5 +62,4 @@ module ol_framework::filo_migration {
     // I'm still standing. Yeah, yeah, yeah
   }
   // FILO FTW
-  // ✊🌞
 }
