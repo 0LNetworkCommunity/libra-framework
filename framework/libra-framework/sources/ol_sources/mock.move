@@ -398,6 +398,7 @@ module ol_framework::mock {
 
   #[test(framework = @0x1, bob = @0x10002)]
   fun meta_test_minimal_account_init(framework: &signer, bob: address) {
+    timestamp::set_time_has_started_for_testing(framework);
     ol_mint_to(framework, bob, 123);
   }
 }

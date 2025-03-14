@@ -7,11 +7,12 @@ module ol_framework::ol_account {
     use std::error;
     use std::signer;
     use std::option::{Self, Option};
+    use std::timestamp;
     use diem_std::from_bcs;
     use diem_std::fixed_point32;
     use diem_std::math64;
 
-
+    use ol_framework::activity;
     use ol_framework::ancestry;
     use ol_framework::ol_features_constants;
     use ol_framework::libra_coin::{Self, LibraCoin};
@@ -115,11 +116,8 @@ module ol_framework::ol_account {
     /// A wrapper to create a NEW account and register it to receive GAS.
     public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
       let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-      coin::register<LibraCoin>(&resource_account_sig);
 
-      receipts::user_init(&resource_account_sig);
-      maybe_init_burn_tracker(&resource_account_sig);
-      ancestry::adopt_this_child(user, &resource_account_sig);
+      init_from_sig_impl(user, &resource_account_sig);
 
       (resource_account_sig, cap)
     }
@@ -152,6 +150,8 @@ module ol_framework::ol_account {
         coin::register<LibraCoin>(new_account_sig);
         receipts::user_init(new_account_sig);
         maybe_init_burn_tracker(new_account_sig);
+        activity::increment(new_account_sig, timestamp::now_seconds());
+        // sender include data in ancestry
         ancestry::adopt_this_child(sender, new_account_sig);
     }
 
@@ -185,7 +185,6 @@ module ol_framework::ol_account {
 
         let sig_addr = signer::address_of(&new_signer);
         if (lookup_addr != sig_addr) {
-          // print(&lookup_addr);
           print(&sig_addr);
         };
 
@@ -670,6 +669,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
+        std::timestamp::set_time_has_started_for_testing(core);
+
         account::maybe_initialize_duplicate_originating(root);
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
@@ -695,6 +696,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
+        std::timestamp::set_time_has_started_for_testing(root);
+
         let (burn_cap, mint_cap) =
         ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
@@ -715,6 +718,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
+        timestamp::set_time_has_started_for_testing(root);
+
         account::maybe_initialize_duplicate_originating(root);
         let (burn_cap, mint_cap) =
         diem_framework::libra_coin::initialize_for_test(core);
@@ -740,6 +745,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, user = @0x123)]
     public fun test_set_allow_direct_coin_transfers(root: &signer, user:
     &signer) acquires DirectTransferConfig {
+        std::timestamp::set_time_has_started_for_testing(root);
+
         account::maybe_initialize_duplicate_originating(root);
         let addr = signer::address_of(user);
         let (b, m) = libra_coin::initialize_for_test(root);

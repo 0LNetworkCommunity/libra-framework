@@ -15,7 +15,7 @@ module ol_framework::test_reconfiguration {
   use ol_framework::ol_account;
   use ol_framework::infra_escrow;
 
-   use diem_std::debug::print;
+  //  use diem_std::debug::print;
 
   // Scenario: all genesis validators make it to next epoch
   #[test(root = @ol_framework)]
@@ -38,24 +38,16 @@ module ol_framework::test_reconfiguration {
     // The epoch's reward BEFORE reconfiguration
     assert!(reward_one == 1000000, 7357004);
 
-    let infra = infra_escrow::infra_escrow_balance();
-    print(&555);
-    print(&infra);
+    let _infra = infra_escrow::infra_escrow_balance();
 
-    let subsidy = transaction_fee::system_fees_collected();
-    print(&666);
-    print(&subsidy);
+    let _subsidy = transaction_fee::system_fees_collected();
 
     // run ol reconfiguration
     mock::trigger_epoch(&root);
 
-    let infra = infra_escrow::infra_escrow_balance();
-    print(&5552);
-    print(&infra);
+    let _infra = infra_escrow::infra_escrow_balance();
 
-    let subsidy = transaction_fee::system_fees_collected();
-    print(&6662);
-    print(&subsidy);
+    let _subsidy = transaction_fee::system_fees_collected();
 
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 5, 7357005);
@@ -69,15 +61,10 @@ module ol_framework::test_reconfiguration {
 
     // test new subsidy
     let (reward_two, _entry_fee, _, _ ) = proof_of_fee::get_consensus_reward();
-    print(&777);
-    print(&reward_two);
-    let new_budget = reward_two * 5;
-    print(&new_budget);
 
-    let subsidy = transaction_fee::system_fees_collected();
-    print(&888);
-    print(&subsidy);
+    let _new_budget = reward_two * 5;
 
+    let _subsidy = transaction_fee::system_fees_collected();
   }
 
   #[test(root = @ol_framework)]
