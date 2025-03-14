@@ -20,6 +20,7 @@ module ol_framework::vouch {
     friend ol_framework::vouch_migration; // TODO: remove after vouch migration is completed
     friend ol_framework::filo_migration;
     friend ol_framework::validator_universe;
+    friend ol_framework::vouch_txs;
 
     #[test_only]
     friend ol_framework::mock;
@@ -268,11 +269,11 @@ module ol_framework::vouch {
     /// will only successfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
+    public(friend) fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
       vouch_impl(grantor, friend_account, true);
     }
 
-    public entry fun revoke(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches {
+    public(friend) fun revoke(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
