@@ -7,7 +7,7 @@ module ol_framework::vouch {
     use ol_framework::ancestry;
     use ol_framework::ol_account;
     use ol_framework::epoch_helper;
-
+    use diem_framework::stake;
     use diem_framework::system_addresses;
     use diem_framework::transaction_fee;
 
@@ -123,6 +123,23 @@ module ol_framework::vouch {
       };
     }
 
+
+    /// validators vouching has a cost
+    // this fee is paid to the system, cannot be reclaimed
+    // TODO: refactor validator vouch into own module
+    fun maybe_debit_validator_cost(grantor: &signer, friend_account: address) acquires VouchPrice {
+      if (
+        stake::is_valid(friend_account) &&
+        stake::is_valid(signer::address_of(grantor))
+      ) {
+      let price = get_vouch_price();
+        if (price > 0) {
+          let vouch_cost = ol_account::withdraw(grantor, price);
+          transaction_fee::user_pay_fee(grantor, vouch_cost);
+        };
+      }
+    }
+
     fun vouch_impl(grantor: &signer, friend_account: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchPrice {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
@@ -142,12 +159,9 @@ module ol_framework::vouch {
         error::invalid_state(EMAX_LIMIT_GIVEN)
       );
 
-      // this fee is paid to the system, cannot be reclaimed
-      let price = get_vouch_price();
-      if (price > 0) {
-        let vouch_cost = ol_account::withdraw(grantor, price);
-        transaction_fee::user_pay_fee(grantor, vouch_cost);
-      };
+      // are these validators?
+      // TODO: refactor validator_vouch into own module
+      maybe_debit_validator_cost(grantor, friend_account);
 
       let epoch = epoch_helper::get_current_epoch();
 
