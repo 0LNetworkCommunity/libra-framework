@@ -357,11 +357,18 @@ strip = true      # strip debug and symbols for size
 debug = true
 
 [profile.dev]
-opt-level = 0
+opt-level = 1
 debug = true
 split-debuginfo = "unpacked"
-lto = false
+lto = "off"
+codegen-units = 256  # More parallel compilation units
 incremental = true
 
 [profile.test]
 inherits = "dev"
+opt-level = 1
+debug = true
+split-debuginfo = "unpacked"
+lto = "off"
+codegen-units = 256  # More parallel compilation units
+incremental = true
