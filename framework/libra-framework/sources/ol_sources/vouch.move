@@ -18,6 +18,7 @@ module ol_framework::vouch {
     friend ol_framework::jail;
     friend ol_framework::epoch_boundary;
     friend ol_framework::vouch_migration; // TODO: remove after vouch migration is completed
+    friend ol_framework::filo_migration;
     friend ol_framework::validator_universe;
 
     #[test_only]
