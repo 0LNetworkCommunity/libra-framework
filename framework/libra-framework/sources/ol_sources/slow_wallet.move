@@ -20,10 +20,11 @@ module ol_framework::slow_wallet {
   // use diem_std::debug::print;
 
   friend diem_framework::genesis;
-
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
   friend ol_framework::epoch_boundary;
+  friend ol_framework::filo_migration;
+
   #[test_only]
   friend ol_framework::test_slow_wallet;
   #[test_only]
@@ -66,6 +67,39 @@ module ol_framework::slow_wallet {
       }
     }
 
+    /// one time function for all founder accounts to migrate
+    /// on close of Level 7 FILO upgrade
+    public(friend) fun filo_migration_reset(sig: &signer) acquires SlowWallet, SlowWalletList {
+        assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
+
+        let addr = signer::address_of(sig);
+        let list = get_slow_list();
+        if (!vector::contains<address>(&list, &addr)) {
+            let s = borrow_global_mut<SlowWalletList>(@ol_framework);
+            vector::push_back(&mut s.list, addr);
+        };
+
+        if (!exists<SlowWallet>(addr)) {
+          move_to<SlowWallet>(sig, SlowWallet {
+            // I feel as naked as the hour that I was born
+            // Running wild with you right through
+            // This coming storm that's gonna form
+            // And tear our world apart
+
+            // Love is a long game we can play
+            // You turn to me and say
+            // Let's break these rules
+            // No use in playing it cool
+            // No separation, you and I
+            unlocked: 0,
+            transferred: 0,
+          });
+        } else {
+          let state = borrow_global_mut<SlowWallet>(addr);
+          state.unlocked = 0;
+        }
+    }
+
     /// Users can change their account to slow, by calling the entry function
     /// Warning: this is permanent for the account. There's no way to
     /// reverse a "slow wallet".
@@ -73,7 +107,7 @@ module ol_framework::slow_wallet {
       set_slow(sig);
     }
 
-    /// implementation of setting slow wallet, allows contracts to call.
+    /// implementation of setting slow wallet
     fun set_slow(sig: &signer) acquires SlowWalletList {
       assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
 

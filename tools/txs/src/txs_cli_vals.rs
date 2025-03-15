@@ -7,7 +7,7 @@ use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
     ProofOfFeePofUpdateBidNetReward, StakeUpdateNetworkAndFullnodeAddresses,
-    ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
+    ValidatorUniverseRegisterValidator, VouchTxsRevoke, VouchTxsVouchFor,
 };
 use libra_config::validator_registration;
 use libra_types::global_config_dir;
@@ -107,11 +107,11 @@ impl ValidatorTxs {
                 revoke,
             } => {
                 if *revoke {
-                    VouchRevoke {
+                    VouchTxsRevoke {
                         friend_account: *vouch_acct,
                     }
                 } else {
-                    VouchVouchFor {
+                    VouchTxsVouchFor {
                         friend_account: *vouch_acct,
                     }
                 }
