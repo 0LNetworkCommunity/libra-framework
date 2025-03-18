@@ -7,6 +7,9 @@ module ol_framework::activity {
   friend diem_framework::transaction_validation;
   friend ol_framework::ol_account;
 
+  #[test_only]
+  friend ol_framework::test_filo_migration;
+
   struct Activity has key {
     last_touch_usecs: u64,
     onboarding_usecs: u64,
@@ -32,7 +35,6 @@ module ol_framework::activity {
   }
 
   public(friend) fun maybe_onboard(user_sig: &signer){
-
     if (!exists<Activity>(signer::address_of(user_sig))) {
       move_to<Activity>(user_sig, Activity {
         last_touch_usecs: 0, // how we identify if a users has used the account after a peer created it.

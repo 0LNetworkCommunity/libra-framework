@@ -6,6 +6,8 @@ module ol_framework::filo_migration {
   use ol_framework::vouch;
 
   friend diem_framework::transaction_validation;
+  #[test_only]
+  friend ol_framework::test_filo_migration;
 
   // Welcome to Level 8
 
