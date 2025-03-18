@@ -19,6 +19,9 @@ module ol_framework::ol_account {
   use ol_framework::cumulative_deposits;
   use ol_framework::community_wallet;
   use ol_framework::donor_voice;
+  use ol_framework::testnet;
+
+
 
   use diem_std::debug::print;
 
@@ -26,7 +29,8 @@ module ol_framework::ol_account {
   use std::vector;
   #[test_only]
   use diem_framework::timestamp;
-
+  #[test_only]
+  use diem_framework::chain_id;
 
   friend ol_framework::donor_voice_txs;
   friend ol_framework::multi_action;
@@ -86,6 +90,12 @@ module ol_framework::ol_account {
   /// Governance mode: chain has restricted p2p transactions while upgrades are executed.
   const EGOVERNANCE_MODE: u64 = 15;
 
+  /// user should not have an activity struct in testnet
+  const ESHOULD_HAVE_NO_ACTIVITY: u64 = 16;
+
+  /// only for testing, not mainnet
+  const EONLY_FOR_TESTING: u64 = 17;
+
   ///////// CONSTS /////////
   /// what limit should be set for new account creation while using transfer()
   const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
@@ -126,6 +136,28 @@ module ol_framework::ol_account {
     (resource_account_sig, cap)
   }
 
+  #[test_only]
+  /// creates an account with only the structs a v7 user would have
+  /// this is for testing migrations
+  public fun test_create_create_v7_account(root: &signer, acc: address): signer {
+    testnet::assert_testnet(root);
+    let new_account_sig = account::create_account_for_test(acc);
+    // ancestry
+    ancestry::test_fork_migrate(root, &new_account_sig, vector::empty());
+    // receipts
+    receipts::user_init(&new_account_sig);
+    // burn tracker
+    maybe_init_burn_tracker(&new_account_sig);
+    // initialize coin
+    coin::register<LibraCoin>(&new_account_sig);
+
+    // assert that the Activity struct does not exist, which
+    // is part of the v8 migration
+    assert!(!activity::is_initialized(acc), error::invalid_state(ESHOULD_HAVE_NO_ACTIVITY));
+
+    new_account_sig
+  }
+
   // Deprecation Notice: creating resource accounts are disabled in Libra.
   // Similar methods exist in multi_action::finalize_and_cage) which is
   // a wrapper for  and multi_sig::migrate_with_owners
@@ -163,6 +195,7 @@ module ol_framework::ol_account {
   /// Belt and suspenders
   // TODO: should check chain ID is not mainnet.
   public entry fun create_account(root: &signer, auth_key: address) {
+    assert!(testnet::is_not_mainnet(), error::invalid_state(EONLY_FOR_TESTING));
     system_addresses::assert_ol(root);
     create_impl(root, auth_key);
   }
@@ -673,6 +706,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
         account::maybe_initialize_duplicate_originating(root);
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
@@ -699,6 +734,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
         let (burn_cap, mint_cap) = ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
@@ -719,6 +756,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
 
         account::maybe_initialize_duplicate_originating(root);
@@ -746,6 +785,7 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, user = @0x123)]
     public fun test_set_allow_direct_coin_transfers(root: &signer, user:
     &signer) acquires DirectTransferConfig {
+        chain_id::initialize_for_test(root, 4);
         timestamp::set_time_has_started_for_testing(root);
         account::maybe_initialize_duplicate_originating(root);
         let addr = signer::address_of(user);

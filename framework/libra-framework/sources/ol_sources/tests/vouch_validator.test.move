@@ -1,5 +1,5 @@
 #[test_only]
-module ol_framework::test_vouch {
+module ol_framework::test_validator_vouch {
   use std::vector;
   use ol_framework::vouch;
   use ol_framework::mock;

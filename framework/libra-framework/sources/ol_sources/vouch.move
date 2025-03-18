@@ -27,7 +27,9 @@ module ol_framework::vouch {
     #[test_only]
     friend ol_framework::test_pof;
     #[test_only]
-    friend ol_framework::test_vouch;
+    friend ol_framework::test_user_vouch;
+    #[test_only]
+    friend ol_framework::test_validator_vouch;
     #[test_only]
     friend ol_framework::test_vouch_migration;
 

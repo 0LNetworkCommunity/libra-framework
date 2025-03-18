@@ -2,7 +2,9 @@
 #[test_only]
 module ol_framework::mock {
   use std::vector;
+  use diem_framework::chain_status;
   use diem_framework::coin;
+  use diem_framework::chain_id;
   use diem_framework::block;
   use diem_framework::stake;
   use diem_framework::account;
@@ -22,6 +24,7 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
+  use ol_framework::testnet;
 
   // use diem_std::debug::print;
 
@@ -29,6 +32,7 @@ module ol_framework::mock {
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
   /// coin supply does not match expected
   const ESUPPLY_MISMATCH: u64 = 3;
+  const EPOCH_DURATION: u64 = 60;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -132,7 +136,7 @@ module ol_framework::mock {
     (bids, expiry)
   }
 
-  use diem_framework::chain_status;
+
   #[test_only]
   public fun ol_test_genesis(root: &signer) {
     system_addresses::assert_ol(root);
@@ -297,8 +301,6 @@ module ol_framework::mock {
     };
   }
 
-  #[test_only]
-  const EPOCH_DURATION: u64 = 60;
 
   #[test_only]
   // NOTE: The order of these is very important.
@@ -314,6 +316,7 @@ module ol_framework::mock {
     );
   }
 
+  #[test_only]
   public fun trigger_epoch_exactly_at(root: &signer, old_epoch: u64, round: u64) {
     timestamp::fast_forward_seconds(EPOCH_DURATION);
     epoch_boundary::ol_reconfigure_for_test(root, old_epoch, round);
@@ -324,6 +327,13 @@ module ol_framework::mock {
 
     // epoch helper should always be in sync
     assert!(reconfiguration::get_current_epoch() == epoch_helper::get_current_epoch(), 666);
+  }
+
+  #[test_only]
+  public fun create_v7_account_for_test(root: &signer) {
+    testnet::assert_testnet(root);
+    let v7 = @0x10007;
+    ol_account::create_account(root, v7);
   }
 
 
@@ -399,6 +409,7 @@ module ol_framework::mock {
   #[test(framework = @0x1, bob = @0x10002)]
   fun meta_test_minimal_account_init(framework: &signer, bob: address) {
     timestamp::set_time_has_started_for_testing(framework);
+    chain_id::initialize_for_test(framework, 4);
     ol_mint_to(framework, bob, 123);
   }
 }
