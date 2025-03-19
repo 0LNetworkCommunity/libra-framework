@@ -21,9 +21,8 @@ module ol_framework::ol_account {
   use ol_framework::donor_voice;
   use ol_framework::testnet;
 
-
-
   use diem_std::debug::print;
+
 
   #[test_only]
   use std::vector;
@@ -139,7 +138,7 @@ module ol_framework::ol_account {
   #[test_only]
   /// creates an account with only the structs a v7 user would have
   /// this is for testing migrations
-  public fun test_create_create_v7_account(root: &signer, acc: address): signer {
+  public fun test_emulate_v7_account(root: &signer, acc: address): signer {
     testnet::assert_testnet(root);
     let new_account_sig = account::create_account_for_test(acc);
     // ancestry

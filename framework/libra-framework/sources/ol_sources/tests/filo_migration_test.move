@@ -25,15 +25,32 @@ module ol_framework::test_filo_migration {
     filo_migration::maybe_migrate(sender);
   }
 
-  #[test(framework = @0x1, bob = @0x1000b)]
-  /// V7 user accounts should not have this struct
-  fun v7_should_not_have(framework: &signer, bob: &signer) {
+  fun setup_one_v7_account(framework: &signer, bob: &signer) {
     mock::ol_test_genesis(framework);
 
+    // cannot be zero secs, since the activity.move needs > 0
+    timestamp::fast_forward_seconds(10);
+
+
+    // emulate the state of a pre-migration v7 account
+    // Founder account in V7 should not have
+    // post-migration structs: Founder, Vouch, SlowWallet
     let b_addr = signer::address_of(bob);
-    ol_account::test_create_create_v7_account(framework, b_addr);
+    ol_account::test_emulate_v7_account(framework, b_addr);
+
+    // check correct setup
     assert!(account::exists_at(b_addr), 735701);
     assert!(!vouch::is_init(b_addr), 735701);
+    assert!(!founder::is_founder(b_addr), 735702);
+    assert!(!activity::has_ever_been_touched(b_addr), 735703);
+    // setup a v7 account without slow wallet.
+    assert!(!slow_wallet::is_slow(b_addr), 735704);
+  }
+
+  #[test(framework = @0x1, bob = @0x1000b)]
+  /// V7 user accounts should not have structs initialized
+  fun v7_should_not_have(framework: &signer, bob: &signer) {
+    setup_one_v7_account(framework, bob);
 
     simulate_transaction_validation(bob);
 
@@ -42,29 +59,125 @@ module ol_framework::test_filo_migration {
   #[test(framework = @0x1, bob = @0x1000b)]
   /// V7 accounts get migrated to Founder on first tx
   fun v7_migrates_lazily_on_tx(framework: &signer, bob: &signer) {
+    setup_one_v7_account(framework, bob);
+
+
+    //////// user sends migration tx ////////
+    simulate_transaction_validation(bob);
+    // safety check: should not error if called again, lazy init
+    simulate_transaction_validation(bob);
+    //////// end migration tx ////////
+
+    let b_addr = signer::address_of(bob);
+    // now the post-migration state should exist
+    assert!(vouch::is_init(b_addr), 735706);
+    assert!(founder::is_founder(b_addr), 735707);
+    assert!(activity::has_ever_been_touched(b_addr), 735708);
+    assert!(slow_wallet::is_slow(b_addr), 735709);
+  }
+
+  #[test(framework = @0x1, bob = @0x1000b)]
+  /// All "founder" accounts should be on equal footing,
+  /// restarting the unlocking rate.
+  fun v7_test_equal_footing_balance(framework: &signer, bob: &signer) {
+    setup_one_v7_account(framework, bob);
     let b_addr = signer::address_of(bob);
 
-    mock::ol_test_genesis(framework);
-    // cannot be zero secs, since the activity.move needs > 0
-    timestamp::fast_forward_seconds(10);
 
-    ol_account::test_create_create_v7_account(framework, b_addr);
-    assert!(account::exists_at(b_addr), 735701);
-    assert!(!vouch::is_init(b_addr), 735701);
+    // emulate the state of a pre-migration v7 account
+    // with 1000 coins total, which are all unlocked
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735701);
+    assert!(unlocked == 1000, 735702);
 
+    //////// user sends migration tx ////////
+    // The first time the user touches the account with a transaction
+    // the migration should happen
     simulate_transaction_validation(bob);
-    // should not error if called again, lazy init
-    simulate_transaction_validation(bob);
-
-    // now the vouch state should exist
-    assert!(vouch::is_init(b_addr), 735702);
-    assert!(founder::is_founder(b_addr), 735703);
-    assert!(activity::has_ever_been_touched(b_addr), 735704);
-    assert!(slow_wallet::is_slow(b_addr), 735705);
+    //////// end migration tx ////////
 
     let (unlocked, total) = ol_account::balance(b_addr);
-    print(&unlocked);
-    print(&total);
+    assert!(unlocked == 0, 735708);
+    assert!(total == 1000, 735709);
+  }
 
+  #[test(framework = @0x1, bob = @0x1000b)]
+  /// V7 accounts (Founder) which WERE previously slow wallets
+  /// will not continue unlocking until migration happens.
+  fun v7_slow_wallets_should_not_unlock(framework: &signer, bob: &signer) {
+    setup_one_v7_account(framework, bob);
+    let b_addr = signer::address_of(bob);
+
+
+
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735705);
+    assert!(unlocked == 1000, 735706);
+
+    let mocked_unlock_amount = 50;
+    // Emulate a V7 slow wallet
+    slow_wallet::test_set_slow_wallet(framework, bob,
+    mocked_unlock_amount, mocked_unlock_amount);
+    // check setup is correct
+    // now it should be a slow wallet
+    assert!(slow_wallet::is_slow(b_addr), 735707);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked != total, 735708);
+    assert!(unlocked == mocked_unlock_amount, 735709);
+    let locked_supply_pre = slow_wallet::get_locked_supply();
+    print(&locked_supply_pre);
+
+    // the test:
+    // Post V8, yet prior to user's migration,
+    // there should be no drip
+    slow_wallet::test_epoch_drip(framework, 10);
+    let (unlocked_post_epoch, total_post_epoch) = ol_account::balance(b_addr);
+    assert!(unlocked_post_epoch == mocked_unlock_amount, 7357010);
+    assert!(unlocked_post_epoch == unlocked, 7357011);
+    assert!(total_post_epoch == total, 7357012);
+
+    // finally check that the global locked supply hasn't changed
+    let locked_supply_post = slow_wallet::get_locked_supply();
+    print(&locked_supply_post);
+    assert!(locked_supply_pre == locked_supply_post, 7357013);
+  }
+
+  #[test(framework = @0x1, bob = @0x1000b)]
+  /// V7 accounts (Founder) should not be able to transfer
+  /// unless the migration structs are initialized
+  /// NOTE: not sure how it would be possible since that
+  /// on the first transaction verification, the migration
+  /// should happen lazily.
+  fun v7_should_not_transfer_until_migrated(framework: &signer, bob: &signer) {
+    setup_one_v7_account(framework, bob);
+
+    // // emulate the state of a pre-migration v7 account
+    // // with 1000 coins total, which are unlocked
+    // ol_account::test_emulate_v7_account(framework, b_addr);
+    // mock::ol_mint_to(framework, b_addr, 1000);
+    // let (unlocked, total) = ol_account::balance(b_addr);
+    // assert!(unlocked == total, 735701);
+    // assert!(unlocked == 1000, 735702);
+
+    // // Founder account in V7 should not have
+    // // post-migration structs: Founder, Vouch, SlowWallet
+    // assert!(account::exists_at(b_addr), 735703);
+    // assert!(!vouch::is_init(b_addr), 735704);
+    // assert!(!founder::is_founder(b_addr), 735705);
+    // assert!(!activity::has_ever_been_touched(b_addr), 735706);
+    // assert!(!slow_wallet::is_slow(b_addr), 735707);
+
+
+    // //////// user sends migration tx ////////
+    // // The first time the user touches the account with a transaction
+    // // the migration should happen
+    // simulate_transaction_validation(bob);
+    // //////// end migration tx ////////
+
+    // let (unlocked, total) = ol_account::balance(b_addr);
+    // assert!(unlocked == 0, 735708);
+    // assert!(total == 1000, 735709);
   }
 }
