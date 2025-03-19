@@ -3,10 +3,11 @@ on:
   push:
     branches:
       # make binaries which may be ahead of releases to use in CI jobs
-      - "ci-bins*"
+      - "canary*"
     tags: # run this also on release candidates
       - "[0-9]+.[0-9]+.[0-9]*"
-
+env:
+ BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 # Note: builds only Intel container at present
 
 jobs:
@@ -26,7 +27,8 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}/libra-node
           tags: |
-            type=sha,enable=true,priority=100,prefix=,suffix=,format=long
+
+            type=${{env.BRANCH_NAME}},type=sha,enable=true,priority=100,prefix=,suffix=,format=long
 
       - name: Log in to Container Image Registry
         uses: docker/login-action@v3
