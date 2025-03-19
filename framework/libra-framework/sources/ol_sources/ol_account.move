@@ -381,6 +381,8 @@ module ol_framework::ol_account {
         // if the account has never been activated, the unlocked amount is
         // zero despite the state (which is stale, until there is a migration).
         assert!(activity::has_ever_been_touched(payer), error::invalid_state(ENOT_MIGRATED));
+
+        // TODO: Should transactions fail if a recipient is not migrated?
         // assert!(activity::has_ever_been_touched(recipient), error::invalid_state(ENOT_MIGRATED));
 
     }

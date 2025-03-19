@@ -48,27 +48,20 @@ module ol_framework::activity {
 
 
   #[view]
-  // if there user has been onboarded (since v8) but never transacted
-  // they should have a last touch timestamp of 0.
+  // check if this is an account that has activity
   public fun has_ever_been_touched(user: address): bool{
+    // I was beat, incomplete
+    // I've been had, I was sad and blue
+    // But you made me feel
+    // Yeah, you made me feel
+    // Shiny and new
     is_initialized(user)
-    // // don't do this check at testnet genesis on blank accounts for testing mostly
-    // if(testnet::is_not_mainnet()){
-    //   return true
-    // };
 
+    // TODO: possibly check if the last touch is greater than 0
     // if (exists<Activity>(user)){
     //   let state = borrow_global<Activity>(user);
     //   return state.last_touch_usecs > 0
     // };
-
-    // // I was beat, incomplete
-    // // I've been had, I was sad and blue
-    // // But you made me feel
-    // // Yeah, you made me feel
-    // // Shiny and new
-
-    // false
   }
 
 

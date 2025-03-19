@@ -11,7 +11,7 @@ module ol_framework::test_filo_migration {
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   /// two state initializations happen on first
   /// transaction
@@ -27,9 +27,6 @@ module ol_framework::test_filo_migration {
 
   fun setup_one_v7_account(framework: &signer, bob: &signer) {
     mock::ol_test_genesis(framework);
-    // cannot be zero secs, since the activity.move needs > 0
-    // timestamp::fast_forward_seconds(10);
-
     // emulate the state of a pre-migration v7 account
     // Founder account in V7 should not have
     // post-migration structs: Founder, Vouch, SlowWallet
@@ -131,7 +128,6 @@ module ol_framework::test_filo_migration {
     assert!(unlocked != total, 735708);
     assert!(unlocked == mocked_unlock_amount, 735709);
     let locked_supply_pre = slow_wallet::get_locked_supply();
-    print(&locked_supply_pre);
 
     // the test:
     // Post V8, yet prior to user's migration,
@@ -144,7 +140,6 @@ module ol_framework::test_filo_migration {
 
     // finally check that the global locked supply hasn't changed
     let locked_supply_post = slow_wallet::get_locked_supply();
-    print(&locked_supply_post);
     assert!(locked_supply_pre == locked_supply_post, 7357013);
   }
 
@@ -174,5 +169,57 @@ module ol_framework::test_filo_migration {
     // // the migration should happen
     // simulate_transaction_validation(bob);
     // //////// end migration tx ////////
+  }
+
+  #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
+  #[expected_failure(abort_code = 196614, location = 0x1::ol_account)]
+  /// can transfer after migration but not if balance is zero (no drips occurred).
+  /// This test will have a different error code
+  fun v7_would_have_no_unlocked_immediately(framework: &signer, bob: &signer, marlon: address) {
+    setup_one_v7_account(framework, bob);
+    let b_addr = signer::address_of(bob);
+
+    // give bob some coins, unlocked leftover from V7.
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735705);
+    assert!(unlocked == 1000, 735706);
+
+    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+
+    //////// user sends migration tx ////////
+    // The first time the user touches the account with a transaction
+    // the migration should happen
+    simulate_transaction_validation(bob);
+    //////// end migration tx ////////
+
+    // uses transfer entry function
+    ol_account::transfer(bob, marlon, 33);
+  }
+
+  #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
+  /// Once there is an epoch drip and the user was migrated
+  /// transfers should work normally
+  fun v7_activate_and_transfer_happy(framework: &signer, bob: &signer, marlon: address) {
+    setup_one_v7_account(framework, bob);
+    let b_addr = signer::address_of(bob);
+
+    // give bob some coins, unlocked leftover from V7.
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735705);
+    assert!(unlocked == 1000, 735706);
+
+    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+
+    //////// user sends migration tx ////////
+    // The first time the user touches the account with a transaction
+    // the migration should happen
+    simulate_transaction_validation(bob);
+    //////// end migration tx ////////
+    slow_wallet::test_epoch_drip(framework, 100);
+
+    // uses transfer entry function
+    ol_account::transfer(bob, marlon, 33);
   }
 }
