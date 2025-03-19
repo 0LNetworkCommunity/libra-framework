@@ -1,4 +1,5 @@
 name: build container
+
 on:
   push:
     branches:
@@ -8,12 +9,12 @@ on:
       - "[0-9]+.[0-9]+.[0-9]*"
 env:
  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-# Note: builds only Intel container at present
 
 jobs:
   publish:
     permissions: write-all
     name: container-build
+# Note: builds only Intel container at present
     runs-on: ubuntu-latest
     steps:
 
@@ -29,6 +30,10 @@ jobs:
           tags: |
 
             type=${{env.BRANCH_NAME}},type=sha,enable=true,priority=100,prefix=,suffix=,format=long
+            # if is in MAIN branch, also tag as latest
+            type=raw,value=canary,enable=${{contains(env.BRANCH_NAME, 'canary')}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
 
       - name: Log in to Container Image Registry
         uses: docker/login-action@v3
