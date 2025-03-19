@@ -4,8 +4,14 @@ module ol_framework::founder {
   use std::signer;
   use ol_framework::vouch_score;
 
+  #[test_only]
+  use ol_framework::testnet;
+
   friend diem_framework::vouch_txs;
   friend ol_framework::filo_migration;
+
+  #[test_only]
+  friend ol_framework::test_filo_migration;
 
   struct Founder has key {
     has_human_friends: bool
@@ -38,10 +44,17 @@ module ol_framework::founder {
   }
 
   #[view]
-  // Bot or not
+  /// Bot or not
   public fun has_friends(user: address): bool acquires Founder {
     let f = borrow_global<Founder>(user);
     f.has_human_friends
+  }
+
+  #[test_only]
+  public(friend) fun test_mock_friendly(framework: &signer, user: &signer) acquires Founder {
+    testnet::assert_testnet(framework);
+    let state = borrow_global_mut<Founder>(signer::address_of(user));
+    state.has_human_friends = true;
   }
 
 }

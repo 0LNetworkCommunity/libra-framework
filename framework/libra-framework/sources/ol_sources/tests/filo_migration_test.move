@@ -144,7 +144,7 @@ module ol_framework::test_filo_migration {
   }
 
   #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
-  #[expected_failure(abort_code = 196626, location = 0x1::ol_account)]
+  #[expected_failure(abort_code = 196609, location = 0x1::reauthorization)]
   /// V7 accounts (Founder) should not be able to transfer
   /// unless the migration structs are initialized
   /// NOTE: not sure how it would be possible since that
@@ -197,6 +197,36 @@ module ol_framework::test_filo_migration {
     ol_account::transfer(bob, marlon, 33);
   }
 
+
+
+  #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
+  #[expected_failure(abort_code = 196610, location = 0x1::reauthorization)]
+
+  /// Once there is an epoch drip and the user was migrated
+  /// transfers should work normally
+  fun v7_fails_without_vouches(framework: &signer, bob: &signer, marlon: address) {
+    setup_one_v7_account(framework, bob);
+    let b_addr = signer::address_of(bob);
+
+    // give bob some coins, unlocked leftover from V7.
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735705);
+    assert!(unlocked == 1000, 735706);
+
+    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+
+    //////// user sends migration tx ////////
+    // The first time the user touches the account with a transaction
+    // the migration should happen
+    simulate_transaction_validation(bob);
+    //////// end migration tx ////////
+    slow_wallet::test_epoch_drip(framework, 100);
+
+    // uses transfer entry function
+    ol_account::transfer(bob, marlon, 33);
+  }
+
   #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
   /// Once there is an epoch drip and the user was migrated
   /// transfers should work normally
@@ -219,6 +249,7 @@ module ol_framework::test_filo_migration {
     //////// end migration tx ////////
     slow_wallet::test_epoch_drip(framework, 100);
 
+    founder::test_mock_friendly(framework, bob);
     // uses transfer entry function
     ol_account::transfer(bob, marlon, 33);
   }

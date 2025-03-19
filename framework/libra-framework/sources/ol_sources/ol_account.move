@@ -16,6 +16,7 @@ module ol_framework::ol_account {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::slow_wallet;
   use ol_framework::receipts;
+  use ol_framework::reauthorization;
   use ol_framework::cumulative_deposits;
   use ol_framework::community_wallet;
   use ol_framework::donor_voice;
@@ -380,7 +381,7 @@ module ol_framework::ol_account {
 
         // if the account has never been activated, the unlocked amount is
         // zero despite the state (which is stale, until there is a migration).
-        assert!(activity::has_ever_been_touched(payer), error::invalid_state(ENOT_MIGRATED));
+        reauthorization::assert_v8_reauthorized(payer);
 
         // TODO: Should transactions fail if a recipient is not migrated?
         // assert!(activity::has_ever_been_touched(recipient), error::invalid_state(ENOT_MIGRATED));
