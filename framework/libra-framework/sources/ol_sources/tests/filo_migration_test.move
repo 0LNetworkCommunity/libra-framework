@@ -9,9 +9,10 @@ module ol_framework::test_filo_migration {
   use ol_framework::ol_account;
   use ol_framework::mock;
   use ol_framework::slow_wallet;
+  use ol_framework::reauthorization;
   use ol_framework::vouch;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   /// two state initializations happen on first
   /// transaction
@@ -62,7 +63,6 @@ module ol_framework::test_filo_migration {
   fun v7_migrates_lazily_on_tx(framework: &signer, bob: &signer) {
     setup_one_v7_account(framework, bob);
 
-
     //////// user sends migration tx ////////
     simulate_transaction_validation(bob);
     // safety check: should not error if called again, lazy init
@@ -75,6 +75,9 @@ module ol_framework::test_filo_migration {
     assert!(founder::is_founder(b_addr), 735707);
     assert!(activity::has_ever_been_touched(b_addr), 735708);
     assert!(slow_wallet::is_slow(b_addr), 735709);
+    // however the vouch is not sufficient
+    assert!(!founder::has_friends(b_addr), 7357010);
+
   }
 
   #[test(framework = @0x1, bob = @0x1000b)]
@@ -109,8 +112,6 @@ module ol_framework::test_filo_migration {
   fun v7_slow_wallets_should_not_unlock(framework: &signer, bob: &signer) {
     setup_one_v7_account(framework, bob);
     let b_addr = signer::address_of(bob);
-
-
 
     mock::ol_mint_to(framework, b_addr, 1000);
     let (unlocked, total) = ol_account::balance(b_addr);
@@ -200,7 +201,44 @@ module ol_framework::test_filo_migration {
 
 
   #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
-  #[expected_failure(abort_code = 196610, location = 0x1::reauthorization)]
+  #[expected_failure(abort_code = 196614, location = 0x1::ol_account)]
+
+  /// There will be no epoch drip until a founder account is reauthorized
+  fun v7_drip_fails_without_vouches(framework: &signer, bob: &signer, marlon: address) {
+    setup_one_v7_account(framework, bob);
+    let b_addr = signer::address_of(bob);
+
+    // give bob some coins, unlocked leftover from V7.
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735705);
+    assert!(unlocked == 1000, 735706);
+
+    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!reauthorization::is_v8_authorized(b_addr), 735708);
+
+    //////// user sends migration tx ////////
+    // The first time the user touches the account with a transaction
+    // the migration should happen
+    simulate_transaction_validation(bob);
+    //////// end migration tx ////////
+
+    assert!(vouch::is_init(b_addr), 735706);
+    assert!(founder::is_founder(b_addr), 735707);
+    assert!(activity::has_ever_been_touched(b_addr), 735708);
+    assert!(slow_wallet::is_slow(b_addr), 735709);
+    // however the vouch is not sufficient
+    assert!(!founder::has_friends(b_addr), 7357010);
+
+    slow_wallet::test_epoch_drip(framework, 100);
+
+    let (unlocked_post, _total_post) = ol_account::balance(b_addr);
+    print(&unlocked_post);
+    assert!(unlocked_post == 0, 735706);
+
+    // uses transfer entry function
+    ol_account::transfer(bob, marlon, 33);
+  }
 
   /// Once there is an epoch drip and the user was migrated
   /// transfers should work normally
@@ -215,6 +253,7 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 1000, 735706);
 
     assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!reauthorization::is_v8_authorized(b_addr), 735708);
 
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
@@ -241,15 +280,21 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 1000, 735706);
 
     assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!reauthorization::is_v8_authorized(b_addr), 735708);
 
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
     simulate_transaction_validation(bob);
     //////// end migration tx ////////
-    slow_wallet::test_epoch_drip(framework, 100);
 
     founder::test_mock_friendly(framework, bob);
+    // should now be authorized
+    assert!(reauthorization::is_v8_authorized(b_addr), 735708);
+
+    // on the next epoch should resume dripping
+    slow_wallet::test_epoch_drip(framework, 100);
+
     // uses transfer entry function
     ol_account::transfer(bob, marlon, 33);
   }

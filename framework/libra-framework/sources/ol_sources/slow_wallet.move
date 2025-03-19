@@ -12,8 +12,8 @@ module ol_framework::slow_wallet {
   use std::vector;
   use diem_framework::account;
   use diem_framework::system_addresses;
-  use ol_framework::activity;
   use ol_framework::libra_coin;
+  use ol_framework::reauthorization;
   use ol_framework::sacred_cows;
   use ol_framework::testnet;
 
@@ -270,7 +270,7 @@ module ol_framework::slow_wallet {
       if (exists<SlowWallet>(addr)) {
         // if the account has never been activated, the unlocked amount is
         // zero despite the state (which is stale, until there is a migration).
-        if (!activity::has_ever_been_touched(addr)) {
+        if (!reauthorization::is_v8_authorized(addr)) {
           return 0
         };
         let s = borrow_global<SlowWallet>(addr);
@@ -315,7 +315,7 @@ module ol_framework::slow_wallet {
       let i = 0;
       while (i < slow_list_len) {
         let addr = vector::borrow<address>(&slow_list, i);
-        if (activity::has_ever_been_touched(*addr)) {
+        if (reauthorization::is_v8_authorized(*addr)) {
           vector::push_back(&mut active_slow_wallets, *addr);
         };
         i = i + 1;
@@ -334,7 +334,7 @@ module ol_framework::slow_wallet {
 
       vector::for_each(list, |addr| {
         let (u, t) = unlocked_and_total(addr);
-        let is_active = activity::has_ever_been_touched(addr);
+        let is_active = reauthorization::is_v8_authorized(addr);
         if (!is_active) {
           sum = sum + t;
         } else if (t > u) {
