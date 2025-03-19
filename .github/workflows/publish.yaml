@@ -30,13 +30,41 @@ jobs:
         # size and performance optimized binary with profile.cli
         run: cargo b --release -p libra
 
+
       # CI bin
-      - name: libra publish
+      - name: libra publish bins for ci
         if: ${{ contains(github.ref, 'ci-bins') }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/release/libra
           tag: ci-bins
+          overwrite: true
+          file_glob: true
+          make_latest: false
+
+      - name: libra publish release bins
+        if: ${{ !contains(github.ref, 'ci-bins') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/libra
+          tag: ci-bins
+          overwrite: true
+          file_glob: true
+          make_latest: true
+
+      # Release framework
+      - name: build framework
+        run: cd framework && ../target/release/libra move framework release
+
+      - name: libra publish Move framework build
+        if: ${{!contains(github.ref, 'ci-bins') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: framework/releases/head.mrb
+          asset_name: release-${{github.ref_name}}.mrb
+          tag: ${{github.ref_name}}
           overwrite: true
           file_glob: true
