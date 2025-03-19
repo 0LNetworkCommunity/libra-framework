@@ -8,14 +8,14 @@
 module ol_framework::slow_wallet {
   use std::error;
   use std::event;
-  use std::vector;
   use std::signer;
-  use diem_framework::system_addresses;
+  use std::vector;
   use diem_framework::account;
+  use diem_framework::system_addresses;
   use ol_framework::activity;
   use ol_framework::libra_coin;
-  use ol_framework::testnet;
   use ol_framework::sacred_cows;
+  use ol_framework::testnet;
 
   // use diem_std::debug::print;
 
@@ -33,6 +33,7 @@ module ol_framework::slow_wallet {
   friend ol_framework::mock;
   #[test_only]
   friend ol_framework::test_boundary;
+
 
 
   /// genesis failed to initialized the slow wallet registry
@@ -263,9 +264,15 @@ module ol_framework::slow_wallet {
     }
     #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
-    public fun unlocked_amount(addr: address): u64 acquires SlowWallet{
+    public fun unlocked_amount(addr: address): u64 acquires SlowWallet {
+
       // this is a normal account, so return the normal balance
       if (exists<SlowWallet>(addr)) {
+        // if the account has never been activated, the unlocked amount is
+        // zero despite the state (which is stale, until there is a migration).
+        // if (!activity::has_ever_been_touched(addr)) {
+        //   return 0
+        // };
         let s = borrow_global<SlowWallet>(addr);
         return s.unlocked
       };

@@ -27,17 +27,14 @@ module ol_framework::test_filo_migration {
 
   fun setup_one_v7_account(framework: &signer, bob: &signer) {
     mock::ol_test_genesis(framework);
-
     // cannot be zero secs, since the activity.move needs > 0
-    timestamp::fast_forward_seconds(10);
-
+    // timestamp::fast_forward_seconds(10);
 
     // emulate the state of a pre-migration v7 account
     // Founder account in V7 should not have
     // post-migration structs: Founder, Vouch, SlowWallet
     let b_addr = signer::address_of(bob);
     ol_account::test_emulate_v7_account(framework, b_addr);
-
     // check correct setup
     assert!(account::exists_at(b_addr), 735701);
     assert!(!vouch::is_init(b_addr), 735701);
@@ -49,9 +46,16 @@ module ol_framework::test_filo_migration {
 
   #[test(framework = @0x1, bob = @0x1000b)]
   /// V7 user accounts should not have structs initialized
-  fun v7_should_not_have(framework: &signer, bob: &signer) {
+  fun meta_correct_v7_emulation(framework: &signer, bob: &signer) {
     setup_one_v7_account(framework, bob);
+  }
 
+  #[test(framework = @0x1, bob = @0x1000b)]
+
+  /// simulating a transaction validation should not
+  /// error out
+  fun v7_accept_tx_validation(framework: &signer, bob: &signer) {
+    setup_one_v7_account(framework, bob);
     simulate_transaction_validation(bob);
 
   }
@@ -144,40 +148,31 @@ module ol_framework::test_filo_migration {
     assert!(locked_supply_pre == locked_supply_post, 7357013);
   }
 
-  #[test(framework = @0x1, bob = @0x1000b)]
+  #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
+  #[expected_failure(abort_code = 196626, location = 0x1::ol_account)]
   /// V7 accounts (Founder) should not be able to transfer
   /// unless the migration structs are initialized
   /// NOTE: not sure how it would be possible since that
   /// on the first transaction verification, the migration
   /// should happen lazily.
-  fun v7_should_not_transfer_until_migrated(framework: &signer, bob: &signer) {
+  fun v7_should_not_transfer_until_migrated(framework: &signer, bob: &signer, marlon: address) {
     setup_one_v7_account(framework, bob);
+    let b_addr = signer::address_of(bob);
 
-    // // emulate the state of a pre-migration v7 account
-    // // with 1000 coins total, which are unlocked
-    // ol_account::test_emulate_v7_account(framework, b_addr);
-    // mock::ol_mint_to(framework, b_addr, 1000);
-    // let (unlocked, total) = ol_account::balance(b_addr);
-    // assert!(unlocked == total, 735701);
-    // assert!(unlocked == 1000, 735702);
+    // give bob some coins, unlocked leftover from V7.
+    mock::ol_mint_to(framework, b_addr, 1000);
+    let (unlocked, total) = ol_account::balance(b_addr);
+    assert!(unlocked == total, 735705);
+    assert!(unlocked == 1000, 735706);
 
-    // // Founder account in V7 should not have
-    // // post-migration structs: Founder, Vouch, SlowWallet
-    // assert!(account::exists_at(b_addr), 735703);
-    // assert!(!vouch::is_init(b_addr), 735704);
-    // assert!(!founder::is_founder(b_addr), 735705);
-    // assert!(!activity::has_ever_been_touched(b_addr), 735706);
-    // assert!(!slow_wallet::is_slow(b_addr), 735707);
-
+    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    // uses transfer entry function
+    ol_account::transfer(bob, marlon, 33);
 
     // //////// user sends migration tx ////////
     // // The first time the user touches the account with a transaction
     // // the migration should happen
     // simulate_transaction_validation(bob);
     // //////// end migration tx ////////
-
-    // let (unlocked, total) = ol_account::balance(b_addr);
-    // assert!(unlocked == 0, 735708);
-    // assert!(total == 1000, 735709);
   }
 }

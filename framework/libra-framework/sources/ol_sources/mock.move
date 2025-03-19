@@ -227,6 +227,10 @@ module ol_framework::mock {
     let tx_fees = coin::test_mint(initial_fees, &mint_cap);
     transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
 
+    // OL Network has no central treasury
+    // the infra escrow came from prior miner
+    // contributions
+
     // Forge Bruce
     let fortune = 100_000_000_000;
     let bruce_address = @0xBA7;
@@ -235,8 +239,8 @@ module ol_framework::mock {
     // Bruce mints a fortune
     let bruce = account::create_signer_for_test(bruce_address);
     let fortune_mint = coin::test_mint(fortune, &mint_cap);
-    ol_account::deposit_coins(bruce_address, fortune_mint);
 
+    ol_account::deposit_coins(bruce_address, fortune_mint);
     // Bruce funds infra escrow
     infra_escrow::init_escrow_with_deposit(root, &bruce, 37_000_000_000);
 
@@ -267,9 +271,10 @@ module ol_framework::mock {
   /// mock up to 6 validators alice..frank
   public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
     // create vals with vouches
+
     create_vals(root, num, true);
 
-    timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
+    // timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
     stake::test_reconfigure(root, validator_universe::get_eligible_validators());
 
     stake::get_current_validators()
@@ -290,7 +295,8 @@ module ol_framework::mock {
       let val = vector::borrow(&val_addr, i);
       let sig = account::create_signer_for_test(*val);
       let (_sk, pk, pop) = stake::generate_identity();
-      validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, true);
+      let should_end_epoch = false;
+      validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, should_end_epoch);
 
       vouch::init(&sig);
       if (with_vouches) {

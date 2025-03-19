@@ -3,6 +3,9 @@
 module ol_framework::activity {
   use std::signer;
   use diem_std::timestamp;
+  #[test_only]
+  use ol_framework::testnet;
+
 
   friend diem_framework::transaction_validation;
   friend ol_framework::ol_account;
@@ -47,18 +50,25 @@ module ol_framework::activity {
   #[view]
   // if there user has been onboarded (since v8) but never transacted
   // they should have a last touch timestamp of 0.
-  public fun has_ever_been_touched(user: address): bool acquires Activity {
-    if (exists<Activity>(user)){
-      let state = borrow_global<Activity>(user);
-      return state.last_touch_usecs > 0
-    };
-    // I was beat, incomplete
-    // I've been had, I was sad and blue
-    // But you made me feel
-    // Yeah, you made me feel
-    // Shiny and new
+  public fun has_ever_been_touched(user: address): bool{
+    is_initialized(user)
+    // // don't do this check at testnet genesis on blank accounts for testing mostly
+    // if(testnet::is_not_mainnet()){
+    //   return true
+    // };
 
-    false
+    // if (exists<Activity>(user)){
+    //   let state = borrow_global<Activity>(user);
+    //   return state.last_touch_usecs > 0
+    // };
+
+    // // I was beat, incomplete
+    // // I've been had, I was sad and blue
+    // // But you made me feel
+    // // Yeah, you made me feel
+    // // Shiny and new
+
+    // false
   }
 
 
@@ -90,6 +100,15 @@ module ol_framework::activity {
   public fun is_prehistoric(user: address): bool acquires Activity {
     let state = borrow_global<Activity>(user);
     state.onboarding_usecs == 0
+  }
+
+  #[test_only]
+  /// testnet help for framework account to mock activity
+  public fun test_mock_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
+    testnet::assert_testnet(framework);
+
+    let state = borrow_global_mut<Activity>(user);
+    state.last_touch_usecs = timestamp;
   }
 
 }

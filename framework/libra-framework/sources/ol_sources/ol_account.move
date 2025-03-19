@@ -95,6 +95,9 @@ module ol_framework::ol_account {
   /// only for testing, not mainnet
   const EONLY_FOR_TESTING: u64 = 17;
 
+  /// inactive account, this account has not migrated from V7
+  const ENOT_MIGRATED: u64 = 18;
+
   ///////// CONSTS /////////
   /// what limit should be set for new account creation while using transfer()
   const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
@@ -191,8 +194,9 @@ module ol_framework::ol_account {
 
 
   /// Helper for smoke tests to create accounts.
+  /// this is in production code because he test_only pragma will
+  /// not work for smoke tests
   /// Belt and suspenders
-  // TODO: should check chain ID is not mainnet.
   public entry fun create_account(root: &signer, auth_key: address) {
     assert!(testnet::is_not_mainnet(), error::invalid_state(EONLY_FOR_TESTING));
     system_addresses::assert_ol(root);
@@ -353,6 +357,7 @@ module ol_framework::ol_account {
         assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
 
         let limit = slow_wallet::unlocked_amount(payer);
+
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         // community wallets cannot use ol_transfer, they have a dedicated workflow
@@ -372,6 +377,12 @@ module ol_framework::ol_account {
         // maybe track cumulative deposits if this is a donor directed wallet
         // or other wallet which tracks cumulative payments.
         cumulative_deposits::maybe_update_deposit(payer, recipient, amount);
+
+        // if the account has never been activated, the unlocked amount is
+        // zero despite the state (which is stale, until there is a migration).
+        assert!(activity::has_ever_been_touched(payer), error::invalid_state(ENOT_MIGRATED));
+        // assert!(activity::has_ever_been_touched(recipient), error::invalid_state(ENOT_MIGRATED));
+
     }
 
 
