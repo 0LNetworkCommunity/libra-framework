@@ -90,4 +90,10 @@ module ol_framework::activity {
     state.onboarding_usecs == 0
   }
 
+  #[test_only]
+  public(friend) fun test_set_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
+    diem_framework::system_addresses::assert_diem_framework(framework);
+    let state = borrow_global_mut<Activity>(user);
+    state.last_touch_usecs = timestamp;
+  }
 }
