@@ -8,6 +8,7 @@ module ol_framework::test_filo_migration {
   use ol_framework::founder;
   use ol_framework::ol_account;
   use ol_framework::mock;
+  use ol_framework::slow_wallet;
   use ol_framework::vouch;
 
   use diem_std::debug::print;
@@ -59,6 +60,7 @@ module ol_framework::test_filo_migration {
     assert!(vouch::is_init(b_addr), 735702);
     assert!(founder::is_founder(b_addr), 735703);
     assert!(activity::has_ever_been_touched(b_addr), 735704);
+    assert!(slow_wallet::is_slow(b_addr), 735705);
 
     let (unlocked, total) = ol_account::balance(b_addr);
     print(&unlocked);
