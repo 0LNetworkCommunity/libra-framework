@@ -174,7 +174,7 @@ pub fn genesis_migrate_slow_wallet(
         exec_function(
             session,
             "slow_wallet",
-            "fork_migrate_slow_wallet",
+            "set_slow_wallet_state",
             vec![],
             serialized_values,
         );
