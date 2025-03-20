@@ -33,6 +33,7 @@
 module ol_framework::root_of_trust {
     use std::vector;
     use std::signer;
+    use ol_framework::vouch_score;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
 
@@ -80,11 +81,13 @@ module ol_framework::root_of_trust {
         maybe_initialize(framework, roots, minimum_cohort, 0);
     }
 
+    #[view]
     /// Score a participant's connection to the root of trust
-    fun score_connection(registry: address, user: address): u64 {
+    public fun score_connection(registry: address, user: address): u64 acquires RootOfTrust {
         // gets the root of trust list.
         // users vouch_score
-        0
+        let list = get_current_roots_at_registry(registry);
+        vouch_score::evaluate_score_for_registry(list, user)
     }
 
     #[view]

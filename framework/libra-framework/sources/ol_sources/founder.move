@@ -2,7 +2,11 @@
 /// Maintains the version number for the blockchain.
 module ol_framework::founder {
   use std::signer;
+  use ol_framework::root_of_trust;
   use ol_framework::vouch_score;
+
+  /// the threshold score for a user to be considered vouched
+  const THRESHOLD_SCORE: u64 = 2;
 
   #[test_only]
   use ol_framework::testnet;
@@ -29,11 +33,17 @@ module ol_framework::founder {
   public(friend) fun maybe_set_friendly_founder(user: address) acquires Founder {
     if (
       is_founder(user) &&
-      vouch_score::is_voucher_score_valid(user)
+      is_voucher_score_valid(user)
     ) {
       let f = borrow_global_mut<Founder>(user);
       f.has_human_friends = true;
     }
+  }
+
+  #[view]
+  public fun is_voucher_score_valid(user: address): bool {
+    let list = root_of_trust::get_current_roots_at_registry(@diem_framework);
+    vouch_score::evaluate_users_vouchers(list, user) > THRESHOLD_SCORE
   }
 
   #[view]
