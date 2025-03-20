@@ -24,16 +24,24 @@ impl MoveTool {
                 tool.execute()?;
             }
             Self::Compile(tool) => {
-                let _ = tool.execute_serialized().await;
+                if tool.execute().await.is_err() {
+                    std::process::exit(1);
+                }
             }
             Self::Coverage(tool) => {
-                let _ = tool.execute().await;
+                if tool.execute().await.is_err() {
+                    std::process::exit(1);
+                }
             }
             Self::Prove(tool) => {
-                let _ = tool.execute_serialized().await;
+                if tool.execute().await.is_err() {
+                    std::process::exit(1);
+                }
             }
             Self::Test(tool) => {
-                let _ = tool.execute_serialized().await;
+                if tool.execute().await.is_err() {
+                    std::process::exit(1);
+                }
             }
         };
         Ok(())
