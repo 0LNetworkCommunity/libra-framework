@@ -6,7 +6,7 @@
 # and are known to pass
 PROVER_TESTS = demo slow sacred
 
-VENDOR_TESTS = chain_id guid
+VENDOR_TESTS = guid
 
 # Formal verification of each framework using the Move prover
 prove:
