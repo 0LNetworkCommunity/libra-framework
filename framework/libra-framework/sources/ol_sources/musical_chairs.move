@@ -1,15 +1,12 @@
 module ol_framework::musical_chairs {
-  use std::error;
   use std::fixed_point32;
   use std::vector;
   use diem_framework::chain_status;
   use diem_framework::system_addresses;
   use diem_framework::stake;
   use ol_framework::grade;
-  use ol_framework::jail;
   use ol_framework::testnet;
-
-  // use diem_std::debug::print;
+  //use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend diem_framework::diem_governance;
@@ -17,19 +14,14 @@ module ol_framework::musical_chairs {
   #[test_only]
   friend ol_framework::mock;
 
-  //////// ERROR CODES ////////
-  /// non_compliant vals, should not appear in compliant
-  const EBAD_APPLE_IN_COMPLIANT: u64 = 0;
-
-
-  ///////// STATIC ////////
   /// We don't want to play the validator selection games
   /// before we're clear out of genesis
   const EPOCH_TO_START_EVAL: u64 = 2;
   /// We can't evaluate the performance of validators
   /// when there are too few rounds committed
   const MINIMUM_ROUNDS_PER_EPOCH: u64 = 1000;
-
+  /// The percentage of validators failing, which we tolerate when considering the network performant
+  const FAILURE_TOLERANCE_PCT: u64 = 5;
 
   struct Chairs has key {
     // The number of chairs in the game
@@ -40,7 +32,7 @@ module ol_framework::musical_chairs {
 
   // With musical chairs we are trying to estimate
   // the number of nodes which the network can support
-  // BFT has upperbounds in the low hundreds, but we
+  // BFT has an upper bound in the low hundreds, but we
   // don't need to hard code it.
   // There also needs to be an upper bound so that there is some
   // competition among validators.
@@ -86,7 +78,7 @@ module ol_framework::musical_chairs {
   /// get the number of seats in the game
   /// returns the list of compliant validators and the number of seats
   /// we should offer in the next epoch
-  /// (compliant_vals, seats_offered)
+  /// @returns (compliant_vals, seats_offered)
   public(friend) fun stop_the_music(
     vm: &signer,
     epoch: u64,
@@ -96,18 +88,7 @@ module ol_framework::musical_chairs {
 
     let chairs = borrow_global_mut<Chairs>(@ol_framework);
     let validators = stake::get_current_validators();
-    let (compliant_vals, bad, fail_ratio) = eval_compliance_impl(validators, epoch, round);
-
-    // jail the non-compliant
-    // commit note: we moved this from epoch_boundary process_outgoing, which
-    // is concerned mostly with payment.
-    // TODO:L Ideally stop_the_music would be a pure function.
-    // move the jailing to top level in epoch_boundary.
-    vector::for_each(bad, |addr| {
-      jail::jail(vm, addr);
-    });
-
-
+    let (compliant_vals, _non, fail_ratio) = eval_compliance_impl(validators, epoch, round);
     let num_compliant_vals = vector::length(&compliant_vals);
 
     // Error handle. We should not have gone into an epoch where we had MORE validators than seats offered.
@@ -151,9 +132,9 @@ module ol_framework::musical_chairs {
       current_seats_offered + 1
     } else {
       let non_compliance_pct = fixed_point32::multiply_u64(100, fail_ratio);
-      if (non_compliance_pct > 5) {
+      if (non_compliance_pct > FAILURE_TOLERANCE_PCT) {
         // Sad case. If we are not getting compliance, need to ratchet down the offer of seats in the next epoch.
-        // See below find_safe_set_size, how we determine what that number should be
+        // So we just offer the number of compliant nodes.
         num_compliant_vals
       } else {
         // Ok case. If it's between 0 and 5% then we accept that margin as if it was fully compliant
@@ -161,7 +142,8 @@ module ol_framework::musical_chairs {
       }
     };
 
-    // Catch failure mode mostly for genesis, or testnets
+    // Catch failure mode where there isn't a minimum of 4 validators
+    //  mostly for genesis, or testnets, but also a backstop for catastrophic failure modes.
     if (new_seats_offered < 4) {
       4
     } else {
@@ -197,11 +179,6 @@ module ol_framework::musical_chairs {
     let good_len = vector::length(&compliant_nodes) ;
     let bad_len = vector::length(&non_compliant_nodes);
 
-    // sanity check that the bad ones are not in the compliant list
-    vector::for_each_ref(&non_compliant_nodes, |el| {
-      assert!(!vector::contains(&compliant_nodes, el), error::invalid_state(EBAD_APPLE_IN_COMPLIANT));
-    });
-
     // Note: sorry for repetition but necessary for writing tests and debugging.
     let null = fixed_point32::create_from_raw_value(0);
     if (good_len > val_set_len) { // safety
@@ -216,8 +193,11 @@ module ol_framework::musical_chairs {
       return (vector::empty(), vector::empty(), null)
     };
 
-    // commit note: if it's zero we want to know, and set it explicitly
-    let ratio = fixed_point32::create_from_rational(bad_len, val_set_len);
+    let ratio = if (bad_len > 0) {
+      fixed_point32::create_from_rational(bad_len, val_set_len)
+    } else {
+      null
+    };
 
     (compliant_nodes, non_compliant_nodes, ratio)
   }
@@ -225,7 +205,7 @@ module ol_framework::musical_chairs {
   // Check for genesis, upgrade or recovery mode scenarios
   // if we are at genesis or otherwise at start of an epoch and don't
   // have a sufficient amount of history to evaluate nodes
-  // we might reduce the validator set too agressively.
+  // we might reduce the validator set too aggressively.
   // Musical chairs should not evaluate performance with less than 1000 rounds
   // created on mainnet,
   // there's something else very wrong in that case.

@@ -31,7 +31,6 @@ module diem_framework::genesis {
     use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
-    use ol_framework::secret_bid;
     use ol_framework::slow_wallet;
     use ol_framework::libra_coin;
     use ol_framework::infra_escrow;
@@ -257,9 +256,7 @@ module diem_framework::genesis {
             // default 90% to align with thermostatic rule in the PoF paper.
             // otherwise the thermostatic rule starts kicking-in immediately
             let sig = create_signer(validator.validator_config.owner_address);
-
-            // genesis validators need a bid struct
-            secret_bid::genesis_helper(diem_framework, &sig, 100);
+            proof_of_fee::pof_update_bid(&sig, 0900, 1000); // make the genesis
 
             if (testnet::is_not_mainnet()) {
               // TODO: this is for testnet purposes only

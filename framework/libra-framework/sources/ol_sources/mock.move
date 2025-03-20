@@ -22,8 +22,6 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
-  use ol_framework::pledge_accounts;
-  use ol_framework::secret_bid;
 
   // use diem_std::debug::print;
 
@@ -31,32 +29,6 @@ module ol_framework::mock {
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
   /// coin supply does not match expected
   const ESUPPLY_MISMATCH: u64 = 3;
-
-  //////// STATIC ////////
-  /// The starting nominal reward. Also how much each validator will have in their starting balance; as a genesis reward at start of network
-  const EPOCH_REWARD: u64 = 1_000_000; /// 1M
-  /// What is the fixed and final supply of the network at start
-  const FINAL_SUPPLY_AT_GENESIS: u64 = 100_000_000_000; // 100B
-  /// Place some coins in the system transaction fee account;
-  const TX_FEE_ACCOUNT_AT_GENESIS: u64 =  100_000_000; // 100M
-  /// Tbe starting entry fee for validators
-  const ENTRY_FEE: u64 =  1_000; // 1K
-  /// Initial funding of infra-escrow
-  const INFRA_ESCROW_START: u64 =  37_000_000_000; // 37B
-
-  #[test_only]
-  public fun default_epoch_reward(): u64 { EPOCH_REWARD }
-
-  #[test_only]
-  /// What is the fixed and final supply of the network at start
-  public fun default_final_supply_at_genesis(): u64 { FINAL_SUPPLY_AT_GENESIS }
-
-  #[test_only]
-  public fun default_tx_fee_account_at_genesis(): u64 { TX_FEE_ACCOUNT_AT_GENESIS }
-
-  #[test_only]
-  public fun default_entry_fee(): u64 { ENTRY_FEE }
-
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -121,41 +93,43 @@ module ol_framework::mock {
 
   //////// PROOF OF FEE ////////
   #[test_only]
-  public fun pof_default(framework: &signer): (vector<address>, vector<u64>){
+  public fun pof_default(): (vector<address>, vector<u64>, vector<u64>){
 
     let vals = stake::get_current_validators();
 
-    let bids = mock_bids(framework, &vals);
+    let (bids, expiry) = mock_bids(&vals);
 
     // make all validators pay auction fee
     // the clearing price in the fibonacci sequence is is 1
-    let alice_bid = secret_bid::get_bid_unchecked(*vector::borrow(&vals, 0));
-
+    let (alice_bid, _) = proof_of_fee::current_bid(*vector::borrow(&vals, 0));
     assert!(alice_bid == 1, 03);
-    (vals, bids)
+    (vals, bids, expiry)
   }
 
   #[test_only]
-  public fun mock_bids(framework: &signer, vals: &vector<address>): vector<u64> {
+  public fun mock_bids(vals: &vector<address>): (vector<u64>, vector<u64>) {
+    // system_addresses::assert_ol(vm);
     let bids = vector::empty<u64>();
+    let expiry = vector::empty<u64>();
     let i = 0;
     let prev = 0;
     let fib = 1;
     while (i < vector::length(vals)) {
+
+      vector::push_back(&mut expiry, 1000);
       let b = prev + fib;
       vector::push_back(&mut bids, b);
 
       let a = vector::borrow(vals, i);
       let sig = account::create_signer_for_test(*a);
-      // initialize and set. Will likely by epoch 0, genesis.
-      let epoch = epoch_helper::get_current_epoch();
-      secret_bid::mock_revealed_bid(framework, &sig, b, epoch);
+      // initialize and set.
+      proof_of_fee::pof_update_bid(&sig, b, 1000);
       prev = fib;
       fib = b;
       i = i + 1;
     };
 
-    bids
+    (bids, expiry)
   }
 
   use diem_framework::chain_status;
@@ -188,6 +162,7 @@ module ol_framework::mock {
       libra_coin::extract_mint_cap(root)
     } else {
       coin_init_minimal(root)
+
     };
 
     if (!account::exists_at(addr)) {
@@ -206,28 +181,22 @@ module ol_framework::mock {
   #[test_only]
   public fun ol_initialize_coin_and_fund_vals(root: &signer, amount: u64,
   drip: bool) {
-    if (!coin::is_coin_initialized<LibraCoin>()) {
-      let mint_cap = coin_init_minimal(root);
-      libra_coin::restore_mint_cap(root, mint_cap);
-    };
-
-    fund_validators(root, amount, drip);
-  }
-
-  fun fund_validators(root: &signer, amount: u64,
-  drip: bool) {
     system_addresses::assert_ol(root);
+
+    let mint_cap = if (coin::is_coin_initialized<LibraCoin>()) {
+      libra_coin::extract_mint_cap(root)
+    } else {
+      coin_init_minimal(root)
+    };
 
     let vals = stake::get_current_validators();
     let i = 0;
     while (i < vector::length(&vals)) {
       let addr = vector::borrow(&vals, i);
-
-      let coin = pledge_accounts::test_single_withdrawal(root, @0xBA7, amount);
-      ol_account::vm_deposit_coins_locked(root, *addr, coin);
+      let c = coin::test_mint(amount, &mint_cap);
+      ol_account::deposit_coins(*addr, c);
 
       let b = libra_coin::balance(*addr);
-
       assert!(b == amount, 0001);
 
       i = i + 1;
@@ -236,11 +205,7 @@ module ol_framework::mock {
     if (drip) {
       slow_wallet::slow_wallet_epoch_drip(root, amount);
     };
-  }
-
-  public fun mock_tx_fees_in_account(root: &signer, amount: u64) {
-    let tx_fees_start = pledge_accounts::test_single_withdrawal(root, @0xBA7, amount);
-    transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees_start);
+    libra_coin::restore_mint_cap(root, mint_cap);
   }
 
   #[test_only]
@@ -254,31 +219,26 @@ module ol_framework::mock {
 
     transaction_fee::initialize_fee_collection_and_distribution(root, 0);
 
-    // let initial_fees = 5_000_000 * 100; // coin scaling * 100 coins
-    let genesis_coins = coin::test_mint(FINAL_SUPPLY_AT_GENESIS, &mint_cap);
-    libra_coin::test_set_final_supply(root, FINAL_SUPPLY_AT_GENESIS);
-    let supply_pre = libra_coin::supply();
-
-    assert!(supply_pre == FINAL_SUPPLY_AT_GENESIS, ESUPPLY_MISMATCH);
-
-    // transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
+    let initial_fees = 5_000_000 * 100; // coin scaling * 100 coins
+    let tx_fees = coin::test_mint(initial_fees, &mint_cap);
+    transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
 
     // Forge Bruce
-    // We need to simulate a long running network
-    // where the Infra Pledge account accumulated.
-    // Here we use Wayne Enterprises as the sole sponsor of the
-    // test environment Infra Pledge
+    let fortune = 100_000_000_000;
     let bruce_address = @0xBA7;
     ol_account::create_account(root, bruce_address);
-    let bruce_sig = account::create_signer_for_test(bruce_address);
 
-    // Bruce inherits a fortune, all the coins from genesis
-    ol_account::deposit_coins(bruce_address, genesis_coins);
+    // Bruce mints a fortune
+    let bruce = account::create_signer_for_test(bruce_address);
+    let fortune_mint = coin::test_mint(fortune, &mint_cap);
+    ol_account::deposit_coins(bruce_address, fortune_mint);
 
     // Bruce funds infra escrow
-    infra_escrow::init_escrow_with_deposit(root, &bruce_sig, INFRA_ESCROW_START);
+    infra_escrow::init_escrow_with_deposit(root, &bruce, 37_000_000_000);
 
-    assert!(supply_pre == libra_coin::supply(), ESUPPLY_MISMATCH);
+    let supply_pre = libra_coin::supply();
+    assert!(supply_pre == (initial_fees + fortune), ESUPPLY_MISMATCH);
+    libra_coin::test_set_final_supply(root, initial_fees);
 
     mint_cap
   }
@@ -335,8 +295,6 @@ module ol_framework::mock {
 
       i = i + 1;
     };
-
-    pof_default(root);
   }
 
   #[test_only]
@@ -351,7 +309,7 @@ module ol_framework::mock {
   public fun trigger_epoch(root: &signer) {
     trigger_epoch_exactly_at(
       root,
-      reconfiguration::current_epoch(),
+      reconfiguration::get_current_epoch(),
       block::get_current_block_height()
     );
   }
@@ -361,11 +319,11 @@ module ol_framework::mock {
     epoch_boundary::ol_reconfigure_for_test(root, old_epoch, round);
 
     // always advance
-    assert!(reconfiguration::current_epoch() > old_epoch,
+    assert!(reconfiguration::get_current_epoch() > old_epoch,
     EDID_NOT_ADVANCE_EPOCH);
 
     // epoch helper should always be in sync
-    assert!(reconfiguration::current_epoch() == epoch_helper::get_current_epoch(), 666);
+    assert!(reconfiguration::get_current_epoch() == epoch_helper::get_current_epoch(), 666);
   }
 
 
@@ -375,7 +333,7 @@ module ol_framework::mock {
   public fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
     musical_chairs::initialize(&root, 10);
-
+    // ol_initialize_coin(&root);
     let epoch = reconfiguration::current_epoch();
     trigger_epoch(&root);
     let new_epoch = reconfiguration::current_epoch();
@@ -392,7 +350,7 @@ module ol_framework::mock {
     // will assert! case_1
     mock_case_1(&root, *addr);
 
-    pof_default(&root);
+    pof_default();
 
     // will assert! case_4
     mock_case_4(&root, *addr);
@@ -411,10 +369,12 @@ module ol_framework::mock {
 
     let n_vals = 5;
     let _vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
-
-    ol_initialize_coin_and_fund_vals(root, EPOCH_REWARD, true);
-
-    assert!(libra_coin::supply() == FINAL_SUPPLY_AT_GENESIS, 73570001);
+    let genesis_mint = 1_000_000;
+    ol_initialize_coin_and_fund_vals(root, genesis_mint, true);
+    let supply_pre = libra_coin::supply();
+    let bruce_fortune = 100_000_000_000;
+    let mocked_tx_fees = 5_000_000 * 100;
+    assert!(supply_pre == bruce_fortune + mocked_tx_fees + (n_vals * genesis_mint), 73570001);
   }
 
 
@@ -423,15 +383,15 @@ module ol_framework::mock {
     // Scenario: unit testing that pof_default results in a usable auction
     let n_vals = 5;
     let vals = genesis_n_vals(root, n_vals); // need to include eve to init funds
-    pof_default(root);
+    pof_default();
 
     proof_of_fee::fill_seats_and_get_price(root, n_vals, &vals, &vals);
 
     let (nominal_reward, entry_fee, clearing_percent, median_bid ) = proof_of_fee::get_consensus_reward();
 
-    assert!(nominal_reward == EPOCH_REWARD, 73570001);
+    assert!(nominal_reward == 1_000_000, 73570001);
     assert!(clearing_percent == 1, 73570002);
-    assert!(entry_fee == ENTRY_FEE, 73570003);
+    assert!(entry_fee == 1_000, 73570003);
     assert!(median_bid == 3, 73570004);
   }
 

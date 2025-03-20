@@ -35,20 +35,18 @@ fn test_correct_supply_arithmetic_all() {
         &mut user_accounts,
         &genesis_vals,
         &head_release_bundle(),
-        ChainId::testnet(),
-        &libra_genesis_default(NamedChain::TESTNET),
+        ChainId::mainnet(),
+        &libra_genesis_default(NamedChain::MAINNET),
     )
     .unwrap();
 
     // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
 
-    ///////// KEEP COMMENTED CODE /////////
-    // in case we need to dump this artifact.
+    // LEAVE THIS CODE in case we need to dump this artifact.
     // test dump balances
     // compare::export_account_balances(&user_accounts, &db_rw.reader, json_path().parent().unwrap())
     //     .unwrap();
-    ////////////////////////////////////////
 
     // audit
     match compare::compare_recovery_vec_to_genesis_tx(
@@ -101,20 +99,25 @@ fn test_drop_all() {
 
     assert!(dead.role == AccountRole::Drop);
 
-    // TODO: get the supply arithmetic so that we can compare outputs
+    // // get the supply arithmetic so that we can compare outputs
     // let supply_stats = supply::populate_supply_stats_from_legacy(&user_accounts).unwrap();
+
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,
         &head_release_bundle(),
-        ChainId::testnet(),
-        &libra_genesis_default(NamedChain::TESTNET),
+        ChainId::mainnet(),
+        &libra_genesis_default(NamedChain::MAINNET),
     )
     .unwrap();
 
     // NOTE: in the case of a single account being migrated, that account balance will equal the total supply as set in: SupplySettings. i.e. 10B
     let (db_rw, _) = genesis_reader::bootstrap_db_reader_from_gen_tx(&gen_tx).unwrap();
 
+    // LEAVE THIS CODE in case we need to dump this artifact.
+    // test dump balances
+    // compare::export_account_balances(&user_accounts, &db_rw.reader, json_path().parent().unwrap())
+    //     .unwrap();
     let dead_acct = dead.account.unwrap();
     // Ok now let's compare to what's on chain
     let db_state_view = db_rw.reader.latest_state_checkpoint_view().unwrap();
