@@ -97,7 +97,7 @@ module ol_framework::activity {
 
   #[test_only]
   /// testnet help for framework account to mock activity
-  public fun test_mock_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
+  public(friend) fun test_set_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
     testnet::assert_testnet(framework);
 
     let state = borrow_global_mut<Activity>(user);

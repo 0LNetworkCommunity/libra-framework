@@ -195,11 +195,12 @@ module ol_framework::ol_account {
 
 
   /// Helper for smoke tests to create accounts.
-  /// this is in production code because he test_only pragma will
-  /// not work for smoke tests
+  /// this is in production code because:
+  /// it is used for genesis transactions regarding mainnet
+  /// e.g. test_correct_supply_arithmetic_single
+  /// plus, a  #[test_only] pragma will not work for smoke tests
   /// Belt and suspenders
   public entry fun create_account(root: &signer, auth_key: address) {
-    // assert!(testnet::is_not_mainnet(), error::invalid_state(EONLY_FOR_TESTING));
     system_addresses::assert_ol(root);
     create_impl(root, auth_key);
   }
