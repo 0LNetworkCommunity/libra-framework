@@ -27,6 +27,8 @@ diem-types = { workspace = true }
 glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 num_cpus = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 

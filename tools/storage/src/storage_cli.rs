@@ -5,7 +5,9 @@ use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
 use std::{fs, path::PathBuf};
 
-use crate::{read_snapshot, restore, restore_bundle::RestoreBundle};
+use crate::{read_snapshot, restore, restore_bundle::RestoreBundle, download_bundle::download_github_folder
+};
+
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -28,6 +30,20 @@ pub enum Sub {
         bundle_path: PathBuf,
         #[clap(short, long)]
         destination_db: PathBuf,
+    },
+    /// downloads the stat, epoch, and transaction
+    /// restore files from the `epoch-archive` repo
+    DownloadRestoreBundle {
+        #[clap(long, default_value = "0LNetworkCommunity")]
+        owner: String,
+        #[clap(long, default_value = "epoch-archive")]
+        repo: String,
+        #[clap(long, default_value = "main")]
+        branch: String,
+        #[clap(short, long)]
+        epoch: String,
+        #[clap(short, long)]
+        destination: PathBuf,
     },
     /// Read a snapshot, parse and export to JSON
     ExportSnapshot {
@@ -83,6 +99,30 @@ impl StorageCli {
                     bundle.epoch, bundle.version
                 );
             }
+            Some(Sub::DownloadRestoreBundle {
+                owner,
+                repo,
+                branch,
+                epoch,
+                destination,
+            }) => {
+                if destination.exists() {
+                    bail!("Destination directory already exists: {}", destination.display());
+                }
+                fs::create_dir_all(&destination)?;
+
+                // Download the epoch folder
+                let epoch_path = format!("epochs/{}", epoch);
+                download_github_folder(
+                    &owner,
+                    &repo,
+                    &epoch_path,
+                    &branch,
+                    destination.to_str().unwrap()
+                ).await?;
+
+                println!("Successfully downloaded restore bundle for epoch {}", epoch);
+            },
             _ => {} // prints help
         }
 
