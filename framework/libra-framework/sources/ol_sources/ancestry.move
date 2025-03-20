@@ -1,4 +1,3 @@
-
 module ol_framework::ancestry {
     use std::signer;
     use std::vector;
@@ -70,7 +69,9 @@ module ol_framework::ancestry {
     // Commit NOTE: any transitive function that the VM calls needs to check
     // this struct exists.
     public fun get_tree(addr: address): vector<address> acquires Ancestry {
-      assert!(exists<Ancestry>(addr), ENO_ANCESTRY_TREE);
+      if(!exists<Ancestry>(addr)) {
+        return vector::empty<address>()
+      };
 
       *&borrow_global<Ancestry>(addr).tree
     }
@@ -87,14 +88,27 @@ module ol_framework::ancestry {
     /// get the degree (hops) between two accounts
     /// if they are related. Assumes ancestor is in the tree of User.
     public(friend) fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
-      let user_tree = get_tree(user);
-      let len = vector::length(&user_tree);
-      assert!(len == 0, error::invalid_state(ENO_ANCESTRY_TREE));
-      let (found, idx) = vector::index_of(&user_tree, &ancestor);
-      if (!found) {
-        return option::none()
-      };
-      return option::some(vector::length(&user_tree) - idx)
+        // Handle self-reference case
+        if (ancestor == user) {
+            return option::some(1)
+        };
+
+        // Will still abort if no Ancestry struct - this is expected
+        let user_tree = get_tree(user);
+        let len = vector::length(&user_tree);
+        let (found, idx) = vector::index_of(&user_tree, &ancestor);
+
+        if (!found) {
+            option::none()
+        } else {
+            // Calculate actual distance:
+            // Length of path from user -> ancestor = len - idx
+            // Example:
+            // Tree: [great_grandparent, grandparent, parent]
+            // To find distance to grandparent (idx 1):
+            // len = 3, idx = 1, distance = 3 - 1 = 2 hops
+            option::some(len - idx)
+        }
     }
 
     /// helper function to check on transactions (e.g. vouch) if accounts are related

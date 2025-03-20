@@ -189,8 +189,10 @@ module ol_framework::ol_account {
     coin::register<LibraCoin>(new_account_sig);
     receipts::user_init(new_account_sig);
     maybe_init_burn_tracker(new_account_sig);
-    ancestry::adopt_this_child(sender, new_account_sig);
+
     activity::maybe_onboard(new_account_sig);
+
+    ancestry::adopt_this_child(sender, new_account_sig);
   }
 
 

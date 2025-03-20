@@ -1,28 +1,31 @@
 module ol_framework::vouch_score {
   use std::option;
   use std::vector;
+  use diem_std::fixed_point32;
   use ol_framework::ancestry;
   use ol_framework::vouch;
 
   /// the threshold score for a user to be considered vouched
-  const THRESHOLD_SCORE: u64 = 2;
+  // const THRESHOLD_SCORE: u64 = 2;
 
   /// get a users's distance score from an arbitrary voucher
   /// score is percent, out of 100
   fun calculate_single_score(root: address, user: address): u64 {
-      let opt = ancestry::get_degree(root, user);
-      if (option::is_none(&opt)) {
-        return 0
-      };
-      let degree = *option::borrow(&opt);
-      if (degree == 0 ){
-        return 100
-      };
-      if (degree > 100) {
-        return 0
-      };
+    let maybe_degree = ancestry::get_degree(root, user);
+    if (option::is_none(&maybe_degree)) {
+        0
+    } else {
+        let degree = *option::borrow(&maybe_degree);
+        if (degree == 0) {
+            0
+        } else {
+            diem_std::debug::print(&degree);
 
-      100 / degree
+            // Create fixed point representation of 100
+            let score = fixed_point32::create_from_rational(100, degree);
+            fixed_point32::floor(score)
+        }
+    }
   }
 
   /// Get the total score for a user from any list of roots
