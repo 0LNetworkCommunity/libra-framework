@@ -33,6 +33,7 @@
 module ol_framework::root_of_trust {
     use std::vector;
     use std::signer;
+    use std::error;  // Add error module
     use ol_framework::vouch_score;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
@@ -48,7 +49,7 @@ module ol_framework::root_of_trust {
         rotate_window_days: u64,
     }
 
-    /// Error codes
+    /// Error codes - using canonical error categories
     const ENOT_INITIALIZED: u64 = 1;
     const ENOT_AUTHORIZED: u64 = 2;
     const EINVALID_ROOT: u64 = 3;
@@ -109,14 +110,14 @@ module ol_framework::root_of_trust {
     /// Rotate the root of trust set by adding and removing addresses
     public(friend) fun rotate_roots(user_sig: &signer, adds: vector<address>, removes: vector<address>) acquires RootOfTrust {
         let user_addr = signer::address_of(user_sig);
-        assert!(exists<RootOfTrust>(user_addr), ENOT_INITIALIZED);
-        assert!(can_rotate(user_addr), EROTATION_WINDOW_NOT_ELAPSED);
+        assert!(exists<RootOfTrust>(user_addr), error::not_found(ENOT_INITIALIZED));
+        assert!(can_rotate(user_addr), error::invalid_state(EROTATION_WINDOW_NOT_ELAPSED));
 
         // Check for conflicting addresses in adds and removes
         let i = 0;
         while (i < vector::length(&adds)) {
             let addr = *vector::borrow(&adds, i);
-            assert!(!vector::contains(&removes, &addr), EINVALID_ROTATION);
+            assert!(!vector::contains(&removes, &addr), error::invalid_argument(EINVALID_ROTATION));
             i = i + 1;
         };
 

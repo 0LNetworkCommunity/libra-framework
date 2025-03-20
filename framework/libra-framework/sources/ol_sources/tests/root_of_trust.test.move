@@ -123,4 +123,37 @@ module ol_framework::root_of_trust_tests {
         assert!(root_of_trust::is_root_at_registry(@0x1, BOB_ALICES_CHILD), 6);
         assert!(root_of_trust::is_root_at_registry(@0x1, DAVE_AT_GENESIS), 7);
     }
+
+
+    #[test(framework = @0x1)]
+    #[expected_failure(abort_code = 196613, location = root_of_trust )]
+    fun test_framework_root_rotation_fails_early(framework: &signer) {
+        // Setup test environment and accounts
+        setup_test_ancestry(framework);
+
+        // Initialize with original roots
+        let initial_roots = vector::empty();
+        vector::push_back(&mut initial_roots, ALICE_AT_GENESIS);
+        vector::push_back(&mut initial_roots, DAVE_AT_GENESIS);
+
+        root_of_trust::framework_migration(
+            framework,
+            initial_roots,
+            2,  // minimum_cohort size
+            5, // days until next rotation
+        );
+
+        // Verify initial setup
+        assert!(root_of_trust::is_root_at_registry(@0x1, ALICE_AT_GENESIS), 1);
+
+        // Only advance 2 days (less than required 5 days)
+        timestamp::fast_forward_seconds(2 * 24 * 60 * 60);
+
+        // Attempt rotation (should fail)
+        let adds = vector::singleton(BOB_ALICES_CHILD);
+        let removes = vector::singleton(ALICE_AT_GENESIS);
+
+        // This call should abort with EROTATION_WINDOW_NOT_ELAPSED
+        root_of_trust::rotate_roots(framework, adds, removes);
+    }
 }
