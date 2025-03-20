@@ -1,5 +1,6 @@
 #[test_only]
 module ol_framework::root_of_trust_tests {
+    use diem_framework::account;
     use ol_framework::ancestry;
     use ol_framework::ol_account;
     use ol_framework::mock;
@@ -19,12 +20,19 @@ module ol_framework::root_of_trust_tests {
         // Initialize test environment first
         mock::ol_test_genesis(framework);
 
-        // Create accounts first
-        let alice_signer = ol_account::create_account(framework, ALICE_AT_GENESIS);
-        let bob_signer = ol_account::create_account(framework, BOB_ALICES_CHILD);
-        let carol_signer = ol_account::create_account(framework, CAROL_BOBS_CHILD);
-        let dave_signer = ol_account::create_account(framework, DAVE_AT_GENESIS);
-        let eve_signer = ol_account::create_account(framework, EVE_DAVES_CHILD);
+        // Create accounts first with ol_account
+        ol_account::create_account(framework, ALICE_AT_GENESIS);
+        ol_account::create_account(framework, BOB_ALICES_CHILD);
+        ol_account::create_account(framework, CAROL_BOBS_CHILD);
+        ol_account::create_account(framework, DAVE_AT_GENESIS);
+        ol_account::create_account(framework, EVE_DAVES_CHILD);
+
+        // Get signers for ancestry setup
+        let alice_signer = account::create_signer_for_test(ALICE_AT_GENESIS);
+        let bob_signer = account::create_signer_for_test(BOB_ALICES_CHILD);
+        let carol_signer = account::create_signer_for_test(CAROL_BOBS_CHILD);
+        let dave_signer = account::create_signer_for_test(DAVE_AT_GENESIS);
+        let eve_signer = account::create_signer_for_test(EVE_DAVES_CHILD);
 
         // Set up ancestry relationships
         ancestry::adopt_this_child(&alice_signer, &bob_signer);
