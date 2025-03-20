@@ -13,7 +13,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(clippy::too_many_arguments)]
-
 use diem_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
@@ -95,7 +94,8 @@ pub enum EntryFunctionCall {
 
     /// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
     /// To authorize the rotation, we need two signatures:
-    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
+    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
+    /// demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
     /// - the second signature `cap_update_table` refers to the signature by the new key (that the account owner wants to rotate to) on a
     /// valid `RotationProofChallenge`, demonstrating that the user owns the new private key, and has the authority to update the
     /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
@@ -449,7 +449,7 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
-    /// Helper for smoke tests to create acounts.
+    /// Helper for smoke tests to create accounts.
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -540,20 +540,11 @@ pub enum EntryFunctionCall {
         major: u64,
     },
 
-    /// you may want to add people who are related to you
-    /// there are no known use cases for this at the moment.
-    VouchInsistVouchFor {
+    VouchTxsRevoke {
         friend_account: AccountAddress,
     },
 
-    VouchRevoke {
-        friend_account: AccountAddress,
-    },
-
-    /// will only successfully vouch if the two are not related by ancestry
-    /// prevents spending a vouch that would not be counted.
-    /// to add a vouch and ignore this check use insist_vouch
-    VouchVouchFor {
+    VouchTxsVouchFor {
         friend_account: AccountAddress,
     },
 }
@@ -871,9 +862,8 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             VersionSetVersion { major } => version_set_version(major),
-            VouchInsistVouchFor { friend_account } => vouch_insist_vouch_for(friend_account),
-            VouchRevoke { friend_account } => vouch_revoke(friend_account),
-            VouchVouchFor { friend_account } => vouch_vouch_for(friend_account),
+            VouchTxsRevoke { friend_account } => vouch_txs_revoke(friend_account),
+            VouchTxsVouchFor { friend_account } => vouch_txs_vouch_for(friend_account),
         }
     }
 
@@ -1048,11 +1038,14 @@ pub fn account_revoke_signer_capability(
 /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
 /// To verify these two signatures, we need their corresponding public key and public key scheme: we use `from_scheme` and `from_public_key_bytes`
 /// to verify `cap_rotate_key`, and `to_scheme` and `to_public_key_bytes` to verify `cap_update_table`.
-/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys. `originating address` refers to an account's original/first address.
+/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys.
+/// `originating address` refers to an account's original/first address.
+///
 /// Here is an example attack if we don't ask for the second signature `cap_update_table`:
 /// Alice has rotated her account `addr_a` to `new_addr_a`. As a result, the following entry is created, to help Alice when recovering her wallet:
 /// `OriginatingAddress[new_addr_a]` -> `addr_a`
-/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one. (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
+/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one.
+/// (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
 ///
 /// But Bob likes to mess with Alice.
 /// Bob creates an account `addr_b` and maliciously rotates it to Alice's new address `new_addr_a`. Since we are no longer checking a PoK,
@@ -2076,7 +2069,7 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
     ))
 }
 
-/// Helper for smoke tests to create acounts.
+/// Helper for smoke tests to create accounts.
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2376,31 +2369,14 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
     ))
 }
 
-/// you may want to add people who are related to you
-/// there are no known use cases for this at the moment.
-pub fn vouch_insist_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
+pub fn vouch_txs_revoke(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("vouch").to_owned(),
-        ),
-        ident_str!("insist_vouch_for").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&friend_account).unwrap()],
-    ))
-}
-
-pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vouch").to_owned(),
+            ident_str!("vouch_txs").to_owned(),
         ),
         ident_str!("revoke").to_owned(),
         vec![],
@@ -2408,17 +2384,14 @@ pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
     ))
 }
 
-/// will only successfully vouch if the two are not related by ancestry
-/// prevents spending a vouch that would not be counted.
-/// to add a vouch and ignore this check use insist_vouch
-pub fn vouch_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
+pub fn vouch_txs_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("vouch").to_owned(),
+            ident_str!("vouch_txs").to_owned(),
         ),
         ident_str!("vouch_for").to_owned(),
         vec![],
@@ -3275,9 +3248,9 @@ mod decoder {
         }
     }
 
-    pub fn vouch_insist_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn vouch_txs_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchInsistVouchFor {
+            Some(EntryFunctionCall::VouchTxsRevoke {
                 friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
@@ -3285,19 +3258,9 @@ mod decoder {
         }
     }
 
-    pub fn vouch_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn vouch_txs_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchRevoke {
-                friend_account: bcs::from_bytes(script.args().first()?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vouch_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchVouchFor {
+            Some(EntryFunctionCall::VouchTxsVouchFor {
                 friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
@@ -3595,13 +3558,12 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::version_set_version),
         );
         map.insert(
-            "vouch_insist_vouch_for".to_string(),
-            Box::new(decoder::vouch_insist_vouch_for),
+            "vouch_txs_revoke".to_string(),
+            Box::new(decoder::vouch_txs_revoke),
         );
-        map.insert("vouch_revoke".to_string(), Box::new(decoder::vouch_revoke));
         map.insert(
-            "vouch_vouch_for".to_string(),
-            Box::new(decoder::vouch_vouch_for),
+            "vouch_txs_vouch_for".to_string(),
+            Box::new(decoder::vouch_txs_vouch_for),
         );
         map
     });

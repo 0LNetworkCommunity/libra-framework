@@ -247,9 +247,13 @@ module ol_framework::test_burn {
     // EVE donates to both. But mostly to Alice.
     // The Match Index, should reflect that.
 
+
+
     let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
     mock::ol_initialize_coin_and_fund_vals(root, 1000000, true);
     // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
+
+
     mock::trigger_epoch(root);
 
     let (communityA, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
@@ -261,7 +265,9 @@ module ol_framework::test_burn {
     community_wallet_init::init_community(&communityB, vals, 2); // make all the vals signers
 
     let eve_donation_to_A = 75;
+
     ol_account::transfer(eve, addr_A, eve_donation_to_A);
+
     let (_, _, total_funds_sent_by_eve) = receipts::read_receipt(signer::address_of(eve), addr_A);
     assert!(total_funds_sent_by_eve == eve_donation_to_A, 7357001);
 
