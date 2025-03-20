@@ -56,46 +56,33 @@ module ol_framework::ol_account {
   const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_TOKEN_TRANSFERS: u64 = 4;
   /// The lengths of the recipients and amounts lists don't match.
   const EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH: u64 = 5;
-
   /// not enough unlocked coins to transfer
   const EINSUFFICIENT_BALANCE: u64 = 6;
-
   /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
   const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
-
   /// trying to transfer zero coins
   const EZERO_TRANSFER: u64 = 8;
-
   /// why is VM trying to use this?
   const ENOT_FOR_VM: u64 = 9;
-
   /// you are trying to send a large coin transfer to an account that does not
   /// yet exist.  If you are trying to initialize this address send an amount
   /// below 1,000 coins
   const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
-
   /// community wallets cannot use transfer, they have a dedicated workflow
   const ENOT_FOR_CW: u64 = 11;
-
   /// donor voice cannot use transfer, they have a dedicated workflow
   const ENOT_FOR_DV: u64 = 12;
-
   /// This key cannot be used to create accounts. The address may have
   /// malformed state. And says, "My advice is to not let the boys in".
   const ETOMBSTONE: u64 = 13;
-
   /// This account is malformed, it does not have the necessary burn tracker struct
   const ENO_TRACKER_INITIALIZED: u64 = 14;
-
   /// Governance mode: chain has restricted p2p transactions while upgrades are executed.
   const EGOVERNANCE_MODE: u64 = 15;
-
   /// user should not have an activity struct in testnet
   const ESHOULD_HAVE_NO_ACTIVITY: u64 = 16;
-
   /// only for testing, not mainnet
   const EONLY_FOR_TESTING: u64 = 17;
-
   /// inactive account, this account has not migrated from V7
   const ENOT_MIGRATED: u64 = 18;
 
