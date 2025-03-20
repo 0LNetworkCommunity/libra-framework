@@ -81,8 +81,9 @@ module ol_framework::root_of_trust {
     }
 
     /// Score a participant's connection to the root of trust
-    fun score_connection(_participant: address): u64 {
-        // TODO: Implementation
+    fun score_connection(registry: address, user: address): u64 {
+        // gets the root of trust list.
+        // users vouch_score
         0
     }
 
