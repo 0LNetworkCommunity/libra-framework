@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
-use reqwest;
+use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
+use anyhow::bail;
 
 #[derive(Deserialize)]
 struct GitHubContent {
@@ -10,6 +12,66 @@ struct GitHubContent {
     #[serde(rename = "type")]
     content_type: String,
     name: String,
+}
+
+/// Finds the closest matching epoch folder name for a given epoch number
+pub async fn find_closest_epoch_folder(
+    client: &Client,
+    owner: &str,
+    repo: &str,
+    branch: &str,
+    target_epoch: u64,
+) -> Result<String> {
+    let api_url = format!(
+        "https://api.github.com/repos/{}/{}/contents/snapshots?ref={}",
+        owner, repo, branch
+    );
+
+    let contents: Vec<GitHubContent> = client
+        .get(&api_url)
+        .header("User-Agent", "libra-framework-downloader")
+        .send()
+        .await
+        .context("Failed to list snapshots directory")?
+        .json()
+        .await
+        .context("Failed to parse snapshots directory contents")?;
+
+    // Filter and parse epoch numbers from folder names
+    let mut epoch_folders: Vec<(u64, String)> = contents
+        .into_iter()
+        .filter_map(|item| {
+            if item.content_type == "dir" && item.name.starts_with("epoch_ending_") {
+                let epoch_str = item.name.strip_prefix("epoch_ending_")?;
+                if let Ok(epoch) = u64::from_str(epoch_str) {
+                    return Some((epoch, item.name));
+                }
+            }
+            None
+        })
+        .collect();
+
+    if epoch_folders.is_empty() {
+        bail!("No epoch folders found in snapshots directory");
+    }
+
+    // Sort by epoch number
+    epoch_folders.sort_by_key(|(epoch, _)| *epoch);
+
+    // Find the closest epoch
+    let closest = epoch_folders
+        .into_iter()
+        .min_by_key(|(epoch, _)| {
+            if *epoch > target_epoch {
+                *epoch - target_epoch
+            } else {
+                target_epoch - *epoch
+            }
+        })
+        .context("Failed to find closest epoch")?;
+
+    println!("Found closest epoch folder: {} for target epoch {}", closest.1, target_epoch);
+    Ok(closest.1)
 }
 
 pub async fn download_github_folder(

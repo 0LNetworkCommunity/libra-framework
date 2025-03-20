@@ -4,6 +4,9 @@ use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
 use std::{fs, path::PathBuf};
+use std::str::FromStr;
+use anyhow::Context;
+use crate::download_bundle;
 
 use crate::{read_snapshot, restore, restore_bundle::RestoreBundle, download_bundle::download_github_folder
 };
@@ -36,9 +39,9 @@ pub enum Sub {
     DownloadRestoreBundle {
         #[clap(long, default_value = "0LNetworkCommunity")]
         owner: String,
-        #[clap(long, default_value = "epoch-archive")]
+        #[clap(long, default_value = "epoch-archive-mainnet")]
         repo: String,
-        #[clap(long, default_value = "main")]
+        #[clap(long, default_value = "v7.0.0")]
         branch: String,
         #[clap(short, long)]
         epoch: String,
@@ -111,12 +114,24 @@ impl StorageCli {
                 }
                 fs::create_dir_all(&destination)?;
 
+                let client = reqwest::Client::new();
+                let epoch_num = u64::from_str(&epoch)
+                    .context("Failed to parse epoch number")?;
+
+                let folder_name = download_bundle::find_closest_epoch_folder(
+                    &client,
+                    &owner,
+                    &repo,
+                    &branch,
+                    epoch_num
+                ).await?;
+
                 // Download the epoch folder
-                let epoch_path = format!("epochs/{}", epoch);
+                let snapshot_path = format!("snapshots/{}", folder_name);
                 download_github_folder(
                     &owner,
                     &repo,
-                    &epoch_path,
+                    &snapshot_path,
                     &branch,
                     destination.to_str().unwrap()
                 ).await?;
