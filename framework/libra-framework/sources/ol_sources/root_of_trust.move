@@ -37,6 +37,9 @@ module ol_framework::root_of_trust {
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
 
+    #[test_only]
+    friend ol_framework::root_of_trust_tests;
+
     /// Struct to store the root of trust configuration
     struct RootOfTrust has key {
         roots: vector<address>,
@@ -73,12 +76,12 @@ module ol_framework::root_of_trust {
     /// At the time of V8 upgrade, the framework
     /// will migrate the prior root of trust implementation
     /// to the new explicit one.
-    public(friend) fun framework_migration(framework: &signer, roots: vector<address>, minimum_cohort: u64) {
+    public(friend) fun framework_migration(framework: &signer, roots: vector<address>, minimum_cohort: u64, rotation_days: u64) {
         // Verify this is called by the framework account
         system_addresses::assert_diem_framework(framework);
 
         // Initialize the root of trust at the framework address
-        maybe_initialize(framework, roots, minimum_cohort, 0);
+        maybe_initialize(framework, roots, minimum_cohort, rotation_days);
     }
 
     #[view]
@@ -104,7 +107,7 @@ module ol_framework::root_of_trust {
     }
 
     /// Rotate the root of trust set by adding and removing addresses
-    fun rotate_roots(user_sig: &signer, adds: vector<address>, removes: vector<address>) acquires RootOfTrust {
+    public(friend) fun rotate_roots(user_sig: &signer, adds: vector<address>, removes: vector<address>) acquires RootOfTrust {
         let user_addr = signer::address_of(user_sig);
         assert!(exists<RootOfTrust>(user_addr), ENOT_INITIALIZED);
         assert!(can_rotate(user_addr), EROTATION_WINDOW_NOT_ELAPSED);
