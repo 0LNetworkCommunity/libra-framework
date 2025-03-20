@@ -1,3 +1,6 @@
+# prover tests use a lot of memory so we
+# run each module sequentially
+
 # Prover Tests are WIP
 # These are the prover tests that have been written
 # and are known to pass
@@ -21,11 +24,3 @@ prove:
 	for i in ${PROVER_TESTS} ${VENDOR_TESTS}; do \
 		libra move prove -f $$i || exit 1; \
 	done
-
-#TODO: automate libra-framework verification once we have identified and fixed specifications
-# @cd libra-framework && \
-# echo "Testing libra-framework" && \
-# find . -type f -name "*.move" ! -name "*.spec.move" -print0 | \
-# awk -v RS='\0' -v ORS='\0' '{sub(/^\.\//,""); print}' | \
-# sort -uz | \
-# xargs -0 -I {} sh -c 'echo "Testing file: {}"; diem move prove -f {} || echo "Error in file: {}"'
