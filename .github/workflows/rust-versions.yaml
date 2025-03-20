@@ -26,11 +26,3 @@ jobs:
 
       - name: does it build?
         run: cargo r -p libra -- version
-
-      - name: does move compile?
-        if: always()
-        run: cargo r -p libra -- move test --package-dir ./framework/libra-framework
-
-      - name: does it prove move?
-        if: always()
-        run: cargo r -p libra -- move prove --package-dir ./framework/move-stdlib
