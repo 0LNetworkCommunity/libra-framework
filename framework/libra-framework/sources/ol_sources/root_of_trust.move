@@ -39,8 +39,9 @@ module ol_framework::root_of_trust {
     /// Struct to store the root of trust configuration
     struct RootOfTrust has key {
         roots: vector<address>,
-        last_updated_usecs: u64,
+        last_updated_secs: u64,
         minimum_cohort: u64,
+        rotate_window_days: u64,
     }
 
     /// Error codes
@@ -48,17 +49,22 @@ module ol_framework::root_of_trust {
     const ENOT_AUTHORIZED: u64 = 2;
     const EINVALID_ROOT: u64 = 3;
     const EINVALID_ROTATION: u64 = 4; // New error code for invalid rotation params
+    const EROTATION_WINDOW_NOT_ELAPSED: u64 = 5;
+
+    // Constants for time conversion
+    const SECONDS_IN_DAY: u64 = 86400; // 24 * 60 * 60
 
     /// Anyone can initialize a root of trust on their account.
     /// as an initial implementation 0x1 framework address will also
     /// keep a default root of trust.
-    fun maybe_initialize(user_sig: &signer, roots: vector<address>, minimum_cohort: u64) {
+    fun maybe_initialize(user_sig: &signer, roots: vector<address>, minimum_cohort: u64, rotate_window_days: u64) {
         let user_addr = signer::address_of(user_sig);
         if (!exists<RootOfTrust>(user_addr)) {
             move_to(user_sig, RootOfTrust {
                 roots,
-                last_updated_usecs: 0, // Initialize at 0
+                last_updated_secs: 0, // Initialize at 0
                 minimum_cohort,
+                rotate_window_days,
             });
         };
     }
@@ -71,7 +77,7 @@ module ol_framework::root_of_trust {
         system_addresses::assert_diem_framework(framework);
 
         // Initialize the root of trust at the framework address
-        maybe_initialize(framework, roots, minimum_cohort);
+        maybe_initialize(framework, roots, minimum_cohort, 0);
     }
 
     /// Score a participant's connection to the root of trust
@@ -80,10 +86,24 @@ module ol_framework::root_of_trust {
         0
     }
 
+    #[view]
+    /// Check if rotation is possible for a given registry
+    public fun can_rotate(registry: address): bool acquires RootOfTrust {
+        if (!exists<RootOfTrust>(registry)) {
+            false
+        } else {
+            let root_of_trust = borrow_global<RootOfTrust>(registry);
+            let elapsed_secs = timestamp::now_seconds() - root_of_trust.last_updated_secs;
+            let required_secs = root_of_trust.rotate_window_days * SECONDS_IN_DAY;
+            elapsed_secs >= required_secs
+        }
+    }
+
     /// Rotate the root of trust set by adding and removing addresses
     fun rotate_roots(user_sig: &signer, adds: vector<address>, removes: vector<address>) acquires RootOfTrust {
         let user_addr = signer::address_of(user_sig);
         assert!(exists<RootOfTrust>(user_addr), ENOT_INITIALIZED);
+        assert!(can_rotate(user_addr), EROTATION_WINDOW_NOT_ELAPSED);
 
         // Check for conflicting addresses in adds and removes
         let i = 0;
@@ -116,7 +136,7 @@ module ol_framework::root_of_trust {
             i = i + 1;
         };
 
-        root_of_trust.last_updated_usecs = timestamp::now_microseconds();
+        root_of_trust.last_updated_secs = timestamp::now_seconds();
     }
 
     /// Update the minimum cohort size required
@@ -126,7 +146,7 @@ module ol_framework::root_of_trust {
 
         let root_of_trust = borrow_global_mut<RootOfTrust>(user_addr);
         root_of_trust.minimum_cohort = new_minimum;
-        root_of_trust.last_updated_usecs = timestamp::now_microseconds();
+        root_of_trust.last_updated_secs = timestamp::now_seconds();
     }
 
     #[view]
