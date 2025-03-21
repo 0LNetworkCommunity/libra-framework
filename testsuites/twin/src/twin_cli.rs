@@ -2,7 +2,7 @@ use clap::{self, Parser};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::{fs, path::PathBuf};
 
-use crate::twin_swarm::{self};
+use crate::{setup, twin_swarm::{self}};
 /// Twin of the network
 #[derive(Parser)]
 
@@ -31,7 +31,7 @@ impl TwinCli {
 
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
 
-        twin_swarm::make_twin_swarm(&mut smoke, Some(db_path), true).await?;
+        setup::Twin::make_twin_swarm(&mut smoke, Some(db_path), true).await?;
 
         Ok(())
     }

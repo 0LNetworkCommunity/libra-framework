@@ -29,7 +29,7 @@ use libra_rescue::{
 };
 use std::{fs, path::Path};
 
-use crate::runner::Twin;
+pub struct Twin;
 
 /// Setup the twin network with a synced db
 impl Twin {
@@ -67,7 +67,6 @@ impl Twin {
         println!("run session to create validator onboarding tx (rescue.blob)");
         let vmc = libra_run_session(
             db_path.to_path_buf(),
-            // |s| writeset_voodoo_events(s),
             |session| session_add_validators(session, creds, false),
             None,
             None,
