@@ -1,40 +1,41 @@
 use anyhow::{Context, Result};
-use diem_crypto::HashValue;
-use diem_executor::db_bootstrapper::generate_waypoint;
-use diem_storage_interface::DbReaderWriter;
+use diem_temppath::TempPath;
 use diem_types::{transaction::Transaction, validator_info::ValidatorInfo, waypoint::Waypoint};
-use diem_vm::DiemVM;
-use libra_rescue::{one_step::apply_rescue_on_db, replace_validators::replace_validators_blob};
-use libra_types::{
-    rescue::{build_rescue_network, save_rescue, RescueContext, RescueOptions},
-    twins::ValCredentials,
-};
+use libra_config::validator_registration::ValCredentials;
+use libra_rescue::{one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob};
+// use libra_types::{
+//     rescue::{build_rescue_network, save_rescue, RescueContext, RescueOptions},
+//     twins::ValCredentials,
+// };
 use std::{
     fs,
     path::{Path, PathBuf},
     time::Instant,
 };
-use tempfile::{NamedTempFile, TempDir};
 
 /// Handles database operations and rescue blob creation/application
 pub struct MakeTwin;
 
 impl MakeTwin {
-    /// Prepare a temporary database from a reference DB
-    pub fn prepare_temp_database(reference_db: &Path) -> Result<(PathBuf, PathBuf)> {
-        // Create temp directory for DB operations
-        let temp_dir = TempDir::new()?;
-        let temp_path = temp_dir.path().to_path_buf();
+    // /// Prepare a temporary database from a reference DB
+    // pub fn prepare_temp_database(reference_db: &Path) -> Result<(PathBuf, PathBuf)> {
+    //     // Create temp directory for DB operations
+    //     let temp_dir = TempDir::new()?;
+    //     let temp_path = temp_dir.path().to_path_buf();
 
-        // Create a copy of the reference DB
-        let temp_db_path = Self::temp_backup_db(reference_db, &temp_path)?;
-        assert!(temp_db_path.exists());
+    //     // Create a copy of the reference DB
+    //     let temp_db_path = Self::temp_backup_db(reference_db, &temp_path)?;
+    //     assert!(temp_db_path.exists());
 
-        Ok((temp_db_path, temp_path))
-    }
+    //     Ok((temp_db_path, temp_path))
+    // }
 
     /// Create a temporary backup of the database
     pub fn temp_backup_db(from_path: &Path, temp_dir: &Path) -> Result<PathBuf> {
+        let mut tempdir = TempPath::new();
+        tempdir.create_as_dir()?;
+        tempdir.persist();
+
         let to_path = temp_dir.join("db_temp");
 
         // Ensure the destination directory exists
@@ -124,14 +125,15 @@ impl MakeTwin {
         let rescue_blob_path = replace_validators_blob(temp_db_path, creds).await?;
 
         println!("Applying the rescue blob to the database & bootstrapping");
-        let waypoint = apply_rescue_on_db(temp_db_path, &rescue_blob_path)?;
+        let waypoint = one_step_apply_rescue_on_db(temp_db_path, &rescue_blob_path)?;
 
         Ok((rescue_blob_path, waypoint))
     }
 }
 
+// TODO replace with an fs:: function
 // Helper function to recursively copy directories
-fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
+pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
     if !dst.exists() {
         fs::create_dir_all(dst)?;
     }

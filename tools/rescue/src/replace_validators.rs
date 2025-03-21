@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
 use diem_types::transaction::{Transaction, WriteSetPayload};
 use libra_config::validator_registration::ValCredentials;
+use std::path::{Path, PathBuf};
 
 use crate::session_tools::{self, libra_run_session, session_add_validators};
 

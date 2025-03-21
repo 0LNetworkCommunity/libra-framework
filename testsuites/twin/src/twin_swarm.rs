@@ -1,15 +1,75 @@
 use anyhow::Result;
 use diem_config::config::NodeConfig;
+use diem_forge::NodeExt;
+use diem_forge::{LocalNode, LocalSwarm, SwarmExt};
+use diem_temppath::TempPath;
 use diem_types::waypoint::Waypoint;
-use libra_config::make_yaml_public_fullnode::VALIDATOR_MANIFEST;
-use libra_smoke_tests::{libra_smoke::LibraSmoke, smoke_test_environment::validator_swarm::LocalSwarm};
-use libra_types::{validator_info::ValidatorInfo, twins::ValCredentials};
-use std::{path::{Path, PathBuf}, time::{Duration, Instant}};
+use libra_config::validator_registration::ValCredentials;
+use libra_smoke_tests::configure_validator;
+use libra_smoke_tests::{
+    extract_credentials::extract_swarm_node_credentials, libra_smoke::LibraSmoke,
+};
 
-use crate::make_twin;
+use diem_config::config::InitialSafetyRulesConfig;
+use diem_config::config::WaypointConfig;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::{Duration, Instant},
+};
 
+use crate::make_twin::{copy_dir_all, MakeTwin};
 /// Manages swarm operations for a twin network
 pub struct TwinSwarm;
+
+/// Apply the rescue blob to the swarm db
+/// returns the temp directory of the swarm
+pub async fn make_twin_swarm(
+    smoke: &mut LibraSmoke,
+    reference_db: Option<PathBuf>,
+    keep_running: bool,
+) -> anyhow::Result<PathBuf> {
+    let start_upgrade = Instant::now();
+
+    // Collect credentials from all validators
+    let creds = TwinSwarm::collect_validator_credentials(&smoke.swarm).await?;
+
+    // Prepare the temporary database environment
+    let (temp_db_path, _, start_version) =
+        TwinSwarm::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
+
+    // Create and apply rescue blob
+    let (rescue_blob_path, wp) = MakeTwin::create_and_apply_rescue(&temp_db_path, creds).await?;
+
+    // Update validators with the new DB and config
+    TwinSwarm::update_nodes_with_rescue(&mut smoke.swarm, &temp_db_path, wp, rescue_blob_path)
+        .await?;
+
+    // Restart validators and verify operation
+    TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
+
+    // Generate CLI config files for validators
+    configure_validator::save_cli_config_all(&mut smoke.swarm)?;
+
+    let duration_upgrade = start_upgrade.elapsed();
+    println!(
+        "SUCCESS: twin swarm started. Time to prepare swarm: {:?}",
+        duration_upgrade
+    );
+
+    let temp_dir = smoke.swarm.dir();
+    println!("temp files found at: {}", temp_dir.display());
+
+    if keep_running {
+        dialoguer::Confirm::new()
+            .with_prompt("swarm will keep running in background. Would you like to exit?")
+            .interact()?;
+        // NOTE: all validators will stop when the LibraSmoke goes out of context.
+        // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
+    }
+
+    Ok(temp_dir.to_owned())
+}
 
 impl TwinSwarm {
     /// Collect credentials from all validators in the swarm
@@ -23,95 +83,78 @@ impl TwinSwarm {
         Ok(creds)
     }
 
-    /// Extract the credentials of the random validator
-    async fn extract_swarm_node_credentials(marlon_node: &LocalNode) -> anyhow::Result<ValCredentials> {
-        // get the necessary values from the current db
-        let account = marlon_node.config().get_peer_id().unwrap();
-
-        let public_identity_yaml = marlon_node
-            .config_path()
-            .parent()
-            .unwrap()
-            .join("public-identity.yaml");
-        let public_identity =
-            serde_yaml::from_slice::<PublicIdentity>(&fs::read(public_identity_yaml)?)?;
-        let proof_of_possession = public_identity
-            .consensus_proof_of_possession
-            .unwrap()
-            .to_bytes()
-            .to_vec();
-        let consensus_public_key_file = public_identity
-            .consensus_public_key
-            .clone()
-            .unwrap()
-            .to_string();
-
-        // query the db for the values
-        let query_res = query_view::get_view(
-            &marlon_node.rest_client(),
-            "0x1::stake::get_validator_config",
-            None,
-            Some(account.to_string()),
-        )
-        .await
-        .unwrap();
-
-        let network_addresses = query_res[1].as_str().unwrap().strip_prefix("0x").unwrap();
-        let fullnode_addresses = query_res[2].as_str().unwrap().strip_prefix("0x").unwrap();
-        let consensus_public_key_chain = query_res[0].as_str().unwrap().strip_prefix("0x").unwrap();
-
-        // for checking if both values are the same:
-        let consensus_public_key_chain = hex::decode(consensus_public_key_chain).unwrap();
-        let consensus_pubkey = hex::decode(consensus_public_key_file).unwrap();
-        let network_addresses = hex::decode(network_addresses).unwrap();
-        let fullnode_addresses = hex::decode(fullnode_addresses).unwrap();
-
-        assert_eq!(consensus_public_key_chain, consensus_pubkey);
-        Ok(ValCredentials {
-            account,
-            consensus_pubkey,
-            proof_of_possession,
-            network_addresses,
-            fullnode_addresses,
-        })
-    }
     /// Replace DB for all validators in swarm
     pub async fn replace_db_all(swarm: &mut LocalSwarm, src_db_path: &Path) -> Result<()> {
         for n in swarm.validators_mut().into_iter() {
             let dst_db_path = n.config().storage.dir();
-
-            // Copy database files
-            // This should be implemented based on your specific requirements
-            // Example: fs::copy_dir_all(src_db_path, dst_db_path)?;
+            copy_dir_all(src_db_path, &dst_db_path)?;
         }
 
+        Ok(())
+    }
+    /// Apply the rescue blob to the swarm db
+    fn update_node_config(validator: &mut LocalNode, mut config: NodeConfig) -> anyhow::Result<()> {
+        // validator.stop();
+        let node_path = validator.config_path();
+        config.save_to_path(node_path)?;
+        // validator.start()?;
         Ok(())
     }
 
     /// Update waypoint in all validator configs
-    pub async fn update_waypoint(
+    async fn update_waypoint(
         swarm: &mut LocalSwarm,
-        waypoint: Waypoint,
-        rescue_blob_path: PathBuf
-    ) -> Result<()> {
-        for n in swarm.validators_mut().into_iter() {
-            let mut config = n.config().clone();
+        wp: Waypoint,
+        rescue_blob: PathBuf,
+    ) -> anyhow::Result<()> {
+        for n in swarm.validators_mut() {
+            let mut node_config = n.config().clone();
 
-            // Update waypoint
-            config.consensus.safety_rules.waypoint = Some(waypoint);
+            let configs_dir = &node_config.base.data_dir;
 
-            // Update rescue blob path
-            let mut safety_rules = &mut config.consensus.safety_rules;
-            safety_rules.enable_rescue = true;
-            safety_rules.rescue_path = Some(rescue_blob_path.clone());
+            let validator_identity_file = configs_dir.join("validator-identity.yaml");
+            assert!(
+                validator_identity_file.exists(),
+                "validator-identity.yaml not found"
+            );
 
-            // Apply updated config
-            n.restart_with_config(config)?;
+            ////////
+            // NOTE: you don't need to insert the waypoint as previously thought
+            // but it is harmless. You must however set initial safety
+            // rules config.
+            // insert_waypoint(&mut node_config, wp);
+            ///////
+
+            let init_safety = InitialSafetyRulesConfig::from_file(
+                validator_identity_file,
+                WaypointConfig::FromConfig(wp),
+            );
+            node_config
+                .consensus
+                .safety_rules
+                .initial_safety_rules_config = init_safety;
+
+            ////////
+            // Note: Example of getting genesis transaction serialized to include in config.
+            // let genesis_transaction = {
+            //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
+            //     bcs::from_bytes::<Transaction>(&buf).unwrap()
+            // };
+            /////////
+
+            // NOTE: Must reset the genesis transaction in the config file
+            // Or overwrite with a serialized versions
+            node_config.execution.genesis = None; // see above to use bin: Some(genesis_transaction);
+                                                  // ... and point to file
+            node_config
+                .execution
+                .genesis_file_location
+                .clone_from(&rescue_blob);
+
+            Self::update_node_config(n, node_config)?;
         }
-
         Ok(())
     }
-
     /// Restart all validators
     pub fn restart_all(swarm: &mut LocalSwarm) -> Result<()> {
         for n in swarm.validators_mut().into_iter() {
@@ -119,6 +162,40 @@ impl TwinSwarm {
         }
 
         Ok(())
+    }
+
+    /// Prepare the temporary database environment
+    async fn prepare_temp_database(
+        swarm: &mut LocalSwarm,
+        reference_db: Option<PathBuf>,
+    ) -> anyhow::Result<(PathBuf, PathBuf, u64)> {
+        // Get starting version for verification
+        let (start_version, _) = swarm
+            .get_client_with_newest_ledger_version()
+            .await
+            .expect("could not get a client");
+
+        // Stop all validators to prevent DB access conflicts
+        for n in swarm.validators_mut() {
+            n.stop();
+        }
+
+        // Use provided reference_db or first validator's DB
+        let reference_db = reference_db
+            .unwrap_or_else(|| swarm.validators().nth(0).unwrap().config().storage.dir());
+
+        // Create temp directory for DB operations
+        let mut temp = TempPath::new();
+        temp.persist();
+        temp.create_as_dir()?;
+        let temp_path = temp.path();
+        assert!(temp_path.exists());
+
+        // Create a copy of the reference DB
+        let temp_db_path = MakeTwin::temp_backup_db(&reference_db, temp_path)?;
+        assert!(temp_db_path.exists());
+
+        Ok((temp_db_path, reference_db, start_version))
     }
 
     /// Update nodes with rescue configuration
@@ -138,10 +215,7 @@ impl TwinSwarm {
     }
 
     /// Restart validators and verify successful operation
-    pub async fn restart_and_verify(
-        swarm: &mut LocalSwarm,
-        start_version: u64,
-    ) -> Result<()> {
+    pub async fn restart_and_verify(swarm: &mut LocalSwarm, start_version: u64) -> Result<()> {
         println!("Restarting validators and waiting for liveness");
         Self::restart_all(swarm)?;
 

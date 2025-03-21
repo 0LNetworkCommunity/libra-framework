@@ -30,6 +30,7 @@ libra-config = { workspace = true }
 libra-query = { workspace = true }
 libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }
+libra-types = { workspace = true }
 libra-txs = { workspace = true }
 serde_yaml = { workspace = true }
 smoke-test = { workspace = true }

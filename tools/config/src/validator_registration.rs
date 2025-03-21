@@ -1,6 +1,7 @@
 use anyhow::{self, Context};
 use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
+
 use libra_types::global_config_dir;
 use libra_wallet::validator_files::OPERATOR_FILE;
 use serde::{Deserialize, Serialize};
