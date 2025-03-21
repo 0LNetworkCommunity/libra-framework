@@ -5,6 +5,7 @@ use diem_backup_cli::backup_types::{
 use diem_logger::info;
 use diem_types::waypoint::Waypoint;
 use glob::glob;
+use serde_json::Value;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -69,9 +70,12 @@ impl RestoreBundle {
 
         if let Some(p) = file_list.flatten().max() {
             self.epoch_manifest = p;
-            let s = fs::read_to_string(&self.epoch_manifest)?;
-            let epoch_manifest: EpochEndingBackup = serde_json::from_str(&s)?;
+            let content = fs::read_to_string(&self.epoch_manifest)?;
+            // Update paths and write back
+            let updated_content = Self::update_manifest_paths(&content);
+            fs::write(&self.epoch_manifest, &updated_content)?;  // Add & here
 
+            let epoch_manifest: EpochEndingBackup = serde_json::from_str(&updated_content)?;
             self.epoch = epoch_manifest.first_epoch;
             self.waypoint = epoch_manifest.waypoints.clone().pop();
         }
@@ -133,6 +137,9 @@ impl RestoreBundle {
 
         if let Some(p) = file_list.flatten().max() {
             self.snapshot_manifest = p;
+            let content = fs::read_to_string(&self.snapshot_manifest)?;
+            let updated_content = Self::update_manifest_paths(&content);
+            fs::write(&self.snapshot_manifest, &updated_content)?;  // Add & here
         }
 
         Ok(())
@@ -153,13 +160,46 @@ impl RestoreBundle {
         ))?;
 
         for entry in file_list.flatten() {
-            // will abort if transaction folder does not have the
-            // txs
+            let content = fs::read_to_string(&entry)?;
+            let updated_content = Self::update_manifest_paths(&content);
+            fs::write(&entry, &updated_content)?;  // Add & here
             verify_valid_transaction_list(&entry, self.version)?;
 
             self.transaction_manifest = entry;
         }
         Ok(())
+    }
+
+    fn update_manifest_paths(manifest_content: &str) -> String {
+        let mut manifest: Value = serde_json::from_str(manifest_content).unwrap();
+
+        if let Some(obj) = manifest.as_object_mut() {
+            // Update chunks paths
+            if let Some(chunks) = obj.get_mut("chunks").and_then(|c| c.as_array_mut()) {
+                for chunk in chunks {
+                    if let Some(chunk_obj) = chunk.as_object_mut() {
+                        for (_, value) in chunk_obj.iter_mut() {
+                            if let Some(path_str) = value.as_str() {
+                                if path_str.ends_with(".gz") {
+                                    *value = Value::String(path_str.strip_suffix(".gz").unwrap().to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Handle top-level proof field (specific to state manifest)
+            if let Some(proof) = obj.get_mut("proof") {
+                if let Some(path_str) = proof.as_str() {
+                    if path_str.ends_with(".gz") {
+                        *proof = Value::String(path_str.strip_suffix(".gz").unwrap().to_string());
+                    }
+                }
+            }
+        }
+
+        serde_json::to_string_pretty(&manifest).unwrap()
     }
 }
 
@@ -200,4 +240,30 @@ fn test_load_any() {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let mut b = RestoreBundle::new(dir.join("fixtures/v7"));
     b.load().unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_update_manifest_paths() {
+        // Test state manifest format
+        let state_manifest = r#"{
+            "version": 117583050,
+            "chunks": [
+                {
+                    "blobs": "state_epoch_339_ver_117583050.05f3/0-.chunk.gz",
+                    "proof": "state_epoch_339_ver_117583050.05f3/0-133368.proof.gz"
+                }
+            ],
+            "proof": "state_epoch_339_ver_117583050.05f3/state.proof.gz"
+        }"#;
+
+        let updated = RestoreBundle::update_manifest_paths(state_manifest);
+        assert!(!updated.contains(".gz"));
+        assert!(updated.contains("state.proof"));
+        assert!(updated.contains("0-.chunk"));
+        assert!(updated.contains("0-133368.proof"));
+    }
 }
