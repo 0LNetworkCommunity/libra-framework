@@ -4,11 +4,8 @@ use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
 use std::{fs, path::PathBuf};
-use std::str::FromStr;
-use anyhow::Context;
-use crate::download_bundle;
 
-use crate::{read_snapshot, restore, restore_bundle::RestoreBundle, download_bundle::download_github_folder
+use crate::{read_snapshot, restore, restore_bundle::RestoreBundle, download_bundle
 };
 
 
@@ -109,34 +106,13 @@ impl StorageCli {
                 epoch,
                 destination,
             }) => {
-                if destination.exists() {
-                    bail!("Destination directory already exists: {}", destination.display());
-                }
-                fs::create_dir_all(&destination)?;
-
-                let client = reqwest::Client::new();
-                let epoch_num = u64::from_str(&epoch)
-                    .context("Failed to parse epoch number")?;
-
-                let folder_name = download_bundle::find_closest_epoch_folder(
-                    &client,
+                download_bundle::download_restore_bundle(
                     &owner,
                     &repo,
                     &branch,
-                    epoch_num
+                    &epoch,
+                    &destination
                 ).await?;
-
-                // Download the epoch folder
-                let snapshot_path = format!("snapshots/{}", folder_name);
-                download_github_folder(
-                    &owner,
-                    &repo,
-                    &snapshot_path,
-                    &branch,
-                    destination.to_str().unwrap()
-                ).await?;
-
-                println!("Successfully downloaded restore bundle for epoch {}", epoch);
             },
             _ => {} // prints help
         }
