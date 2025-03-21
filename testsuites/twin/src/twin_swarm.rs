@@ -19,65 +19,6 @@ use diem_forge::Node;
 /// Manages swarm operations for a twin network
 pub struct TwinSwarm;
 
-// /// Apply the rescue blob to the swarm db
-// /// returns the temp directory of the swarm
-// pub async fn make_twin_swarm(
-//     smoke: &mut LibraSmoke,
-//     reference_db: Option<PathBuf>,
-//     keep_running: bool,
-// ) -> anyhow::Result<PathBuf> {
-//     let start_upgrade = Instant::now();
-
-//     // Collect credentials from all validators
-//     let creds = TwinSwarm::collect_validator_credentials(&smoke.swarm).await?;
-
-//     println!(
-//         "make a temporary db for calculating the rescue blob, using reference db at {:?}",
-//         &reference_db
-//     );
-//     // Prepare the temporary database environment
-//     let (temp_db_path, _, start_version) =
-//         TwinSwarm::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
-
-//     println!("created temp db at: {}", temp_db_path.display());
-//     println!("make a temporary db for calculating the rescue blob");
-
-//     // Create and apply rescue blob
-//     let (rescue_blob_path, wp) = MakeTwin::create_and_apply_rescue(&temp_db_path, creds).await?;
-//     println!("created rescue blob at: {}", rescue_blob_path.display());
-
-//     println!("updating swarm validators with new DB and config");
-//     // Update validators with the new DB and config
-//     TwinSwarm::update_nodes_with_rescue(&mut smoke.swarm, &temp_db_path, wp, rescue_blob_path)
-//         .await?;
-
-//     println!("restarting validators and verifying operation");
-//     // Restart validators and verify operation
-//     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
-
-//     // Generate CLI config files for validators
-//     configure_validator::save_cli_config_all(&mut smoke.swarm)?;
-
-//     let duration_upgrade = start_upgrade.elapsed();
-//     println!(
-//         "SUCCESS: twin swarm started. Time to prepare swarm: {:?}",
-//         duration_upgrade
-//     );
-
-//     let temp_dir = smoke.swarm.dir();
-//     println!("temp files found at: {}", temp_dir.display());
-
-//     if keep_running {
-//         dialoguer::Confirm::new()
-//             .with_prompt("swarm will keep running in background. Would you like to exit?")
-//             .interact()?;
-//         // NOTE: all validators will stop when the LibraSmoke goes out of context.
-//         // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
-//     }
-
-//     Ok(temp_dir.to_owned())
-// }
-
 impl TwinSwarm {
     /// Collect credentials from all validators in the swarm
     pub async fn collect_validator_credentials(swarm: &LocalSwarm) -> Result<Vec<ValCredentials>> {
@@ -231,42 +172,6 @@ impl TwinSwarm {
 
         Ok(())
     }
-
-    // /// Prepare the temporary database environment
-    // pub async fn prepare_temp_database(
-    //     swarm: &mut LocalSwarm,
-    //     reference_db: Option<PathBuf>,
-    // ) -> anyhow::Result<(PathBuf, PathBuf, u64)> {
-    //     // Get starting version for verification
-    //     let (start_version, _) = swarm
-    //         .get_client_with_newest_ledger_version()
-    //         .await
-    //         .expect("could not get a client");
-
-    //     // Stop all validators to prevent DB access conflicts
-    //     for n in swarm.validators_mut() {
-    //         n.stop();
-    //     }
-
-    //     // Use provided reference_db or first validator's DB
-    //     let reference_db = reference_db
-    //         .unwrap_or_else(|| swarm.validators().nth(0).unwrap().config().storage.dir());
-
-    //     // Create temp directory for DB operations
-    //     let mut temp = TempPath::new();
-    //     temp.persist();
-    //     temp.create_as_dir()?;
-
-    //     dbg!(&temp);
-    //     let temp_path = temp.path();
-    //     assert!(temp_path.exists());
-
-    //     // Create a copy of the reference DB
-    //     fs_extra::dir::copy(&reference_db, &temp_path, &CopyOptions::new().content_only(true))?;
-    //     assert!(temp_path.exists());
-
-    //     Ok((temp_path.to_owned(), reference_db, start_version))
-    // }
 
     /// Update nodes with rescue configuration
     pub async fn update_nodes_with_rescue(
