@@ -1,11 +1,13 @@
+use crate::parse_folder_names::{
+    parse_epoch_ending_number, parse_state_epoch_info, parse_transaction_number,
+};
+use anyhow::bail;
 use anyhow::{Context, Result};
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
-use anyhow::bail;
-use crate::parse_folder_names::{parse_epoch_ending_number, parse_state_epoch_info, parse_transaction_number};
 
 #[derive(Deserialize, Debug)]
 struct GitHubContent {
@@ -36,7 +38,7 @@ fn parse_state_epoch_version(folder_name: &str) -> Result<u64> {
 
 fn find_closest_transaction_folder(
     transaction_folders: &[(u64, String)],
-    target_version: u64
+    target_version: u64,
 ) -> Result<String> {
     // Find the highest version below target and lowest version above target
     let version_below = transaction_folders
@@ -52,7 +54,11 @@ fn find_closest_transaction_folder(
     // Validate version ordering
     if let (Some((ver_below, _)), Some((ver_above, _))) = (version_below, version_above) {
         if ver_below >= ver_above {
-            bail!("Version ordering error: below ({}) >= above ({})", ver_below, ver_above);
+            bail!(
+                "Version ordering error: below ({}) >= above ({})",
+                ver_below,
+                ver_above
+            );
         }
     }
 
@@ -111,7 +117,10 @@ pub async fn find_closest_epoch_folder(
         }
     }
 
-    if epoch_ending_folders.is_empty() || state_epoch_folders.is_empty() || transaction_folders.is_empty() {
+    if epoch_ending_folders.is_empty()
+        || state_epoch_folders.is_empty()
+        || transaction_folders.is_empty()
+    {
         bail!("Could not find all required folder types");
     }
 
@@ -232,10 +241,7 @@ pub async fn download_github_folder(
             } else if item.content_type == "dir" {
                 println!("Processing directory: {}", item.name);
                 let new_path = format!("{}/{}", current_path, item.name);
-                pending_dirs.push((
-                    new_path,
-                    full_dir_path.to_str().unwrap().to_string(),
-                ));
+                pending_dirs.push((new_path, full_dir_path.to_str().unwrap().to_string()));
             }
         }
     }
@@ -258,30 +264,32 @@ pub async fn download_restore_bundle(
     }
 
     let client = reqwest::Client::new();
-    let epoch_num = u64::from_str(epoch)
-        .context("Failed to parse epoch number")?;
+    let epoch_num = u64::from_str(epoch).context("Failed to parse epoch number")?;
 
-    let folders = find_closest_epoch_folder(
-        &client,
-        owner,
-        repo,
-        branch,
-        epoch_num
-    ).await?;
+    let folders = find_closest_epoch_folder(&client, owner, repo, branch, epoch_num).await?;
 
     // Download all three folders
-    for folder in [&folders.epoch_ending, &folders.state_epoch, &folders.transaction] {
+    for folder in [
+        &folders.epoch_ending,
+        &folders.state_epoch,
+        &folders.transaction,
+    ] {
         let snapshot_path = format!("snapshots/{}", folder);
         download_github_folder(
             owner,
             repo,
             &snapshot_path,
             branch,
-            bundle_dir.to_str().unwrap()
-        ).await?;
+            bundle_dir.to_str().unwrap(),
+        )
+        .await?;
     }
 
-    println!("Successfully downloaded restore bundle for epoch {} to {}", epoch, bundle_dir.display());
+    println!(
+        "Successfully downloaded restore bundle for epoch {} to {}",
+        epoch,
+        bundle_dir.display()
+    );
     Ok(())
 }
 
@@ -360,7 +368,7 @@ mod tests {
         // Test error case with invalid ordering
         let invalid_folders = vec![
             (33000000, "transaction_33000000-.58b4".to_string()),
-            (33000000, "transaction_33000000-.58b4".to_string()),  // Duplicate version
+            (33000000, "transaction_33000000-.58b4".to_string()), // Duplicate version
         ];
         assert!(find_closest_transaction_folder(&invalid_folders, 33007311).is_err());
     }

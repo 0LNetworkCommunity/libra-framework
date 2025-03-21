@@ -2,7 +2,7 @@ pub fn parse_epoch_ending_number(folder_name: &str) -> Option<u64> {
     // Format: "epoch_ending_273-.0338"
     folder_name
         .strip_prefix("epoch_ending_")?
-        .split(['-', '.'])  // split on either - or .
+        .split(['-', '.']) // split on either - or .
         .next()?
         .parse()
         .ok()
@@ -31,7 +31,7 @@ pub fn parse_transaction_number(folder_name: &str) -> Option<u64> {
     // Format: "transaction_111500001-.d5aa"
     folder_name
         .strip_prefix("transaction_")?
-        .split(['-', '.'])  // split on either - or .
+        .split(['-', '.']) // split on either - or .
         .next()?
         .parse()
         .ok()
@@ -43,12 +43,18 @@ mod tests {
 
     #[test]
     fn test_folder_name_parsing() {
-        assert_eq!(parse_epoch_ending_number("epoch_ending_273-.0338"), Some(273));
+        assert_eq!(
+            parse_epoch_ending_number("epoch_ending_273-.0338"),
+            Some(273)
+        );
         assert_eq!(
             parse_state_epoch_info("state_epoch_173_ver_58967541.df7d"),
             Some((173, 58967541))
         );
-        assert_eq!(parse_transaction_number("transaction_111500001-.d5aa"), Some(111500001));
+        assert_eq!(
+            parse_transaction_number("transaction_111500001-.d5aa"),
+            Some(111500001)
+        );
     }
 
     #[test]

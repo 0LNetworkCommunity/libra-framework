@@ -1,4 +1,4 @@
-use anyhow::{bail, Result, Context};  // Add Context import
+use anyhow::{bail, Context, Result}; // Add Context import
 use clap::{Parser, Subcommand};
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
@@ -83,8 +83,8 @@ impl StorageCli {
                 fs::create_dir_all(&destination_db)?;
 
                 // underlying tools get lost with relative paths
-                let bundle_path = fs::canonicalize(bundle_path)
-                    .context("Failed to canonicalize bundle path")?;
+                let bundle_path =
+                    fs::canonicalize(bundle_path).context("Failed to canonicalize bundle path")?;
                 let destination_db = fs::canonicalize(destination_db)
                     .context("Failed to canonicalize destination path")?;
 

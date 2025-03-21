@@ -72,7 +72,7 @@ pub async fn full_restore(db_destination: &Path, bundle: &RestoreBundle) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use diem_temppath::TempPath;
+    
     use std::path::PathBuf;
 
     #[tokio::test]

@@ -73,7 +73,7 @@ impl RestoreBundle {
             let content = fs::read_to_string(&self.epoch_manifest)?;
             // Update paths and write back
             let updated_content = Self::update_manifest_paths(&content);
-            fs::write(&self.epoch_manifest, &updated_content)?;  // Add & here
+            fs::write(&self.epoch_manifest, &updated_content)?; // Add & here
 
             let epoch_manifest: EpochEndingBackup = serde_json::from_str(&updated_content)?;
             self.epoch = epoch_manifest.first_epoch;
@@ -139,7 +139,7 @@ impl RestoreBundle {
             self.snapshot_manifest = p;
             let content = fs::read_to_string(&self.snapshot_manifest)?;
             let updated_content = Self::update_manifest_paths(&content);
-            fs::write(&self.snapshot_manifest, &updated_content)?;  // Add & here
+            fs::write(&self.snapshot_manifest, &updated_content)?; // Add & here
         }
 
         Ok(())
@@ -162,7 +162,7 @@ impl RestoreBundle {
         for entry in file_list.flatten() {
             let content = fs::read_to_string(&entry)?;
             let updated_content = Self::update_manifest_paths(&content);
-            fs::write(&entry, &updated_content)?;  // Add & here
+            fs::write(&entry, &updated_content)?; // Add & here
             verify_valid_transaction_list(&entry, self.version)?;
 
             self.transaction_manifest = entry;
@@ -181,7 +181,9 @@ impl RestoreBundle {
                         for (_, value) in chunk_obj.iter_mut() {
                             if let Some(path_str) = value.as_str() {
                                 if path_str.ends_with(".gz") {
-                                    *value = Value::String(path_str.strip_suffix(".gz").unwrap().to_string());
+                                    *value = Value::String(
+                                        path_str.strip_suffix(".gz").unwrap().to_string(),
+                                    );
                                 }
                             }
                         }
