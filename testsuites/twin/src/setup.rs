@@ -220,6 +220,103 @@ impl Twin {
         Ok(())
     }
 
+    /// Collect credentials from all validators in the swarm
+    async fn collect_validator_credentials(swarm: &LocalSwarm) -> anyhow::Result<Vec<ValCredentials>> {
+        println!("1. Get credentials from validator set.");
+        let mut creds = Vec::new();
+        for n in swarm.validators() {
+            let cred = Self::extract_credentials(n).await?;
+            creds.push(cred);
+        }
+        Ok(creds)
+    }
+
+    /// Prepare the temporary database environment
+    async fn prepare_temp_database(
+        swarm: &mut LocalSwarm,
+        reference_db: Option<PathBuf>
+    ) -> anyhow::Result<(PathBuf, PathBuf, u64)> {
+        // Get starting version for verification
+        let (start_version, _) = swarm
+            .get_client_with_newest_ledger_version()
+            .await
+            .expect("could not get a client");
+
+        // Stop all validators to prevent DB access conflicts
+        for n in swarm.validators_mut() {
+            n.stop();
+        }
+
+        // Use provided reference_db or first validator's DB
+        let reference_db = reference_db.unwrap_or_else(|| {
+            swarm
+                .validators()
+                .nth(0)
+                .unwrap()
+                .config()
+                .storage
+                .dir()
+        });
+
+        // Create temp directory for DB operations
+        let mut temp = TempPath::new();
+        temp.persist();
+        temp.create_as_dir()?;
+        let temp_path = temp.path();
+        assert!(temp_path.exists());
+
+        // Create a copy of the reference DB
+        let temp_db_path = Self::temp_backup_db(&reference_db, temp_path)?;
+        assert!(temp_db_path.exists());
+
+        Ok((temp_db_path, reference_db, start_version))
+    }
+
+    /// Create and apply rescue blob
+    async fn create_and_apply_rescue(
+        temp_db_path: &Path,
+        creds: Vec<ValCredentials>
+    ) -> anyhow::Result<(PathBuf, Waypoint)> {
+        println!("2. Create a rescue blob from the reference db");
+        let rescue_blob_path = Self::make_rescue_twin_blob(temp_db_path, creds).await?;
+
+        println!("3. Apply the rescue blob to the swarm db & bootstrap");
+        let wp = Self::apply_rescue_on_db(temp_db_path, &rescue_blob_path)?;
+
+        Ok((rescue_blob_path, wp))
+    }
+
+    /// Update all nodes with the new DB and configuration
+    async fn update_nodes_with_rescue(
+        swarm: &mut LocalSwarm,
+        temp_db_path: &Path,
+        wp: Waypoint,
+        rescue_blob_path: PathBuf,
+    ) -> anyhow::Result<()> {
+        println!("4. Replace the swarm db with the snapshot db");
+        Self::replace_db_all(swarm, temp_db_path).await?;
+
+        println!("5. Change the waypoint in the node configs and add the rescue blob to the config");
+        Self::update_waypoint(swarm, wp, rescue_blob_path).await?;
+
+        Ok(())
+    }
+
+    /// Restart validators and verify successful operation
+    async fn restart_and_verify(
+        swarm: &mut LocalSwarm,
+        start_version: u64,
+    ) -> anyhow::Result<()> {
+        println!("6. Wait for liveness");
+        Self::restart_all(swarm)?;
+
+        swarm
+            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(30))
+            .await?;
+
+        Ok(())
+    }
+
     /// Apply the rescue blob to the swarm db
     /// returns the temp directory of the swarm
     pub async fn make_twin_swarm(
@@ -229,85 +326,22 @@ impl Twin {
     ) -> anyhow::Result<PathBuf> {
         let start_upgrade = Instant::now();
 
-        println!("1. Get credentials from validator set.");
+        // Collect credentials from all validators
+        let creds = Self::collect_validator_credentials(&smoke.swarm).await?;
 
-        //Get the credentials of all the nodes
-        let mut creds = Vec::new();
-        for n in smoke.swarm.validators() {
-            let cred = Self::extract_credentials(n).await?;
-            creds.push(cred);
-        }
+        // Prepare the temporary database environment
+        let (temp_db_path, _, start_version) = Self::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
 
-        // stop all vals so we don't have DBs open.
-        let (start_version, _) = smoke
-            .swarm
-            .get_client_with_newest_ledger_version()
-            .await
-            .expect("could not get a client");
-        for n in smoke.swarm.validators_mut() {
-            n.stop();
-        }
+        // Create and apply rescue blob
+        let (rescue_blob_path, wp) = Self::create_and_apply_rescue(&temp_db_path, creds).await?;
 
-        let creds = creds.into_iter().collect::<Vec<_>>();
+        // Update validators with the new DB and config
+        Self::update_nodes_with_rescue(&mut smoke.swarm, &temp_db_path, wp, rescue_blob_path).await?;
 
-        // If no DB is sent, we will use the swarm's initial DB,
-        // this is useful for debugging the internals of Twin, since
-        // we should expect no changes to validator set, credentials and state, only the rescue transaction.
-        let reference_db = reference_db.unwrap_or_else(|| {
-            smoke
-                .swarm
-                .validators()
-                .nth(0)
-                .unwrap()
-                .config()
-                .storage
-                .dir()
-        });
+        // Restart validators and verify operation
+        Self::restart_and_verify(&mut smoke.swarm, start_version).await?;
 
-        // Do all writeset operations on a temp db.
-        let mut temp = TempPath::new();
-        temp.persist();
-        temp.create_as_dir()?;
-        let temp_path = temp.path();
-        assert!(temp_path.exists());
-        let temp_db_path = Self::temp_backup_db(&reference_db, temp_path)?;
-
-        assert!(temp_db_path.exists());
-
-        println!("2. Create a rescue blob from the reference db");
-
-        let rescue_blob_path = Self::make_rescue_twin_blob(&temp_db_path, creds).await?;
-
-        println!("3. Apply the rescue blob to the swarm db & bootstrap");
-
-        let wp = Self::apply_rescue_on_db(&temp_db_path, &rescue_blob_path)?;
-
-        println!("4. Replace the swarm db with the snapshot db");
-
-        Self::replace_db_all(&mut smoke.swarm, &temp_db_path).await?;
-
-        println!(
-            "5. Change the waypoint in the node configs and add the rescue blob to the config"
-        );
-        Self::update_waypoint(&mut smoke.swarm, wp, rescue_blob_path).await?;
-
-        println!("6. wait for liveness");
-        Self::restart_all(&mut smoke.swarm)?;
-
-        // TODO: check if this is doing what is expected
-        // was previously not running
-        // smoke
-        //     .swarm
-        //     .liveness_check(Instant::now().checked_add(Duration::from_secs(20)).unwrap())
-        //     .await?;
-
-        smoke
-            .swarm
-            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(30))
-            .await?;
-
-        // place a libra-cli-config.yaml in the home dir of the swarm vals
-        // helps test the cli tools
+        // Generate CLI config files for validators
         configure_validator::save_cli_config_all(&mut smoke.swarm)?;
 
         let duration_upgrade = start_upgrade.elapsed();

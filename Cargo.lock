@@ -5784,7 +5784,7 @@ checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
 
 [[package]]
 name = "libra"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "clap 4.5.20",
@@ -5806,7 +5806,7 @@ dependencies = [
 
 [[package]]
 name = "libra-backwards-compatibility"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5832,7 +5832,7 @@ dependencies = [
 
 [[package]]
 name = "libra-cached-packages"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "bcs 0.1.4",
  "diem-types",
@@ -5843,7 +5843,7 @@ dependencies = [
 
 [[package]]
 name = "libra-config"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5868,7 +5868,7 @@ dependencies = [
 
 [[package]]
 name = "libra-framework"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5888,7 +5888,7 @@ dependencies = [
 
 [[package]]
 name = "libra-genesis-tools"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -5926,7 +5926,7 @@ dependencies = [
 
 [[package]]
 name = "libra-query"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "clap 4.5.20",
@@ -5944,7 +5944,7 @@ dependencies = [
 
 [[package]]
 name = "libra-rescue"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5979,7 +5979,7 @@ dependencies = [
 
 [[package]]
 name = "libra-smoke-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "diem-config",
@@ -6000,7 +6000,7 @@ dependencies = [
 
 [[package]]
 name = "libra-storage"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6009,21 +6009,29 @@ dependencies = [
  "diem-config",
  "diem-db",
  "diem-db-tool",
+ "diem-executor",
  "diem-executor-types",
  "diem-logger",
  "diem-push-metrics",
+ "diem-storage-interface",
  "diem-temppath",
  "diem-types",
+ "diem-vm",
+ "flate2",
  "glob",
  "libra-backwards-compatibility",
+ "libra-config",
+ "libra-types",
  "num_cpus",
+ "reqwest",
+ "serde 1.0.214",
  "serde_json",
  "tokio",
 ]
 
 [[package]]
 name = "libra-twin-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6052,7 +6060,7 @@ dependencies = [
 
 [[package]]
 name = "libra-txs"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6085,7 +6093,7 @@ dependencies = [
 
 [[package]]
 name = "libra-types"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6120,7 +6128,7 @@ dependencies = [
 
 [[package]]
 name = "libra-upgrade-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6139,7 +6147,7 @@ dependencies = [
 
 [[package]]
 name = "libra-wallet"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "blst",
@@ -10261,7 +10269,7 @@ dependencies = [
 
 [[package]]
 name = "transactional-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "datatest-stable",
  "diem-transactional-test-harness",
