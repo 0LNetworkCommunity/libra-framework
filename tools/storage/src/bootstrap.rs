@@ -5,6 +5,7 @@ use diem_executor::db_bootstrapper::maybe_bootstrap;
 use diem_storage_interface::DbReaderWriter;
 use diem_types::{transaction::Transaction, waypoint::Waypoint};
 use diem_vm::DiemVM;
+use libra_types::global_config_dir;
 use std::{fs, path::PathBuf, str::FromStr};
 
 // Import functions from libra-config
@@ -13,21 +14,21 @@ use libra_config::get_genesis_artifacts::{download_genesis, get_genesis_waypoint
 /// Bootstrap a restored database with genesis transaction and waypoint
 pub async fn bootstrap_db(
     db_path: PathBuf,
+    home_path: Option<PathBuf>,
     genesis_path: Option<PathBuf>,
     waypoint: Option<String>,
 ) -> Result<()> {
     if !db_path.exists() {
         bail!("DB path does not exist: {}", db_path.display());
     }
-
     println!("Bootstrapping DB at {}", db_path.display());
 
+    let data_path = home_path.unwrap_or_else(|| global_config_dir());
+    println!("Storing genesis artifacts at home path: {}", data_path.display());
+
     // Create or use data path for downloaded genesis files
-    let data_path = std::env::temp_dir().join("libra_bootstrap");
-    if !data_path.exists() {
-        println!("Creating config directory: {}", data_path.display());
-        fs::create_dir_all(&data_path)?;
-    }
+
+    assert!(data_path.exists(), "home path provided does not exist: {}", data_path.display());
 
     // Get genesis blob - either from provided path or download
     let genesis_blob = match genesis_path {
@@ -38,8 +39,8 @@ pub async fn bootstrap_db(
         None => {
             println!("Downloading genesis blob...");
             // Download genesis from GitHub
-            download_genesis(Some(data_path.clone())).await?;
-            fs::read(data_path.join("genesis.blob"))
+            let p = download_genesis(Some(data_path.clone())).await?;
+            fs::read(&p)
                 .context("Failed to read downloaded genesis blob")?
         }
     };

@@ -58,6 +58,10 @@ pub enum Sub {
         #[clap(long)]
         db_path: PathBuf,
 
+        /// optional, home path for genesis files (defaults to global config dir)
+        #[clap(long)]
+        home_path: Option<PathBuf>,
+
         /// Optional custom genesis path (defaults to downloading mainnet genesis)
         #[clap(long)]
         genesis_path: Option<PathBuf>,
@@ -138,10 +142,11 @@ impl StorageCli {
             }
             Some(Sub::Bootstrap {
                 db_path,
+                home_path,
                 genesis_path,
                 waypoint,
             }) => {
-                bootstrap::bootstrap_db(db_path, genesis_path, waypoint).await?;
+                bootstrap::bootstrap_db(db_path, home_path, genesis_path, waypoint).await?;
             }
             _ => {} // prints help
         }

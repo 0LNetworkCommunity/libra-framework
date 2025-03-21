@@ -12,7 +12,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::get_genesis_artifacts::{get_genesis_waypoint};
+use crate::get_genesis_artifacts::get_genesis_waypoint;
 
 pub const FN_FILENAME: &str = "fullnode.yaml";
 pub const VFN_FILENAME: &str = "vfn.yaml";
@@ -179,8 +179,6 @@ mempool:
 
     Ok(template)
 }
-
-
 
 #[tokio::test]
 async fn get_peers() {

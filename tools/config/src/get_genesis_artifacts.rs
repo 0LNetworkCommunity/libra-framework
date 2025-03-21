@@ -16,7 +16,7 @@ struct GithubContent {
 }
 
 /// download genesis blob and save it to the specified directory.
-pub async fn download_genesis(home_dir: Option<PathBuf>) -> Result<()> {
+pub async fn download_genesis(home_dir: Option<PathBuf>) -> Result<PathBuf> {
     // Base URL for GitHub API requests
     let base_url =
         "https://api.github.com/repos/0LNetworkCommunity/epoch-archive-mainnet/contents/upgrades";
@@ -52,8 +52,8 @@ pub async fn download_genesis(home_dir: Option<PathBuf>) -> Result<()> {
     let p = genesis_dir.join("genesis.blob");
 
     // Write the genesis blob to the file
-    std::fs::write(p, &blob_bytes)?;
-    Ok(())
+    std::fs::write(&p, &blob_bytes)?;
+    Ok(p)
 }
 
 /// Fetch the genesis waypoint from the GitHub repository.
