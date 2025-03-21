@@ -1,8 +1,10 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use diem_temppath::TempPath;
-use diem_types::{transaction::Transaction, validator_info::ValidatorInfo, waypoint::Waypoint};
+use diem_types::waypoint::Waypoint;
 use libra_config::validator_registration::ValCredentials;
-use libra_rescue::{one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob};
+use libra_rescue::{
+    one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
+};
 // use libra_types::{
 //     rescue::{build_rescue_network, save_rescue, RescueContext, RescueOptions},
 //     twins::ValCredentials,
@@ -10,7 +12,6 @@ use libra_rescue::{one_step::one_step_apply_rescue_on_db, replace_validators::re
 use std::{
     fs,
     path::{Path, PathBuf},
-    time::Instant,
 };
 
 /// Handles database operations and rescue blob creation/application

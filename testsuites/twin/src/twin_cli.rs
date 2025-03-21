@@ -2,7 +2,7 @@ use clap::{self, Parser};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::{fs, path::PathBuf};
 
-use crate::twin_swarm::{self, TwinSwarm};
+use crate::twin_swarm::{self};
 /// Twin of the network
 #[derive(Parser)]
 

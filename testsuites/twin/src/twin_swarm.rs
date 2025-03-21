@@ -1,6 +1,5 @@
 use anyhow::Result;
 use diem_config::config::NodeConfig;
-use diem_forge::NodeExt;
 use diem_forge::{LocalNode, LocalSwarm, SwarmExt};
 use diem_temppath::TempPath;
 use diem_types::waypoint::Waypoint;
@@ -13,7 +12,6 @@ use libra_smoke_tests::{
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_config::config::WaypointConfig;
 use std::{
-    fs,
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -85,7 +83,7 @@ impl TwinSwarm {
 
     /// Replace DB for all validators in swarm
     pub async fn replace_db_all(swarm: &mut LocalSwarm, src_db_path: &Path) -> Result<()> {
-        for n in swarm.validators_mut().into_iter() {
+        for n in swarm.validators_mut() {
             let dst_db_path = n.config().storage.dir();
             copy_dir_all(src_db_path, &dst_db_path)?;
         }
@@ -157,7 +155,7 @@ impl TwinSwarm {
     }
     /// Restart all validators
     pub fn restart_all(swarm: &mut LocalSwarm) -> Result<()> {
-        for n in swarm.validators_mut().into_iter() {
+        for n in swarm.validators_mut() {
             n.start()?;
         }
 
