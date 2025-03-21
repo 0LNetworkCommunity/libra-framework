@@ -1,6 +1,7 @@
 use crate::{
     config_wizard,
-    make_yaml_public_fullnode::{download_genesis, get_genesis_waypoint, init_fullnode_yaml},
+    get_genesis_artifacts::{download_genesis, get_genesis_waypoint},
+    make_yaml_public_fullnode::init_fullnode_yaml,
     validator_config::{validator_dialogue, vfn_dialogue},
 };
 use anyhow::{anyhow, Context, Result};
