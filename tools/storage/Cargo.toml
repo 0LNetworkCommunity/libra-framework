@@ -24,6 +24,8 @@ diem-executor-types = { workspace = true }
 diem-logger = { workspace = true }
 diem-push-metrics = { workspace = true }
 diem-types = { workspace = true }
+diem-temppath = { workspace = true }
+flate2 = { workspace = true }
 glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 num_cpus = { workspace = true }
