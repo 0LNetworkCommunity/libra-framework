@@ -1,13 +1,11 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Result, Context};  // Add Context import
 use clap::{Parser, Subcommand};
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
 use std::{fs, path::PathBuf};
 
-use crate::{read_snapshot, restore, restore_bundle::RestoreBundle, download_bundle
-};
-
+use crate::{download_bundle, read_snapshot, restore, restore_bundle::RestoreBundle};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -81,12 +79,20 @@ impl StorageCli {
                 if destination_db.exists() {
                     bail!("you are trying to restore to a directory that already exists, and may have conflicting state: {}", &destination_db.display());
                 };
-                assert!(!destination_db.exists());
+
                 fs::create_dir_all(&destination_db)?;
 
                 // underlying tools get lost with relative paths
-                let bundle_path = fs::canonicalize(bundle_path)?;
-                let destination_db = fs::canonicalize(destination_db)?;
+                let bundle_path = fs::canonicalize(bundle_path)
+                    .context("Failed to canonicalize bundle path")?;
+                let destination_db = fs::canonicalize(destination_db)
+                    .context("Failed to canonicalize destination path")?;
+
+                // Decompress all .gz files in the bundle directory
+                restore::decompress_gz_files(&bundle_path)
+                    .await
+                    .context("Failed to decompress gz files")?;
+                println!("Decompression completed, starting restore sequence");
 
                 let mut bundle = RestoreBundle::new(bundle_path);
 
@@ -111,9 +117,10 @@ impl StorageCli {
                     &repo,
                     &branch,
                     &epoch,
-                    &destination
-                ).await?;
-            },
+                    &destination,
+                )
+                .await?;
+            }
             _ => {} // prints help
         }
 

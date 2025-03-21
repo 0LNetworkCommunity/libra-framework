@@ -31,9 +31,14 @@ pub struct RestoreBundle {
 
 impl RestoreBundle {
     pub fn new(restore_bundle_dir: PathBuf) -> Self {
-        RestoreBundle {
+        Self {
             restore_bundle_dir,
-            ..Default::default()
+            epoch: 0,
+            version: 0,
+            waypoint: None,
+            epoch_manifest: PathBuf::new(),
+            snapshot_manifest: PathBuf::new(),
+            transaction_manifest: PathBuf::new(),
         }
     }
 
@@ -95,6 +100,7 @@ impl RestoreBundle {
     }
 
     pub fn set_version(&mut self) -> anyhow::Result<()> {
+        dbg!(&self.epoch_manifest);
         assert!(
             self.epoch_manifest.exists(),
             "this epoch manifest file does not exist"
