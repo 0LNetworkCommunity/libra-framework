@@ -31,8 +31,16 @@ impl TwinCli {
 
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
 
-        make_twin_swarm::make_twin_swarm(&mut smoke, Some(db_path), true).await?;
+        make_twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path), true).await?;
 
         Ok(())
     }
+}
+
+#[tokio::test]
+async fn test_twin_swarm() -> anyhow::Result<()> {
+    let mut smoke = LibraSmoke::new(Some(1), None).await?;
+
+    make_twin_swarm::awake_frankenswarm(&mut smoke, None, false).await?;
+    Ok(())
 }

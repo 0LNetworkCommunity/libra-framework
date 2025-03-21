@@ -7,7 +7,7 @@ use crate::twin_swarm::TwinSwarm;
 
 /// Apply the rescue blob to the swarm db
 /// returns the temp directory of the swarm
-pub async fn make_twin_swarm(
+pub async fn awake_frankenswarm(
     smoke: &mut LibraSmoke,
     reference_db: Option<PathBuf>,
     keep_running: bool,
