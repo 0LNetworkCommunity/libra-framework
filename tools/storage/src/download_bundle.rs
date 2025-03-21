@@ -38,12 +38,36 @@ fn find_closest_transaction_folder(
     transaction_folders: &[(u64, String)],
     target_version: u64
 ) -> Result<String> {
-    transaction_folders
+    // Find the highest version below target and lowest version above target
+    let version_below = transaction_folders
         .iter()
         .filter(|(version, _)| version <= &target_version)
-        .max_by_key(|(version, _)| version)
+        .max_by_key(|(version, _)| version);
+
+    let version_above = transaction_folders
+        .iter()
+        .filter(|(version, _)| version > &target_version)
+        .min_by_key(|(version, _)| version);
+
+    // Validate version ordering
+    if let (Some((ver_below, _)), Some((ver_above, _))) = (version_below, version_above) {
+        if ver_below >= ver_above {
+            bail!("Version ordering error: below ({}) >= above ({})", ver_below, ver_above);
+        }
+    }
+
+    println!("For target version {}, found candidates:", target_version);
+    if let Some((v, name)) = version_below {
+        println!("  Below target: {} ({})", name, v);
+    }
+    if let Some((v, name)) = version_above {
+        println!("  Above target: {} ({})", name, v);
+    }
+
+    // Choose the version below target
+    version_below
         .map(|(_, name)| name.clone())
-        .context("No suitable transaction folder found")
+        .context("No suitable transaction folder found below target version")
 }
 
 pub async fn find_closest_epoch_folder(
@@ -302,5 +326,42 @@ mod tests {
         // Test no matches
         assert!(find_closest_epoch_ending(&epoch_endings, 10).is_err());
         assert!(find_matching_state_epoch(&state_epochs, 10).is_err());
+    }
+
+    #[test]
+    fn test_transaction_folder_selection() {
+        let folders = vec![
+            (33100000, "transaction_33100000-.58b4".to_string()),
+            (33000000, "transaction_33000000-.58b4".to_string()),
+            (32900000, "transaction_32900000-.58b4".to_string()),
+        ];
+
+        // Should select 33000000 folder for version 33007311
+        assert_eq!(
+            find_closest_transaction_folder(&folders, 33007311).unwrap(),
+            "transaction_33000000-.58b4"
+        );
+    }
+
+    #[test]
+    fn test_transaction_folder_version_ordering() {
+        let folders = vec![
+            (33100000, "transaction_33100000-.58b4".to_string()),
+            (33000000, "transaction_33000000-.58b4".to_string()),
+            (32900000, "transaction_32900000-.58b4".to_string()),
+        ];
+
+        // Test normal case
+        assert_eq!(
+            find_closest_transaction_folder(&folders, 33007311).unwrap(),
+            "transaction_33000000-.58b4"
+        );
+
+        // Test error case with invalid ordering
+        let invalid_folders = vec![
+            (33000000, "transaction_33000000-.58b4".to_string()),
+            (33000000, "transaction_33000000-.58b4".to_string()),  // Duplicate version
+        ];
+        assert!(find_closest_transaction_folder(&invalid_folders, 33007311).is_err());
     }
 }

@@ -89,10 +89,9 @@ impl StorageCli {
                     .context("Failed to canonicalize destination path")?;
 
                 // Decompress all .gz files in the bundle directory
-                restore::decompress_gz_files(&bundle_path)
+                restore::maybe_decompress_gz_files(&bundle_path)
                     .await
                     .context("Failed to decompress gz files")?;
-                println!("Decompression completed, starting restore sequence");
 
                 let mut bundle = RestoreBundle::new(bundle_path);
 

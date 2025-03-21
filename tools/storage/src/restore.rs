@@ -1,19 +1,22 @@
 // Do a full restoration given a RestoreBundle with verified manifests
 
-use std::path::Path;
-use std::fs::{self, File};
+use anyhow::{Context, Result};
 use flate2::read::GzDecoder;
-use std::io::copy;
-use anyhow::{Result, Context};
 use glob::glob;
+use std::fs::{self, File};
+use std::io::copy;
+use std::path::Path;
 
 use crate::{
     dbtool_init::{run_restore, RestoreTypes},
     restore_bundle::RestoreBundle,
 };
 
-pub async fn decompress_gz_files(bundle_dir: &Path) -> Result<()> {
-    println!("Starting decompression in directory: {}", bundle_dir.display());
+pub async fn maybe_decompress_gz_files(bundle_dir: &Path) -> Result<()> {
+    println!(
+        "Starting decompression in directory: {}",
+        bundle_dir.display()
+    );
 
     // Find all .gz files in the bundle directory and subdirectories
     let gz_pattern = bundle_dir.join("**/*.gz");
@@ -42,6 +45,8 @@ pub async fn decompress_gz_files(bundle_dir: &Path) -> Result<()> {
 
     if !found_files {
         println!("No .gz files found in {}", bundle_dir.display());
+    } else {
+        println!("Decompression completed");
     }
 
     Ok(())
@@ -67,8 +72,8 @@ pub async fn full_restore(db_destination: &Path, bundle: &RestoreBundle) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
     use diem_temppath::TempPath;
+    use std::path::PathBuf;
 
     #[tokio::test]
     async fn test_full_restore() -> Result<()> {
@@ -94,20 +99,21 @@ mod tests {
         // Create a test .gz file
         let test_content = b"test content";
         let gz_path = test_dir.join("test.json.gz");
-        let mut encoder = flate2::write::GzEncoder::new(
-            File::create(&gz_path)?,
-            flate2::Compression::default()
-        );
+        let mut encoder =
+            flate2::write::GzEncoder::new(File::create(&gz_path)?, flate2::Compression::default());
         std::io::Write::write_all(&mut encoder, test_content)?;
         encoder.finish()?;
 
         // Decompress files
-        decompress_gz_files(&test_dir).await?;
+        maybe_decompress_gz_files(&test_dir).await?;
 
         // Verify decompression
         let decompressed = fs::read_to_string(test_dir.join("test.json"))?;
         assert_eq!(decompressed, "test content");
-        assert!(!gz_path.exists(), "gz file should be removed after decompression");
+        assert!(
+            !gz_path.exists(),
+            "gz file should be removed after decompression"
+        );
 
         // Cleanup
         fs::remove_file(test_dir.join("test.json"))?;

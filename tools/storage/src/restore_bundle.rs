@@ -153,9 +153,11 @@ impl RestoreBundle {
         ))?;
 
         for entry in file_list.flatten() {
-            if verify_valid_transaction_list(&entry, self.version).is_ok() {
-                self.transaction_manifest = entry;
-            }
+            // will abort if transaction folder does not have the
+            // txs
+            verify_valid_transaction_list(&entry, self.version)?;
+
+            self.transaction_manifest = entry;
         }
         Ok(())
     }
@@ -167,7 +169,8 @@ pub fn verify_valid_transaction_list(
 ) -> anyhow::Result<()> {
     let s = fs::read_to_string(transaction_manifest)?;
     let tm: TransactionBackup = serde_json::from_str(&s)?;
-
+    dbg!(&version);
+    dbg!(&tm.last_version);
     if tm.last_version < version {
         bail!("the transaction you are looking for is newer than the last version in this bundle. Get a newer transaction backup");
     };
@@ -175,7 +178,7 @@ pub fn verify_valid_transaction_list(
     if tm.first_version > version {
         bail!("the transaction you are looking for is older than the last version in this bundle. Get an older transaction backup.");
     }
-    info!("OK: transaction bundle should have this transaction");
+    println!("OK: transaction bundle should have this transaction");
     Ok(())
 }
 
