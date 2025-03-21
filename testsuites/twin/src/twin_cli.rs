@@ -1,15 +1,17 @@
 use clap::{self, Parser};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::{fs, path::PathBuf};
+
+use crate::make_twin_swarm;
 /// Twin of the network
 #[derive(Parser)]
 
 /// Set up a twin of the network, with a synced db
-pub struct Twin {
+pub struct TwinCli {
     /// path of snapshot db we want marlon to drive
     #[clap(long, short)]
     pub db_dir: PathBuf,
-    /// The operator.yaml file which contains registration information
+    /// the operator.yaml file which contains registration information
     #[clap(long, short)]
     pub oper_file: Option<PathBuf>,
     /// provide info about the DB state, e.g. version
@@ -20,7 +22,7 @@ pub struct Twin {
     #[clap(long, short)]
     pub count_vals: Option<u8>,
 }
-impl Twin {
+impl TwinCli {
     /// Runner for the twin
     pub async fn run(&self) -> anyhow::Result<(), anyhow::Error> {
         let db_path = fs::canonicalize(&self.db_dir)?;
@@ -28,11 +30,17 @@ impl Twin {
         let num_validators = self.count_vals.unwrap_or(1);
 
         let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
-        // save_cli_config_all(&mut smoke.swarm)?;
 
-        // thread::sleep(Duration::from_secs(60));
-        Twin::make_twin_swarm(&mut smoke, Some(db_path), true).await?;
+        make_twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path), true).await?;
 
         Ok(())
     }
+}
+
+#[tokio::test]
+async fn test_twin_swarm() -> anyhow::Result<()> {
+    let mut smoke = LibraSmoke::new(Some(1), None).await?;
+
+    make_twin_swarm::awake_frankenswarm(&mut smoke, None, false).await?;
+    Ok(())
 }

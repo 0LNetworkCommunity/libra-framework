@@ -163,19 +163,24 @@ pub fn session_add_validators(
     }
 
     // set the chain id (its is set to devnet by default)
-    dbg!("set_chain_id");
-    libra_execute_session_function(
-        session,
-        "0x1::chain_id::set_impl",
-        vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
-    )?;
+    // dbg!("set_chain_id");
+    // if let Some(id) = chain_id {
+    //   libra_execute_session_function(
+    //       session,
+    //       "0x1::chain_id::set_impl",
+    //       vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
+    //   )?;
+    // }
+
     // clean the validator universe
-    dbg!("clean_validator_universe");
-    libra_execute_session_function(
-        session,
-        "0x1::validator_universe::clean_validator_universe",
-        vec![&MoveValue::Signer(AccountAddress::ONE)],
-    )?;
+    // dbg!("clean_validator_universe");
+    // // if let Some()
+    // libra_execute_session_function(
+    //     session,
+    //     "0x1::validator_universe::clean_validator_universe",
+    //     vec![&MoveValue::Signer(AccountAddress::ONE)],
+    // )?;
+
     // reset the validators
     dbg!("bulk_set_next_validators");
     libra_execute_session_function(
