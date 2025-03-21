@@ -115,7 +115,7 @@ impl Twin {
     fn temp_backup_db(reference_db: &Path, temp_dir: &Path) -> anyhow::Result<PathBuf> {
         let options: dir::CopyOptions = dir::CopyOptions::new(); // Initialize default values for CopyOptions
         dir::copy(reference_db, temp_dir, &options).context("cannot copy to new db dir")?;
-        let db_path = temp_dir.join("db");
+        let db_path = temp_dir.join(reference_db.file_name().unwrap().to_str().unwrap());
         assert!(db_path.exists());
 
         Ok(db_path)
