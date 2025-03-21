@@ -1,7 +1,6 @@
 use anyhow::{bail, Context};
 use diem_config::config::{NodeConfig, WaypointConfig};
 use diem_forge::{LocalSwarm, SwarmExt, Validator};
-use diem_temppath::TempPath;
 use diem_types::{
     transaction::{Script, Transaction, WriteSetPayload},
     waypoint::Waypoint,
@@ -253,7 +252,7 @@ impl Twin {
         // If no DB is sent, we will use the swarm's initial DB,
         // this is useful for debugging the internals of Twin, since
         // we should expect no changes to validator set, credentials and state, only the rescue transaction.
-        let reference_db = reference_db.unwrap_or_else(|| {
+        let temp_db_path = reference_db.unwrap_or_else(|| {
             smoke
                 .swarm
                 .validators()
@@ -263,15 +262,6 @@ impl Twin {
                 .storage
                 .dir()
         });
-
-        // Do all writeset operations on a temp db.
-        let mut temp = TempPath::new();
-        temp.persist();
-        temp.create_as_dir()?;
-        let temp_path = temp.path();
-        assert!(temp_path.exists());
-        let temp_db_path = Self::temp_backup_db(&reference_db, temp_path)?;
-
         assert!(temp_db_path.exists());
 
         println!("2. Create a rescue blob from the reference db");
@@ -293,13 +283,6 @@ impl Twin {
 
         println!("6. wait for liveness");
         Self::restart_all(&mut smoke.swarm)?;
-
-        // TODO: check if this is doing what is expected
-        // was previously not running
-        // smoke
-        //     .swarm
-        //     .liveness_check(Instant::now().checked_add(Duration::from_secs(20)).unwrap())
-        //     .await?;
 
         smoke
             .swarm
