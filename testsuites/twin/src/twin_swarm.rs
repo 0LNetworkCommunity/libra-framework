@@ -15,8 +15,9 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
+use fs_extra::dir::CopyOptions;
 
-use crate::make_twin::{copy_dir_all, MakeTwin};
+use crate::make_twin::MakeTwin;
 /// Manages swarm operations for a twin network
 pub struct TwinSwarm;
 
@@ -32,19 +33,27 @@ pub async fn make_twin_swarm(
     // Collect credentials from all validators
     let creds = TwinSwarm::collect_validator_credentials(&smoke.swarm).await?;
 
+    println!("make a temporary db for calculating the rescue blob, using reference db at {:?}", &reference_db);
     // Prepare the temporary database environment
     let (temp_db_path, _, start_version) =
         TwinSwarm::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
 
+    println!("created temp db at: {}", temp_db_path.display());
+    println!("make a temporary db for calculating the rescue blob");
+
     // Create and apply rescue blob
     let (rescue_blob_path, wp) = MakeTwin::create_and_apply_rescue(&temp_db_path, creds).await?;
+    println!("created rescue blob at: {}", rescue_blob_path.display());
 
+    println!("updating swarm validators with new DB and config");
     // Update validators with the new DB and config
     TwinSwarm::update_nodes_with_rescue(&mut smoke.swarm, &temp_db_path, wp, rescue_blob_path)
         .await?;
 
+    println!("restarting validators and verifying operation");
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
+
 
     // Generate CLI config files for validators
     configure_validator::save_cli_config_all(&mut smoke.swarm)?;
@@ -82,10 +91,11 @@ impl TwinSwarm {
     }
 
     /// Replace DB for all validators in swarm
-    pub async fn replace_db_all(swarm: &mut LocalSwarm, src_db_path: &Path) -> Result<()> {
+    pub async fn replace_db_on_swarm_nodes(swarm: &mut LocalSwarm, src_db_path: &Path) -> Result<()> {
+        dbg!(&src_db_path);
         for n in swarm.validators_mut() {
             let dst_db_path = n.config().storage.dir();
-            copy_dir_all(src_db_path, &dst_db_path)?;
+            fs_extra::dir::copy(&src_db_path, &dst_db_path, &CopyOptions::new().content_only(true).overwrite(true))?;
         }
 
         Ok(())
@@ -186,14 +196,16 @@ impl TwinSwarm {
         let mut temp = TempPath::new();
         temp.persist();
         temp.create_as_dir()?;
+
+        dbg!(&temp);
         let temp_path = temp.path();
         assert!(temp_path.exists());
 
         // Create a copy of the reference DB
-        let temp_db_path = MakeTwin::temp_backup_db(&reference_db, temp_path)?;
-        assert!(temp_db_path.exists());
+        fs_extra::dir::copy(&reference_db, &temp_path, &CopyOptions::new().content_only(true))?;
+        assert!(temp_path.exists());
 
-        Ok((temp_db_path, reference_db, start_version))
+        Ok((temp_path.to_owned(), reference_db, start_version))
     }
 
     /// Update nodes with rescue configuration
@@ -204,7 +216,7 @@ impl TwinSwarm {
         rescue_blob_path: PathBuf,
     ) -> Result<()> {
         println!("Replacing swarm DB with the snapshot DB");
-        Self::replace_db_all(swarm, temp_db_path).await?;
+        Self::replace_db_on_swarm_nodes(swarm, temp_db_path).await?;
 
         println!("Updating waypoint in node configs and adding rescue blob");
         Self::update_waypoint(swarm, waypoint, rescue_blob_path).await?;

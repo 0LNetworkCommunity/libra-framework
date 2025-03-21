@@ -31,44 +31,45 @@ impl MakeTwin {
     //     Ok((temp_db_path, temp_path))
     // }
 
-    /// Create a temporary backup of the database
-    pub fn temp_backup_db(from_path: &Path, temp_dir: &Path) -> Result<PathBuf> {
-        let mut tempdir = TempPath::new();
-        tempdir.create_as_dir()?;
-        tempdir.persist();
+    // /// Create a temporary backup of the database
+    // pub fn temp_backup_db(from_path: &Path, temp_dir: &Path) -> Result<PathBuf> {
+    //     let mut tempdir = TempPath::new();
+    //     tempdir.create_as_dir()?;
+    //     tempdir.persist();
 
-        let to_path = temp_dir.join("db_temp");
+    //     let to_path = temp_dir.join("db_temp");
 
-        // Ensure the destination directory exists
-        fs::create_dir_all(&to_path)?;
+    //     // Ensure the destination directory exists
+    //     fs::create_dir_all(&to_path)?;
 
-        // Copy the database files
-        fs::copy(from_path.join("consensus_db"), to_path.join("consensus_db"))?;
+    //     // Copy the database files
+    //     fs::copy(from_path.join("consensus_db"), to_path.join("consensus_db"))?;
 
-        fs::copy(
-            from_path.join("secure_storage.json"),
-            to_path.join("secure_storage.json"),
-        )?;
+    //     fs::copy(
+    //         from_path.join("secure_storage.json"),
+    //         to_path.join("secure_storage.json"),
+    //     )?;
 
-        // Copy the ledger_db directory recursively
-        let from_ledger = from_path.join("ledger_db");
-        let to_ledger = to_path.join("ledger_db");
-        fs::create_dir_all(&to_ledger)?;
+    //     // Copy the ledger_db directory recursively
+    //     let from_ledger = from_path.join("ledger_db");
+    //     let to_ledger = to_path.join("ledger_db");
+    //     fs::create_dir_all(&to_ledger)?;
 
-        for entry in fs::read_dir(from_ledger)? {
-            let entry = entry?;
-            let path = entry.path();
-            let to = to_ledger.join(path.file_name().unwrap());
-            if path.is_dir() {
-                fs::create_dir_all(&to)?;
-                copy_dir_all(&path, &to)?;
-            } else {
-                fs::copy(&path, &to)?;
-            }
-        }
+    //     for entry in fs::read_dir(from_ledger)? {
+    //         let entry = entry?;
+    //         let path = entry.path();
+    //         let to = to_ledger.join(path.file_name().unwrap());
+    //         if path.is_dir() {
+    //             fs::create_dir_all(&to)?;
+    //             // Use fs_extra instead of custom function
+    //             fs_extra::dir::copy(&path, &to, &CopyOptions::new())?;
+    //         } else {
+    //             fs::copy(&path, &to)?;
+    //         }
+    //     }
 
-        Ok(to_path)
-    }
+    //     Ok(to_path)
+    // }
 
     // /// Create a rescue blob from credentials and a database
     // pub async fn make_rescue_twin_blob(
@@ -130,29 +131,4 @@ impl MakeTwin {
 
         Ok((rescue_blob_path, waypoint))
     }
-}
-
-// TODO replace with an fs:: function
-// Helper function to recursively copy directories
-pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
-    if !dst.exists() {
-        fs::create_dir_all(dst)?;
-    }
-
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let ty = entry.file_type()?;
-        let path = entry.path();
-
-        if ty.is_dir() {
-            let new_dst = dst.join(path.file_name().unwrap());
-            fs::create_dir_all(&new_dst)?;
-            copy_dir_all(&path, &new_dst)?;
-        } else if ty.is_file() {
-            let new_dst = dst.join(path.file_name().unwrap());
-            fs::copy(&path, &new_dst)?;
-        }
-    }
-
-    Ok(())
 }
