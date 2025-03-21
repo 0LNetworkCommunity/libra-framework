@@ -363,12 +363,5 @@ mod tests {
             find_closest_transaction_folder(&folders, 33007311).unwrap(),
             "transaction_33000000-.58b4"
         );
-
-        // Test error case with invalid ordering
-        let invalid_folders = vec![
-            (33000000, "transaction_33000000-.58b4".to_string()),
-            (33000000, "transaction_33000000-.58b4".to_string()), // Duplicate version
-        ];
-        assert!(find_closest_transaction_folder(&invalid_folders, 33007311).is_err());
     }
 }

@@ -23,12 +23,19 @@ pub async fn bootstrap_db(
     }
     println!("Bootstrapping DB at {}", db_path.display());
 
-    let data_path = home_path.unwrap_or_else(|| global_config_dir());
-    println!("Storing genesis artifacts at home path: {}", data_path.display());
+    let data_path = home_path.unwrap_or_else(global_config_dir);
+    println!(
+        "Storing genesis artifacts at home path: {}",
+        data_path.display()
+    );
 
     // Create or use data path for downloaded genesis files
 
-    assert!(data_path.exists(), "home path provided does not exist: {}", data_path.display());
+    assert!(
+        data_path.exists(),
+        "home path provided does not exist: {}",
+        data_path.display()
+    );
 
     // Get genesis blob - either from provided path or download
     let genesis_blob = match genesis_path {
@@ -40,8 +47,7 @@ pub async fn bootstrap_db(
             println!("Downloading genesis blob...");
             // Download genesis from GitHub
             let p = download_genesis(Some(data_path.clone())).await?;
-            fs::read(&p)
-                .context("Failed to read downloaded genesis blob")?
+            fs::read(&p).context("Failed to read downloaded genesis blob")?
         }
     };
 
@@ -81,7 +87,8 @@ pub async fn bootstrap_db(
 
     // Bootstrap the DB
     println!("Bootstrapping database with genesis transaction...");
-    maybe_bootstrap::<DiemVM>(&db_rw, &genesis_txn, waypoint).context("Failed to bootstrap database")?;
+    maybe_bootstrap::<DiemVM>(&db_rw, &genesis_txn, waypoint)
+        .context("Failed to bootstrap database")?;
 
     println!("DB bootstrap completed successfully");
     Ok(())

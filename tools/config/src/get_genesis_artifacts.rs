@@ -1,7 +1,7 @@
+use anyhow::Result;
 use diem_types::waypoint::Waypoint;
 use serde::Deserialize;
 use std::path::PathBuf;
-use anyhow::Result;
 
 pub const GENESIS_FILES_VERSION: &str = "7.0.0";
 
@@ -111,11 +111,7 @@ async fn persist_genesis() {
     );
 
     // Verify path is a directory
-    assert!(
-        Path::new(&path).is_dir(),
-        "Path is not a directory: {:?}",
-        path
-    );
+    assert!(path.is_dir(), "Path is not a directory: {:?}", path);
 
     // Attempt to download genesis
     download_genesis(Some(path.clone())).await.unwrap();

@@ -85,10 +85,10 @@ pub async fn epoch_restore(bundle_path: PathBuf, destination_db: PathBuf) -> Res
     fs::create_dir_all(&destination_db)?;
 
     // Canonicalize paths to avoid issues with relative paths
-    let bundle_path = fs::canonicalize(bundle_path)
-        .context("Failed to canonicalize bundle path")?;
-    let destination_db = fs::canonicalize(destination_db)
-        .context("Failed to canonicalize destination path")?;
+    let bundle_path =
+        fs::canonicalize(bundle_path).context("Failed to canonicalize bundle path")?;
+    let destination_db =
+        fs::canonicalize(destination_db).context("Failed to canonicalize destination path")?;
 
     // Decompress all .gz files in the bundle directory
     maybe_decompress_gz_files(&bundle_path)
