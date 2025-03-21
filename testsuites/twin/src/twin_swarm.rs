@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use diem_config::config::NodeConfig;
 use diem_forge::{LocalNode, LocalSwarm, SwarmExt};
 use diem_temppath::TempPath;
@@ -11,12 +11,14 @@ use libra_smoke_tests::{
 
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_config::config::WaypointConfig;
+use fs_extra::dir::{self, CopyOptions};
 use std::{
+    fs,
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
-use fs_extra::dir::CopyOptions;
 
+use diem_forge::Node;
 use crate::make_twin::MakeTwin;
 /// Manages swarm operations for a twin network
 pub struct TwinSwarm;
@@ -33,7 +35,10 @@ pub async fn make_twin_swarm(
     // Collect credentials from all validators
     let creds = TwinSwarm::collect_validator_credentials(&smoke.swarm).await?;
 
-    println!("make a temporary db for calculating the rescue blob, using reference db at {:?}", &reference_db);
+    println!(
+        "make a temporary db for calculating the rescue blob, using reference db at {:?}",
+        &reference_db
+    );
     // Prepare the temporary database environment
     let (temp_db_path, _, start_version) =
         TwinSwarm::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
@@ -53,7 +58,6 @@ pub async fn make_twin_swarm(
     println!("restarting validators and verifying operation");
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
-
 
     // Generate CLI config files for validators
     configure_validator::save_cli_config_all(&mut smoke.swarm)?;
@@ -91,11 +95,18 @@ impl TwinSwarm {
     }
 
     /// Replace DB for all validators in swarm
-    pub async fn replace_db_on_swarm_nodes(swarm: &mut LocalSwarm, src_db_path: &Path) -> Result<()> {
+    pub async fn replace_db_on_swarm_nodes(
+        swarm: &mut LocalSwarm,
+        src_db_path: &Path,
+    ) -> Result<()> {
         dbg!(&src_db_path);
         for n in swarm.validators_mut() {
             let dst_db_path = n.config().storage.dir();
-            fs_extra::dir::copy(&src_db_path, &dst_db_path, &CopyOptions::new().content_only(true).overwrite(true))?;
+            fs_extra::dir::copy(
+                &src_db_path,
+                &dst_db_path,
+                &CopyOptions::new().content_only(true).overwrite(true),
+            )?;
         }
 
         Ok(())
@@ -108,9 +119,62 @@ impl TwinSwarm {
         // validator.start()?;
         Ok(())
     }
+    /// Prepare the temporary database environment
+    pub async fn prepare_temp_database(
+        swarm: &mut LocalSwarm,
+        reference_db: Option<PathBuf>,
+    ) -> anyhow::Result<(PathBuf, PathBuf, u64)> {
+        // Get starting version for verification
+        let (start_version, _) = swarm
+            .get_client_with_newest_ledger_version()
+            .await
+            .expect("could not get a client");
 
+        // Stop all validators to prevent DB access conflicts
+        for n in swarm.validators_mut() {
+            n.stop();
+        }
+
+        // Use provided reference_db or first validator's DB
+        let reference_db = reference_db
+            .unwrap_or_else(|| swarm.validators().nth(0).unwrap().config().storage.dir());
+
+        // Create temp directory for DB operations
+        let mut temp = TempPath::new();
+        temp.persist();
+        temp.create_as_dir()?;
+        let temp_path = temp.path();
+        assert!(temp_path.exists());
+
+        // Create a copy of the reference DB
+        let temp_db_path = Self::temp_backup_db(&reference_db, temp_path)?;
+        assert!(temp_db_path.exists());
+
+        Ok((temp_db_path, reference_db, start_version))
+    }
+
+        fn temp_backup_db(reference_db: &Path, temp_dir: &Path) -> anyhow::Result<PathBuf> {
+        let options: dir::CopyOptions = dir::CopyOptions::new(); // Initialize default values for CopyOptions
+        dir::copy(reference_db, temp_dir, &options).context("cannot copy to new db dir")?;
+        let db_path = temp_dir.join(reference_db.file_name().unwrap().to_str().unwrap());
+        assert!(db_path.exists());
+
+        Ok(db_path)
+    }
+
+    pub async fn replace_db_all(swarm: &mut LocalSwarm, reference_db: &Path) -> anyhow::Result<()> {
+        for v in swarm.validators_mut() {
+            // stop and clear storage
+            v.stop();
+            v.clear_storage().await?;
+
+            // clone the DB
+            clone_db(reference_db, &v.config().storage.dir())?;
+        }
+        Ok(())
+    }
     /// Update waypoint in all validator configs
-    async fn update_waypoint(
+    pub async fn update_waypoint(
         swarm: &mut LocalSwarm,
         wp: Waypoint,
         rescue_blob: PathBuf,
@@ -172,41 +236,41 @@ impl TwinSwarm {
         Ok(())
     }
 
-    /// Prepare the temporary database environment
-    async fn prepare_temp_database(
-        swarm: &mut LocalSwarm,
-        reference_db: Option<PathBuf>,
-    ) -> anyhow::Result<(PathBuf, PathBuf, u64)> {
-        // Get starting version for verification
-        let (start_version, _) = swarm
-            .get_client_with_newest_ledger_version()
-            .await
-            .expect("could not get a client");
+    // /// Prepare the temporary database environment
+    // pub async fn prepare_temp_database(
+    //     swarm: &mut LocalSwarm,
+    //     reference_db: Option<PathBuf>,
+    // ) -> anyhow::Result<(PathBuf, PathBuf, u64)> {
+    //     // Get starting version for verification
+    //     let (start_version, _) = swarm
+    //         .get_client_with_newest_ledger_version()
+    //         .await
+    //         .expect("could not get a client");
 
-        // Stop all validators to prevent DB access conflicts
-        for n in swarm.validators_mut() {
-            n.stop();
-        }
+    //     // Stop all validators to prevent DB access conflicts
+    //     for n in swarm.validators_mut() {
+    //         n.stop();
+    //     }
 
-        // Use provided reference_db or first validator's DB
-        let reference_db = reference_db
-            .unwrap_or_else(|| swarm.validators().nth(0).unwrap().config().storage.dir());
+    //     // Use provided reference_db or first validator's DB
+    //     let reference_db = reference_db
+    //         .unwrap_or_else(|| swarm.validators().nth(0).unwrap().config().storage.dir());
 
-        // Create temp directory for DB operations
-        let mut temp = TempPath::new();
-        temp.persist();
-        temp.create_as_dir()?;
+    //     // Create temp directory for DB operations
+    //     let mut temp = TempPath::new();
+    //     temp.persist();
+    //     temp.create_as_dir()?;
 
-        dbg!(&temp);
-        let temp_path = temp.path();
-        assert!(temp_path.exists());
+    //     dbg!(&temp);
+    //     let temp_path = temp.path();
+    //     assert!(temp_path.exists());
 
-        // Create a copy of the reference DB
-        fs_extra::dir::copy(&reference_db, &temp_path, &CopyOptions::new().content_only(true))?;
-        assert!(temp_path.exists());
+    //     // Create a copy of the reference DB
+    //     fs_extra::dir::copy(&reference_db, &temp_path, &CopyOptions::new().content_only(true))?;
+    //     assert!(temp_path.exists());
 
-        Ok((temp_path.to_owned(), reference_db, start_version))
-    }
+    //     Ok((temp_path.to_owned(), reference_db, start_version))
+    // }
 
     /// Update nodes with rescue configuration
     pub async fn update_nodes_with_rescue(
@@ -235,4 +299,42 @@ impl TwinSwarm {
 
         Ok(())
     }
+}
+
+/// Clone the prod db to the swarm db
+fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()> {
+    println!("copying the db db to the swarm db");
+    println!("prod db path: {:?}", prod_db);
+    println!("swarm db path: {:?}", swarm_db);
+
+    // this swaps the directories
+    assert!(prod_db.exists());
+    assert!(swarm_db.exists());
+    let swarm_old_path = swarm_db.parent().unwrap().join("db-old");
+    match fs::create_dir(&swarm_old_path).context("cannot create db-old") {
+        Ok(_) => {}
+        Err(e) => {
+            println!(
+                "db-old path already exists at {:?}, {}",
+                &swarm_old_path,
+                &e.to_string()
+            );
+        }
+    };
+    let options = dir::CopyOptions::new(); // Initialize default values for CopyOptions
+
+    // move source/dir1 to target/dir1
+    dir::move_dir(swarm_db, &swarm_old_path, &options)?;
+    assert!(
+        !swarm_db.exists(),
+        "swarm db should have been moved/deleted"
+    );
+
+    fs::create_dir(swarm_db).context("cannot create new db dir")?;
+
+    dir::copy(prod_db, swarm_db.parent().unwrap(), &options)
+        .context("cannot copy to new db dir")?;
+
+    println!("db copied");
+    Ok(())
 }
