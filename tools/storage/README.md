@@ -7,14 +7,14 @@ To download and restore a snapshot:
 
 ```bash
 # Download a restore bundle for epoch 339
-cargo run -- download-bundle \
+cargo run -- download-restore-bundle \
   --epoch 339 \
-  --destination ./restore
+  --destination $HOME/.libra/restore
 
 # Restore the downloaded bundle
 cargo run -- epoch-restore \
-  --bundle-path ./restore/epoch_339_restore_bundle \
-  --destination-db ./db-test
+  --bundle-path $HOME/.libra/restore/epoch_339_restore_bundle \
+  --destination-db $HOME/.libra/db_339
 ```
 
 At the end of a successful run you should see:
@@ -109,3 +109,63 @@ Tool verified with epoch 339. Other epochs may have:
 - [ ] Enhanced manifest path updating
 - [ ] Support for varying epoch folder patterns
 - [ ] Clearer error messaging
+
+## Advanced Usage: Manual Restore
+
+For advanced users who need to restore individual components, you can restore each backup type separately.
+This requires understanding the relationships between epoch, state version, and transaction version.
+
+### Environment Setup
+```bash
+# Set paths for your restore
+BACKUP_DIR="path/to/restore/bundle"
+DB_PATH="$HOME/.libra/data/db"
+TARGET_VERSION=38180075
+
+# Manifest paths in the backup directory
+EPOCH_MANIFEST="$BACKUP_DIR/epoch_ending_116-.be9b/epoch_ending.manifest"
+STATE_MANIFEST="$BACKUP_DIR/state_epoch_116_ver_38180075.05af/state.manifest"
+TX_MANIFEST="$BACKUP_DIR/transaction_38100001-.541f/transaction.manifest"
+```
+
+### Individual Restore Commands
+
+#### 1. Restore Epoch Ending
+```bash
+libra ops storage db restore oneoff epoch-ending \
+  --epoch-ending-manifest "$EPOCH_MANIFEST" \
+  --target-db-dir "$DB_PATH" \
+  --local-fs-dir "$BACKUP_DIR" \
+  --target-version "$TARGET_VERSION"
+```
+
+#### 2. Restore State Snapshot
+```bash
+libra ops storage db restore oneoff state-snapshot \
+  --state-manifest "$STATE_MANIFEST" \
+  --target-db-dir "$DB_PATH" \
+  --local-fs-dir "$BACKUP_DIR" \
+  --restore-mode default \
+  --state-into-version "$TARGET_VERSION" \
+  --target-version "$TARGET_VERSION"
+```
+
+#### 3. Restore Transactions
+```bash
+libra ops storage db restore oneoff transaction \
+  --transaction-manifest "$TX_MANIFEST" \
+  --target-db-dir "$DB_PATH" \
+  --local-fs-dir "$BACKUP_DIR" \
+  --target-version "$TARGET_VERSION"
+```
+
+### Important Notes
+
+- The restore order matters: epoch ending → state snapshot → transactions
+- All components must be compatible (epoch and version numbers align)
+- The `--target-version` should match across all commands
+- The `--local-fs-dir` must contain all referenced files
+- Ensure DB_PATH has proper permissions
+
+> **Warning**: Manual restore requires careful attention to version numbers and file paths.
+> Consider using the automated `epoch-restore` command for most cases.

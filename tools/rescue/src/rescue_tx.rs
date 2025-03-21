@@ -45,7 +45,7 @@ impl RescueTxOpts {
         //    transaction from a .move source
 
         let gen_tx = if let Some(p) = &self.script_path {
-            // let payload = custom_script(p, None, Some(5));
+
             let (code, _hash) = libra_compile_script(p, false)?;
 
             let wp = WriteSetPayload::Script {
