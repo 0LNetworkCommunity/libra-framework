@@ -1,11 +1,11 @@
 // Do a full restoration given a RestoreBundle with verified manifests
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use flate2::read::GzDecoder;
 use glob::glob;
 use std::fs::{self, File};
 use std::io::copy;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::{
     dbtool_init::{run_restore, RestoreTypes},
@@ -65,6 +65,45 @@ pub async fn full_restore(db_destination: &Path, bundle: &RestoreBundle) -> Resu
     run_restore(RestoreTypes::Epoch, db_destination, bundle).await?;
     run_restore(RestoreTypes::Snapshot, db_destination, bundle).await?;
     run_restore(RestoreTypes::Transaction, db_destination, bundle).await?;
+
+    Ok(())
+}
+
+/// Perform a complete epoch restore from a bundle to a destination DB
+pub async fn epoch_restore(bundle_path: PathBuf, destination_db: PathBuf) -> Result<()> {
+    if !bundle_path.exists() {
+        bail!("Bundle directory not found: {}", &bundle_path.display());
+    }
+
+    if destination_db.exists() {
+        bail!(
+            "Destination directory already exists and may contain conflicting state: {}",
+            &destination_db.display()
+        );
+    }
+
+    fs::create_dir_all(&destination_db)?;
+
+    // Canonicalize paths to avoid issues with relative paths
+    let bundle_path = fs::canonicalize(bundle_path)
+        .context("Failed to canonicalize bundle path")?;
+    let destination_db = fs::canonicalize(destination_db)
+        .context("Failed to canonicalize destination path")?;
+
+    // Decompress all .gz files in the bundle directory
+    maybe_decompress_gz_files(&bundle_path)
+        .await
+        .context("Failed to decompress gz files")?;
+
+    let mut bundle = RestoreBundle::new(bundle_path);
+    bundle.load()?;
+
+    full_restore(&destination_db, &bundle).await?;
+
+    println!(
+        "SUCCESS: restored to epoch: {}, version: {}",
+        bundle.epoch, bundle.version
+    );
 
     Ok(())
 }

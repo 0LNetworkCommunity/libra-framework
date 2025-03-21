@@ -253,20 +253,19 @@ pub async fn download_restore_bundle(
     owner: &str,
     repo: &str,
     branch: &str,
-    epoch: &str,
+    epoch_num: &u64,
     destination: &Path,
 ) -> Result<()> {
     // Create the bundle-specific directory
-    let bundle_dir = destination.join(format!("epoch_{}_restore_bundle", epoch));
+    let bundle_dir = destination.join(format!("epoch_{}_restore_bundle", epoch_num));
     if !bundle_dir.exists() {
         println!("creating directory: {}", bundle_dir.display());
         fs::create_dir_all(&bundle_dir)?;
     }
 
     let client = reqwest::Client::new();
-    let epoch_num = u64::from_str(epoch).context("Failed to parse epoch number")?;
 
-    let folders = find_closest_epoch_folder(&client, owner, repo, branch, epoch_num).await?;
+    let folders = find_closest_epoch_folder(&client, owner, repo, branch, *epoch_num).await?;
 
     // Download all three folders
     for folder in [
@@ -286,8 +285,8 @@ pub async fn download_restore_bundle(
     }
 
     println!(
-        "Successfully downloaded restore bundle for epoch {} to {}",
-        epoch,
+        "Successfully downloaded restore bundle for epoch {} into {}",
+        epoch_num,
         bundle_dir.display()
     );
     Ok(())

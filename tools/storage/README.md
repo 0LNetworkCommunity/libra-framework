@@ -15,6 +15,7 @@ cargo run -- download-restore-bundle \
 cargo run -- epoch-restore \
   --bundle-path $HOME/.libra/restore/epoch_339_restore_bundle \
   --destination-db $HOME/.libra/db_339
+
 ```
 
 At the end of a successful run you should see:
