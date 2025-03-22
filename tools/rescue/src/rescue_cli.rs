@@ -21,6 +21,7 @@ pub struct RescueCli {
     #[clap(short, long)]
     /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
+
     #[clap(subcommand)]
     pub command: Sub,
 }
@@ -33,11 +34,18 @@ pub enum Sub {
         #[clap(long)]
         /// registers new validators not found on the db, and replaces the validator set. Must be in format of operator.yaml (use `libra config validator init``)
         operator_yaml: Vec<PathBuf>,
+        #[clap(short, long)]
+        /// optional, provide a path to .mrb release, if this write should publish new framework
+        upgrade_mrb: Option<PathBuf>,
     },
     /// Upgrades the framework in the reference DB
     UpgradeFramework {
+         #[clap(short, long)]
+        /// provide a path to .mrb release, if this write should publish new framework
+        upgrade_mrb: PathBuf,
+
         #[clap(short, long)]
-        /// also update the validators while here
+        /// optional, update validator set (must be previously registered on db)
         set_validators: Option<Vec<AccountAddress>>,
     },
     // Run a Move script from a file. Must use code from reference DB's framework.
@@ -54,15 +62,15 @@ impl RescueCli {
             Sub::Bootstrap(bootstrap) => {
                 bootstrap.run()?;
             }
-            Sub::RegisterVals { operator_yaml } => {
-                let tx = register_vals(&self.db_path, operator_yaml)?;
+            Sub::RegisterVals { operator_yaml, upgrade_mrb } => {
+                let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb)?;
 
                 let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
-            Sub::UpgradeFramework { set_validators } => {
-                let tx = upgrade_tx(&self.db_path, set_validators.clone())?;
+            Sub::UpgradeFramework { upgrade_mrb, set_validators } => {
+                let tx = upgrade_tx(&self.db_path, upgrade_mrb, set_validators.clone())?;
                 let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;

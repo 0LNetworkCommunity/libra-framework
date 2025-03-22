@@ -10,13 +10,13 @@ use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
 use libra_config::validator_registration::ValCredentials;
-use libra_framework::head_release_bundle;
+use libra_framework::{read_release_file, release::ReleaseTarget, testing_local_release_bundle};
 use move_core_types::{
     ident_str,
     language_storage::{StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
-use move_vm_runtime::session::SerializedReturnValues;
+use move_vm_runtime::session::{SerializedReturnValues, Session};
 use move_vm_types::gas::UnmeteredGasMeter;
 use std::path::{Path, PathBuf};
 
@@ -115,8 +115,11 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 // wrapper to publish the latest head framework release
-pub fn upgrade_to_head_release_framework(session: &mut SessionExt) -> anyhow::Result<()> {
-    let new_modules = head_release_bundle();
+pub fn upgrade_framework_from_mrb_file(
+    session: &mut SessionExt,
+    upgrade_mrb: &Path,
+) -> anyhow::Result<()> {
+    let new_modules = TargetRelease::load_bundle_from_file(upgrade_mrb);
 
     session.publish_module_bundle_relax_compatibility(
         new_modules.legacy_copy_code(),
@@ -154,33 +157,7 @@ pub fn libra_execute_session_function(
 pub fn session_add_validators(
     session: &mut SessionExt,
     creds: Vec<ValCredentials>,
-    upgrade: bool,
 ) -> anyhow::Result<()> {
-    // upgrade the framework
-    if upgrade {
-        dbg!("upgrade_framework");
-        upgrade_to_head_release_framework(session)?;
-    }
-
-    // set the chain id (its is set to devnet by default)
-    // dbg!("set_chain_id");
-    // if let Some(id) = chain_id {
-    //   libra_execute_session_function(
-    //       session,
-    //       "0x1::chain_id::set_impl",
-    //       vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
-    //   )?;
-    // }
-
-    // clean the validator universe
-    // dbg!("clean_validator_universe");
-    // // if let Some()
-    // libra_execute_session_function(
-    //     session,
-    //     "0x1::validator_universe::clean_validator_universe",
-    //     vec![&MoveValue::Signer(AccountAddress::ONE)],
-    // )?;
-
     // reset the validators
     dbg!("bulk_set_next_validators");
     libra_execute_session_function(
@@ -251,19 +228,8 @@ pub fn session_add_validators(
         "0x1::diem_governance::set_validators",
         vec![&signer, &validators],
     )?;
-    // RECONFIGURE
 
-    // dbg!("on new epoch");
-    // libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
-    // let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-    // dbg!("emit_writeset_block_event");
-    // libra_execute_session_function(
-    //     session,
-    //     "0x1::block::emit_writeset_block_event",
-    //     vec![&vm_signer, &MoveValue::Address(CORE_CODE_ADDRESS)],
-    // )?;
-    // dbg!("reconfigure");
-    // libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+    dbg!("end session");
     Ok(())
 }
 
@@ -278,111 +244,40 @@ pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
 pub fn upgrade_framework_head_build(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
+    upgrade_mrb: &Path,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir.to_path_buf(), upgrade_and_emit_events, debug_vals, None)?;
-    unpack_changeset(vmc)
-}
-
-fn upgrade_and_emit_events(session: &mut SessionExt) -> anyhow::Result<()> {
-    upgrade_to_head_release_framework(session)?;
-    writeset_voodoo_events(session)?;
-    Ok(())
-}
-
-/// Twin testnet registration, replace validator set with new registrations
-pub fn twin_testnet(dir: &Path, testnet_vals: Vec<ValCredentials>) -> anyhow::Result<ChangeSet> {
     let vmc = libra_run_session(
         dir.to_path_buf(),
-        |session| {
-            // if we are doing a twin testnet we don't want to upgrade the chain
-            session_add_validators(session, testnet_vals, false)
+        |session: &mut SessionExt| {
+            upgrade_framework_from_mrb_file(session, upgrade_mrb)
+                .expect("should publish framework");
+            writeset_voodoo_events(session).expect("should voodoo, who do?");
+            Ok(())
         },
-        None,
+        debug_vals,
         None,
     )?;
     unpack_changeset(vmc)
 }
 
-#[ignore]
-#[test]
-// test we can publish a db to a fixture
-fn test_publish() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+/// Twin testnet registration, replace validator set with new registrations
+pub fn register_and_replace_validators(
+    dir: &Path,
+    replacement_vals: Vec<ValCredentials>,
+    upgrade_mrb: Option<PathBuf>,
+) -> anyhow::Result<ChangeSet> {
+    let vmc = libra_run_session(
+        dir.to_path_buf(),
+        |session| {
+            if let Some(p) = upgrade_mrb {
+                upgrade_framework_head_build(session, None, &p).expect("could not upgrade framework");
+            }
 
-    upgrade_framework_head_build(dir, None).unwrap();
-}
-
-// TODO: ability to mutate some state without calling a function
-fn _update_resource_in_session(session: &mut SessionExt) {
-    let s = StructTag {
-        address: CORE_CODE_ADDRESS,
-        module: ident_str!("chain_id").into(),
-        name: ident_str!("ChainId").into(),
-        type_params: vec![],
-    };
-    let this_type = session.load_type(&s.clone().into()).unwrap();
-    let _layout = session.get_type_layout(&s.into()).unwrap();
-    let (resource, _) = session
-        .load_resource(CORE_CODE_ADDRESS, &this_type)
-        .unwrap();
-    let _a = resource.move_from().unwrap();
-}
-
-#[ignore]
-#[test]
-// the writeset voodoo needs to be perfect
-fn test_voodoo() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir.to_path_buf(), writeset_voodoo_events, None, None).unwrap();
-}
-
-#[ignore]
-#[test]
-// helper to see if an upgraded function is found in the DB
-fn test_base() {
-    fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
-        libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
-        Ok(())
-    }
-
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-
-    libra_run_session(dir.to_path_buf(), check_base, None, None).unwrap();
-}
-
-#[ignore]
-#[test]
-// testing we can open a database from fixtures, and produce a VM session
-fn meta_test_open_db_sync() -> anyhow::Result<()> {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    let db = DiemDB::open(
-        dir,
-        true,
-        NO_OP_STORAGE_PRUNER_CONFIG, /* pruner */
-        RocksdbConfigs::default(),
-        false, /* indexer */
-        BUFFERED_STATE_TARGET_ITEMS,
-        DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-    )
-    .expect("Failed to open DB.");
-
-    let db_rw = DbReaderWriter::new(db);
-
-    let v = db_rw.reader.get_latest_version().unwrap();
-
-    let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
-
-    let dvm = diem_vm::DiemVM::new(&view);
-    let adapter = dvm.as_move_resolver(&view);
-
-    let _s_id = SessionId::Txn {
-        sender: CORE_CODE_ADDRESS,
-        sequence_number: 0,
-        script_hash: b"none".to_vec(),
-    };
-    let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
-
-    let mvm = dvm.internals().move_vm();
-    let _session = mvm.new_session(&adapter, s_id, false);
-    Ok(())
+            session_add_validators(session, replacement_vals).expect("could not register validators");
+            Ok(())
+        },
+        None, // uses the validators registered above
+        None,
+    )?;
+    unpack_changeset(vmc)
 }
