@@ -269,7 +269,7 @@ pub fn register_and_replace_validators_changeset(
         dir.to_path_buf(),
         |session| {
             if let Some(p) = upgrade_mrb {
-                upgrade_framework_from_mrb_file(session, &p).expect("could not upgrade framework");
+                upgrade_framework_from_mrb_file(session, p).expect("could not upgrade framework");
             }
 
             session_add_validators(session, replacement_vals)
