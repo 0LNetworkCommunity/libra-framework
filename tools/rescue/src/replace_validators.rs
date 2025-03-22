@@ -10,11 +10,12 @@ use crate::session_tools::{self, libra_run_session, session_add_validators};
 pub async fn replace_validators_blob(
     db_path: &Path,
     creds: Vec<ValCredentials>,
+    upgrade_framework: bool,
 ) -> anyhow::Result<PathBuf> {
     println!("run session to create validator onboarding tx (replace_validators_rescue.blob)");
     let vmc = libra_run_session(
         db_path.to_path_buf(),
-        |session| session_add_validators(session, creds, false),
+        |session| session_add_validators(session, creds, upgrade_framework),
         None,
         None,
     )?;

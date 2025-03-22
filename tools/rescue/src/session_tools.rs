@@ -252,17 +252,19 @@ pub fn session_add_validators(
         vec![&signer, &validators],
     )?;
     // RECONFIGURE
-    dbg!("on new epoch");
-    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
-    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-    dbg!("emit_writeset_block_event");
-    libra_execute_session_function(
-        session,
-        "0x1::block::emit_writeset_block_event",
-        vec![&vm_signer, &MoveValue::Address(CORE_CODE_ADDRESS)],
-    )?;
-    dbg!("reconfigure");
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+    writeset_voodoo_events(session)?;
+
+    // dbg!("on new epoch");
+    // libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
+    // let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+    // dbg!("emit_writeset_block_event");
+    // libra_execute_session_function(
+    //     session,
+    //     "0x1::block::emit_writeset_block_event",
+    //     vec![&vm_signer, &MoveValue::Address(CORE_CODE_ADDRESS)],
+    // )?;
+    // dbg!("reconfigure");
+    // libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
     Ok(())
 }
 
