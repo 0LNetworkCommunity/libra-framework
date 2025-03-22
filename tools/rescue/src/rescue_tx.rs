@@ -65,7 +65,11 @@ pub fn upgrade_tx(
     Ok(Transaction::GenesisTransaction(WriteSetPayload::Direct(cs)))
 }
 
-pub fn register_vals(db_path: &Path, reg_files: &[PathBuf], upgrade_mrb: &Option<PathBuf>) -> Result<Transaction> {
+pub fn register_vals(
+    db_path: &Path,
+    reg_files: &[PathBuf],
+    upgrade_mrb: &Option<PathBuf>,
+) -> Result<Transaction> {
     // TODO: replace ValCredentials with OperatorConfiguration
     let registrations: Vec<ValCredentials> = reg_files
         .iter()
@@ -75,7 +79,11 @@ pub fn register_vals(db_path: &Path, reg_files: &[PathBuf], upgrade_mrb: &Option
         })
         .collect();
 
-    let cs = session_tools::register_and_replace_validators_changeset(db_path, registrations, upgrade_mrb)?;
+    let cs = session_tools::register_and_replace_validators_changeset(
+        db_path,
+        registrations,
+        upgrade_mrb,
+    )?;
     Ok(Transaction::GenesisTransaction(WriteSetPayload::Direct(cs)))
 }
 

@@ -29,7 +29,9 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
         db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         command: Sub::UpgradeFramework {
-            upgrade_mrb: ReleaseTarget::Head.find_bundle_path().expect("cannot find head.mrb"),
+            upgrade_mrb: ReleaseTarget::Head
+                .find_bundle_path()
+                .expect("cannot find head.mrb"),
             set_validators: None,
         },
     };

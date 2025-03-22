@@ -15,7 +15,7 @@ use move_core_types::{
     language_storage::{StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
-use move_vm_runtime::session::{SerializedReturnValues};
+use move_vm_runtime::session::SerializedReturnValues;
 use move_vm_types::gas::UnmeteredGasMeter;
 use std::path::{Path, PathBuf};
 
@@ -112,7 +112,6 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
 
     Ok(())
 }
-
 
 // wrapper to exectute a function
 // call anythign you want, except #[test] functions
@@ -270,10 +269,11 @@ pub fn register_and_replace_validators_changeset(
         dir.to_path_buf(),
         |session| {
             if let Some(p) = upgrade_mrb {
-                upgrade_framework_from_mrb_file(session,  &p).expect("could not upgrade framework");
+                upgrade_framework_from_mrb_file(session, &p).expect("could not upgrade framework");
             }
 
-            session_add_validators(session, replacement_vals).expect("could not register validators");
+            session_add_validators(session, replacement_vals)
+                .expect("could not register validators");
             Ok(())
         },
         None, // uses the validators registered above

@@ -40,7 +40,7 @@ pub enum Sub {
     },
     /// Upgrades the framework in the reference DB
     UpgradeFramework {
-         #[clap(short, long)]
+        #[clap(short, long)]
         /// provide a path to .mrb release, if this write should publish new framework
         upgrade_mrb: PathBuf,
 
@@ -62,14 +62,20 @@ impl RescueCli {
             Sub::Bootstrap(bootstrap) => {
                 bootstrap.run()?;
             }
-            Sub::RegisterVals { operator_yaml, upgrade_mrb } => {
+            Sub::RegisterVals {
+                operator_yaml,
+                upgrade_mrb,
+            } => {
                 let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb)?;
 
                 let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
-            Sub::UpgradeFramework { upgrade_mrb, set_validators } => {
+            Sub::UpgradeFramework {
+                upgrade_mrb,
+                set_validators,
+            } => {
                 let tx = upgrade_tx(&self.db_path, upgrade_mrb, set_validators.clone())?;
                 let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
                 let p = save_rescue_blob(tx, &out_dir)?;
