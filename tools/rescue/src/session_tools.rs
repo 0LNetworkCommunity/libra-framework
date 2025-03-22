@@ -115,7 +115,7 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 // wrapper to publish the latest head framework release
-pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
+pub fn upgrade_to_head_release_framework(session: &mut SessionExt) -> anyhow::Result<()> {
     let new_modules = head_release_bundle();
 
     session.publish_module_bundle_relax_compatibility(
@@ -159,7 +159,7 @@ pub fn session_add_validators(
     // upgrade the framework
     if upgrade {
         dbg!("upgrade_framework");
-        upgrade_framework(session)?;
+        upgrade_to_head_release_framework(session)?;
     }
 
     // set the chain id (its is set to devnet by default)
@@ -252,7 +252,6 @@ pub fn session_add_validators(
         vec![&signer, &validators],
     )?;
     // RECONFIGURE
-    writeset_voodoo_events(session)?;
 
     // dbg!("on new epoch");
     // libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
@@ -276,16 +275,16 @@ pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
 }
 
 /// Publishes the current framework to the database.
-pub fn publish_current_framework(
+pub fn upgrade_framework_head_build(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir.to_path_buf(), combined_steps, debug_vals, None)?;
+    let vmc = libra_run_session(dir.to_path_buf(), upgrade_and_emit_events, debug_vals, None)?;
     unpack_changeset(vmc)
 }
 
-fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
-    upgrade_framework(session)?;
+fn upgrade_and_emit_events(session: &mut SessionExt) -> anyhow::Result<()> {
+    upgrade_to_head_release_framework(session)?;
     writeset_voodoo_events(session)?;
     Ok(())
 }
@@ -310,7 +309,7 @@ pub fn twin_testnet(dir: &Path, testnet_vals: Vec<ValCredentials>) -> anyhow::Re
 fn test_publish() {
     let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
 
-    publish_current_framework(dir, None).unwrap();
+    upgrade_framework_head_build(dir, None).unwrap();
 }
 
 // TODO: ability to mutate some state without calling a function

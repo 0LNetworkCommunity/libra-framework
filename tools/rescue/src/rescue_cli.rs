@@ -27,12 +27,11 @@ pub struct RescueCli {
 
 #[derive(Subcommand)]
 pub enum Sub {
-    // RescueTx(RescueTxOpts),
+    Bootstrap(BootstrapOpts),
     /// Registers new validators, and replaces the validator set.
     RegisterVals {
         #[clap(long)]
-        /// registers new validators not found on the db, and replaces the validator set.
-        /// Must be in format of operator.yaml (use `libra config validator init``)
+        /// registers new validators not found on the db, and replaces the validator set. Must be in format of operator.yaml (use `libra config validator init``)
         operator_yaml: Vec<PathBuf>,
     },
     /// Upgrades the framework in the reference DB
@@ -41,30 +40,17 @@ pub enum Sub {
         /// also update the validators while here
         set_validators: Option<Vec<AccountAddress>>,
     },
+    // Run a Move script from a file. Must use code from reference DB's framework.
     RunScript {
         #[clap(short, long)]
         /// directory to read/write or the rescue.blob
         script_path: Option<PathBuf>,
     },
-    Bootstrap(BootstrapOpts),
 }
 
 impl RescueCli {
     pub fn run(&self) -> anyhow::Result<()> {
         match &self.command {
-            // Sub::RescueTx(mission) => {
-            //     let blob_path = mission.run()?;
-
-            //     // confirm the blob is correct
-            //     let b = BootstrapOpts {
-            //         db_dir: mission.db_path.clone(),
-            //         genesis_txn_file: blob_path,
-            //         waypoint_to_verify: None,
-            //         commit: false,
-            //         info: false,
-            //     };
-            //     let _ = b.run()?;
-            // }
             Sub::Bootstrap(bootstrap) => {
                 bootstrap.run()?;
             }

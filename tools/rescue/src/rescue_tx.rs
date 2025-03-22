@@ -60,12 +60,12 @@ pub fn upgrade_tx(
     db_path: &Path,
     validator_set: Option<Vec<AccountAddress>>,
 ) -> Result<Transaction> {
-    let cs = session_tools::publish_current_framework(db_path, validator_set)?;
+    let cs = session_tools::upgrade_framework_head_build(db_path, validator_set)?;
     Ok(Transaction::GenesisTransaction(WriteSetPayload::Direct(cs)))
 }
 
 pub fn register_vals(db_path: &Path, reg_files: &[PathBuf]) -> Result<Transaction> {
-    // todo: replace ValCredentials with OperatorConfiguration
+    // TODO: replace ValCredentials with OperatorConfiguration
     let registrations: Vec<ValCredentials> = reg_files
         .iter()
         .map(|el| {
