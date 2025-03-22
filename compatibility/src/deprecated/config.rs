@@ -158,13 +158,14 @@ impl AppCfg {
         };
 
         if source_path.is_some() {
-            default_config.workspace.source_path = source_path.clone();
-            default_config.workspace.stdlib_bin_path = Some(
-                source_path
-                    .as_ref()
-                    .unwrap()
-                    .join("language/diem-framework/staged/stdlib.mv"),
-            );
+          todo!("source_path is not implemented, using deprecated paths");
+            // default_config.workspace.source_path = source_path.clone();
+            // default_config.workspace.stdlib_bin_path = Some(
+            //     source_path
+            //         .as_ref()
+            //         .unwrap()
+            //         .join("language/diem-framework/staged/stdlib.mv"),
+            // );
         }
 
         // override from args

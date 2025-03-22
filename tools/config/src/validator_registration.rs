@@ -1,6 +1,7 @@
 use anyhow::{self, Context};
 use diem_genesis::config::OperatorConfiguration;
 use diem_types::account_address::AccountAddress;
+
 use libra_types::global_config_dir;
 use libra_wallet::validator_files::OPERATOR_FILE;
 use serde::{Deserialize, Serialize};
@@ -13,6 +14,7 @@ use std::{
 /// creating this depends on access to private keys.
 ///
 // TODO: this matches the  libra framework sdk ValidatorUniverseRegisterValidator, there may be other duplications elsewhere.
+// Duplicate: All information in ValCredentials also exists in OperatorConfiguration operator.yaml
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ValCredentials {
@@ -29,7 +31,7 @@ pub struct ValCredentials {
 
 /// given the operators private keys file at operator.yaml (usually)
 /// create the data structure needed for a registration transaction
-pub fn registration_from_private_file(
+pub fn registration_from_operator_yaml(
     operator_keyfile: Option<PathBuf>,
 ) -> anyhow::Result<ValCredentials> {
     let file = operator_keyfile.to_owned().unwrap_or_else(|| {
