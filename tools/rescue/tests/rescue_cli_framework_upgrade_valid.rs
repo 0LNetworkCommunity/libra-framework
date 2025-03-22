@@ -1,4 +1,7 @@
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_rescue::{
+    diem_db_bootstrapper::BootstrapOpts,
+    rescue_cli::{RescueCli, Sub},
+};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 #[tokio::test]
@@ -21,14 +24,21 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let r = RescueTxOpts {
+    let r = RescueCli {
         db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: None,
-        framework_upgrade: true,
-        validator_set: None,
-        register_vals: None,
+        command: Sub::UpgradeFramework {
+            set_validators: None,
+        },
     };
+    // let r = RescueTxOpts {
+    //     db_path: val_db_path.clone(),
+    //     blob_path: Some(blob_path.path().to_owned()),
+    //     script_path: None,
+    //     framework_upgrade: true,
+    //     validator_set: None,
+    //     register_vals: None,
+    // };
     r.run()?;
 
     let file = blob_path.path().join("rescue.blob");
