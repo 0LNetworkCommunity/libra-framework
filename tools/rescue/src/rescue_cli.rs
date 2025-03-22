@@ -26,8 +26,9 @@ impl RescueCli {
             Some(Sub::RescueTx(mission)) => {
                 let blob_path = mission.run()?;
 
+                // confirm the blob is correct
                 let b = BootstrapOpts {
-                    db_dir: mission.data_path.clone(),
+                    db_dir: mission.db_path.clone(),
                     genesis_txn_file: blob_path,
                     waypoint_to_verify: None,
                     commit: false,

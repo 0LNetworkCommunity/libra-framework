@@ -4,17 +4,18 @@ use diem_types::{
     account_address::AccountAddress,
     transaction::{Script, Transaction, WriteSetPayload},
 };
-use libra_config::validator_registration::parse_pub_files_to_vec;
+use libra_config::validator_registration::{registration_from_operator_yaml, ValCredentials,
+};
 use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile_script;
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-/// Start a libra node
+/// Create writeset binary files to apply to a db
 pub struct RescueTxOpts {
     #[clap(short, long)]
-    /// directory enclosing the `/db` folder of the node
-    pub data_path: PathBuf,
+    /// path to the reference db, often $HOME/.libra/data/db
+    pub db_path: PathBuf,
     #[clap(short, long)]
     /// directory to read/write or the rescue.blob. Will default to db_path/rescue.blob
     pub blob_path: Option<PathBuf>,
@@ -24,26 +25,27 @@ pub struct RescueTxOpts {
     #[clap(long)]
     /// directory to read/write or the rescue.blob
     pub framework_upgrade: bool,
-    #[clap(long)]
+    #[clap(short, long)]
     /// Replace validator set with these addresses. They must
     /// already have valid configurations on chain.
-    pub debug_vals: Option<Vec<AccountAddress>>,
-    // TODO
-    /// testnet twin options
-    /// replaces the validator set with these new validators that need to be registered
-    /// must be in format of testnet_vals.yaml
-    pub testnet_vals: Option<Vec<PathBuf>>,
+    pub validator_set: Option<Vec<AccountAddress>>,
+
+    #[clap(long)]
+    /// registers new validators not found on the db, and replaces the validator set.
+    /// Must be in format of operator.yaml (use `libra config validator init``)
+    pub register_vals: Option<Vec<PathBuf>>,
 }
 
 impl RescueTxOpts {
     pub fn run(&self) -> anyhow::Result<PathBuf> {
-        let db_path = self.data_path.clone();
+        let db_path = self.db_path.clone();
 
-        // There are two options:
-        // 1. upgrade the framework because the source in db is a brick.
-        // 2. the framework in DB is usable, and we need to execute an admin
-        //    transaction from a .move source
+        // There are three options:
+        // 1. Twin: replace the validator set from config files
+        // 2. Upgrade only: upgrade the framework (maybe the source in reference db is a brick, and can't do the scripts you want).
+        // 3. Run script: the framework in DB is usable, and we need to execute an admin transaction from a .move source
 
+        // Run a script (Case 3)
         let gen_tx = if let Some(p) = &self.script_path {
             let (code, _hash) = libra_compile_script(p, false)?;
 
@@ -53,12 +55,24 @@ impl RescueTxOpts {
             };
 
             Transaction::GenesisTransaction(wp)
-        } else if self.framework_upgrade {
+        }
+        // Flash the framework (Case 2)
+        else if self.framework_upgrade {
             let cs =
-                session_tools::publish_current_framework(&db_path, self.debug_vals.to_owned())?;
+                session_tools::publish_current_framework(&db_path, self.validator_set.to_owned())?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
-        } else if let Some(reg_files) = self.testnet_vals.to_owned() {
-            let registrations = parse_pub_files_to_vec(reg_files);
+        }
+        // Twin Setup (Case 1)
+        else if let Some(reg_files) = self.register_vals.to_owned() {
+            // todo: replace ValCredentials with OperatorConfiguration
+            let registrations: Vec<ValCredentials> = reg_files
+                .iter()
+                .map(|el| {
+                    registration_from_operator_yaml(Some(el.to_path_buf()))
+                        .expect("could parse operator.yaml")
+                })
+                .collect();
+
             let cs = session_tools::twin_testnet(&db_path, registrations)?;
             Transaction::GenesisTransaction(WriteSetPayload::Direct(cs))
         } else {
@@ -94,12 +108,12 @@ fn test_create_blob() -> anyhow::Result<()> {
     blob_path.create_as_dir()?;
 
     let r = RescueTxOpts {
-        data_path: db_root_path.path().to_owned(),
+        db_path: db_root_path.path().to_owned(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        validator_set: None,
+        register_vals: None,
     };
     r.run()?;
 

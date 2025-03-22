@@ -36,12 +36,12 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     println!("2. compile the script");
 
     let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        validator_set: None,
+        register_vals: None,
     };
     r.run()?;
 
@@ -111,12 +111,12 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
     println!("2. compile the script");
 
     let r = RescueTxOpts {
-        data_path: val_db_path,
+        db_path: val_db_path,
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        validator_set: None,
+        register_vals: None,
     };
     r.run()?;
 
@@ -159,12 +159,12 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
     println!("2. compile the script");
 
     let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
         script_path: Some(script_path),
         framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        validator_set: None,
+        register_vals: None,
     };
     r.run()?;
 
