@@ -1,79 +1,105 @@
+use diem_storage_interface::state_view::DbStateViewAtVersion;
+use diem_storage_interface::DbReaderWriter;
+use diem_temppath::TempPath;
+use diem_vm::move_vm_ext::SessionId;
+use flate2::read::GzDecoder;
+use libra_framework::release::ReleaseTarget;
+use std::fs;
 use std::path::Path;
+use tar::Archive;
 
 // Database related imports
+use diem_config::config::{
+    RocksdbConfigs, BUFFERED_STATE_TARGET_ITEMS, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
+    NO_OP_STORAGE_PRUNER_CONFIG,
+};
 use diem_db::DiemDB;
-use storage_interface::{DbReaderWriter, DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD, BUFFERED_STATE_TARGET_ITEMS};
-use diem_config::config::{NO_OP_STORAGE_PRUNER_CONFIG, RocksdbConfigs};
 
 // VM related imports
-use move_core_types::identifier::ident_str;
-use move_core_types::language_storage::{StructTag, CORE_CODE_ADDRESS};
-
-// Session related imports
-use diem_types::transaction::SessionId;
-use diem_crypto::HashValue;
+use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
 // Project-specific imports
-use crate::session_tools::{
-    SessionExt,
-    libra_execute_session_function,
-    libra_run_session,
-    writeset_voodoo_events,
+use libra_rescue::session_tools::{
+    libra_run_session, upgrade_framework_changeset, writeset_voodoo_events,
 };
-use crate::release::{ReleaseTarget, upgrade_framework_head_build};
 
-#[ignore]
-#[test]
-// test we can publish a db to a fixture
-fn test_publish() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    let upgrade_mrb = ReleaseTarget::Head.find_bundle_path().expect("cannot find head.mrb");
-    upgrade_framework_head_build(dir, None, &upgrade_mrb).unwrap();
+/// Sets up a test database by extracting a fixture file to a temporary directory.
+///
+/// This function extracts the database fixture from `./rescue/fixtures/db_339.tar.gz`,
+/// which contains a recovered database at epoch 339. The extracted database is placed
+/// in a temporary directory that will be automatically cleaned up when the TempPath
+/// is dropped (unless persist() is called).
+///
+/// Returns the TempPath containing the extracted database.
+fn setup_test_db() -> anyhow::Result<TempPath> {
+    let temp_dir = TempPath::new();
+    temp_dir.create_as_dir()?;
+
+    // Open and decompress the fixture file
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let fixture_path = Path::new(manifest_dir).join("rescue/fixtures/db_339.tar.gz");
+    let tar_gz = fs::File::open(fixture_path)?;
+    let decompressor = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(decompressor);
+
+    // Extract to temp directory
+    archive.unpack(temp_dir.path())?;
+
+    Ok(temp_dir)
 }
 
-// TODO: ability to mutate some state without calling a function
-fn _update_resource_in_session(session: &mut SessionExt) {
-    let s = StructTag {
-        address: CORE_CODE_ADDRESS,
-        module: ident_str!("chain_id").into(),
-        name: ident_str!("ChainId").into(),
-        type_params: vec![],
-    };
-    let this_type = session.load_type(&s.clone().into()).unwrap();
-    let _layout = session.get_type_layout(&s.into()).unwrap();
-    let (resource, _) = session
-        .load_resource(CORE_CODE_ADDRESS, &this_type)
-        .unwrap();
-    let _a = resource.move_from().unwrap();
-}
-
-#[ignore]
 #[test]
-// the writeset voodoo needs to be perfect
-fn test_voodoo() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir.to_path_buf(), writeset_voodoo_events, None, None).unwrap();
-}
-
-#[ignore]
-#[test]
-// helper to see if an upgraded function is found in the DB
-fn test_base() {
-    fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
-        libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
-        Ok(())
-    }
-
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-
-    libra_run_session(dir.to_path_buf(), check_base, None, None).unwrap();
+/// Test we can publish a framework to a database fixture
+///
+/// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
+fn test_publish() -> anyhow::Result<()> {
+    let temp_dir = setup_test_db()?;
+    let dir = temp_dir.path();
+    let upgrade_mrb = ReleaseTarget::Head
+        .find_bundle_path()
+        .expect("cannot find head.mrb");
+    upgrade_framework_changeset(dir, None, &upgrade_mrb)?;
+    Ok(())
 }
 
 #[ignore]
 #[test]
-// testing we can open a database from fixtures, and produce a VM session
+/// The writeset voodoo needs to be perfect
+///
+/// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
+fn test_voodoo() -> anyhow::Result<()> {
+    let temp_dir = setup_test_db()?;
+    let dir = temp_dir.path();
+    libra_run_session(dir.to_path_buf(), writeset_voodoo_events, None, None)?;
+    Ok(())
+}
+
+// #[ignore]
+// #[test]
+// /// Helper to see if an upgraded function is found in the DB
+// ///
+// /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
+// fn test_base() -> anyhow::Result<()> {
+//     fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
+//         libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
+//         Ok(())
+//     }
+
+//     let temp_dir = setup_test_db()?;
+//     let dir = temp_dir.path();
+
+//     libra_run_session(dir.to_path_buf(), check_base, None, None)?;
+//     Ok(())
+// }
+
+#[ignore]
+#[test]
+/// Testing we can open a database from fixtures, and produce a VM session
+///
+/// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
 fn meta_test_open_db_sync() -> anyhow::Result<()> {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    let temp_dir = setup_test_db()?;
+    let dir = temp_dir.path();
     let db = DiemDB::open(
         dir,
         true,

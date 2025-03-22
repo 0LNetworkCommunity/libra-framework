@@ -10,13 +10,12 @@ use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
 use libra_config::validator_registration::ValCredentials;
-use libra_framework::{read_release_file, release::ReleaseTarget, testing_local_release_bundle};
+use libra_framework::release::ReleaseTarget;
 use move_core_types::{
-    ident_str,
     language_storage::{StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
-use move_vm_runtime::session::{SerializedReturnValues, Session};
+use move_vm_runtime::session::{SerializedReturnValues};
 use move_vm_types::gas::UnmeteredGasMeter;
 use std::path::{Path, PathBuf};
 
@@ -114,20 +113,6 @@ pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
     Ok(())
 }
 
-// wrapper to publish the latest head framework release
-pub fn upgrade_framework_from_mrb_file(
-    session: &mut SessionExt,
-    upgrade_mrb: &Path,
-) -> anyhow::Result<()> {
-    let new_modules = TargetRelease::load_bundle_from_file(upgrade_mrb);
-
-    session.publish_module_bundle_relax_compatibility(
-        new_modules.legacy_copy_code(),
-        CORE_CODE_ADDRESS,
-        &mut UnmeteredGasMeter,
-    )?;
-    Ok(())
-}
 
 // wrapper to exectute a function
 // call anythign you want, except #[test] functions
@@ -233,22 +218,37 @@ pub fn session_add_validators(
     Ok(())
 }
 
+// wrapper to publish the latest head framework release
+pub fn upgrade_framework_from_mrb_file(
+    session: &mut SessionExt,
+    upgrade_mrb: &Path,
+) -> anyhow::Result<()> {
+    let new_modules = ReleaseTarget::load_bundle_from_file(upgrade_mrb.to_path_buf())?;
+
+    session.publish_module_bundle_relax_compatibility(
+        new_modules.legacy_copy_code(),
+        CORE_CODE_ADDRESS,
+        &mut UnmeteredGasMeter,
+    )?;
+    Ok(())
+}
+
 /// Unpacks a VM change set.
-pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
+pub fn unpack_to_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
 
     Ok(ChangeSet::new(write_set, events))
 }
 
 /// Publishes the current framework to the database.
-pub fn upgrade_framework_head_build(
+pub fn upgrade_framework_changeset(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
     upgrade_mrb: &Path,
 ) -> anyhow::Result<ChangeSet> {
     let vmc = libra_run_session(
         dir.to_path_buf(),
-        |session: &mut SessionExt| {
+        |session| {
             upgrade_framework_from_mrb_file(session, upgrade_mrb)
                 .expect("should publish framework");
             writeset_voodoo_events(session).expect("should voodoo, who do?");
@@ -257,20 +257,20 @@ pub fn upgrade_framework_head_build(
         debug_vals,
         None,
     )?;
-    unpack_changeset(vmc)
+    unpack_to_changeset(vmc)
 }
 
 /// Twin testnet registration, replace validator set with new registrations
-pub fn register_and_replace_validators(
+pub fn register_and_replace_validators_changeset(
     dir: &Path,
     replacement_vals: Vec<ValCredentials>,
-    upgrade_mrb: Option<PathBuf>,
+    upgrade_mrb: &Option<PathBuf>,
 ) -> anyhow::Result<ChangeSet> {
     let vmc = libra_run_session(
         dir.to_path_buf(),
         |session| {
             if let Some(p) = upgrade_mrb {
-                upgrade_framework_head_build(session, None, &p).expect("could not upgrade framework");
+                upgrade_framework_from_mrb_file(session,  &p).expect("could not upgrade framework");
             }
 
             session_add_validators(session, replacement_vals).expect("could not register validators");
@@ -279,5 +279,5 @@ pub fn register_and_replace_validators(
         None, // uses the validators registered above
         None,
     )?;
-    unpack_changeset(vmc)
+    unpack_to_changeset(vmc)
 }
