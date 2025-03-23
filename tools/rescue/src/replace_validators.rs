@@ -11,14 +11,14 @@ use crate::session_tools;
 pub async fn replace_validators_blob(
     db_path: &Path,
     creds: Vec<ValCredentials>,
-    _upgrade_framework: bool,
+    output_dir: &Path,
 ) -> anyhow::Result<PathBuf> {
     println!("run session to create validator onboarding tx (replace_validators_rescue.blob)");
 
     let cs = session_tools::register_and_replace_validators_changeset(db_path, creds, &None)?;
 
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
-    let out = db_path.join("replace_validators_rescue.blob");
+    let out = output_dir.join("replace_validators_rescue.blob");
 
     let bytes = bcs::to_bytes(&gen_tx)?;
     std::fs::write(&out, bytes.as_slice())?;

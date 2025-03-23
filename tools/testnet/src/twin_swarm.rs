@@ -50,10 +50,8 @@ impl TwinSwarm {
     }
     /// Apply the rescue blob to the swarm db
     fn update_node_config(validator: &mut LocalNode, mut config: NodeConfig) -> anyhow::Result<()> {
-        // validator.stop();
         let node_path = validator.config_path();
         config.save_to_path(node_path)?;
-        // validator.start()?;
         Ok(())
     }
     /// Prepare the temporary database environment
@@ -91,8 +89,8 @@ impl TwinSwarm {
     }
 
     fn temp_backup_db(reference_db: &Path, temp_dir: &Path) -> anyhow::Result<PathBuf> {
-        let options: dir::CopyOptions = dir::CopyOptions::new(); // Initialize default values for CopyOptions
-        dir::copy(reference_db, temp_dir, &options).context("cannot copy to new db dir")?;
+        dir::copy(reference_db, temp_dir, &dir::CopyOptions::new())
+            .context("cannot copy to new db dir")?;
         let db_path = temp_dir.join(reference_db.file_name().unwrap().to_str().unwrap());
         assert!(db_path.exists());
 
@@ -110,6 +108,7 @@ impl TwinSwarm {
         }
         Ok(())
     }
+
     /// Update waypoint in all validator configs
     pub async fn update_waypoint(
         swarm: &mut LocalSwarm,
@@ -117,6 +116,9 @@ impl TwinSwarm {
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
         for n in swarm.validators_mut() {
+            // let config_path = n.config_path()
+            // insert_waypoint(&config_path, &rescue_blob, wp)?;
+
             let mut node_config = n.config().clone();
 
             let configs_dir = &node_config.base.data_dir;
@@ -237,5 +239,55 @@ fn clone_db(prod_db: &Path, swarm_db: &Path) -> anyhow::Result<()> {
         .context("cannot copy to new db dir")?;
 
     println!("db copied");
+    Ok(())
+}
+
+/// genesis blob and waypoint need to be present in node config
+pub fn update_genesis_in_node_config(
+    node_config_path: &Path,
+    rescue_blob_path: &Path,
+    wp: Waypoint,
+) -> Result<()> {
+    let mut node_config = NodeConfig::load_from_path(node_config_path)?;
+
+    let configs_dir = &node_config.base.data_dir;
+
+    let validator_identity_file = configs_dir.join("validator-identity.yaml");
+    assert!(
+        validator_identity_file.exists(),
+        "validator-identity.yaml not found"
+    );
+
+    ////////
+    // NOTE: you don't need to insert the waypoint as previously thought
+    // but it is harmless. You must however set initial safety
+    // rules config.
+    // insert_waypoint(&mut node_config, wp);
+    ///////
+
+    let init_safety = InitialSafetyRulesConfig::from_file(
+        validator_identity_file,
+        WaypointConfig::FromConfig(wp),
+    );
+    node_config
+        .consensus
+        .safety_rules
+        .initial_safety_rules_config = init_safety;
+
+    ////////
+    // Note: Example of getting genesis transaction serialized to include in config.
+    // let genesis_transaction = {
+    //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
+    //     bcs::from_bytes::<Transaction>(&buf).unwrap()
+    // };
+    /////////
+
+    // NOTE: Must reset the genesis transaction in the config file
+    // Or overwrite with a serialized versions
+    node_config.execution.genesis = None; // see above to use bin: Some(genesis_transaction);
+                                          // ... and point to file
+    node_config.execution.genesis_file_location = rescue_blob_path.to_path_buf();
+
+    node_config.save_to_path(node_config_path)?;
     Ok(())
 }

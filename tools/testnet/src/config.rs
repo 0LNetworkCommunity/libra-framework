@@ -10,6 +10,8 @@ use libra_rescue::{
 use libra_types::{core_types::fixtures::TestPersona, global_config_dir};
 use std::path::{Path, PathBuf};
 
+use crate::twin_swarm::update_genesis_in_node_config;
+
 #[derive(clap::Parser)]
 pub struct TestnetConfigOpts {
     #[clap(short, long)]
@@ -125,16 +127,18 @@ async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Result
     println!("Running twin rescue mission...");
     // Create and apply rescue blob
     println!("Creating rescue blob from the reference db");
-    let rescue_blob_path = replace_validators_blob(&reference_db, val_credentials, false).await?;
+    let rescue_blob_path =
+        replace_validators_blob(reference_db, val_credentials, home_path).await?;
+    println!("Created rescue blob at: {}", rescue_blob_path.display());
 
     println!("Applying the rescue blob to the database & bootstrapping");
-    let wp = one_step_apply_rescue_on_db(&reference_db, &rescue_blob_path)?;
-
-    println!("Created rescue blob at: {}", rescue_blob_path.display());
+    let wp = one_step_apply_rescue_on_db(reference_db, &rescue_blob_path)?;
+    println!("Writeset successful, waypoint: {}", wp);
 
     // Step 4: Update config files with artifacts
     println!("Updating configuration files...");
-    // TODO: Add code to update configs with rescue blob
+    let config_path = home_path.join("validator.yaml");
+    update_genesis_in_node_config(&config_path, &rescue_blob_path, wp)?;
 
     println!("Twin configuration complete");
     Ok(())

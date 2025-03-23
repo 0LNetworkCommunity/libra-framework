@@ -1,7 +1,9 @@
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use std::{path::PathBuf, time::Instant};
 
-use libra_rescue::{one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob};
+use libra_rescue::{
+    one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
+};
 
 use crate::twin_swarm::TwinSwarm;
 
@@ -21,11 +23,10 @@ pub async fn awake_frankenswarm(
         TwinSwarm::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
 
     println!("Creating rescue blob from the reference db");
-    let rescue_blob_path = replace_validators_blob(&temp_db_path, creds, false).await?;
+    let rescue_blob_path = replace_validators_blob(&temp_db_path, creds, &temp_db_path).await?;
 
     println!("Applying the rescue blob to the database & bootstrapping");
     let wp = one_step_apply_rescue_on_db(&temp_db_path, &rescue_blob_path)?;
-
 
     println!("4. Replace the swarm db with the snapshot db");
     TwinSwarm::replace_db_all(&mut smoke.swarm, &temp_db_path).await?;
