@@ -14,7 +14,6 @@ use std::{fs, time::Duration};
 
 use crate::support::{update_node_config_restart, wait_for_node};
 
-// #[ignore]
 #[tokio::test]
 /// Tests we can create a genesis blob from the smoke test e2e environment.
 /// NOTE: much of this is duplicated in rescue_cli_creates_blob and e2e but we
@@ -64,24 +63,11 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
     let data_path = TempPath::new();
     data_path.create_as_dir()?;
 
-    //     let t = RescueCli {
-    //     db_path: val_db_path.clone(),
-    //     blob_path: Some(blob_path.path().to_owned()),
-    //     command: Sub::RunScript {
-    //         script_path: Some(script_path),
-    //     },
-    // };
+
+    //////// Run the tool ////////
     let tx = run_script_tx(&script_path)?;
     let genesis_blob_path = save_rescue_blob(tx, data_path.path())?;
-
-    // let rescue = RescueTxOpts {
-    //     db_path: data_path.path().to_owned(),
-    //     blob_path: None, // defaults to data_path/rescue.blob
-    //     script_path: Some(script_path),
-    //     framework_upgrade: false,
-    //     validator_set: None,
-    //     register_vals: None,
-    // };
+    //////////////////////////////
 
     assert!(genesis_blob_path.exists());
 

@@ -6,8 +6,8 @@ use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::{NodeExt, SwarmExt};
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
-use futures_util::future::try_join_all;
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_framework::release::ReleaseTarget;
+use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_cli::{RescueCli, Sub}};
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::{fs, time::Duration};
@@ -19,8 +19,8 @@ use std::{fs, time::Duration};
 /// do want the granularity.
 /// NOTE: You should `tail` the logs from the advertised logs location. It
 /// looks something like this `/tmp/.tmpM9dF7w/0/log`
-async fn test_can_restart() -> anyhow::Result<()> {
-    let num_nodes: usize = 5;
+async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
+    let num_nodes: usize = 2;
     let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
         .expect("could not start libra smoke");
@@ -34,7 +34,7 @@ async fn test_can_restart() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    println!("2. Set sync_only = true for all nodes and restart");
+    println!("1. Set sync_only = true for all nodes and restart");
     for node in env.validators_mut() {
         let mut node_config = node.config().clone();
         node_config.consensus.sync_only = true;
@@ -42,34 +42,36 @@ async fn test_can_restart() -> anyhow::Result<()> {
         wait_for_node(node, num_nodes - 1).await?;
     }
 
-    println!("4. verify all nodes are at the same round and no progress being made");
+    println!("2. verify all nodes are at the same round and no progress being made");
     env.wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
         .await
         .unwrap();
 
-    println!("5. kill nodes");
+    println!("3. stop nodes");
     for node in env.validators_mut() {
         node.stop();
     }
 
-    println!("6. prepare a genesis txn to remove the first validator");
+    println!("4. create writeset file");
 
-    let remove_last = env.validators().last().unwrap().peer_id();
-    let script_path = support::make_script(remove_last);
-    assert!(script_path.exists());
+    let val_db_path = env.validators().next().unwrap().config().storage.dir();
+    assert!(val_db_path.exists());
+    let blob_path = val_db_path.clone();
 
-    let data_path = TempPath::new();
-    data_path.create_as_dir().unwrap();
-    let rescue = RescueTxOpts {
-        data_path: data_path.path().to_owned(),
-        blob_path: None, // defaults to data_path/rescue.blob
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
+        blob_path: Some(blob_path.clone()),
+        command: Sub::UpgradeFramework {
+            upgrade_mrb: ReleaseTarget::Head
+                .find_bundle_path()
+                .expect("cannot find head.mrb"),
+            set_validators: None,
+        },
     };
-    let genesis_blob_path = rescue.run().unwrap();
 
+    r.run()?;
+
+    let genesis_blob_path = blob_path.join("rescue.blob");
     assert!(genesis_blob_path.exists());
 
     let genesis_transaction = {
@@ -77,11 +79,9 @@ async fn test_can_restart() -> anyhow::Result<()> {
         bcs::from_bytes::<Transaction>(&buf).unwrap()
     };
 
-    let val_db_path = env.validators().next().unwrap().config().storage.dir();
-    assert!(val_db_path.exists());
 
     // replace with rescue cli
-    println!("6. check we can get a waypoint generally");
+    println!("5. check we can get a waypoint generally");
     let bootstrap = BootstrapOpts {
         db_dir: val_db_path,
         genesis_txn_file: genesis_blob_path.clone(),
@@ -92,19 +92,16 @@ async fn test_can_restart() -> anyhow::Result<()> {
 
     let _waypoint = bootstrap.run()?;
 
-    println!("7. apply genesis transaction to all validators");
+    println!("6. apply genesis transaction to all validators");
     for (expected_to_connect, node) in env.validators_mut().enumerate() {
-        // skip the dead validator
-        if node.peer_id() == remove_last {
-            continue;
-        }
+
         let mut node_config = node.config().clone();
 
         let val_db_path = node.config().storage.dir();
         assert!(val_db_path.exists());
 
         // replace with rescue cli
-        println!("7b. each validator db");
+        println!("apply on each validator db");
         let bootstrap = BootstrapOpts {
             db_dir: val_db_path,
             genesis_txn_file: genesis_blob_path.clone(),
@@ -127,48 +124,10 @@ async fn test_can_restart() -> anyhow::Result<()> {
         wait_for_node(node, expected_to_connect).await?;
     }
 
-    println!("8. wait for startup and progress");
-
-    assert!(
-        // NOTE: liveness check fails because the test tool doesn't
-        // have a way of removing a validator from the test suite. I tried...
-        env.liveness_check(deadline_secs(1)).await.is_err(),
-        "test suite thinks dead node is live"
-    );
-
-    // check some nodes to see if alive, since the test suite doesn't
-    // allow us to drop a node
-    let _res = try_join_all(
-        env.validators()
-            .take(3) // check first three
-            .map(|node| node.liveness_check(10)),
-    )
-    .await?;
-
-    println!("9. verify node 4 is out from the validator set");
-    let a = client
-        .view(
-            &ViewRequest {
-                function: "0x1::stake::get_current_validators".parse().unwrap(),
-                type_arguments: vec![],
-                arguments: vec![],
-            },
-            None,
-        )
-        .await;
-    let num_nodes = a
-        .unwrap()
-        .inner()
-        .first()
-        .unwrap()
-        .as_array()
-        .unwrap()
-        .len();
-
-    assert_eq!(num_nodes, 4);
+    println!("7. wait for startup and progress");
 
     // show progress
-    println!("10. verify transactions work");
+    println!("8. verify transactions work");
     std::thread::sleep(Duration::from_secs(5));
     let second_val = env.validators().nth(1).unwrap().peer_id();
     let old_bal = get_libra_balance(&client, second_val).await?;

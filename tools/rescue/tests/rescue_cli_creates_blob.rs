@@ -46,14 +46,6 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         },
     };
 
-    // let r = RescueTxOpts {
-    //     db_path: val_db_path.clone(),
-    //     blob_path: Some(blob_path.path().to_owned()),
-    //     script_path: Some(script_path),
-    //     framework_upgrade: false,
-    //     validator_set: None,
-    //     register_vals: None,
-    // };
     r.run()?;
 
     let file = blob_path.path().join("rescue.blob");
@@ -128,14 +120,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
             script_path: Some(script_path),
         },
     };
-    // let r = RescueTxOpts {
-    //     db_path: val_db_path,
-    //     blob_path: Some(blob_path.path().to_owned()),
-    //     script_path: Some(script_path),
-    //     framework_upgrade: false,
-    //     validator_set: None,
-    //     register_vals: None,
-    // };
+
     r.run()?;
 
     let file = blob_path.path().join("rescue.blob");
@@ -183,14 +168,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
             script_path: Some(script_path),
         },
     };
-    // let r = RescueTxOpts {
-    //     db_path: val_db_path.clone(),
-    //     blob_path: Some(blob_path.path().to_owned()),
-    //     script_path: Some(script_path),
-    //     framework_upgrade: false,
-    //     validator_set: None,
-    //     register_vals: None,
-    // };
+
     r.run()?;
 
     let file = blob_path.path().join("rescue.blob");
