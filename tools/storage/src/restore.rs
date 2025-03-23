@@ -114,10 +114,17 @@ mod tests {
 
     use std::path::PathBuf;
 
+
     #[tokio::test]
     async fn test_full_restore() -> Result<()> {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let mut b = RestoreBundle::new(dir.join("fixtures/v7"));
+        let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/v7");
+        let temp = diem_temppath::TempPath::new();
+        temp.create_as_dir()?;
+        // Copy all files recursively from fixtures to temp using fs_extra
+        let copy_options = fs_extra::dir::CopyOptions::new();
+        fs_extra::dir::copy(&fixtures, temp.path(), &copy_options)?;
+
+        let mut b = RestoreBundle::new(temp.path().to_path_buf());
         b.load().unwrap();
         let mut db_temp = diem_temppath::TempPath::new();
         db_temp.persist();
@@ -132,8 +139,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_decompress_gz_files() -> Result<()> {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let test_dir = dir.join("fixtures/v7");
+        let temp = diem_temppath::TempPath::new();
+        temp.create_as_dir()?;
+        let test_dir = temp.path();
+
 
         // Create a test .gz file
         let test_content = b"test content";

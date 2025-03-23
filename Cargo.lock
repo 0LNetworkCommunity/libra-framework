@@ -6037,6 +6037,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "flate2",
+ "fs_extra",
  "glob",
  "libra-backwards-compatibility",
  "libra-config",
