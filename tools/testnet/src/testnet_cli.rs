@@ -1,6 +1,6 @@
-use clap::{self, Parser};
-use clap::Subcommand;
 use crate::twin_cli::TwinCli;
+use clap::Subcommand;
+use clap::{self, Parser};
 /// Twin of the network
 #[derive(Parser)]
 
