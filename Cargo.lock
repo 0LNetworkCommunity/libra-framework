@@ -6069,6 +6069,7 @@ dependencies = [
  "fs_extra",
  "hex",
  "libra-config",
+ "libra-framework",
  "libra-query",
  "libra-rescue",
  "libra-smoke-tests",

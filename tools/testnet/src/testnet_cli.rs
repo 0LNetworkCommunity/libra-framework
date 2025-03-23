@@ -1,7 +1,7 @@
 use crate::swarm_cli::SwarmCliOpts;
 use clap::Subcommand;
 use clap::{self, Parser};
-use diem_framework::{ReleaseBundle, ReleaseTarget};
+use diem_framework::ReleaseBundle;
 use std::path::PathBuf;
 
 /// Twin of the network
@@ -41,7 +41,7 @@ impl TestnetCli {
             ReleaseBundle::read(p)?
         } else {
             print!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
-            ReleaseTarget::Head.load_bundle()?
+            libra_framework::testing_local_release_bundle()
         };
 
         if self.twin_epoch {
