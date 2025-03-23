@@ -4,8 +4,8 @@ use diem_temppath::TempPath;
 use diem_vm::move_vm_ext::SessionId;
 use flate2::read::GzDecoder;
 use libra_framework::release::ReleaseTarget;
-use std::fs;
 use std::path::Path;
+use std::{fs, path::PathBuf};
 use tar::Archive;
 
 // Database related imports
@@ -31,13 +31,15 @@ use libra_rescue::session_tools::{
 /// is dropped (unless persist() is called).
 ///
 /// Returns the TempPath containing the extracted database.
-fn setup_test_db() -> anyhow::Result<TempPath> {
-    let temp_dir = TempPath::new();
+fn setup_test_db() -> anyhow::Result<PathBuf> {
+    let mut temp_dir = TempPath::new();
     temp_dir.create_as_dir()?;
+    temp_dir.persist();
 
     // Open and decompress the fixture file
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let fixture_path = Path::new(manifest_dir).join("rescue/fixtures/db_339.tar.gz");
+    let fixture_path = Path::new(manifest_dir).join("fixtures/db_339.tar.gz");
+    assert!(&fixture_path.exists(), "can't find fixture db_339.tar.gz");
     let tar_gz = fs::File::open(fixture_path)?;
     let decompressor = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(decompressor);
@@ -45,7 +47,7 @@ fn setup_test_db() -> anyhow::Result<TempPath> {
     // Extract to temp directory
     archive.unpack(temp_dir.path())?;
 
-    Ok(temp_dir)
+    Ok(temp_dir.path().join("db_339"))
 }
 
 #[test]
@@ -53,53 +55,32 @@ fn setup_test_db() -> anyhow::Result<TempPath> {
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
 fn test_publish() -> anyhow::Result<()> {
-    let temp_dir = setup_test_db()?;
-    let dir = temp_dir.path();
+    let dir = setup_test_db()?;
     let upgrade_mrb = ReleaseTarget::Head
         .find_bundle_path()
         .expect("cannot find head.mrb");
-    upgrade_framework_changeset(dir, None, &upgrade_mrb)?;
+    dbg!(&upgrade_mrb);
+    upgrade_framework_changeset(&dir, None, &upgrade_mrb)?;
     Ok(())
 }
 
-#[ignore]
 #[test]
 /// The writeset voodoo needs to be perfect
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
 fn test_voodoo() -> anyhow::Result<()> {
-    let temp_dir = setup_test_db()?;
-    let dir = temp_dir.path();
-    libra_run_session(dir.to_path_buf(), writeset_voodoo_events, None, None)?;
+    let dir = setup_test_db()?;
+    libra_run_session(dir, writeset_voodoo_events, None, None)?;
     Ok(())
 }
 
-// #[ignore]
-// #[test]
-// /// Helper to see if an upgraded function is found in the DB
-// ///
-// /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-// fn test_base() -> anyhow::Result<()> {
-//     fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
-//         libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
-//         Ok(())
-//     }
-
-//     let temp_dir = setup_test_db()?;
-//     let dir = temp_dir.path();
-
-//     libra_run_session(dir.to_path_buf(), check_base, None, None)?;
-//     Ok(())
-// }
-
-#[ignore]
 #[test]
 /// Testing we can open a database from fixtures, and produce a VM session
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
 fn meta_test_open_db_sync() -> anyhow::Result<()> {
-    let temp_dir = setup_test_db()?;
-    let dir = temp_dir.path();
+    let dir = setup_test_db()?;
+
     let db = DiemDB::open(
         dir,
         true,
