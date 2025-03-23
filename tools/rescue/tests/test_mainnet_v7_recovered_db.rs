@@ -139,7 +139,7 @@ fn e2e_publish_on_v7() -> anyhow::Result<()> {
 #[test]
 /// run the validators replacement writeset
 /// used for twin testnet
-fn e2e_register_vals_on_v7() -> anyhow::Result<()> {
+fn e2e_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let blob_path = dir.clone();
     // get the Alice operator.yaml from fixtures
@@ -177,12 +177,13 @@ fn e2e_register_vals_on_v7() -> anyhow::Result<()> {
     };
 
     let wp = boot.run()?;
-    dbg!(&wp);
-    // assert!(
-    //     &wp.unwrap().to_string()
-    //         == "117583051:607deefff898ee4bd868f6ff8151e1dd3a0fcf70a6c15dc2d557a963d82a1676",
-    //     "wrong waypoint"
-    // );
+    assert!(
+        &wp.unwrap().to_string()
+            == "117583051:74e66c9df794c6356e3b1490dd2817201f74a11edd1fece08cdddb5b429aec2f",
+        "wrong waypoint"
+    );
 
+    // hack, getting weird sigabrt on exit
+    std::thread::sleep(std::time::Duration::from_millis(10));
     Ok(())
 }

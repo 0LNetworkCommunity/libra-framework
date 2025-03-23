@@ -274,6 +274,9 @@ pub fn register_and_replace_validators_changeset(
 
             session_add_validators(session, replacement_vals)
                 .expect("could not register validators");
+
+            writeset_voodoo_events(session).expect("should voodoo, who do?");
+
             Ok(())
         },
         None, // uses the validators registered above
