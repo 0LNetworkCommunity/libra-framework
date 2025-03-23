@@ -41,7 +41,7 @@ impl TestnetCli {
         let bundle = if let Some(p) = self.framework_mrb_path.clone() {
             ReleaseBundle::read(p)?
         } else {
-            print!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
+            println!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
             libra_framework::testing_local_release_bundle()
         };
 
