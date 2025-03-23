@@ -91,7 +91,7 @@ fn unit_publish_on_v7() -> anyhow::Result<()> {
 
 #[test]
 /// using the command-line entry point
-/// try to upgrade and bootsrap a db from an epoch restore
+/// try to upgrade and bootstrap a db from an epoch restore
 /// point
 fn e2e_publish_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;

@@ -116,24 +116,34 @@ mod tests {
 
     #[tokio::test]
     async fn test_full_restore() -> Result<()> {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let mut b = RestoreBundle::new(dir.join("fixtures/v7"));
-        b.load().unwrap();
-        let mut db_temp = diem_temppath::TempPath::new();
-        db_temp.persist();
-        db_temp.create_as_dir()?;
+        // don't run restore directly on fixtures path please,
+        // it can modify the files in the fixtures directory
+        let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/v7");
+        let temp = diem_temppath::TempPath::new();
+        temp.create_as_dir()?;
+        // Copy all files recursively from fixtures to temp using fs_extra
+        let copy_options = fs_extra::dir::CopyOptions::new();
+        // copy_options.copy_inside(true);
+        fs_extra::dir::copy(&fixtures, temp.path(), &copy_options)?;
 
-        full_restore(db_temp.path(), &b).await?;
+        let test_data = temp.path().join("v7");
 
-        assert!(db_temp.path().join("ledger_db").exists());
-        assert!(db_temp.path().join("state_merkle_db").exists());
+        let mut bundle = RestoreBundle::new(test_data);
+        bundle.load().unwrap();
+
+        let db_output_path = temp.path().join("output");
+        full_restore(&db_output_path, &bundle).await?;
+
+        assert!(db_output_path.join("ledger_db").exists());
+        assert!(db_output_path.join("state_merkle_db").exists());
         Ok(())
     }
 
     #[tokio::test]
     async fn test_decompress_gz_files() -> Result<()> {
-        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let test_dir = dir.join("fixtures/v7");
+        let temp = diem_temppath::TempPath::new();
+        temp.create_as_dir()?;
+        let test_dir = temp.path();
 
         // Create a test .gz file
         let test_content = b"test content";
@@ -144,7 +154,7 @@ mod tests {
         encoder.finish()?;
 
         // Decompress files
-        maybe_decompress_gz_files(&test_dir).await?;
+        maybe_decompress_gz_files(test_dir).await?;
 
         // Verify decompression
         let decompressed = fs::read_to_string(test_dir.join("test.json"))?;

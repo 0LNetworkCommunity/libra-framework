@@ -41,3 +41,4 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 diem-temppath = { workspace = true }
+fs_extra = { workspace = true }

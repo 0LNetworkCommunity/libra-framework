@@ -211,8 +211,7 @@ pub fn verify_valid_transaction_list(
 ) -> anyhow::Result<()> {
     let s = fs::read_to_string(transaction_manifest)?;
     let tm: TransactionBackup = serde_json::from_str(&s)?;
-    dbg!(&version);
-    dbg!(&tm.last_version);
+
     if tm.last_version < version {
         bail!("the transaction you are looking for is newer than the last version in this bundle. Get a newer transaction backup");
     };
