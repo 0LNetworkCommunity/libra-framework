@@ -114,7 +114,6 @@ mod tests {
 
     use std::path::PathBuf;
 
-
     #[tokio::test]
     async fn test_full_restore() -> Result<()> {
         // don't run restore directly on fixtures path please,
@@ -132,7 +131,7 @@ mod tests {
         let mut bundle = RestoreBundle::new(test_data);
         bundle.load().unwrap();
 
-        let db_output_path  = temp.path().join("output");
+        let db_output_path = temp.path().join("output");
         full_restore(&db_output_path, &bundle).await?;
 
         assert!(db_output_path.join("ledger_db").exists());
@@ -146,7 +145,6 @@ mod tests {
         temp.create_as_dir()?;
         let test_dir = temp.path();
 
-
         // Create a test .gz file
         let test_content = b"test content";
         let gz_path = test_dir.join("test.json.gz");
@@ -156,7 +154,7 @@ mod tests {
         encoder.finish()?;
 
         // Decompress files
-        maybe_decompress_gz_files(&test_dir).await?;
+        maybe_decompress_gz_files(test_dir).await?;
 
         // Verify decompression
         let decompressed = fs::read_to_string(test_dir.join("test.json"))?;
