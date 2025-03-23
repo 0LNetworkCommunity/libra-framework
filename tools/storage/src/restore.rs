@@ -117,23 +117,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_full_restore() -> Result<()> {
+        // don't run restore directly on fixtures path please,
+        // it can modify the files in the fixtures directory
         let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/v7");
         let temp = diem_temppath::TempPath::new();
         temp.create_as_dir()?;
         // Copy all files recursively from fixtures to temp using fs_extra
         let copy_options = fs_extra::dir::CopyOptions::new();
+        // copy_options.copy_inside(true);
         fs_extra::dir::copy(&fixtures, temp.path(), &copy_options)?;
 
-        let mut b = RestoreBundle::new(temp.path().to_path_buf());
-        b.load().unwrap();
-        let mut db_temp = diem_temppath::TempPath::new();
-        db_temp.persist();
-        db_temp.create_as_dir()?;
+        let test_data = temp.path().join("v7");
 
-        full_restore(db_temp.path(), &b).await?;
+        let mut bundle = RestoreBundle::new(test_data);
+        bundle.load().unwrap();
 
-        assert!(db_temp.path().join("ledger_db").exists());
-        assert!(db_temp.path().join("state_merkle_db").exists());
+        let db_output_path  = temp.path().join("output");
+        full_restore(&db_output_path, &bundle).await?;
+
+        assert!(db_output_path.join("ledger_db").exists());
+        assert!(db_output_path.join("state_merkle_db").exists());
         Ok(())
     }
 
