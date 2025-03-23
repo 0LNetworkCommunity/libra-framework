@@ -8,6 +8,7 @@ use libra_rescue::{
     one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
 };
 use libra_types::{core_types::fixtures::TestPersona, global_config_dir};
+use tokio::fs;
 use std::path::{Path, PathBuf};
 
 use crate::twin_swarm::update_genesis_in_node_config;
@@ -70,11 +71,14 @@ impl TestnetConfigOpts {
 async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Result<()> {
     // don't do any operations on the reference db
     let destination_db = home_path.join("data/db");
+    fs::create_dir_all(&destination_db).await?;
     fs_extra::dir::copy(
         reference_db,
         &destination_db, // saving to standard db path
         &fs_extra::dir::CopyOptions::new(),
     )?;
+    assert!(destination_db.exists(), "destination db should exist");
+    println!("Copied reference db to: {}", destination_db.display());
     // Step 1: Collect all the operator.yaml files
     println!("Collecting operator configuration files...");
     // using glob read all the operator*.yaml files in <data_path>/operator_files

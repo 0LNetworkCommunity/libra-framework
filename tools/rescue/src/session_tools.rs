@@ -68,8 +68,8 @@ where
 
     // if we want accelerated epochs for twin, testnet, etc
     if let Some(ms) = debug_epoch_interval_microsecs {
-        println!("setting epoch interval seconds");
-        println!("{}, ms", ms);
+        println!("[vm session] setting epoch interval seconds");
+        println!("[vm session] {}, ms", ms);
         let secs_arg = MoveValue::U64(ms);
         libra_execute_session_function(
             &mut session,
@@ -85,7 +85,7 @@ where
         &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
     )?;
 
-    println!("session run sucessfully");
+    println!("[vm session] session run sucessfully");
     Ok(change_set)
 }
 
@@ -143,7 +143,6 @@ pub fn session_register_validators(
     creds: Vec<ValCredentials>,
 ) -> anyhow::Result<()> {
     // reset the validators
-    dbg!("bulk_set_next_validators");
     libra_execute_session_function(
         session,
         "0x1::stake::bulk_set_next_validators",
@@ -158,7 +157,6 @@ pub fn session_register_validators(
         let vector_val = MoveValue::vector_address(vec![cred.account]);
         let args = vec![&signer, &vector_val];
         //configure allowed validators(it should be deprecated??)
-        dbg!("configure_allowed_validators");
         libra_execute_session_function(session, "0x1::stake::configure_allowed_validators", args)?;
         let signer = MoveValue::Signer(cred.account);
         let consensus_pubkey = MoveValue::vector_u8(cred.consensus_pubkey.clone());
@@ -176,22 +174,19 @@ pub fn session_register_validators(
         let amount = 1000 * 1_000_000_u64;
         let amount = MoveValue::U64(amount);
         //create account
-        dbg!("create account");
         match libra_execute_session_function(
             session,
             "0x1::ol_account::create_impl",
             vec![&MoveValue::Signer(AccountAddress::ONE), &signer],
         ) {
             Ok(_) => {
-                println!("account created successfully");
+                println!("[vm session] account created successfully");
                 //The accounts are not slow so we do not have to unlock them
-                dbg!("mint to account");
                 libra_execute_session_function(
                     session,
                     "0x1::libra_coin::mint_to_impl",
                     vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
                 )?;
-                dbg!("registering validator");
                 libra_execute_session_function(
                     session,
                     "0x1::validator_universe::register_validator",
@@ -199,21 +194,19 @@ pub fn session_register_validators(
                 )?;
             }
             Err(_) => {
-                println!("account already exists, skipping");
+                println!("[vm session] account already exists, skipping");
             }
         };
     }
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
     let signer = MoveValue::Signer(AccountAddress::ONE);
     //set the new validators
-    dbg!("set_validators");
     libra_execute_session_function(
         session,
         "0x1::diem_governance::set_validators",
         vec![&signer, &validators],
     )?;
 
-    dbg!("end session");
     Ok(())
 }
 
