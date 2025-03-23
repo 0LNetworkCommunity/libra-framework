@@ -9,12 +9,14 @@ use libra_framework::framework_cli::make_template_files;
 use libra_types::core_types::app_cfg::TxCost;
 use smoke_test::test_utils::{MAX_CONNECTIVITY_WAIT_SECS, MAX_HEALTHY_WAIT_SECS};
 use std::{
+    fs,
     path::PathBuf,
     process::Command,
     time::{Duration, Instant},
 };
 
 use diem_types::chain_id::NamedChain;
+use flate2::read::GzDecoder;
 use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
@@ -22,6 +24,35 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
 };
+use std::path::Path;
+use tar::Archive;
+
+/// Sets up a test database by extracting a fixture file to a temporary directory.
+///
+/// This function extracts the database fixture from `./rescue/fixtures/db_339.tar.gz`,
+/// which contains a recovered database at epoch 339. The extracted database is placed
+/// in a temporary directory that will be automatically cleaned up when the TempPath
+/// is dropped (unless persist() is called).
+///
+/// Returns the PathBuf containing the extracted database.
+pub fn setup_test_db() -> anyhow::Result<PathBuf> {
+    let mut temp_dir = TempPath::new();
+    temp_dir.create_as_dir()?;
+    temp_dir.persist();
+
+    // Open and decompress the fixture file
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let fixture_path = Path::new(manifest_dir).join("fixtures/db_339.tar.gz");
+    assert!(&fixture_path.exists(), "can't find fixture db_339.tar.gz");
+    let tar_gz = fs::File::open(fixture_path)?;
+    let decompressor = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(decompressor);
+
+    // Extract to temp directory
+    archive.unpack(temp_dir.path())?;
+
+    Ok(temp_dir.path().join("db_339"))
+}
 
 pub fn make_script(remove_validator: AccountAddress) -> PathBuf {
     let script = format!(

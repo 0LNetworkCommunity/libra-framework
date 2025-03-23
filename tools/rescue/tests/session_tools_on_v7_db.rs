@@ -1,12 +1,9 @@
+mod support;
+use crate::support::setup_test_db;
 use diem_storage_interface::state_view::DbStateViewAtVersion;
 use diem_storage_interface::DbReaderWriter;
-use diem_temppath::TempPath;
 use diem_vm::move_vm_ext::SessionId;
-use flate2::read::GzDecoder;
 use libra_framework::release::ReleaseTarget;
-use std::path::Path;
-use std::{fs, path::PathBuf};
-use tar::Archive;
 
 // Database related imports
 use diem_config::config::{
@@ -23,38 +20,11 @@ use libra_rescue::session_tools::{
     libra_run_session, upgrade_framework_changeset, writeset_voodoo_events,
 };
 
-/// Sets up a test database by extracting a fixture file to a temporary directory.
-///
-/// This function extracts the database fixture from `./rescue/fixtures/db_339.tar.gz`,
-/// which contains a recovered database at epoch 339. The extracted database is placed
-/// in a temporary directory that will be automatically cleaned up when the TempPath
-/// is dropped (unless persist() is called).
-///
-/// Returns the TempPath containing the extracted database.
-fn setup_test_db() -> anyhow::Result<PathBuf> {
-    let mut temp_dir = TempPath::new();
-    temp_dir.create_as_dir()?;
-    temp_dir.persist();
-
-    // Open and decompress the fixture file
-    let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let fixture_path = Path::new(manifest_dir).join("fixtures/db_339.tar.gz");
-    assert!(&fixture_path.exists(), "can't find fixture db_339.tar.gz");
-    let tar_gz = fs::File::open(fixture_path)?;
-    let decompressor = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(decompressor);
-
-    // Extract to temp directory
-    archive.unpack(temp_dir.path())?;
-
-    Ok(temp_dir.path().join("db_339"))
-}
-
 #[test]
 /// Test we can publish a framework to a database fixture
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn test_publish() -> anyhow::Result<()> {
+fn test_publish_to_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let upgrade_mrb = ReleaseTarget::Head
         .find_bundle_path()
@@ -68,7 +38,7 @@ fn test_publish() -> anyhow::Result<()> {
 /// The writeset voodoo needs to be perfect
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn test_voodoo() -> anyhow::Result<()> {
+fn test_voodoo_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     libra_run_session(dir, writeset_voodoo_events, None, None)?;
     Ok(())
@@ -78,7 +48,7 @@ fn test_voodoo() -> anyhow::Result<()> {
 /// Testing we can open a database from fixtures, and produce a VM session
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn meta_test_open_db_sync() -> anyhow::Result<()> {
+fn meta_test_open_db_sync_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
 
     let db = DiemDB::open(
