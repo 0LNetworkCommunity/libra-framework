@@ -1,13 +1,14 @@
 mod support;
-use crate::support::{deadline_secs, update_node_config_restart, wait_for_node};
+use crate::support::{update_node_config_restart, wait_for_node};
 
-use diem_api_types::ViewRequest;
 use diem_config::config::InitialSafetyRulesConfig;
-use diem_forge::{NodeExt, SwarmExt};
-use diem_temppath::TempPath;
+use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_cli::{RescueCli, Sub}};
+use libra_rescue::{
+    diem_db_bootstrapper::BootstrapOpts,
+    rescue_cli::{RescueCli, Sub},
+};
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
 use std::{fs, time::Duration};
@@ -79,7 +80,6 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
         bcs::from_bytes::<Transaction>(&buf).unwrap()
     };
 
-
     // replace with rescue cli
     println!("5. check we can get a waypoint generally");
     let bootstrap = BootstrapOpts {
@@ -94,7 +94,6 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
 
     println!("6. apply genesis transaction to all validators");
     for (expected_to_connect, node) in env.validators_mut().enumerate() {
-
         let mut node_config = node.config().clone();
 
         let val_db_path = node.config().storage.dir();

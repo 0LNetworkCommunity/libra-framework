@@ -139,7 +139,7 @@ fn e2e_publish_on_v7() -> anyhow::Result<()> {
 #[test]
 /// run the validators replacement writeset
 /// used for twin testnet
-fn e2e_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
+fn e2e_twin_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let blob_path = dir.clone();
     // get the Alice operator.yaml from fixtures
@@ -147,8 +147,8 @@ fn e2e_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
     let oper_file = PathBuf::from(manifest_dir).join("fixtures/operator.yaml");
 
     let upgrade_mrb = ReleaseTarget::Head
-                .find_bundle_path()
-                .expect("cannot find head.mrb");
+        .find_bundle_path()
+        .expect("cannot find head.mrb");
 
     let r = RescueCli {
         db_path: dir.clone(),

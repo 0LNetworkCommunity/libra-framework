@@ -63,7 +63,6 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
     let data_path = TempPath::new();
     data_path.create_as_dir()?;
 
-
     //////// Run the tool ////////
     let tx = run_script_tx(&script_path)?;
     let genesis_blob_path = save_rescue_blob(tx, data_path.path())?;
