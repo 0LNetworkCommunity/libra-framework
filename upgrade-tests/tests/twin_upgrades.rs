@@ -3,7 +3,7 @@ mod support;
 use anyhow::Context;
 use libra_framework::release::ReleaseTarget;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_twin_tests::make_twin_swarm::awake_frankenswarm;
+use libra_testnet::make_twin_swarm::awake_frankenswarm;
 // Here we are testing how a Twin modified swarm responds to an upgrade
 // upgrades are being applied against Mainnet data which is recovered by a snapshot.
 

@@ -1,5 +1,5 @@
 [package]
-name = "libra-twin-tests"
+name = "libra-testnet"
 
 # Workspace inherited keys
 version = { workspace = true }

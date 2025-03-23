@@ -6049,7 +6049,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "libra-twin-tests"
+name = "libra-testnet"
 version = "7.0.4"
 dependencies = [
  "anyhow",
@@ -6158,7 +6158,7 @@ dependencies = [
  "libra-framework",
  "libra-query",
  "libra-smoke-tests",
- "libra-twin-tests",
+ "libra-testnet",
  "libra-txs",
  "libra-types",
  "smoke-test",
