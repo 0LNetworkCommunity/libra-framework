@@ -10,7 +10,6 @@ use crate::twin_swarm::TwinSwarm;
 pub async fn awake_frankenswarm(
     smoke: &mut LibraSmoke,
     reference_db: Option<PathBuf>,
-    keep_running: bool,
 ) -> anyhow::Result<PathBuf> {
     let start_upgrade = Instant::now();
 
@@ -47,14 +46,6 @@ pub async fn awake_frankenswarm(
 
     let temp_dir = smoke.swarm.dir();
     println!("temp files found at: {}", temp_dir.display());
-
-    if keep_running {
-        dialoguer::Confirm::new()
-            .with_prompt("swarm will keep running in background. Would you like to exit?")
-            .interact()?;
-        // NOTE: all validators will stop when the LibraSmoke goes out of context.
-        // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
-    }
 
     Ok(temp_dir.to_owned())
 }
