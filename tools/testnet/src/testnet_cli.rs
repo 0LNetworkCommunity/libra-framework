@@ -1,3 +1,4 @@
+use crate::config::TestnetConfigOpts;
 use crate::swarm_cli::SwarmCliOpts;
 use clap::Subcommand;
 use clap::{self, Parser};
@@ -29,7 +30,7 @@ pub struct TestnetCli {
 #[derive(Subcommand)]
 pub enum Sub {
     /// configs for genesis
-    Configure,
+    Configure(TestnetConfigOpts),
     /// Start using containers
     StartContainer,
     /// Start using Diem swarm
@@ -37,7 +38,7 @@ pub enum Sub {
 }
 impl TestnetCli {
     pub async fn run(self) -> anyhow::Result<()> {
-        let bundle = if let Some(p) = self.framework_mrb_path {
+        let bundle = if let Some(p) = self.framework_mrb_path.clone() {
             ReleaseBundle::read(p)?
         } else {
             print!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
@@ -69,11 +70,12 @@ impl TestnetCli {
         }
 
         match self.command {
-            Sub::Configure => {
+            Sub::Configure(cli) => {
                 if self.twin_epoch || self.twin_db.is_some() {
                     println!("configuring twin...");
                 } else {
                     println!("configuring virgin network...");
+                    cli.run(self.framework_mrb_path).await?;
                 }
             }
             Sub::StartContainer => {

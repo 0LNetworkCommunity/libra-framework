@@ -6070,6 +6070,7 @@ dependencies = [
  "hex",
  "libra-config",
  "libra-framework",
+ "libra-genesis-tools",
  "libra-query",
  "libra-rescue",
  "libra-smoke-tests",

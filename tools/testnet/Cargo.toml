@@ -29,6 +29,7 @@ fs_extra = { workspace = true }
 hex = { workspace = true }
 libra-config = { workspace = true }
 libra-framework = { workspace = true }
+libra-genesis-tools = { workspace = true }
 libra-query = { workspace = true }
 libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }

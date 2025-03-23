@@ -46,7 +46,10 @@ impl Drop for LibraSmoke {
 impl LibraSmoke {
     /// start a swarm and return first val account.
     /// defaults to Head release.
-    pub async fn new(count_vals: Option<u8>, libra_bin_path: Option<PathBuf>) -> anyhow::Result<Self> {
+    pub async fn new(
+        count_vals: Option<u8>,
+        libra_bin_path: Option<PathBuf>,
+    ) -> anyhow::Result<Self> {
         Self::new_with_target(count_vals, libra_bin_path, ReleaseTarget::Head).await
     }
     /// start a swarm and specify the target name e.g. HEAD
