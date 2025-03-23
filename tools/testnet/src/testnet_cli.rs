@@ -31,9 +31,9 @@ pub struct TestnetCli {
 pub enum Sub {
     /// configs for genesis
     Configure(TestnetConfigOpts),
-    /// Start using containers
+    /// start using containers
     StartContainer,
-    /// Start using Diem swarm
+    /// start using Diem swarm
     StartSwarm(SwarmCliOpts),
 }
 impl TestnetCli {
@@ -71,11 +71,17 @@ impl TestnetCli {
 
         match self.command {
             Sub::Configure(cli) => {
+                // first configure a vanilla genesis
+                 cli.run(self.framework_mrb_path).await?;
+
+                // if its a twin then we need to do brain surgery
+                // 1. collect all the operator.yaml files created
+                // in first step.
+                // 2. place a database in the default home path
+                // 3. run the twin rescue mission
+                // 4. use artifacts of #4 to update the config files
                 if self.twin_epoch || self.twin_db.is_some() {
                     println!("configuring twin...");
-                } else {
-                    println!("configuring virgin network...");
-                    cli.run(self.framework_mrb_path).await?;
                 }
             }
             Sub::StartContainer => {
