@@ -72,9 +72,9 @@ impl TestnetCli {
         match self.command {
             Sub::Configure(cli) => {
                 // first configure a vanilla genesis
-                 cli.run(self.framework_mrb_path).await?;
+                cli.run(self.framework_mrb_path).await?;
 
-                // if its a twin then we need to do brain surgery
+                // if it's a twin case, then we need to do brain surgery
                 // 1. collect all the operator.yaml files created
                 // in first step.
                 // 2. place a database in the default home path
