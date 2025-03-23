@@ -3,6 +3,7 @@
 use anyhow::Context;
 use diem_crypto::traits::ValidCryptoMaterialStringExt;
 use diem_forge::{LocalSwarm, Node, Swarm};
+use diem_framework::ReleaseBundle;
 use diem_sdk::types::LocalAccount;
 use diem_temppath::TempPath;
 use diem_types::chain_id::NamedChain;
@@ -45,16 +46,28 @@ impl Drop for LibraSmoke {
 impl LibraSmoke {
     /// start a swarm and return first val account.
     /// defaults to Head release.
-    pub async fn new(count_vals: Option<u8>, path: Option<PathBuf>) -> anyhow::Result<Self> {
-        Self::new_with_target(count_vals, path, ReleaseTarget::Head).await
+    pub async fn new(count_vals: Option<u8>, libra_bin_path: Option<PathBuf>) -> anyhow::Result<Self> {
+        Self::new_with_target(count_vals, libra_bin_path, ReleaseTarget::Head).await
     }
-    /// start a swarm and specify the release bundle
+    /// start a swarm and specify the target name e.g. HEAD
+    // TODO: deprecate this message,
+    // prefer to always pass the file path.
     pub async fn new_with_target(
         count_vals: Option<u8>,
-        path: Option<PathBuf>,
+        libra_bin_path: Option<PathBuf>,
         target: ReleaseTarget,
     ) -> anyhow::Result<Self> {
-        if let Some(p) = path {
+        let release = target.load_bundle().unwrap();
+        Self::new_with_bundle(count_vals, libra_bin_path, release).await
+    }
+
+    /// start a swarm and specify the release bundle
+    pub async fn new_with_bundle(
+        count_vals: Option<u8>,
+        libra_bin_path: Option<PathBuf>,
+        bundle: ReleaseBundle,
+    ) -> anyhow::Result<Self> {
+        if let Some(p) = libra_bin_path {
             std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", p);
         }
 
@@ -66,10 +79,9 @@ impl LibraSmoke {
         );
         println!("Using diem-node binary at {:?}", &diem_path);
 
-        let release = target.load_bundle().unwrap();
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
             count_vals.unwrap_or(1).into(),
-            release,
+            bundle,
         )
         .await;
 
@@ -130,7 +142,10 @@ impl LibraSmoke {
         let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
         let api_endpoint = node.rest_api_endpoint();
 
-        println!("SUCCESS: swarm started!");
+        println!(
+            "SUCCESS: swarm started! Use API at: {}",
+            api_endpoint.as_str()
+        );
 
         // TODO: order here is awkward because of borrow issues. Clean this up.
         // mint one coin to the main validator.

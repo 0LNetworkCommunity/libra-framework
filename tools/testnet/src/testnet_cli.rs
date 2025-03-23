@@ -1,12 +1,19 @@
 use crate::swarm_cli::SwarmCliOpts;
 use clap::Subcommand;
 use clap::{self, Parser};
+use diem_framework::{ReleaseBundle, ReleaseTarget};
 use std::path::PathBuf;
 
 /// Twin of the network
 #[derive(Parser)]
 /// Set up a twin of the network, with a synced db
 pub struct TestnetCli {
+    #[clap(long)]
+    /// Path to a framework mrb file
+    /// If not provided, will try to search in this path
+    /// at ./framework/releases/head.mrb
+    framework_mrb_path: Option<PathBuf>,
+
     #[clap(long, conflicts_with = "twin_db")]
     /// Run a twin of mainnet, instead of a virgin network
     twin_epoch: bool,
@@ -30,6 +37,13 @@ pub enum Sub {
 }
 impl TestnetCli {
     pub async fn run(self) -> anyhow::Result<()> {
+        let bundle = if let Some(p) = self.framework_mrb_path {
+            ReleaseBundle::read(p)?
+        } else {
+            print!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
+            ReleaseTarget::Head.load_bundle()?
+        };
+
         if self.twin_epoch {
             println!("do you want to download an epoch archive and restore?");
         } else if self.twin_db.is_some() {
@@ -67,7 +81,7 @@ impl TestnetCli {
             }
             Sub::StartSwarm(cli) => {
                 println!("starting local testnet using Diem swarm...");
-                cli.run(self.twin_db).await?;
+                cli.run(self.twin_db, bundle).await?;
             }
         }
         Ok(())

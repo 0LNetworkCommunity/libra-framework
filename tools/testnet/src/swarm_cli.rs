@@ -1,8 +1,8 @@
+use crate::make_twin_swarm;
 use clap::{self, Parser};
+use diem_framework::ReleaseBundle;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::{fs, path::PathBuf};
-
-use crate::make_twin_swarm;
 /// Twin of the network
 #[derive(Parser)]
 
@@ -17,10 +17,15 @@ pub struct SwarmCliOpts {
 }
 impl SwarmCliOpts {
     /// Runner for swarm
-    pub async fn run(&self, twin_db: Option<PathBuf>) -> anyhow::Result<(), anyhow::Error> {
+    pub async fn run(
+        &self,
+        twin_db: Option<PathBuf>,
+        framework_mrb: ReleaseBundle,
+    ) -> anyhow::Result<()> {
         let num_validators = self.count_vals.unwrap_or(1);
 
-        let mut smoke = LibraSmoke::new(Some(num_validators), None).await?;
+        let mut smoke =
+            LibraSmoke::new_with_bundle(Some(num_validators), None, framework_mrb).await?;
 
         if let Some(p) = twin_db {
             let db_path = fs::canonicalize(p)?;

@@ -19,6 +19,7 @@ dialoguer = { workspace = true }
 
 diem-config = { workspace = true }
 diem-forge = { workspace = true }
+diem-framework = { workspace = true }
 diem-genesis = { workspace = true }
 diem-temppath = { workspace = true }
 diem-types = { workspace = true }
