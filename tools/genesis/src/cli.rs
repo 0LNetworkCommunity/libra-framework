@@ -84,7 +84,7 @@ impl GenesisCli {
                     json_legacy.to_owned(),
                     Some(framework_mrb_path.to_owned()),
                 )
-                .await?
+                .await?;
             }
             _ => {}
         }

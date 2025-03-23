@@ -9,7 +9,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 /// Set up a twin of the network, with a synced db
 pub struct TestnetCli {
-    #[clap(long)]
+    #[clap(short, long)]
     /// Path to a framework mrb file
     /// If not provided, will try to search in this path
     /// at ./framework/releases/head.mrb
@@ -36,6 +36,7 @@ pub enum Sub {
     /// start using Diem swarm
     StartSwarm(SwarmCliOpts),
 }
+
 impl TestnetCli {
     pub async fn run(self) -> anyhow::Result<()> {
         let bundle = if let Some(p) = self.framework_mrb_path.clone() {
@@ -72,20 +73,11 @@ impl TestnetCli {
         match self.command {
             Sub::Configure(cli) => {
                 // first configure a vanilla genesis
-                cli.run(self.framework_mrb_path).await?;
-
-                // if it's a twin case, then we need to do brain surgery
-                // 1. collect all the operator.yaml files created
-                // in first step.
-                // 2. place a database in the default home path
-                // 3. run the twin rescue mission
-                // 4. use artifacts of #4 to update the config files
-                if self.twin_epoch || self.twin_db.is_some() {
-                    println!("configuring twin...");
-                }
+                cli.run(self.framework_mrb_path, self.twin_db).await?;
             }
             Sub::StartContainer => {
                 println!("starting local testnet using containers...");
+                todo!();
             }
             Sub::StartSwarm(cli) => {
                 println!("starting local testnet using Diem swarm...");

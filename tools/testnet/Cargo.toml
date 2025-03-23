@@ -25,7 +25,7 @@ diem-temppath = { workspace = true }
 diem-types = { workspace = true }
 
 fs_extra = { workspace = true }
-
+glob = { workspace = true }
 hex = { workspace = true }
 libra-config = { workspace = true }
 libra-framework = { workspace = true }

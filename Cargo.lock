@@ -5932,6 +5932,7 @@ dependencies = [
  "move-core-types",
  "serde 1.0.214",
  "serde_json",
+ "serde_yaml 0.8.26",
  "tokio",
  "ureq",
 ]
@@ -6067,6 +6068,7 @@ dependencies = [
  "diem-temppath",
  "diem-types",
  "fs_extra",
+ "glob",
  "hex",
  "libra-config",
  "libra-framework",
