@@ -40,10 +40,9 @@ impl SwarmCliOpts {
 
         // NOTE: all validators will stop when the LibraSmoke goes out of context. This is intentional
         // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
-        dialoguer::Confirm::new()
-            .with_prompt("swarm `libra` processes will keep running until you exit. Press any key to exit.")
-            .default(true)
-            .interact()?;
+        let _ = dialoguer::Input::<String>::new()
+            .with_prompt("\nswarm `libra` processes will keep running until you exit. Press any key to exit")
+            .interact_text()?;
 
         Ok(())
     }
