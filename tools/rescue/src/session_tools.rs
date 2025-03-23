@@ -138,7 +138,7 @@ pub fn libra_execute_session_function(
 ///
 /// ! CAUTION: This function will overwrite the current validator set
 /// Vector of `ValCredentials` is a list of validators to be added to the session
-pub fn session_add_validators(
+pub fn session_register_validators(
     session: &mut SessionExt,
     creds: Vec<ValCredentials>,
 ) -> anyhow::Result<()> {
@@ -272,7 +272,7 @@ pub fn register_and_replace_validators_changeset(
                 upgrade_framework_from_mrb_file(session, p).expect("could not upgrade framework");
             }
 
-            session_add_validators(session, replacement_vals)
+            session_register_validators(session, replacement_vals)
                 .expect("could not register validators");
 
             writeset_voodoo_events(session).expect("should voodoo, who do?");
