@@ -6,7 +6,7 @@ members = [
   "framework",
   "framework/cached-packages",
   "smoke-tests",
-  "testsuites/twin",
+  "tools/twin",
   "tools/cli",
   "tools/config",
   "tools/genesis",
@@ -44,7 +44,7 @@ libra-rescue = { path = "tools/rescue" }
 libra-storage = { path = "tools/storage" }
 libra-smoke-tests = { path = "smoke-tests" }
 libra-tower = { path = "tools/tower" }
-libra-twin-tests = { path = "testsuites/twin" }
+libra-twin-tests = { path = "tools/twin" }
 libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
