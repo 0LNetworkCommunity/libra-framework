@@ -52,6 +52,35 @@ where
 
     let mut session = mvm.new_session(&adapter, s_id, false);
 
+    let res =
+        libra_execute_session_function(&mut session, "0x1::timestamp::now_microseconds", vec![])?;
+
+    let mut last_timestamp_in_db_ms: u64 = 0;
+    res.return_values.iter().for_each(|v| {
+        let secs = MoveValue::simple_deserialize(&v.0, &v.1)
+            .expect("to parse timestamp::now_microseconds");
+        println!("[vm session] now_microseconds: {}", secs);
+        if let MoveValue::U64(s) = secs {
+            if s > last_timestamp_in_db_ms {
+                last_timestamp_in_db_ms = s;
+                println!("[vm session] last_time_in_db: {}", s);
+            }
+        }
+    });
+
+    // pre-session voodoo incantation
+    // always use prime numbers when voodoo is involved
+    let signer = MoveValue::Signer(AccountAddress::ZERO);
+    // proposer must be different than VM 0x0, otherwise time will not advance.
+    let addr = MoveValue::Address(AccountAddress::ONE);
+    let new_timestamp = MoveValue::U64(last_timestamp_in_db_ms + 7);
+
+    libra_execute_session_function(
+        &mut session,
+        "0x1::timestamp::update_global_time",
+        vec![&signer, &addr, &new_timestamp],
+    )?;
+
     ////// FUNCTIONS RUN HERE
     f(&mut session)
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;

@@ -19,6 +19,8 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 
+use libra_rescue::cli_main::REPLACE_VALIDATORS_BLOB;
+use libra_rescue::cli_main::UPGRADE_FRAMEWORK_BLOB;
 // VM related imports
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
@@ -91,13 +93,10 @@ fn publish_on_v7_changeset_success() -> anyhow::Result<()> {
     Ok(())
 }
 
-// TODO: the restored DBs at exact epoch boundaries
-// are not working.
-#[ignore]
-#[test]
+// take a recovered db using only the backup files from `epoch-archive-mainnet`
+// and try to upgrade and bootstrap a db
 /// using the command-line entry point
-/// try to upgrade and bootstrap a db from an epoch restore
-/// point
+#[test]
 fn e2e_publish_on_restored_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let blob_path = dir.clone();
@@ -116,7 +115,7 @@ fn e2e_publish_on_restored_v7() -> anyhow::Result<()> {
 
     r.run().context("rescue tx fails")?;
 
-    let file = blob_path.join("rescue.blob");
+    let file = blob_path.join(UPGRADE_FRAMEWORK_BLOB);
     assert!(file.exists());
 
     println!(
@@ -133,20 +132,18 @@ fn e2e_publish_on_restored_v7() -> anyhow::Result<()> {
 
     let wp = boot.run()?;
     assert!(
-        &wp.unwrap().to_string()
-            == "117583051:607deefff898ee4bd868f6ff8151e1dd3a0fcf70a6c15dc2d557a963d82a1676",
+        wp.unwrap().version()
+          // do not use hash to test since it will change on evert Move build
+            == 117583051u64,
         "wrong waypoint"
     );
 
     Ok(())
 }
 
-// TODO: the restored DBs at exact epoch boundaries
-// are not working.
-#[ignore]
+/// Same as above, but also register some validators
+/// and upgrade the framework
 #[test]
-/// run the validators replacement writeset
-/// used for twin testnet
 fn e2e_twin_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let blob_path = dir.clone();
@@ -169,7 +166,7 @@ fn e2e_twin_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
 
     r.run()?;
 
-    let file = blob_path.join("rescue.blob");
+    let file = blob_path.join(REPLACE_VALIDATORS_BLOB);
     assert!(file.exists());
 
     println!(
@@ -186,8 +183,9 @@ fn e2e_twin_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
 
     let wp = boot.run()?;
     assert!(
-        &wp.unwrap().to_string()
-            == "117583051:74e66c9df794c6356e3b1490dd2817201f74a11edd1fece08cdddb5b429aec2f",
+        wp.unwrap().version()
+          // do not use hash to test since it will change on evert Move build
+            == 117583051u64,
         "wrong waypoint"
     );
 

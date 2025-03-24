@@ -10,7 +10,15 @@ use crate::{
 use clap::{Parser, Subcommand};
 use libra_types::exports::AccountAddress;
 use std::{path::PathBuf, time::Duration};
+
+/// Constants for blob file names
+pub const REPLACE_VALIDATORS_BLOB: &str = "replace_validators_rescue.blob";
+pub const UPGRADE_FRAMEWORK_BLOB: &str = "upgrade_framework_rescue.blob";
+pub const RUN_SCRIPT_BLOB: &str = "run_script_rescue.blob";
+
 #[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+#[clap(arg_required_else_help(true))]
 #[clap(author, version, about, long_about = None)]
 #[clap(arg_required_else_help(true))]
 /// Apply writeset transactions to DB at rest
@@ -68,8 +76,12 @@ impl RescueCli {
             } => {
                 let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb)?;
 
-                let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
-                let p = save_rescue_blob(tx, &out_dir)?;
+                let out_file = self
+                    .blob_path
+                    .clone()
+                    .unwrap_or(self.db_path.clone())
+                    .join(REPLACE_VALIDATORS_BLOB);
+                let p = save_rescue_blob(tx, &out_file)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
             Sub::UpgradeFramework {
@@ -77,13 +89,21 @@ impl RescueCli {
                 set_validators,
             } => {
                 let tx = upgrade_tx(&self.db_path, upgrade_mrb, set_validators.clone())?;
-                let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
+                let out_dir = self
+                    .blob_path
+                    .clone()
+                    .unwrap_or(self.db_path.clone())
+                    .join(UPGRADE_FRAMEWORK_BLOB);
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
             Sub::RunScript { script_path } => {
                 let tx = run_script_tx(script_path.as_ref().unwrap())?;
-                let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
+                let out_dir = self
+                    .blob_path
+                    .clone()
+                    .unwrap_or(self.db_path.clone())
+                    .join(RUN_SCRIPT_BLOB);
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
