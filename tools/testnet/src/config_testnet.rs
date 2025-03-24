@@ -1,9 +1,10 @@
+use crate::testnet_setup;
+
 use anyhow::Result;
 use diem_genesis::config::HostAndPort;
 use diem_types::chain_id::NamedChain;
 use glob::glob;
 use libra_config::validator_registration::{registration_from_operator_yaml, ValCredentials};
-use libra_genesis_tools::testnet_setup;
 use libra_rescue::{
     one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
 };

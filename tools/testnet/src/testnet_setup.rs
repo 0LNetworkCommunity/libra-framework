@@ -1,8 +1,8 @@
-use crate::{genesis_builder, parse_json};
 use anyhow::{bail, Context};
 use diem_genesis::config::{HostAndPort, OperatorConfiguration, ValidatorConfiguration};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_config::validator_config;
+use libra_genesis_tools::{genesis_builder, parse_json};
 use libra_types::{
     core_types::fixtures::TestPersona,
     exports::{AccountAddress, AuthenticationKey, NamedChain},

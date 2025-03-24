@@ -1,12 +1,11 @@
-use clap::{Args, Parser, Subcommand};
-use diem_genesis::config::HostAndPort;
-
 use crate::{
-    genesis_builder, parse_json, testnet_setup,
+    genesis_builder, parse_json,
     wizard::{GenesisWizard, GITHUB_TOKEN_FILENAME},
 };
-use libra_types::{core_types::fixtures::TestPersona, exports::NamedChain, global_config_dir};
+use clap::{Args, Parser, Subcommand};
+use libra_types::{exports::NamedChain, global_config_dir};
 use std::{fs, path::PathBuf};
+
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None, arg_required_else_help = true)]
 /// Generate genesis transactions for testnet and upgrades
@@ -69,23 +68,6 @@ impl GenesisCli {
                 )
                 .await?;
             }
-
-            Some(Sub::Testnet {
-                me,
-                host_list,
-                framework_mrb_path,
-                json_legacy,
-            }) => {
-                testnet_setup::setup(
-                    me,
-                    host_list,
-                    chain_name,
-                    data_path,
-                    json_legacy.to_owned(),
-                    Some(framework_mrb_path.to_owned()),
-                )
-                .await?;
-            }
             _ => {}
         }
         println!("\nIf you're looking for trouble \nYou came to the right place\n");
@@ -130,23 +112,5 @@ enum Sub {
         /// github args
         #[clap(flatten)]
         github: GithubArgs,
-    },
-
-    /// sensible defaults for testnet, does not need a genesis repo
-    /// accounts are created from fixture mnemonics for alice, bob, carol, dave
-    Testnet {
-        /// which persona is this machine going to register as
-        #[clap(short, long)]
-        me: TestPersona,
-        /// ordered list of dns/ip with port for alice..dave
-        /// use 6180 for production validator port
-        #[clap(long)]
-        host_list: Vec<HostAndPort>,
-        /// path to the Move framework file, usually ./framework/releases/head.mrb
-        #[clap(short, long)]
-        framework_mrb_path: PathBuf,
-        /// path to file for legacy migration file
-        #[clap(short, long)]
-        json_legacy: Option<PathBuf>,
     },
 }
