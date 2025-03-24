@@ -6185,7 +6185,6 @@ dependencies = [
  "hmac 0.10.1",
  "indoc",
  "libra-types",
- "mirai-annotations",
  "pbkdf2 0.7.5",
  "rand 0.7.3",
  "rpassword",
