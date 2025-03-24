@@ -1,4 +1,3 @@
-
 use glob::glob;
 use libra_config::validator_registration::{registration_from_operator_yaml, ValCredentials};
 use libra_rescue::{
