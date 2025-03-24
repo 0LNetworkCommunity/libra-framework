@@ -1,3 +1,13 @@
+// This module tests that a pure restored db
+// (using only the backup files from `epoch-archive-mainnet`)
+// can be used for offline writesets (rescue missions), including
+// twin testnets.
+
+// WIP
+// There is a known issue with the restored DBs at exact epoch boundaries
+// which is not working. There is some voodoo which is not
+// being invoked, the epoch event is not being emitted.
+
 mod support;
 use std::env;
 use std::path::PathBuf;
@@ -41,7 +51,7 @@ fn test_voodoo_on_v7() -> anyhow::Result<()> {
 /// Testing we can open a database from fixtures, and produce a VM session
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn meta_test_open_db_sync_on_v7() -> anyhow::Result<()> {
+fn meta_test_open_db_on_restored_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
 
     let db = DiemDB::open(
@@ -80,7 +90,7 @@ fn meta_test_open_db_sync_on_v7() -> anyhow::Result<()> {
 /// Test we can publish a framework to a database fixture
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn publish_on_v7_changeset_success() -> anyhow::Result<()> {
+fn publish_on_restored_v7_changeset_success() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let upgrade_mrb = ReleaseTarget::Head
         .find_bundle_path()
