@@ -3,6 +3,7 @@ use std::env;
 use std::path::PathBuf;
 
 use crate::support::setup_test_db;
+use anyhow::Context;
 use diem_storage_interface::state_view::DbStateViewAtVersion;
 use diem_storage_interface::DbReaderWriter;
 use diem_vm::move_vm_ext::SessionId;
@@ -79,13 +80,14 @@ fn meta_test_open_db_sync_on_v7() -> anyhow::Result<()> {
 /// Test we can publish a framework to a database fixture
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn unit_publish_on_v7() -> anyhow::Result<()> {
+fn publish_on_v7_changeset_success() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let upgrade_mrb = ReleaseTarget::Head
         .find_bundle_path()
         .expect("cannot find head.mrb");
 
     upgrade_framework_changeset(&dir, None, &upgrade_mrb)?;
+
     Ok(())
 }
 
@@ -108,7 +110,7 @@ fn e2e_publish_on_v7() -> anyhow::Result<()> {
         },
     };
 
-    r.run()?;
+    r.run().context("rescue tx fails")?;
 
     let file = blob_path.join("rescue.blob");
     assert!(file.exists());
