@@ -1,4 +1,4 @@
-use crate::{diem_db_bootstrapper::BootstrapOpts, session_tools};
+use crate::{cli_bootstrapper::BootstrapOpts, session_tools};
 use anyhow::Result;
 use diem_types::{
     account_address::AccountAddress,

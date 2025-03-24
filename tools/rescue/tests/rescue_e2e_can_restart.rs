@@ -6,7 +6,7 @@ use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::{
-    diem_db_bootstrapper::BootstrapOpts,
+    cli_bootstrapper::BootstrapOpts,
     rescue_cli::{RescueCli, Sub},
 };
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};

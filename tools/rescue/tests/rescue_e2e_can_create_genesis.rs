@@ -5,7 +5,7 @@ use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_rescue::{
-    diem_db_bootstrapper::BootstrapOpts,
+    cli_bootstrapper::BootstrapOpts,
     rescue_tx::{run_script_tx, save_rescue_blob},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;

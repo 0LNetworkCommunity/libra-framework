@@ -18,7 +18,7 @@ use diem_storage_interface::state_view::DbStateViewAtVersion;
 use diem_storage_interface::DbReaderWriter;
 use diem_vm::move_vm_ext::SessionId;
 use libra_framework::release::ReleaseTarget;
-use libra_rescue::diem_db_bootstrapper::BootstrapOpts;
+use libra_rescue::cli_bootstrapper::BootstrapOpts;
 use libra_rescue::rescue_cli::RescueCli;
 use libra_rescue::rescue_cli::Sub;
 

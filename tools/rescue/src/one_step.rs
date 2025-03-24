@@ -1,4 +1,4 @@
-use crate::diem_db_bootstrapper::BootstrapOpts;
+use crate::cli_bootstrapper::BootstrapOpts;
 use diem_types::waypoint::Waypoint;
 use std::{path::Path, time::Duration};
 

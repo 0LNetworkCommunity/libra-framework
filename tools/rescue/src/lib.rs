@@ -1,4 +1,4 @@
-pub mod diem_db_bootstrapper;
+pub mod cli_bootstrapper;
 pub mod one_step;
 pub mod replace_validators;
 pub mod rescue_cli;
