@@ -1,6 +1,6 @@
-use crate::rescue_cli::REPLACE_VALIDATORS_BLOB;
 use diem_types::transaction::{Transaction, WriteSetPayload};
 use libra_config::validator_registration::ValCredentials;
+use libra_rescue::cli_main::REPLACE_VALIDATORS_BLOB;
 use std::path::{Path, PathBuf};
 
 use libra_rescue::{session_tools, transaction_factory};
