@@ -5,7 +5,7 @@ use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_rescue::{
-    cli_bootstrapper::BootstrapOpts,
+    cli_bootstrapper::{BootstrapOpts, RUN_SCRIPT_BLOB},
     transaction_factory::{run_script_tx, save_rescue_blob},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
@@ -65,7 +65,7 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
 
     //////// Run the tool ////////
     let tx = run_script_tx(&script_path)?;
-    let genesis_blob_path = save_rescue_blob(tx, data_path.path())?;
+    let genesis_blob_path = save_rescue_blob(tx, &data_path.path().join(RUN_SCRIPT_BLOB))?;
     //////////////////////////////
 
     assert!(genesis_blob_path.exists());

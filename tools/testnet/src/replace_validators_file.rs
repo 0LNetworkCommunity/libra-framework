@@ -1,3 +1,4 @@
+use crate::rescue_cli::REPLACE_VALIDATORS_BLOB;
 use diem_types::transaction::{Transaction, WriteSetPayload};
 use libra_config::validator_registration::ValCredentials;
 use std::path::{Path, PathBuf};
@@ -18,7 +19,7 @@ pub async fn replace_validators_blob(
     let cs = session_tools::register_and_replace_validators_changeset(db_path, creds, &None)?;
 
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
-    let out = output_dir.join("replace_validators_rescue.blob");
+    let out = output_dir.join(REPLACE_VALIDATORS_BLOB);
     transaction_factory::save_rescue_blob(gen_tx, &out)?;
     Ok(out)
 }

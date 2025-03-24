@@ -1,13 +1,12 @@
 mod support;
 use crate::support::{update_node_config_restart, wait_for_node};
-
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
-    cli_main::{RescueCli, Sub},
+    cli_main::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
 };
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
@@ -72,7 +71,7 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
 
     r.run()?;
 
-    let genesis_blob_path = blob_path.join("rescue.blob");
+    let genesis_blob_path = blob_path.join(UPGRADE_FRAMEWORK_BLOB);
     assert!(genesis_blob_path.exists());
 
     let genesis_transaction = {
