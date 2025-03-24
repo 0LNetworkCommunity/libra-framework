@@ -1,5 +1,4 @@
-use crate::config_testnet::TestnetConfigOpts;
-use crate::swarm_cli::SwarmCliOpts;
+use crate::{cli_config::TestnetConfigOpts, cli_swarm::SwarmCliOpts};
 use clap::Subcommand;
 use clap::{self, Parser};
 use diem_framework::ReleaseBundle;

@@ -1,6 +1,6 @@
-pub mod config_testnet;
-pub mod make_twin_swarm;
-pub mod swarm_cli;
-pub mod testnet_cli;
-pub mod testnet_setup;
+pub mod cli_config;
+pub mod cli_main;
+pub mod cli_swarm;
+pub mod config_twin;
+pub mod config_virgin;
 pub mod twin_swarm;

@@ -1,4 +1,5 @@
-use crate::make_twin_swarm;
+use crate::twin_swarm;
+
 use clap::{self, Parser};
 use diem_framework::ReleaseBundle;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
@@ -30,7 +31,7 @@ impl SwarmCliOpts {
         if let Some(p) = twin_db {
             let db_path = fs::canonicalize(p)?;
 
-            make_twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path)).await?;
+            twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path)).await?;
         } else {
             smoke
                 .swarm
@@ -54,6 +55,6 @@ impl SwarmCliOpts {
 async fn test_twin_swarm() -> anyhow::Result<()> {
     let mut smoke = LibraSmoke::new(Some(1), None).await?;
 
-    make_twin_swarm::awake_frankenswarm(&mut smoke, None).await?;
+    twin_swarm::awake_frankenswarm(&mut smoke, None).await?;
     Ok(())
 }
