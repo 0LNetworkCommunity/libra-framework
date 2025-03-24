@@ -47,7 +47,7 @@ async fn wait_for_node(validator: &mut dyn Validator, expected_to_connect: usize
 /// This meta test checks that our tools can control a network
 /// so the nodes stop producing blocks, shut down, and start again.
 async fn test_swarm_can_halt_and_restart() -> anyhow::Result<()> {
-    let num_nodes: usize = 5;
+    let num_nodes: usize = 3;
 
     let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
         .await
