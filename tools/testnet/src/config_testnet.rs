@@ -8,8 +8,8 @@ use libra_rescue::{
     one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
 };
 use libra_types::{core_types::fixtures::TestPersona, global_config_dir};
-use tokio::fs;
 use std::path::{Path, PathBuf};
+use tokio::fs;
 
 use crate::twin_swarm::update_genesis_in_node_config;
 

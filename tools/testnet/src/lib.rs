@@ -1,4 +1,4 @@
-pub mod config;
+pub mod config_testnet;
 pub mod make_twin_swarm;
 pub mod swarm_cli;
 pub mod testnet_cli;

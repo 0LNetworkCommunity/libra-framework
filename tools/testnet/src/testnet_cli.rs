@@ -1,4 +1,4 @@
-use crate::config::TestnetConfigOpts;
+use crate::config_testnet::TestnetConfigOpts;
 use crate::swarm_cli::SwarmCliOpts;
 use clap::Subcommand;
 use clap::{self, Parser};
