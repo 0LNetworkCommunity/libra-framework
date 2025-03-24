@@ -84,7 +84,7 @@ fn unit_publish_on_v7() -> anyhow::Result<()> {
     let upgrade_mrb = ReleaseTarget::Head
         .find_bundle_path()
         .expect("cannot find head.mrb");
-    dbg!(&upgrade_mrb);
+
     upgrade_framework_changeset(&dir, None, &upgrade_mrb)?;
     Ok(())
 }
