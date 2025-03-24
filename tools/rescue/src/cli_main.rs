@@ -9,7 +9,14 @@ use clap::{Parser, Subcommand};
 use libra_types::exports::AccountAddress;
 use std::{path::PathBuf, time::Duration};
 
+/// Constants for blob file names
+pub const REPLACE_VALIDATORS_BLOB: &str = "replace_validators_rescue.blob";
+pub const UPGRADE_FRAMEWORK_BLOB: &str = "upgrade_framework_rescue.blob";
+pub const RUN_SCRIPT_BLOB: &str = "run_script_rescue.blob";
+
 #[derive(Parser)]
+#[clap(author, version, about, long_about = None)]
+#[clap(arg_required_else_help(true))]
 #[clap(author, version, about, long_about = None)]
 #[clap(arg_required_else_help(true))]
 /// Apply writeset transactions to DB at rest
@@ -71,7 +78,7 @@ impl RescueCli {
                     .blob_path
                     .clone()
                     .unwrap_or(self.db_path.clone())
-                    .join("replace_validators_rescue.blob");
+                    .join(REPLACE_VALIDATORS_BLOB);
                 let p = save_rescue_blob(tx, &out_file)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
@@ -84,7 +91,7 @@ impl RescueCli {
                     .blob_path
                     .clone()
                     .unwrap_or(self.db_path.clone())
-                    .join("upgrade_framework_rescue.blob");
+                    .join(UPGRADE_FRAMEWORK_BLOB);
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
@@ -94,7 +101,7 @@ impl RescueCli {
                     .blob_path
                     .clone()
                     .unwrap_or(self.db_path.clone())
-                    .join("run_script_rescue.blob");
+                    .join(RUN_SCRIPT_BLOB);
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
