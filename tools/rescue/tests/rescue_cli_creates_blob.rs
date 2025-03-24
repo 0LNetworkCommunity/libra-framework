@@ -2,7 +2,7 @@ mod support;
 
 use libra_rescue::{
     diem_db_bootstrapper::BootstrapOpts,
-    rescue_cli::{RescueCli, Sub},
+    rescue_cli::{RescueCli, Sub, RUN_SCRIPT_BLOB},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
@@ -48,7 +48,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
 
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     println!(
@@ -123,7 +123,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
 
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     Ok(())
@@ -171,7 +171,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
 
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     println!(

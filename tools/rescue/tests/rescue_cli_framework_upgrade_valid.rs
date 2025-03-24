@@ -1,7 +1,7 @@
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::{
     diem_db_bootstrapper::BootstrapOpts,
-    rescue_cli::{RescueCli, Sub},
+    rescue_cli::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
@@ -38,7 +38,7 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
 
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(UPGRADE_FRAMEWORK_BLOB);
     assert!(file.exists());
 
     println!(

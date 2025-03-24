@@ -9,12 +9,10 @@ use libra_framework::builder::framework_generate_upgrade_proposal::libra_compile
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use std::path::{Path, PathBuf};
 
-pub fn save_rescue_blob(tx: Transaction, out_dir: &Path) -> Result<PathBuf> {
-    let file = out_dir.join("rescue.blob");
-
+pub fn save_rescue_blob(tx: Transaction, out_file: &Path) -> Result<PathBuf> {
     let bytes = bcs::to_bytes(&tx)?;
-    std::fs::write(&file, bytes.as_slice())?;
-    Ok(file)
+    std::fs::write(out_file, bytes.as_slice())?;
+    Ok(out_file.to_path_buf())
 }
 
 pub fn run_script_tx(script_path: &Path) -> Result<Transaction> {

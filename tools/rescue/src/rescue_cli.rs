@@ -94,6 +94,7 @@ impl RescueCli {
                     .clone()
                     .unwrap_or(self.db_path.clone())
                     .join(UPGRADE_FRAMEWORK_BLOB);
+
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
