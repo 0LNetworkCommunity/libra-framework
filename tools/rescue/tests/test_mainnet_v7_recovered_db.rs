@@ -98,14 +98,15 @@ fn publish_on_v7_changeset_success() -> anyhow::Result<()> {
 fn e2e_publish_on_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let blob_path = dir.clone();
+    let bundle = ReleaseTarget::Head
+        .find_bundle_path()
+        .expect("cannot find head.mrb");
 
     let r = RescueCli {
         db_path: dir.clone(),
         blob_path: Some(blob_path.clone()),
         command: Sub::UpgradeFramework {
-            upgrade_mrb: ReleaseTarget::Head
-                .find_bundle_path()
-                .expect("cannot find head.mrb"),
+            upgrade_mrb: bundle,
             set_validators: None,
         },
     };
