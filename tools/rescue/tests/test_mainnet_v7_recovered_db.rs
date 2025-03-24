@@ -19,8 +19,8 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 
-use libra_rescue::cli_main::REPLACE_VALIDATORS_BLOB;
-use libra_rescue::cli_main::UPGRADE_FRAMEWORK_BLOB;
+use libra_rescue::rescue_cli::REPLACE_VALIDATORS_BLOB;
+use libra_rescue::rescue_cli::UPGRADE_FRAMEWORK_BLOB;
 // VM related imports
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
