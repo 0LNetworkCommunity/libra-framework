@@ -6056,7 +6056,6 @@ name = "libra-testnet"
 version = "7.0.4"
 dependencies = [
  "anyhow",
- "bcs 0.1.4",
  "clap 4.5.20",
  "dialoguer",
  "diem-api-types",
@@ -6069,18 +6068,14 @@ dependencies = [
  "diem-types",
  "fs_extra",
  "glob",
- "hex",
  "libra-config",
  "libra-framework",
  "libra-genesis-tools",
- "libra-query",
  "libra-rescue",
  "libra-smoke-tests",
- "libra-txs",
  "libra-types",
  "regex",
  "serde_json",
- "serde_yaml 0.8.26",
  "smoke-test",
  "tokio",
 ]
