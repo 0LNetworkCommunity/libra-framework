@@ -58,8 +58,8 @@ where
     //////
 
     let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
-    // if we want to replace the vals, or otherwise use swarm
-    // to drive the db state
+    // if we want to replace the vals the vals must ALREADY be registered
+    // in the db we are running a session on, and bootstrapping
     if let Some(vals) = debug_vals {
         let vals_cast = MoveValue::vector_address(vals);
         let args = vec![&framework_sig, &vals_cast];
