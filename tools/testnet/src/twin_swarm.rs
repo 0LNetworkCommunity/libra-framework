@@ -1,9 +1,8 @@
+use crate::replace_validators_file::replace_validators_blob;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use std::time::Instant;
 
-use libra_rescue::{
-    one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
-};
+use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 
 use anyhow::{Context, Result};
 use diem_config::config::NodeConfig;

@@ -6,7 +6,7 @@ use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
-    rescue_tx::{run_script_tx, save_rescue_blob},
+    transaction_factory::{run_script_tx, save_rescue_blob},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;

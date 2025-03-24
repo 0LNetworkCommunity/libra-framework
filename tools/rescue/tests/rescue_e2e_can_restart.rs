@@ -7,7 +7,7 @@ use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
-    rescue_cli::{RescueCli, Sub},
+    cli_main::{RescueCli, Sub},
 };
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};

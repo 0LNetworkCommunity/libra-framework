@@ -1,10 +1,8 @@
 //! CLI tool for rescue operations in Diem, providing commands for transaction rescue,
 //! database bootstrapping, and debugging twin states.
 use crate::{
-    cli_bootstrapper::BootstrapOpts,
-    rescue_tx::{
-        check_rescue_bootstraps, register_vals, run_script_tx, save_rescue_blob, upgrade_tx,
-    },
+    cli_bootstrapper::{check_rescue_bootstraps, BootstrapOpts},
+    transaction_factory::{register_vals, run_script_tx, save_rescue_blob, upgrade_tx},
 };
 
 use clap::{Parser, Subcommand};
@@ -69,8 +67,12 @@ impl RescueCli {
             } => {
                 let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb)?;
 
-                let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
-                let p = save_rescue_blob(tx, &out_dir)?;
+                let out_file = self
+                    .blob_path
+                    .clone()
+                    .unwrap_or(self.db_path.clone())
+                    .join("replace_validators_rescue.blob");
+                let p = save_rescue_blob(tx, &out_file)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
             Sub::UpgradeFramework {
@@ -78,13 +80,21 @@ impl RescueCli {
                 set_validators,
             } => {
                 let tx = upgrade_tx(&self.db_path, upgrade_mrb, set_validators.clone())?;
-                let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
+                let out_dir = self
+                    .blob_path
+                    .clone()
+                    .unwrap_or(self.db_path.clone())
+                    .join("upgrade_framework_rescue.blob");
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
             Sub::RunScript { script_path } => {
                 let tx = run_script_tx(script_path.as_ref().unwrap())?;
-                let out_dir = self.blob_path.clone().unwrap_or(self.db_path.clone());
+                let out_dir = self
+                    .blob_path
+                    .clone()
+                    .unwrap_or(self.db_path.clone())
+                    .join("run_script_rescue.blob");
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }

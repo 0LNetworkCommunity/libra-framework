@@ -19,8 +19,8 @@ use diem_storage_interface::DbReaderWriter;
 use diem_vm::move_vm_ext::SessionId;
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::cli_bootstrapper::BootstrapOpts;
-use libra_rescue::rescue_cli::RescueCli;
-use libra_rescue::rescue_cli::Sub;
+use libra_rescue::cli_main::RescueCli;
+use libra_rescue::cli_main::Sub;
 
 // Database related imports
 use diem_config::config::{

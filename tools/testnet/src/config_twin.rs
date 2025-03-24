@@ -1,8 +1,8 @@
+use crate::replace_validators_file::replace_validators_blob;
+
 use glob::glob;
 use libra_config::validator_registration::{registration_from_operator_yaml, ValCredentials};
-use libra_rescue::{
-    one_step::one_step_apply_rescue_on_db, replace_validators::replace_validators_blob,
-};
+use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use std::path::{Path, PathBuf};
 use tokio::fs;
 

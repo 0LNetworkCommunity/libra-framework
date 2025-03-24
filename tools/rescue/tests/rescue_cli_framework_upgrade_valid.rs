@@ -1,7 +1,7 @@
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
-    rescue_cli::{RescueCli, Sub},
+    cli_main::{RescueCli, Sub},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
