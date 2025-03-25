@@ -326,6 +326,6 @@ jobs:
           name: framework-build
           path: framework/
 
-      - name: twin
-        working-directory: ./testsuites/twin
+      - name: testnet
+        working-directory: ./tools/testnet
         run: cargo test --no-fail-fast -- --test-threads=1

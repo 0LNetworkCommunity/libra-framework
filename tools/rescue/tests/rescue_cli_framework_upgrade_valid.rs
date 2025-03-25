@@ -1,7 +1,7 @@
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::{
-    diem_db_bootstrapper::BootstrapOpts,
-    rescue_cli::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
+    cli_bootstrapper::BootstrapOpts,
+    cli_main::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 

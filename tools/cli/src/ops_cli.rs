@@ -1,6 +1,6 @@
 use clap::Subcommand;
 use libra_genesis_tools::cli::GenesisCli;
-use libra_rescue::rescue_cli::RescueCli;
+use libra_rescue::cli_main::RescueCli;
 use libra_storage::storage_cli::StorageCli;
 
 #[derive(Subcommand)]

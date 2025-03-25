@@ -5882,6 +5882,7 @@ dependencies = [
  "move-core-types",
  "serde 1.0.214",
  "serde_json",
+ "serde_yaml 0.8.26",
  "tokio",
  "ureq",
 ]
@@ -5949,6 +5950,7 @@ dependencies = [
  "diem-config",
  "diem-crypto",
  "diem-forge",
+ "diem-framework",
  "diem-genesis",
  "diem-logger",
  "diem-sdk",
@@ -6000,27 +6002,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "libra-twin-tests"
+name = "libra-testnet"
 version = "7.0.4"
 dependencies = [
  "anyhow",
- "bcs 0.1.4",
  "clap 4.5.20",
  "dialoguer",
  "diem-api-types",
  "diem-config",
  "diem-forge",
+ "diem-framework",
  "diem-genesis",
  "diem-logger",
  "diem-temppath",
  "diem-types",
  "fs_extra",
- "hex",
+ "glob",
+ "libra-backwards-compatibility",
  "libra-config",
- "libra-query",
+ "libra-framework",
+ "libra-genesis-tools",
  "libra-rescue",
  "libra-smoke-tests",
- "libra-txs",
  "libra-types",
  "regex",
  "serde_json",
@@ -6109,7 +6112,7 @@ dependencies = [
  "libra-framework",
  "libra-query",
  "libra-smoke-tests",
- "libra-twin-tests",
+ "libra-testnet",
  "libra-txs",
  "libra-types",
  "smoke-test",
@@ -6134,7 +6137,6 @@ dependencies = [
  "hmac 0.10.1",
  "indoc",
  "libra-types",
- "mirai-annotations",
  "pbkdf2 0.7.5",
  "rand 0.7.3",
  "rpassword",
