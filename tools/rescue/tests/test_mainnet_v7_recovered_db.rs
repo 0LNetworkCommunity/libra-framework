@@ -1,3 +1,13 @@
+// This module tests that a pure restored db
+// (using only the backup files from `epoch-archive-mainnet`)
+// can be used for offline writesets (rescue missions), including
+// twin testnets.
+
+// WIP
+// There is a known issue with the restored DBs at exact epoch boundaries
+// which is not working. There is some voodoo which is not
+// being invoked, the epoch event is not being emitted.
+
 mod support;
 use std::env;
 use std::path::PathBuf;
@@ -8,9 +18,9 @@ use diem_storage_interface::state_view::DbStateViewAtVersion;
 use diem_storage_interface::DbReaderWriter;
 use diem_vm::move_vm_ext::SessionId;
 use libra_framework::release::ReleaseTarget;
-use libra_rescue::diem_db_bootstrapper::BootstrapOpts;
-use libra_rescue::rescue_cli::RescueCli;
-use libra_rescue::rescue_cli::Sub;
+use libra_rescue::cli_bootstrapper::BootstrapOpts;
+use libra_rescue::cli_main::RescueCli;
+use libra_rescue::cli_main::Sub;
 
 // Database related imports
 use diem_config::config::{
@@ -19,8 +29,8 @@ use diem_config::config::{
 };
 use diem_db::DiemDB;
 
-use libra_rescue::rescue_cli::REPLACE_VALIDATORS_BLOB;
-use libra_rescue::rescue_cli::UPGRADE_FRAMEWORK_BLOB;
+use libra_rescue::cli_main::REPLACE_VALIDATORS_BLOB;
+use libra_rescue::cli_main::UPGRADE_FRAMEWORK_BLOB;
 // VM related imports
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 
@@ -43,7 +53,7 @@ fn test_voodoo_on_v7() -> anyhow::Result<()> {
 /// Testing we can open a database from fixtures, and produce a VM session
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn meta_test_open_db_sync_on_v7() -> anyhow::Result<()> {
+fn meta_test_open_db_on_restored_v7() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
 
     let db = DiemDB::open(
@@ -82,7 +92,7 @@ fn meta_test_open_db_sync_on_v7() -> anyhow::Result<()> {
 /// Test we can publish a framework to a database fixture
 ///
 /// Uses a database fixture extracted from `./rescue/fixtures/db_339.tar.gz`
-fn publish_on_v7_changeset_success() -> anyhow::Result<()> {
+fn publish_on_restored_v7_changeset_success() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let upgrade_mrb = ReleaseTarget::Head
         .find_bundle_path()

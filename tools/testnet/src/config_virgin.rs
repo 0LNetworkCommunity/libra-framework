@@ -1,8 +1,8 @@
-use crate::{genesis_builder, parse_json};
-use anyhow::bail;
-use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
+use anyhow::{bail, Context};
+use diem_genesis::config::{HostAndPort, OperatorConfiguration, ValidatorConfiguration};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_config::validator_config;
+use libra_genesis_tools::{genesis_builder, parse_json};
 use libra_types::{
     core_types::fixtures::TestPersona,
     exports::{AccountAddress, AuthenticationKey, NamedChain},
@@ -12,9 +12,46 @@ use libra_types::{
     },
     ONCHAIN_DECIMAL_PRECISION,
 };
-use std::{fs, path::PathBuf, thread, time};
+use serde_yaml;
+use std::{fs, path::PathBuf, thread, time}; // Explicitly import serde_yaml
+
+// Simple function to convert ValidatorConfiguration to OperatorConfiguration
+fn validator_to_operator_config(
+    config: &ValidatorConfiguration,
+) -> anyhow::Result<OperatorConfiguration> {
+    let consensus_public_key = config
+        .consensus_public_key
+        .clone()
+        .context("Consensus public key is required for operator configuration")?;
+
+    let consensus_proof_of_possession = config
+        .proof_of_possession
+        .clone()
+        .context("Proof of possession is required for operator configuration")?;
+
+    let validator_network_public_key = config
+        .validator_network_public_key
+        .context("Validator network public key is required for operator configuration")?;
+
+    let validator_host = config
+        .validator_host
+        .clone()
+        .context("Validator host is required for operator configuration")?;
+
+    Ok(OperatorConfiguration {
+        operator_account_address: config.operator_account_address,
+        operator_account_public_key: config.operator_account_public_key.clone(),
+        consensus_public_key,
+        consensus_proof_of_possession,
+        validator_network_public_key,
+        validator_host,
+        full_node_network_public_key: config.full_node_network_public_key,
+        full_node_host: config.full_node_host.clone(),
+    })
+}
 
 // Sets up the environment for the given test persona.
+// returns the home data path
 pub async fn setup(
     me: &TestPersona,
     host_list: &[HostAndPort],
@@ -22,7 +59,7 @@ pub async fn setup(
     data_path: PathBuf,
     legacy_data_path: Option<PathBuf>,
     framework_mrb_path: Option<PathBuf>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<PathBuf> {
     // config the host address for this persona
     if host_list.len() < 3 {
         bail!("cannot start a testnet with less than 3 nodes, use --host-list for each of Alice, Bob, Carol and Dave but not more. Exiting.")
@@ -77,6 +114,35 @@ pub async fn setup(
         })
         .collect();
 
+    // make a directory under data-path for `operator_files`
+    let operator_files_path = data_path.join("operator_files");
+    fs::create_dir_all(&operator_files_path)?;
+
+    // save the identity files operator.yaml, we'll need them in cases of twin tests
+    val_cfg.iter().for_each(|v| {
+      match validator_to_operator_config(v) {
+        Ok(o) => {
+          // use serde yaml to write the operator configuration to a file
+          // including the address
+          let operator_file = operator_files_path.join(format!("operator_{}.yaml", v.owner_account_address));
+          match serde_yaml::to_string(&o) {
+              Ok(yaml_str) => {
+                  if let Err(e) = fs::write(&operator_file, yaml_str) {
+                      eprintln!("Could not write operator file to {:?}: {}", operator_file, e);
+                  } else {
+                      println!("Wrote operator file to {:?}", operator_file);
+                  }
+              },
+              Err(e) => eprintln!("Failed to serialize operator config: {}", e),
+          }
+        }
+        Err(e) => {
+            eprintln!("Failed to convert ValidatorConfiguration to OperatorConfiguration for validator {:?}: {}",
+                v.owner_account_address, e);
+        }
+      }
+    });
+
     // Determines the path for the recovery data.
     // NOTE: test fixtures located at ./tests/fixtures/sample_export_recovery.json
     let mut recovery = if let Some(p) = legacy_data_path {
@@ -92,13 +158,13 @@ pub async fn setup(
         "none".to_string(), // we ignore ceremony coordination for testnet
         "none".to_string(),
         "none".to_string(),
-        data_path,
+        data_path.clone(),
         framework_mrb_path,
         &mut recovery,
         chain,
         Some(val_cfg),
     )?;
-    Ok(())
+    Ok(data_path)
 }
 
 fn generate_testnet_state_for_vals(vals: &[ValidatorConfiguration]) -> Vec<LegacyRecoveryV6> {

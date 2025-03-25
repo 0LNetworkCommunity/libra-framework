@@ -3,7 +3,7 @@ mod support;
 use anyhow::Context;
 use libra_framework::release::ReleaseTarget;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_twin_tests::make_twin_swarm::awake_frankenswarm;
+use libra_testnet::twin_swarm::awake_frankenswarm;
 // Here we are testing how a Twin modified swarm responds to an upgrade
 // upgrades are being applied against Mainnet data which is recovered by a snapshot.
 
@@ -17,7 +17,7 @@ async fn twin_test_all_upgrades_dummy() -> anyhow::Result<()> {
 
     // Is not trying to restore from an actual Twin, hence None
     // just a meta integration test
-    awake_frankenswarm(&mut s, None, false).await?;
+    awake_frankenswarm(&mut s, None).await?;
 
     support::upgrade_multiple_impl(
         &mut s,
@@ -41,7 +41,7 @@ async fn twin_test_stdlib_upgrade() -> anyhow::Result<()> {
     let p = default_path.join("data/db");
     assert!(p.exists());
 
-    awake_frankenswarm(&mut s, Some(p), false).await?;
+    awake_frankenswarm(&mut s, Some(p)).await?;
 
     support::upgrade_multiple_impl(&mut s, "upgrade-single-lib", vec!["1-move-stdlib"]).await?;
     Ok(())
@@ -59,7 +59,7 @@ async fn twin_test_framework_upgrade() -> anyhow::Result<()> {
     let p = default_path.join("data/db");
     assert!(p.exists());
 
-    awake_frankenswarm(&mut s, Some(p), false).await?;
+    awake_frankenswarm(&mut s, Some(p)).await?;
 
     support::upgrade_multiple_impl(
         &mut s,

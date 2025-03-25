@@ -1,4 +1,4 @@
-use crate::{diem_db_bootstrapper::BootstrapOpts, session_tools};
+use crate::session_tools;
 use anyhow::Result;
 use diem_types::{
     account_address::AccountAddress,
@@ -57,18 +57,4 @@ pub fn register_vals(
         upgrade_mrb,
     )?;
     Ok(Transaction::GenesisTransaction(WriteSetPayload::Direct(cs)))
-}
-
-pub fn check_rescue_bootstraps(db_path: &Path, blob_path: &Path) -> Result<()> {
-    let b = BootstrapOpts {
-        db_dir: db_path.to_owned(),
-        genesis_txn_file: blob_path.to_owned(),
-        waypoint_to_verify: None,
-        commit: false,
-        info: false,
-    };
-    if let Some(wp) = b.run()? {
-        println!("Rescue tx verified. Bootstrap with waypoint: {:?}", wp);
-    }
-    Ok(())
 }
