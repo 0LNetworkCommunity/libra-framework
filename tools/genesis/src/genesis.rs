@@ -52,13 +52,13 @@ pub fn save_genesis(gen_tx: &Transaction, output_path: &PathBuf) -> Result<(), E
 #[test]
 fn test_basic_genesis() {
     use diem_vm_genesis::TestValidator;
-    use libra_framework::head_release_bundle;
+    use libra_framework::testing_local_release_bundle;
     let test_validators = TestValidator::new_test_set(Some(4), Some(100_000_000));
     let validators: Vec<Validator> = test_validators.iter().map(|t| t.data.clone()).collect();
     let _tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut [],
         &validators,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )
@@ -74,7 +74,7 @@ fn test_recovery_genesis() {
         write_set::TransactionWrite,
     };
     use diem_vm_genesis::TestValidator;
-    use libra_framework::head_release_bundle;
+    use libra_framework::testing_local_release_bundle;
 
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/single.json");
 
@@ -86,7 +86,7 @@ fn test_recovery_genesis() {
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut recovery,
         &validators,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )

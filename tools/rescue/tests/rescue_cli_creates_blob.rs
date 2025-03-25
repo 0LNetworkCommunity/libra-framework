@@ -1,6 +1,9 @@
 mod support;
 
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_rescue::{
+    cli_bootstrapper::BootstrapOpts,
+    cli_main::{RescueCli, Sub, RUN_SCRIPT_BLOB},
+};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 #[tokio::test]
@@ -35,17 +38,17 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
 
     println!("2. compile the script");
 
-    let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::RunScript {
+            script_path: Some(script_path),
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     println!(
@@ -110,17 +113,17 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
 
     println!("2. compile the script");
 
-    let r = RescueTxOpts {
-        data_path: val_db_path,
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::RunScript {
+            script_path: Some(script_path),
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     Ok(())
@@ -158,17 +161,17 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
 
     println!("2. compile the script");
 
-    let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::RunScript {
+            script_path: Some(script_path),
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     println!(

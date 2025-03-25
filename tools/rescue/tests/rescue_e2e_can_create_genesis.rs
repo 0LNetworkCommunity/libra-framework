@@ -4,14 +4,17 @@ use anyhow::Context;
 use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
 use diem_types::transaction::Transaction;
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_rescue::{
+    cli_bootstrapper::BootstrapOpts,
+    cli_main::RUN_SCRIPT_BLOB,
+    transaction_factory::{run_script_tx, save_rescue_blob},
+};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::{fs, time::Duration};
 
 use crate::support::{update_node_config_restart, wait_for_node};
 
-// #[ignore]
 #[tokio::test]
 /// Tests we can create a genesis blob from the smoke test e2e environment.
 /// NOTE: much of this is duplicated in rescue_cli_creates_blob and e2e but we
@@ -60,15 +63,11 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
 
     let data_path = TempPath::new();
     data_path.create_as_dir()?;
-    let rescue = RescueTxOpts {
-        data_path: data_path.path().to_owned(),
-        blob_path: None, // defaults to data_path/rescue.blob
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
-    };
-    let genesis_blob_path = rescue.run()?;
+
+    //////// Run the tool ////////
+    let tx = run_script_tx(&script_path)?;
+    let genesis_blob_path = save_rescue_blob(tx, &data_path.path().join(RUN_SCRIPT_BLOB))?;
+    //////////////////////////////
 
     assert!(genesis_blob_path.exists());
 

@@ -14,7 +14,7 @@ use libra_genesis_tools::{
 };
 use std::path::PathBuf;
 
-use libra_framework::head_release_bundle;
+use libra_framework::testing_local_release_bundle;
 
 use std::fs;
 
@@ -35,7 +35,7 @@ fn end_to_end_single() {
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut recovery,
         &validators,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )
@@ -84,7 +84,7 @@ fn end_to_end_all() {
     let tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut recovery,
         &validators,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )

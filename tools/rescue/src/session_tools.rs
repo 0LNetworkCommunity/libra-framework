@@ -10,9 +10,8 @@ use diem_types::{account_address::AccountAddress, transaction::ChangeSet};
 use diem_vm::move_vm_ext::{MoveVmExt, SessionExt, SessionId};
 use diem_vm_types::change_set::VMChangeSet;
 use libra_config::validator_registration::ValCredentials;
-use libra_framework::head_release_bundle;
+use libra_framework::release::ReleaseTarget;
 use move_core_types::{
-    ident_str,
     language_storage::{StructTag, CORE_CODE_ADDRESS},
     value::{serialize_values, MoveValue},
 };
@@ -53,14 +52,23 @@ where
 
     let mut session = mvm.new_session(&adapter, s_id, false);
 
+    // voodoo time travel
+    // say a prayer
+    // before the writeset
+    // or the gods will be angry
+    // and the writeset will fail later
+    // once you try to bootstrap it
+    // with INVALID WRITESET
+    voodoo_time_travel(&mut session)?;
+
     ////// FUNCTIONS RUN HERE
     f(&mut session)
         .map_err(|err| format_err!("Unexpected VM Error Running Rescue VM Session: {:?}", err))?;
     //////
 
     let framework_sig: MoveValue = MoveValue::Signer(AccountAddress::ONE);
-    // if we want to replace the vals, or otherwise use swarm
-    // to drive the db state
+    // if we want to replace the vals the vals must ALREADY be registered
+    // in the db we are running a session on, and bootstrapping
     if let Some(vals) = debug_vals {
         let vals_cast = MoveValue::vector_address(vals);
         let args = vec![&framework_sig, &vals_cast];
@@ -69,8 +77,8 @@ where
 
     // if we want accelerated epochs for twin, testnet, etc
     if let Some(ms) = debug_epoch_interval_microsecs {
-        println!("setting epoch interval seconds");
-        println!("{}, ms", ms);
+        println!("[vm session] setting epoch interval seconds");
+        println!("[vm session] {}, ms", ms);
         let secs_arg = MoveValue::U64(ms);
         libra_execute_session_function(
             &mut session,
@@ -86,48 +94,12 @@ where
         &ChangeSetConfigs::unlimited_at_gas_feature_version(LATEST_GAS_FEATURE_VERSION),
     )?;
 
-    println!("session run sucessfully");
+    println!("[vm session] session run sucessfully");
     Ok(change_set)
 }
 
-// BLACK MAGIC
-// there's a bunch of branch magic that happens for a writeset.
-// these are the ceremonial dance steps
-// don't upset the gods
-pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
-    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
-
-    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-
-    libra_execute_session_function(
-        session,
-        "0x1::block::emit_writeset_block_event",
-        vec![
-            &vm_signer,
-            // note: any address would work below
-            &MoveValue::Address(CORE_CODE_ADDRESS),
-        ],
-    )?;
-
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
-
-    Ok(())
-}
-
-// wrapper to publish the latest head framework release
-pub fn upgrade_framework(session: &mut SessionExt) -> anyhow::Result<()> {
-    let new_modules = head_release_bundle();
-
-    session.publish_module_bundle_relax_compatibility(
-        new_modules.legacy_copy_code(),
-        CORE_CODE_ADDRESS,
-        &mut UnmeteredGasMeter,
-    )?;
-    Ok(())
-}
-
-// wrapper to exectute a function
-// call anythign you want, except #[test] functions
+// wrapper to execute a function
+// call anything you want, except #[test] functions
 // note this ignores the `public` and `friend` visibility
 pub fn libra_execute_session_function(
     session: &mut SessionExt,
@@ -151,33 +123,11 @@ pub fn libra_execute_session_function(
 ///
 /// ! CAUTION: This function will overwrite the current validator set
 /// Vector of `ValCredentials` is a list of validators to be added to the session
-pub fn session_add_validators(
+pub fn session_register_validators(
     session: &mut SessionExt,
     creds: Vec<ValCredentials>,
-    upgrade: bool,
 ) -> anyhow::Result<()> {
-    // upgrade the framework
-    if upgrade {
-        dbg!("upgrade_framework");
-        upgrade_framework(session)?;
-    }
-
-    // set the chain id (its is set to devnet by default)
-    dbg!("set_chain_id");
-    libra_execute_session_function(
-        session,
-        "0x1::chain_id::set_impl",
-        vec![&MoveValue::Signer(AccountAddress::ONE), &MoveValue::U8(4)],
-    )?;
-    // clean the validator universe
-    dbg!("clean_validator_universe");
-    libra_execute_session_function(
-        session,
-        "0x1::validator_universe::clean_validator_universe",
-        vec![&MoveValue::Signer(AccountAddress::ONE)],
-    )?;
     // reset the validators
-    dbg!("bulk_set_next_validators");
     libra_execute_session_function(
         session,
         "0x1::stake::bulk_set_next_validators",
@@ -192,7 +142,6 @@ pub fn session_add_validators(
         let vector_val = MoveValue::vector_address(vec![cred.account]);
         let args = vec![&signer, &vector_val];
         //configure allowed validators(it should be deprecated??)
-        dbg!("configure_allowed_validators");
         libra_execute_session_function(session, "0x1::stake::configure_allowed_validators", args)?;
         let signer = MoveValue::Signer(cred.account);
         let consensus_pubkey = MoveValue::vector_u8(cred.consensus_pubkey.clone());
@@ -210,22 +159,19 @@ pub fn session_add_validators(
         let amount = 1000 * 1_000_000_u64;
         let amount = MoveValue::U64(amount);
         //create account
-        dbg!("create account");
         match libra_execute_session_function(
             session,
             "0x1::ol_account::create_impl",
             vec![&MoveValue::Signer(AccountAddress::ONE), &signer],
         ) {
             Ok(_) => {
-                println!("account created successfully");
+                println!("[vm session] account created successfully");
                 //The accounts are not slow so we do not have to unlock them
-                dbg!("mint to account");
                 libra_execute_session_function(
                     session,
                     "0x1::libra_coin::mint_to_impl",
                     vec![&MoveValue::Signer(AccountAddress::ONE), &signer, &amount],
                 )?;
-                dbg!("registering validator");
                 libra_execute_session_function(
                     session,
                     "0x1::validator_universe::register_validator",
@@ -233,150 +179,190 @@ pub fn session_add_validators(
                 )?;
             }
             Err(_) => {
-                println!("account already exists, skipping");
+                println!("[vm session] account already exists, skipping");
             }
         };
     }
     let validators = MoveValue::vector_address(creds.iter().map(|c| c.account).collect());
     let signer = MoveValue::Signer(AccountAddress::ONE);
     //set the new validators
-    dbg!("set_validators");
     libra_execute_session_function(
         session,
         "0x1::diem_governance::set_validators",
         vec![&signer, &validators],
     )?;
-    // RECONFIGURE
-    dbg!("on new epoch");
-    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
-    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-    dbg!("emit_writeset_block_event");
-    libra_execute_session_function(
-        session,
-        "0x1::block::emit_writeset_block_event",
-        vec![&vm_signer, &MoveValue::Address(CORE_CODE_ADDRESS)],
+
+    Ok(())
+}
+
+// wrapper to publish the latest head framework release
+pub fn upgrade_framework_from_mrb_file(
+    session: &mut SessionExt,
+    upgrade_mrb: &Path,
+) -> anyhow::Result<()> {
+    let new_modules = ReleaseTarget::load_bundle_from_file(upgrade_mrb.to_path_buf())?;
+
+    session.publish_module_bundle_relax_compatibility(
+        new_modules.legacy_copy_code(),
+        CORE_CODE_ADDRESS,
+        &mut UnmeteredGasMeter,
     )?;
-    dbg!("reconfigure");
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
     Ok(())
 }
 
 /// Unpacks a VM change set.
-pub fn unpack_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
+pub fn unpack_to_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
     let (write_set, _delta_change_set, events) = vmc.unpack();
 
     Ok(ChangeSet::new(write_set, events))
 }
 
 /// Publishes the current framework to the database.
-pub fn publish_current_framework(
+pub fn upgrade_framework_changeset(
     dir: &Path,
     debug_vals: Option<Vec<AccountAddress>>,
+    upgrade_mrb: &Path,
 ) -> anyhow::Result<ChangeSet> {
-    let vmc = libra_run_session(dir.to_path_buf(), combined_steps, debug_vals, None)?;
-    unpack_changeset(vmc)
-}
-
-fn combined_steps(session: &mut SessionExt) -> anyhow::Result<()> {
-    upgrade_framework(session)?;
-    writeset_voodoo_events(session)?;
-    Ok(())
-}
-
-/// Twin testnet registration, replace validator set with new registrations
-pub fn twin_testnet(dir: &Path, testnet_vals: Vec<ValCredentials>) -> anyhow::Result<ChangeSet> {
     let vmc = libra_run_session(
         dir.to_path_buf(),
         |session| {
-            // if we are doing a twin testnet we don't want to upgrade the chain
-            session_add_validators(session, testnet_vals, false)
+            upgrade_framework_from_mrb_file(session, upgrade_mrb)
+                .expect("should publish framework");
+            writeset_voodoo_events(session).expect("should voodoo, who do?");
+            Ok(())
         },
-        None,
+        debug_vals,
         None,
     )?;
-    unpack_changeset(vmc)
+    unpack_to_changeset(vmc)
 }
 
-#[ignore]
-#[test]
-// test we can publish a db to a fixture
-fn test_publish() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+/// Twin testnet registration, replace validator set with new registrations
+pub fn register_and_replace_validators_changeset(
+    dir: &Path,
+    replacement_vals: Vec<ValCredentials>,
+    upgrade_mrb: &Option<PathBuf>,
+) -> anyhow::Result<ChangeSet> {
+    let vmc = libra_run_session(
+        dir.to_path_buf(),
+        |session| {
+            if let Some(p) = upgrade_mrb {
+                upgrade_framework_from_mrb_file(session, p).expect("could not upgrade framework");
+            }
 
-    publish_current_framework(dir, None).unwrap();
+            session_register_validators(session, replacement_vals)
+                .expect("could not register validators");
+
+            writeset_voodoo_events(session).expect("should voodoo, who do?");
+
+            Ok(())
+        },
+        None, // uses the validators registered above
+        None,
+    )?;
+    unpack_to_changeset(vmc)
 }
 
-// TODO: ability to mutate some state without calling a function
-fn _update_resource_in_session(session: &mut SessionExt) {
-    let s = StructTag {
-        address: CORE_CODE_ADDRESS,
-        module: ident_str!("chain_id").into(),
-        name: ident_str!("ChainId").into(),
-        type_params: vec![],
-    };
-    let this_type = session.load_type(&s.clone().into()).unwrap();
-    let _layout = session.get_type_layout(&s.into()).unwrap();
-    let (resource, _) = session
-        .load_resource(CORE_CODE_ADDRESS, &this_type)
-        .unwrap();
-    let _a = resource.move_from().unwrap();
-}
+///////////////// BEGIN BLACK MAGIC /////////////////
+// __________.____       _____  _________  ____  __.
+// \______   \    |     /  _  \ \_   ___ \|    |/ _|
+//  |    |  _/    |    /  /_\  \/    \  \/|      <
+//  |    |   \    |___/    |    \     \___|    |  \
+//  |______  /_______ \____|__  /\______  /____|__ \
+//         \/        \/       \/        \/        \/
+//    _____      _____    ________.____________
+//   /     \    /  _  \  /  _____/|   \_   ___ \
+//  /  \ /  \  /  /_\  \/   \  ___|   /    \  \/
+// /    Y    \/    |    \    \_\  \   \     \____
+// \____|__  /\____|__  /\______  /___|\______  /
+//         \/         \/        \/            \/
+//
+// Offline writesets are a second class. There's a bunch of branch magic
+// that Diem code does to obviate the checks the VM framework relies on
+// while in production.
+// e.g. reconfigure.move "don't reconfigure if the time hasn't
+// changed since last time you did this".
+// don't emit new block events willynilly.
+// However a rescue blob (or genesis blob) requires these events emitted.
+// So the writeset tooling in diem and vendor, does this black magic stuff (yes we asked them, and there's no other way).
+// It's particularly a problem for testing. We would like to be able to recover a backup of a specific epoch from archive files.
+// While an epoch restore contains all the events needed, applying a writeset
+// directly to it will fail.
+// Because the time hasn't changed, or there's no way to make a block event.
+// Anyhow, short of neuromancy and a lot of trial and error, we have to do this.
+// Loup garou, loup garou, loup garou.
 
-#[ignore]
-#[test]
-// the writeset voodoo needs to be perfect
-fn test_voodoo() {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    libra_run_session(dir.to_path_buf(), writeset_voodoo_events, None, None).unwrap();
-}
+pub fn voodoo_time_travel(session: &mut SessionExt) -> anyhow::Result<()> {
+    // DEV NOTE: in future versions of the libra framework we
+    // may make this easier. Currently this is the only sequence of
+    // keystrokes that will change the time on v7 mainnet.
+    let res = libra_execute_session_function(session, "0x1::timestamp::now_microseconds", vec![])?;
 
-#[ignore]
-#[test]
-// helper to see if an upgraded function is found in the DB
-fn test_base() {
-    fn check_base(session: &mut SessionExt) -> anyhow::Result<()> {
-        libra_execute_session_function(session, "0x1::all_your_base::are_belong_to", vec![])?;
-        Ok(())
-    }
+    let mut last_timestamp_in_db_ms: u64 = 0;
+    res.return_values.iter().for_each(|v| {
+        let secs = MoveValue::simple_deserialize(&v.0, &v.1)
+            .expect("to parse timestamp::now_microseconds");
+        println!("[vm session] now_microseconds: {}", secs);
+        if let MoveValue::U64(s) = secs {
+            if s > last_timestamp_in_db_ms {
+                last_timestamp_in_db_ms = s;
+                println!("[vm session] last_time_in_db: {}", s);
+            }
+        }
+    });
 
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
+    let signer = MoveValue::Signer(AccountAddress::ZERO);
+    // proposer must be different than VM 0x0, otherwise time will not advance.
+    let addr = MoveValue::Address(AccountAddress::ONE);
 
-    libra_run_session(dir.to_path_buf(), check_base, None, None).unwrap();
-}
+    // always use prime numbers when voodoo is involved
+    // █ ▄▄  █▄▄▄▄ ▄█ █▀▄▀█ ▄███▄
+    // █   █ █  ▄▀ ██ █ █ █ █▀   ▀
+    // █▀▀▀  █▀▀▌  ██ █ ▄ █ ██▄▄
+    // █     █  █  ▐█ █   █ █▄   ▄▀
+    //  █      █    ▐    █  ▀███▀
+    //   ▀    ▀         ▀
 
-#[ignore]
-#[test]
-// testing we can open a database from fixtures, and produce a VM session
-fn meta_test_open_db_sync() -> anyhow::Result<()> {
-    let dir = Path::new("/root/dbarchive/data_bak_2023-12-11/db");
-    let db = DiemDB::open(
-        dir,
-        true,
-        NO_OP_STORAGE_PRUNER_CONFIG, /* pruner */
-        RocksdbConfigs::default(),
-        false, /* indexer */
-        BUFFERED_STATE_TARGET_ITEMS,
-        DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
-    )
-    .expect("Failed to open DB.");
+    //    ▄     ▄   █▀▄▀█ ███   ▄███▄   █▄▄▄▄
+    //     █     █  █ █ █ █  █  █▀   ▀  █  ▄▀
+    // ██   █ █   █ █ ▄ █ █ ▀ ▄ ██▄▄    █▀▀▌
+    // █ █  █ █   █ █   █ █  ▄▀ █▄   ▄▀ █  █
+    // █  █ █ █▄ ▄█    █  ███   ▀███▀     █
+    // █   ██  ▀▀▀    ▀                  ▀
 
-    let db_rw = DbReaderWriter::new(db);
+    let new_timestamp = MoveValue::U64(last_timestamp_in_db_ms + 7);
 
-    let v = db_rw.reader.get_latest_version().unwrap();
-
-    let view = db_rw.reader.state_view_at_version(Some(v)).unwrap();
-
-    let dvm = diem_vm::DiemVM::new(&view);
-    let adapter = dvm.as_move_resolver(&view);
-
-    let _s_id = SessionId::Txn {
-        sender: CORE_CODE_ADDRESS,
-        sequence_number: 0,
-        script_hash: b"none".to_vec(),
-    };
-    let s_id = SessionId::genesis(diem_crypto::HashValue::zero());
-
-    let mvm = dvm.internals().move_vm();
-    let _session = mvm.new_session(&adapter, s_id, false);
+    libra_execute_session_function(
+        session,
+        "0x1::timestamp::update_global_time",
+        vec![&signer, &addr, &new_timestamp],
+    )?;
     Ok(())
 }
+
+// there's a bunch of branch magic that happens for a writeset.
+// These event are for the block event and epoch boundary
+//  (via reconfiguration.move).
+// TODO: its not clear as of yet if the time travel needs to happen before the
+// script, or could happen here.
+
+pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
+    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
+
+    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+
+    libra_execute_session_function(
+        session,
+        "0x1::block::emit_writeset_block_event",
+        vec![
+            &vm_signer,
+            // note: any address would work below
+            &MoveValue::Address(CORE_CODE_ADDRESS),
+        ],
+    )?;
+
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+
+    Ok(())
+}
+//////// END BLACK MAGIC ////////
