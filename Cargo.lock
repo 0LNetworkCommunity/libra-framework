@@ -4379,12 +4379,12 @@ dependencies = [
 
 [[package]]
 name = "errno"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "534c5cf6194dfab3db3242765c03bbe257cf92f22b38f6bc0c58d59108a820ba"
+checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4447,6 +4447,18 @@ checksum = "c1320970ff3b1c1cacc6a38e8cdb1aced955f29627697cd992c5ded82eb646a8"
 dependencies = [
  "quote 1.0.37",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "filetime"
+version = "0.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35c0522e981e68cbfa8c3f978441a5f34b30b96e146b33cd3359176b50fe8586"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "libredox",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5748,9 +5760,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.161"
+version = "0.2.171"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e9489c2807c139ffd9c1794f4af0ebe86a828db53ecdc7fea2111d0fed085d1"
+checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
 
 [[package]]
 name = "libgit2-sys"
@@ -5784,7 +5796,7 @@ checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
 
 [[package]]
 name = "libra"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "clap 4.5.20",
@@ -5806,7 +5818,7 @@ dependencies = [
 
 [[package]]
 name = "libra-backwards-compatibility"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5832,7 +5844,7 @@ dependencies = [
 
 [[package]]
 name = "libra-cached-packages"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "bcs 0.1.4",
  "diem-types",
@@ -5843,7 +5855,7 @@ dependencies = [
 
 [[package]]
 name = "libra-config"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5868,7 +5880,7 @@ dependencies = [
 
 [[package]]
 name = "libra-framework"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5888,7 +5900,7 @@ dependencies = [
 
 [[package]]
 name = "libra-genesis-tools"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -5926,7 +5938,7 @@ dependencies = [
 
 [[package]]
 name = "libra-query"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "clap 4.5.20",
@@ -5944,7 +5956,7 @@ dependencies = [
 
 [[package]]
 name = "libra-rescue"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5962,6 +5974,7 @@ dependencies = [
  "diem-types",
  "diem-vm",
  "diem-vm-types",
+ "flate2",
  "libra-config",
  "libra-framework",
  "libra-query",
@@ -5974,25 +5987,31 @@ dependencies = [
  "regex",
  "serde_json",
  "smoke-test",
+ "tar",
  "tokio",
 ]
 
 [[package]]
 name = "libra-smoke-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "diem-config",
  "diem-crypto",
  "diem-forge",
+ "diem-genesis",
  "diem-logger",
  "diem-sdk",
  "diem-temppath",
  "diem-types",
+ "hex",
  "libra-cached-packages",
+ "libra-config",
  "libra-framework",
+ "libra-query",
  "libra-types",
  "serde_json",
+ "serde_yaml 0.8.26",
  "smoke-test",
  "tokio",
  "url",
@@ -6000,7 +6019,7 @@ dependencies = [
 
 [[package]]
 name = "libra-storage"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6009,21 +6028,30 @@ dependencies = [
  "diem-config",
  "diem-db",
  "diem-db-tool",
+ "diem-executor",
  "diem-executor-types",
  "diem-logger",
  "diem-push-metrics",
+ "diem-storage-interface",
  "diem-temppath",
  "diem-types",
+ "diem-vm",
+ "flate2",
+ "fs_extra",
  "glob",
  "libra-backwards-compatibility",
+ "libra-config",
+ "libra-types",
  "num_cpus",
+ "reqwest",
+ "serde 1.0.214",
  "serde_json",
  "tokio",
 ]
 
 [[package]]
 name = "libra-twin-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6043,6 +6071,7 @@ dependencies = [
  "libra-rescue",
  "libra-smoke-tests",
  "libra-txs",
+ "libra-types",
  "regex",
  "serde_json",
  "serde_yaml 0.8.26",
@@ -6052,7 +6081,7 @@ dependencies = [
 
 [[package]]
 name = "libra-txs"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6085,7 +6114,7 @@ dependencies = [
 
 [[package]]
 name = "libra-types"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6120,7 +6149,7 @@ dependencies = [
 
 [[package]]
 name = "libra-upgrade-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6139,7 +6168,7 @@ dependencies = [
 
 [[package]]
 name = "libra-wallet"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "anyhow",
  "blst",
@@ -6174,6 +6203,7 @@ checksum = "c0ff37bd590ca25063e35af745c343cb7a0271906fb7b37e4813e8f79f00268d"
 dependencies = [
  "bitflags 2.6.0",
  "libc",
+ "redox_syscall 0.5.7",
 ]
 
 [[package]]
@@ -6288,6 +6318,12 @@ name = "linux-raw-sys"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
+
+[[package]]
+name = "linux-raw-sys"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe7db12097d22ec582439daf8618b8fdd1a7bef6270e9af3b1ebcd30893cf413"
 
 [[package]]
 name = "lock_api"
@@ -8703,8 +8739,21 @@ dependencies = [
  "bitflags 2.6.0",
  "errno",
  "libc",
- "linux-raw-sys",
+ "linux-raw-sys 0.4.14",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rustix"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e56a18552996ac8d29ecc3b190b4fdbb2d91ca4ec396de7bbffaf43f3d637e96"
+dependencies = [
+ "bitflags 2.6.0",
+ "errno",
+ "libc",
+ "linux-raw-sys 0.9.3",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -9632,6 +9681,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
+name = "tar"
+version = "0.4.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d863878d212c87a19c1a610eb53bb01fe12951c0501cf5a0d65f724914a667a"
+dependencies = [
+ "filetime",
+ "libc",
+ "xattr",
+]
+
+[[package]]
 name = "task-local-extensions"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9649,7 +9709,7 @@ dependencies = [
  "cfg-if",
  "fastrand",
  "once_cell",
- "rustix",
+ "rustix 0.38.38",
  "windows-sys 0.59.0",
 ]
 
@@ -10261,7 +10321,7 @@ dependencies = [
 
 [[package]]
 name = "transactional-tests"
-version = "7.0.3"
+version = "7.0.4"
 dependencies = [
  "datatest-stable",
  "diem-transactional-test-harness",
@@ -10554,7 +10614,7 @@ dependencies = [
  "errno",
  "js-sys",
  "libc",
- "rustix",
+ "rustix 0.38.38",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "wasm-bindgen",
  "winapi 0.3.9",
@@ -11054,6 +11114,16 @@ dependencies = [
  "curve25519-dalek",
  "rand_core 0.5.1",
  "zeroize",
+]
+
+[[package]]
+name = "xattr"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d65cbf2f12c15564212d48f4e3dfb87923d25d611f2aed18f4cb23f0413d89e"
+dependencies = [
+ "libc",
+ "rustix 1.0.3",
 ]
 
 [[package]]
