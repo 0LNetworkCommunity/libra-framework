@@ -284,7 +284,7 @@ pub fn register_and_replace_validators_changeset(
 // \____|__  /\____|__  /\______  /___|\______  /
 //         \/         \/        \/            \/
 //
-//  Offline writesets are a second class. There's a bunch of branch magic
+// Offline writesets are a second class. There's a bunch of branch magic
 // that Diem code does to obviate the checks the VM framework relies on
 // while in production.
 // e.g. reconfigure.move "don't reconfigure if the time hasn't
@@ -348,8 +348,11 @@ pub fn voodoo_time_travel(session: &mut SessionExt) -> anyhow::Result<()> {
 }
 
 // there's a bunch of branch magic that happens for a writeset.
-// these are the ceremonial dance steps
-// don't upset the gods
+// These event are for the block event and epoch boundary
+//  (via reconfiguration.move).
+// TODO: its not clear as of yet if the time travel needs to happen before the
+// script, or could happen here.
+
 pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
     libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
 
