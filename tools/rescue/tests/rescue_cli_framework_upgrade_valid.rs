@@ -1,4 +1,8 @@
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_framework::release::ReleaseTarget;
+use libra_rescue::{
+    diem_db_bootstrapper::BootstrapOpts,
+    rescue_cli::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
+};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 #[tokio::test]
@@ -21,17 +25,20 @@ async fn test_framework_upgrade_writeset() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: None,
-        framework_upgrade: true,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::UpgradeFramework {
+            upgrade_mrb: ReleaseTarget::Head
+                .find_bundle_path()
+                .expect("cannot find head.mrb"),
+            set_validators: None,
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(UPGRADE_FRAMEWORK_BLOB);
     assert!(file.exists());
 
     println!(

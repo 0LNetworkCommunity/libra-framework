@@ -4,7 +4,7 @@ use diem_state_view::account_with_state_view::AsAccountWithStateView;
 use diem_storage_interface::state_view::LatestDbStateCheckpointView;
 use diem_types::{account_view::AccountView, chain_id::NamedChain};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
-use libra_framework::head_release_bundle;
+use libra_framework::testing_local_release_bundle;
 use libra_genesis_tools::{
     compare, genesis::make_recovery_genesis_from_vec_legacy_recovery, genesis_reader, parse_json,
     supply, vm::libra_genesis_default,
@@ -32,7 +32,7 @@ fn test_correct_supply_arithmetic_single() {
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::mainnet(),
         &libra_genesis_default(NamedChain::MAINNET),
     )
@@ -66,7 +66,7 @@ fn test_check_genesis_validators() {
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )
@@ -98,7 +98,7 @@ fn test_check_ancestry() {
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )
@@ -167,7 +167,7 @@ fn test_drop() {
     let gen_tx = make_recovery_genesis_from_vec_legacy_recovery(
         &mut user_accounts,
         &genesis_vals,
-        &head_release_bundle(),
+        &testing_local_release_bundle(),
         ChainId::test(),
         &libra_genesis_default(NamedChain::TESTING),
     )
