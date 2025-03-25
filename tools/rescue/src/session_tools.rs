@@ -52,34 +52,14 @@ where
 
     let mut session = mvm.new_session(&adapter, s_id, false);
 
-    let res =
-        libra_execute_session_function(&mut session, "0x1::timestamp::now_microseconds", vec![])?;
-
-    let mut last_timestamp_in_db_ms: u64 = 0;
-    res.return_values.iter().for_each(|v| {
-        let secs = MoveValue::simple_deserialize(&v.0, &v.1)
-            .expect("to parse timestamp::now_microseconds");
-        println!("[vm session] now_microseconds: {}", secs);
-        if let MoveValue::U64(s) = secs {
-            if s > last_timestamp_in_db_ms {
-                last_timestamp_in_db_ms = s;
-                println!("[vm session] last_time_in_db: {}", s);
-            }
-        }
-    });
-
-    // pre-session voodoo incantation
-    // always use prime numbers when voodoo is involved
-    let signer = MoveValue::Signer(AccountAddress::ZERO);
-    // proposer must be different than VM 0x0, otherwise time will not advance.
-    let addr = MoveValue::Address(AccountAddress::ONE);
-    let new_timestamp = MoveValue::U64(last_timestamp_in_db_ms + 7);
-
-    libra_execute_session_function(
-        &mut session,
-        "0x1::timestamp::update_global_time",
-        vec![&signer, &addr, &new_timestamp],
-    )?;
+    // voodoo time travel
+    // say a prayer
+    // before the writeset
+    // or the gods will be angry
+    // and the writeset will fail later
+    // once you try to bootstrap it
+    // with INVALID WRITESET
+    voodoo_time_travel(&mut session)?;
 
     ////// FUNCTIONS RUN HERE
     f(&mut session)
@@ -118,32 +98,8 @@ where
     Ok(change_set)
 }
 
-// BLACK MAGIC
-// there's a bunch of branch magic that happens for a writeset.
-// these are the ceremonial dance steps
-// don't upset the gods
-pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
-    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
-
-    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
-
-    libra_execute_session_function(
-        session,
-        "0x1::block::emit_writeset_block_event",
-        vec![
-            &vm_signer,
-            // note: any address would work below
-            &MoveValue::Address(CORE_CODE_ADDRESS),
-        ],
-    )?;
-
-    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
-
-    Ok(())
-}
-
-// wrapper to exectute a function
-// call anythign you want, except #[test] functions
+// wrapper to execute a function
+// call anything you want, except #[test] functions
 // note this ignores the `public` and `friend` visibility
 pub fn libra_execute_session_function(
     session: &mut SessionExt,
@@ -313,3 +269,104 @@ pub fn register_and_replace_validators_changeset(
     )?;
     unpack_to_changeset(vmc)
 }
+
+///////////////// BEGIN BLACK MAGIC /////////////////
+// __________.____       _____  _________  ____  __.
+// \______   \    |     /  _  \ \_   ___ \|    |/ _|
+//  |    |  _/    |    /  /_\  \/    \  \/|      <
+//  |    |   \    |___/    |    \     \___|    |  \
+//  |______  /_______ \____|__  /\______  /____|__ \
+//         \/        \/       \/        \/        \/
+//    _____      _____    ________.____________
+//   /     \    /  _  \  /  _____/|   \_   ___ \
+//  /  \ /  \  /  /_\  \/   \  ___|   /    \  \/
+// /    Y    \/    |    \    \_\  \   \     \____
+// \____|__  /\____|__  /\______  /___|\______  /
+//         \/         \/        \/            \/
+//
+//  Offline writesets are a second class. There's a bunch of branch magic
+// that Diem code does to obviate the checks the VM framework relies on
+// while in production.
+// e.g. reconfigure.move "don't reconfigure if the time hasn't
+// changed since last time you did this".
+// don't emit new block events willynilly.
+// However a rescue blob (or genesis blob) requires these events emitted.
+// So the writeset tooling in diem and vendor, does this black magic stuff (yes we asked them, and there's no other way).
+// It's particularly a problem for testing. We would like to be able to recover a backup of a specific epoch from archive files.
+// While an epoch restore contains all the events needed, applying a writeset
+// directly to it will fail.
+// Because the time hasn't changed, or there's no way to make a block event.
+// Anyhow, short of neuromancy and a lot of trial and error, we have to do this.
+// Loup garou, loup garou, loup garou.
+
+pub fn voodoo_time_travel(session: &mut SessionExt) -> anyhow::Result<()> {
+    // DEV NOTE: in future versions of the libra framework we
+    // may make this easier. Currently this is the only sequence of
+    // keystrokes that will change the time on v7 mainnet.
+    let res = libra_execute_session_function(session, "0x1::timestamp::now_microseconds", vec![])?;
+
+    let mut last_timestamp_in_db_ms: u64 = 0;
+    res.return_values.iter().for_each(|v| {
+        let secs = MoveValue::simple_deserialize(&v.0, &v.1)
+            .expect("to parse timestamp::now_microseconds");
+        println!("[vm session] now_microseconds: {}", secs);
+        if let MoveValue::U64(s) = secs {
+            if s > last_timestamp_in_db_ms {
+                last_timestamp_in_db_ms = s;
+                println!("[vm session] last_time_in_db: {}", s);
+            }
+        }
+    });
+
+    let signer = MoveValue::Signer(AccountAddress::ZERO);
+    // proposer must be different than VM 0x0, otherwise time will not advance.
+    let addr = MoveValue::Address(AccountAddress::ONE);
+
+    // always use prime numbers when voodoo is involved
+    // █ ▄▄  █▄▄▄▄ ▄█ █▀▄▀█ ▄███▄
+    // █   █ █  ▄▀ ██ █ █ █ █▀   ▀
+    // █▀▀▀  █▀▀▌  ██ █ ▄ █ ██▄▄
+    // █     █  █  ▐█ █   █ █▄   ▄▀
+    //  █      █    ▐    █  ▀███▀
+    //   ▀    ▀         ▀
+
+    //    ▄     ▄   █▀▄▀█ ███   ▄███▄   █▄▄▄▄
+    //     █     █  █ █ █ █  █  █▀   ▀  █  ▄▀
+    // ██   █ █   █ █ ▄ █ █ ▀ ▄ ██▄▄    █▀▀▌
+    // █ █  █ █   █ █   █ █  ▄▀ █▄   ▄▀ █  █
+    // █  █ █ █▄ ▄█    █  ███   ▀███▀     █
+    // █   ██  ▀▀▀    ▀                  ▀
+
+    let new_timestamp = MoveValue::U64(last_timestamp_in_db_ms + 7);
+
+    libra_execute_session_function(
+        session,
+        "0x1::timestamp::update_global_time",
+        vec![&signer, &addr, &new_timestamp],
+    )?;
+    Ok(())
+}
+
+// there's a bunch of branch magic that happens for a writeset.
+// these are the ceremonial dance steps
+// don't upset the gods
+pub fn writeset_voodoo_events(session: &mut SessionExt) -> anyhow::Result<()> {
+    libra_execute_session_function(session, "0x1::stake::on_new_epoch", vec![])?;
+
+    let vm_signer = MoveValue::Signer(AccountAddress::ZERO);
+
+    libra_execute_session_function(
+        session,
+        "0x1::block::emit_writeset_block_event",
+        vec![
+            &vm_signer,
+            // note: any address would work below
+            &MoveValue::Address(CORE_CODE_ADDRESS),
+        ],
+    )?;
+
+    libra_execute_session_function(session, "0x1::reconfiguration::reconfigure", vec![])?;
+
+    Ok(())
+}
+//////// END BLACK MAGIC ////////
