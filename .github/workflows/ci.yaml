@@ -132,7 +132,7 @@ jobs:
       - name: query
         if: always()
         working-directory: ./tools/query
-        run: cargo test --no-fail-fast
+        run: cargo test --no-fail-fast -- --test-threads=1
 
   genesis:
     timeout-minutes: 60
@@ -158,7 +158,7 @@ jobs:
       - name: genesis
         if: always()
         working-directory: ./tools/genesis
-        run: cargo test --no-fail-fast
+        run: cargo test --no-fail-fast -- --test-threads=1
 
   txs:
     timeout-minutes: 60
@@ -185,7 +185,7 @@ jobs:
         if: always()
         working-directory: ./tools/txs
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
-        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast
+        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --test-threads=1
 
   upgrades:
     timeout-minutes: 60
@@ -252,14 +252,14 @@ jobs:
         if: always()
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
-        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --skip compatible_
+        run: RUST_MIN_STACK=104857600 cargo test --no-fail-fast -- --skip compatible_ --test-threads=1
 
       - name: upgrade - should be backwards compatible
         # should always run unless we explicitly mark the branch or tag as "breaking"
         if: ${{ env.hasBreakingCommit == 'false' && env.requiresFullUpgrade == 'false' && !contains(steps.get_branch.outputs.branch, 'breaking/') }}
         working-directory: ./upgrade-tests
         # NOTE: upgrade tests which compile Move code, and then submit in the same thread will cause a stack overflow with the default rust stack size.
-        run: RUST_MIN_STACK=104857600 cargo test compatible_
+        run: RUST_MIN_STACK=104857600 cargo test compatible_ --no-fail-fast -- --test-threads=1
 
   rescue:
     timeout-minutes: 60
@@ -303,7 +303,7 @@ jobs:
 
       - name: storage
         working-directory: ./tools/storage
-        run: cargo test --no-fail-fast
+        run: cargo test --no-fail-fast -- --test-threads=1
 
   twin-testsuite:
     timeout-minutes: 60
@@ -326,6 +326,6 @@ jobs:
           name: framework-build
           path: framework/
 
-      - name: twin
-        working-directory: ./testsuites/twin
-        run: cargo test --no-fail-fast
+      - name: testnet
+        working-directory: ./tools/testnet
+        run: cargo test --no-fail-fast -- --test-threads=1

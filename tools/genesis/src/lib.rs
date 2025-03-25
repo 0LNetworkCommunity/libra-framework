@@ -11,6 +11,5 @@ pub mod github_extensions;
 pub mod parse_json;
 pub mod process_comm_wallet;
 pub mod supply;
-pub mod testnet_setup;
 pub mod vm;
 pub mod wizard;

@@ -1,0 +1,43 @@
+[package]
+name = "libra-testnet"
+
+# Workspace inherited keys
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+
+publish = { workspace = true }
+repository = { workspace = true }
+rust-version = { workspace = true }
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+dialoguer = { workspace = true }
+
+diem-config = { workspace = true }
+diem-forge = { workspace = true }
+diem-framework = { workspace = true }
+diem-genesis = { workspace = true }
+diem-temppath = { workspace = true }
+diem-types = { workspace = true }
+
+fs_extra = { workspace = true }
+glob = { workspace = true }
+libra-backwards-compatibility = { workspace = true }
+libra-config = { workspace = true }
+libra-framework = { workspace = true }
+libra-genesis-tools = { workspace = true }
+libra-rescue = { workspace = true }
+libra-smoke-tests = { workspace = true }
+libra-types = { workspace = true }
+serde_yaml = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+diem-api-types = { workspace = true }
+diem-logger = { workspace = true }
+regex = { workspace = true }
+serde_json = { workspace = true }
+smoke-test = { workspace = true }
