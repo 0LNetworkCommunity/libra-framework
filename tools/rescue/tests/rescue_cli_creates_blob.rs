@@ -1,8 +1,8 @@
 mod support;
 
 use libra_rescue::{
-    diem_db_bootstrapper::BootstrapOpts,
-    rescue_cli::{RescueCli, Sub, RUN_SCRIPT_BLOB},
+    cli_bootstrapper::BootstrapOpts,
+    cli_main::{RescueCli, Sub, RUN_SCRIPT_BLOB},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 

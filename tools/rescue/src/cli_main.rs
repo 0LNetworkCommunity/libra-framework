@@ -1,10 +1,8 @@
 //! CLI tool for rescue operations in Diem, providing commands for transaction rescue,
 //! database bootstrapping, and debugging twin states.
 use crate::{
-    diem_db_bootstrapper::BootstrapOpts,
-    rescue_tx::{
-        check_rescue_bootstraps, register_vals, run_script_tx, save_rescue_blob, upgrade_tx,
-    },
+    cli_bootstrapper::{check_rescue_bootstraps, BootstrapOpts},
+    transaction_factory::{register_vals, run_script_tx, save_rescue_blob, upgrade_tx},
 };
 
 use clap::{Parser, Subcommand};
@@ -40,7 +38,7 @@ pub enum Sub {
     /// Registers new validators, and replaces the validator set.
     RegisterVals {
         #[clap(long)]
-        /// registers new validators not found on the db, and replaces the validator set. Must be in format of operator.yaml (use `libra config validator init``)
+        /// registers new validators not found on the db, and replaces the validator set. Must be in format of operator.yaml (use `libra config validator init`)
         operator_yaml: Vec<PathBuf>,
         #[clap(short, long)]
         /// optional, provide a path to .mrb release, if this write should publish new framework

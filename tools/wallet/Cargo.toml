@@ -26,7 +26,6 @@ hex = { workspace = true }
 hmac = { workspace = true }
 indoc = { workspace = true }
 libra-types = { workspace = true }
-mirai-annotations = { workspace = true }
 pbkdf2 = { workspace = true }
 rand = { workspace = true }
 rpassword = { workspace = true }
