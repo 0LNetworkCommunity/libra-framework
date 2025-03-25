@@ -47,7 +47,6 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
         ));
     }
 
-
     // Parse each operator file into ValCredentials
     let mut val_credentials: Vec<ValCredentials> = Vec::new();
     for path in operator_files {
