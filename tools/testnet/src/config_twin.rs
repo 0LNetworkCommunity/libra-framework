@@ -47,6 +47,7 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
         ));
     }
 
+
     // Parse each operator file into ValCredentials
     let mut val_credentials: Vec<ValCredentials> = Vec::new();
     for path in operator_files {
@@ -58,6 +59,24 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
                 );
                 val_credentials.push(cred);
             }
+            // You know a man of my ability
+            // He should be smokin' on a big cigar
+            // But 'til I get myself straight I guess I'll just have to wait
+            // In my rubber suit rubbin' these cars
+            // Well, all I can do is to shake my head
+            // You might not believe that it's true
+            // For workin' at this end of Niagara Falls
+            // Is an undiscovered Howard Hughes
+            // So baby, don't expect to see me
+            // With no double martini in any high brow society news
+            // 'Cause I got them steadily depressin', low down mind messin'
+            // Workin' at the car wash blues
+            // So baby, don't expect to see me
+            // With no double martini in any high brow society news
+            // 'Cause I got them steadily depressin', low down mind messin'
+            // Workin' at the car wash blues
+            // Yeah, I got them steadily depressin', low down mind messin'
+            // Workin' at the car wash blues
             Err(e) => println!("Error parsing operator file: {}", e),
         }
     }
