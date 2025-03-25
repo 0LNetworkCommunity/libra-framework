@@ -90,11 +90,16 @@ impl SetValidatorConfiguration {
         };
 
         // Only add the public key if there is a full node
-        let full_node_network_public_key = if self.full_node_host.is_some() {
-            operator_identity.full_node_network_public_key
-        } else {
-            None
-        };
+        let full_node_network_public_key = operator_identity.full_node_network_public_key;
+
+        // if there is no explicit fullnode setting, we assume that the
+        // validator will be using "easy mode", and using the same
+        // network address, but on the fullnode port: 6182
+        let fullnode_host = self.full_node_host.unwrap_or_else(|| {
+            let mut h = self.validator_host.clone();
+            h.port = 6182;
+            h
+        });
 
         // Build operator configuration file
         let operator_config = OperatorConfiguration {
@@ -105,7 +110,7 @@ impl SetValidatorConfiguration {
             validator_network_public_key,
             validator_host: self.validator_host,
             full_node_network_public_key,
-            full_node_host: self.full_node_host,
+            full_node_host: Some(fullnode_host),
         };
 
         let owner_config = OwnerConfiguration {

@@ -3,5 +3,5 @@
 use clap::Parser;
 
 fn main() -> anyhow::Result<()> {
-    libra_rescue::rescue_cli::RescueCli::parse().run()
+    libra_rescue::cli_main::RescueCli::parse().run()
 }
