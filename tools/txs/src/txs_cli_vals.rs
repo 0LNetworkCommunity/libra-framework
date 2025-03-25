@@ -121,7 +121,7 @@ impl ValidatorTxs {
                 }
             }
             ValidatorTxs::Register { operator_file } => {
-                let reg = validator_registration::registration_from_private_file(
+                let reg = validator_registration::registration_from_operator_yaml(
                     operator_file.to_owned(),
                 )?;
                 ValidatorUniverseRegisterValidator {

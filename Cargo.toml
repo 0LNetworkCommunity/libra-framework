@@ -15,7 +15,6 @@ members = [
   "tools/storage",
   "tools/txs",
   "tools/wallet",
-  "transactional-tests",
   "types",
   "upgrade-tests",
 ]
@@ -176,7 +175,6 @@ glob = "0.3.0"
 goldenfile = "1.1.0"
 handlebars = "4.2.2"
 heck = "0.3.2"
-# hex = "0.4.3"
 hkdf = "0.10.0"
 hostname = "0.3.1"
 http = "0.2.3"
@@ -184,7 +182,6 @@ httpmock = "0.6"
 hyper = { version = "0.14.18", features = ["full"] }
 hyper-tls = "0.5.0"
 include_dir = { version = "0.7.2", features = ["glob"] }
-# indicatif = "0.15.0"
 indoc = "1.0.6"
 inferno = "0.11.14"
 ipnet = "2.5.0"
@@ -277,6 +274,7 @@ structopt = "0.3.21"
 substreams = "0.0.17"
 syn = { version = "1.0.92", features = ["derive", "extra-traits"] }
 sysinfo = "0.28.4"
+tar = "0.4.44"
 tempfile = "3.3.0"
 termcolor = "1.1.2"
 textwrap = "0.15.0"
