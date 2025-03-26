@@ -1,9 +1,8 @@
-mod support;
-use crate::support::{update_node_config_restart, wait_for_node};
 use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
+use libra_rescue::test_support::{update_node_config_restart, wait_for_node};
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
     cli_main::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},

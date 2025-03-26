@@ -122,7 +122,6 @@ impl TwinSwarm {
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
         for n in swarm.validators_mut() {
-
             let mut node_config = n.config().clone();
 
             let configs_dir = &node_config.base.data_dir;
@@ -269,7 +268,6 @@ pub fn update_genesis_in_node_config(
     // rules config.
     // insert_waypoint(&mut node_config, wp);
     ///////
-
 
     let init_safety = InitialSafetyRulesConfig::from_file(
         validator_identity_file,

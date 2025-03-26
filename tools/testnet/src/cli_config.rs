@@ -37,11 +37,11 @@ impl TestnetConfigOpts {
         twin_db: Option<PathBuf>,
     ) -> Result<()> {
         let chain_name = self.chain_name.unwrap_or(NamedChain::TESTNET); // chain_id = 2
-        // let data_path = self.out_dir.clone().unwrap_or_else(|| {
-        //     let p = global_config_dir().join("swarm");
-        //     println!("using default path: {}", p.display());
-        //     p
-        // });
+                                                                         // let data_path = self.out_dir.clone().unwrap_or_else(|| {
+                                                                         //     let p = global_config_dir().join("swarm");
+                                                                         //     println!("using default path: {}", p.display());
+                                                                         //     p
+                                                                         // });
         let data_path = self.out_dir.clone().unwrap_or_else(global_config_dir);
 
         let out_path = config_virgin::setup(

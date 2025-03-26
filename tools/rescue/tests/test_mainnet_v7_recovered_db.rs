@@ -8,11 +8,9 @@
 // which is not working. There is some voodoo which is not
 // being invoked, the epoch event is not being emitted.
 
-mod support;
 use std::env;
 use std::path::PathBuf;
 
-use crate::support::setup_test_db;
 use anyhow::Context;
 use diem_storage_interface::state_view::DbStateViewAtVersion;
 use diem_storage_interface::DbReaderWriter;
@@ -21,6 +19,7 @@ use libra_framework::release::ReleaseTarget;
 use libra_rescue::cli_bootstrapper::BootstrapOpts;
 use libra_rescue::cli_main::RescueCli;
 use libra_rescue::cli_main::Sub;
+use libra_rescue::test_support::setup_test_db;
 
 // Database related imports
 use diem_config::config::{

@@ -1,8 +1,7 @@
-mod support;
-
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
     cli_main::{RescueCli, Sub, RUN_SCRIPT_BLOB},
+    test_support,
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
@@ -34,7 +33,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(first_validator_address);
+    let script_path = test_support::make_script(first_validator_address);
 
     println!("2. compile the script");
 
@@ -109,7 +108,7 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(first_validator_address);
+    let script_path = test_support::make_script(first_validator_address);
 
     println!("2. compile the script");
 
@@ -157,7 +156,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(remove_first);
+    let script_path = test_support::make_script(remove_first);
 
     println!("2. compile the script");
 

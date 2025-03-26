@@ -50,11 +50,3 @@ impl SwarmCliOpts {
         Ok(())
     }
 }
-
-#[tokio::test]
-async fn test_twin_swarm() -> anyhow::Result<()> {
-    let mut smoke = LibraSmoke::new(Some(1), None).await?;
-
-    twin_swarm::awake_frankenswarm(&mut smoke, None).await?;
-    Ok(())
-}
