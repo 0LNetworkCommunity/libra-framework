@@ -18,19 +18,21 @@ use std::{fs, path::PathBuf};
 pub enum ValidatorTxs {
     /// Proof-of-Fee auction bidding
     Pof {
-        #[clap(short('r'), long)]
-        /// Estimated net reward you would like to receive each epoch
-        net_reward: u64,
         #[clap(short, long)]
         /// Percentage of the nominal reward you will bid to join the
         /// validator set, with three decimal places: 1.234 is 123.4%
         bid_pct: Option<f64>,
+
         #[clap(short, long)]
         /// Epoch until the bid is valid (will expire in `expiry` + 1)
         epoch_expiry: u64,
         #[clap(short, long)]
         /// Eliminates the bid. There are only a limited amount of retractions that can happen in an epoch
         retract: bool,
+
+        #[clap(short('r'), long, conflicts_with = "bid_pct")]
+        /// experimental. Estimated net reward you would like to receive each epoch
+        net_reward: Option<u64>,
     },
     /// Jail and unjail transactions
     Jail {
@@ -91,12 +93,14 @@ impl ValidatorTxs {
                         bid: scaled_bid,
                         epoch_expiry: *epoch_expiry,
                     }
-                } else {
+                } else if let Some(n) = net_reward {
                     // Default path is to update based on the expected net reward
                     ProofOfFeePofUpdateBidNetReward {
-                        net_reward: *net_reward,
+                        net_reward: *n,
                         epoch_expiry: *epoch_expiry,
                     }
+                } else {
+                    bail!("either bid_pct or net_reward must be provided")
                 }
             }
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
