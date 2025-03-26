@@ -75,6 +75,7 @@ impl TestnetCli {
                 check_bins_path()?;
 
                 println!("starting local testnet using Diem swarm...");
+                assert!(reference_db.is_some(), "no db");
                 cli.run(move_release, reference_db).await?;
             }
         }

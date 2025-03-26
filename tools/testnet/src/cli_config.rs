@@ -37,7 +37,13 @@ impl TestnetConfigOpts {
         twin_db: Option<PathBuf>,
     ) -> Result<()> {
         let chain_name = self.chain_name.unwrap_or(NamedChain::TESTNET); // chain_id = 2
+        // let data_path = self.out_dir.clone().unwrap_or_else(|| {
+        //     let p = global_config_dir().join("swarm");
+        //     println!("using default path: {}", p.display());
+        //     p
+        // });
         let data_path = self.out_dir.clone().unwrap_or_else(global_config_dir);
+
         let out_path = config_virgin::setup(
             &self.me,
             &self.host_list,
@@ -56,6 +62,7 @@ impl TestnetConfigOpts {
         // 4. use artifacts of #4 to update the config files
         if let Some(p) = twin_db {
             println!("configuring twin...");
+            dbg!(&out_path);
             config_twin::configure_twin(&out_path, &p).await?;
         }
         Ok(())

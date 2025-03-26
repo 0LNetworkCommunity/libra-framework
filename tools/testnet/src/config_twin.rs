@@ -4,27 +4,39 @@ use glob::glob;
 use libra_config::validator_registration::{registration_from_operator_yaml, ValCredentials};
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use std::path::{Path, PathBuf};
-use tokio::fs;
 
 use crate::twin_swarm::update_genesis_in_node_config;
 
 /// Configure a twin network based on the specified options
 pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Result<()> {
     // don't do any operations on the reference db
+
+    assert!(home_path.exists(), "home data path should exist");
+    // Note this is the customary path for the database
     let destination_db = home_path.join("data/db");
-    fs::create_dir_all(&destination_db).await?;
+    std::fs::create_dir_all(&destination_db)?;
+
+    println!("Copying reference db to: {}", destination_db.display());
+
     fs_extra::dir::copy(
         reference_db,
-        &destination_db, // saving to standard db path
-        &fs_extra::dir::CopyOptions::new(),
+        &destination_db, // will create a folder under this path
+        &fs_extra::dir::CopyOptions::new()
+            .content_only(true)
+            .overwrite(true),
     )?;
+
     assert!(destination_db.exists(), "destination db should exist");
-    println!("Copied reference db to: {}", destination_db.display());
     // Step 1: Collect all the operator.yaml files
     println!("Collecting operator configuration files...");
     // using glob read all the operator*.yaml files in <data_path>/operator_files
-    let operator_path = home_path.join("operator_files");
-    let pattern = operator_path
+    let operators_dir = home_path.join("operator_files");
+    assert!(
+        operators_dir.exists(),
+        "operator_files dir should exist, prior to coniguring a twin"
+    );
+
+    let pattern = operators_dir
         .join("operator*.yaml")
         .to_string_lossy()
         .to_string();
@@ -38,13 +50,6 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
             }
             Err(e) => println!("Error while processing operator file: {}", e),
         }
-    }
-
-    if operator_files.is_empty() {
-        return Err(anyhow::anyhow!(
-            "No operator files found in {}",
-            operator_path.display()
-        ));
     }
 
     // Parse each operator file into ValCredentials
@@ -101,6 +106,7 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
     // Step 4: Update config files with artifacts
     println!("Updating configuration files...");
     let config_path = home_path.join("validator.yaml");
+
     update_genesis_in_node_config(&config_path, &rescue_blob_path, wp)?;
 
     println!("Twin configuration complete");

@@ -254,9 +254,10 @@ pub fn update_genesis_in_node_config(
 ) -> Result<()> {
     let mut node_config = NodeConfig::load_from_path(node_config_path)?;
 
-    let configs_dir = &node_config.base.data_dir;
+    let configs_dir = node_config_path.parent().unwrap();
 
     let validator_identity_file = configs_dir.join("validator-identity.yaml");
+    dbg!(&validator_identity_file);
     assert!(
         validator_identity_file.exists(),
         "validator-identity.yaml not found"
@@ -268,6 +269,7 @@ pub fn update_genesis_in_node_config(
     // rules config.
     // insert_waypoint(&mut node_config, wp);
     ///////
+
 
     let init_safety = InitialSafetyRulesConfig::from_file(
         validator_identity_file,

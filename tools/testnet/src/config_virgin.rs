@@ -13,7 +13,7 @@ use libra_types::{
     ONCHAIN_DECIMAL_PRECISION,
 };
 use serde_yaml;
-use std::{fs, path::PathBuf, thread, time}; // Explicitly import serde_yaml
+use std::{fs, path::PathBuf}; // Explicitly import serde_yaml
 
 // Simple function to convert ValidatorConfiguration to OperatorConfiguration
 fn validator_to_operator_config(
@@ -84,14 +84,13 @@ pub async fn setup(
         my_host.host, my_host.port
     );
 
-    // create the local files for my_persona
-    if data_path.exists() {
-        println!("WARN: deleting {}, in 5 secs", &data_path.display());
-        let delay = time::Duration::from_secs(5);
-        thread::sleep(delay);
-        fs::remove_dir_all(&data_path)?;
-    }
+    // assert!(
+    //     !data_path.exists(),
+    //     "create a clean dir for swarm files please. You have stuff here: {}",
+    //     &data_path.display()
+    // );
 
+      dbg!(&data_path);
     // Initializes the validator configuration.
     validator_config::initialize_validator(
         Some(data_path.clone()),
