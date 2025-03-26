@@ -16,6 +16,7 @@ rust-version = { workspace = true }
 anyhow = { workspace = true }
 bcs = { workspace = true }
 clap = { workspace = true }
+dialoguer = { workspace = true }
 diem-backup-cli = { workspace = true }
 diem-config = { workspace = true }
 diem-db = { workspace = true }
@@ -28,7 +29,9 @@ diem-storage-interface = { workspace = true }
 diem-types = { workspace = true }
 diem-vm = { workspace = true }
 flate2 = { workspace = true }
+fs_extra = { workspace = true }
 glob = { workspace = true }
+indicatif = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 libra-config = { workspace = true }
 libra-types = { workspace = true }

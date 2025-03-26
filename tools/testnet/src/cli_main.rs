@@ -30,8 +30,6 @@ pub struct TestnetCli {
 pub enum Sub {
     /// configs for genesis
     Configure(TestnetConfigOpts),
-    /// start using containers
-    StartContainer,
     /// start using Diem swarm
     StartSwarm(SwarmCliOpts),
 }
@@ -73,10 +71,6 @@ impl TestnetCli {
             Sub::Configure(cli) => {
                 // first configure a vanilla genesis
                 cli.run(self.framework_mrb_path, self.twin_db).await?;
-            }
-            Sub::StartContainer => {
-                println!("starting local testnet using containers...");
-                todo!();
             }
             Sub::StartSwarm(cli) => {
                 println!("starting local testnet using Diem swarm...");

@@ -5,4 +5,5 @@ pub mod parse_folder_names;
 pub mod read_snapshot;
 pub mod restore;
 pub mod restore_bundle;
+pub mod restore_interact;
 pub mod storage_cli;
