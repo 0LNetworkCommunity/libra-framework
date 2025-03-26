@@ -7,9 +7,9 @@ use crate::{
 };
 
 use clap::{Parser, Subcommand};
-use diem_types::{transaction::Transaction, waypoint::Waypoint};
+use diem_types::waypoint::Waypoint;
 use libra_types::exports::AccountAddress;
-use std::{fs, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
 /// Constants for blob file names
 pub const REPLACE_VALIDATORS_BLOB: &str = "replace_validators_rescue.blob";
@@ -125,9 +125,7 @@ impl RescueCli {
                 blob_path,
                 waypoint,
             } => {
-                let tx_bytes = fs::read(blob_path)?;
-                let tx: Transaction = bcs::from_bytes(tx_bytes.as_slice())?;
-                post_rescue_node_file_updates(config_path, *waypoint, tx)?;
+                post_rescue_node_file_updates(config_path, *waypoint, blob_path)?;
             }
         }
         // hack. let the DB close before exiting

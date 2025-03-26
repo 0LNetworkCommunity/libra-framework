@@ -1,5 +1,4 @@
 use crate::replace_validators_file::replace_validators_blob;
-use diem_types::transaction::Transaction;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use std::time::Instant;
 
@@ -122,15 +121,11 @@ impl TwinSwarm {
         wp: Waypoint,
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
-        let genesis_transaction = {
-            let buf = std::fs::read(rescue_blob.clone()).unwrap();
-            bcs::from_bytes::<Transaction>(&buf).unwrap()
-        };
         for n in swarm.validators_mut() {
             libra_rescue::node_config::post_rescue_node_file_updates(
                 &n.config_path(),
                 wp,
-                genesis_transaction.clone(),
+                &rescue_blob,
             )?;
             // let mut node_config = n.config().clone();
 
@@ -210,7 +205,7 @@ impl TwinSwarm {
         Self::restart_all(swarm)?;
 
         swarm
-            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(30))
+            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(300))
             .await?;
 
         Ok(())

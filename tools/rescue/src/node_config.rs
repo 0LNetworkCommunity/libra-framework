@@ -5,9 +5,9 @@ use std::path::Path;
 
 /// update the node's files with waypoint information
 pub fn post_rescue_node_file_updates(
-    config_path: &Path,               // validator.yaml
-    waypoint: Waypoint,               // waypoint
-    genesis_transaction: Transaction, // genesis transaction
+    config_path: &Path,  // validator.yaml
+    waypoint: Waypoint,  // waypoint
+    restore_blob: &Path, // genesis transaction
 ) -> anyhow::Result<()> {
     let mut node_config = NodeConfig::load_from_path(config_path)?;
     swarm_utils::insert_waypoint(&mut node_config, waypoint);
@@ -15,7 +15,10 @@ pub fn post_rescue_node_file_updates(
         .consensus
         .safety_rules
         .initial_safety_rules_config = InitialSafetyRulesConfig::None;
-    node_config.execution.genesis = Some(genesis_transaction);
+    node_config.execution.genesis_file_location = restore_blob.to_path_buf();
+
+    let tx: Transaction = bcs::from_bytes(&std::fs::read(restore_blob)?)?;
+    node_config.execution.genesis = Some(tx);
 
     node_config.consensus.sync_only = false;
 

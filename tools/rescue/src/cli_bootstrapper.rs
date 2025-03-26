@@ -143,7 +143,11 @@ impl BootstrapOpts {
             println!("Successfully committed genesis.");
 
             if let Some(p) = &self.update_node_config {
-                node_config::post_rescue_node_file_updates(p, output_waypoint, genesis_txn)?;
+                node_config::post_rescue_node_file_updates(
+                    p,
+                    output_waypoint,
+                    &self.genesis_txn_file,
+                )?;
             }
         }
 
