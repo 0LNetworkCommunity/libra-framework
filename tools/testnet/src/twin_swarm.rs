@@ -122,8 +122,6 @@ impl TwinSwarm {
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
         for n in swarm.validators_mut() {
-            // let config_path = n.config_path()
-            // insert_waypoint(&config_path, &rescue_blob, wp)?;
 
             let mut node_config = n.config().clone();
 

@@ -31,6 +31,7 @@ libra-framework = { workspace = true }
 libra-genesis-tools = { workspace = true }
 libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }
+libra-storage = { workspace = true }
 libra-types = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }

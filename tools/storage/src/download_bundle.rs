@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 #[derive(Deserialize, Debug)]
@@ -255,7 +255,7 @@ pub async fn download_restore_bundle(
     branch: &str,
     epoch_num: &u64,
     destination: &Path,
-) -> Result<()> {
+) -> Result<PathBuf> {
     // Create the bundle-specific directory
     let bundle_dir = destination.join(format!("epoch_{}_restore_bundle", epoch_num));
     if !bundle_dir.exists() {
@@ -289,7 +289,7 @@ pub async fn download_restore_bundle(
         epoch_num,
         bundle_dir.display()
     );
-    Ok(())
+    Ok(bundle_dir)
 }
 
 #[cfg(test)]
