@@ -1,14 +1,14 @@
-use diem_config::config::InitialSafetyRulesConfig;
 use diem_forge::SwarmExt;
 use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
+use libra_rescue::node_config::post_rescue_node_file_updates;
 use libra_rescue::test_support::{update_node_config_restart, wait_for_node};
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
     cli_main::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
 };
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
-use smoke_test::test_utils::{swarm_utils::insert_waypoint, MAX_CATCH_UP_WAIT_SECS};
+use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::{fs, time::Duration};
 
 // #[ignore]
@@ -47,6 +47,7 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
         .unwrap();
 
     println!("3. stop nodes");
+
     for node in env.validators_mut() {
         node.stop();
     }
@@ -92,7 +93,7 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
 
     println!("6. apply genesis transaction to all validators");
     for (expected_to_connect, node) in env.validators_mut().enumerate() {
-        let mut node_config = node.config().clone();
+        node.stop();
 
         let val_db_path = node.config().storage.dir();
         assert!(val_db_path.exists());
@@ -109,23 +110,27 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
 
         let waypoint = bootstrap.run().unwrap().unwrap();
 
-        insert_waypoint(&mut node_config, waypoint);
-        node_config
-            .consensus
-            .safety_rules
-            .initial_safety_rules_config = InitialSafetyRulesConfig::None;
-        node_config.execution.genesis = Some(genesis_transaction.clone());
-        // reset the sync_only flag to false
-        node_config.consensus.sync_only = false;
-        update_node_config_restart(node, node_config)?;
+        // voodoo to update node config
+        post_rescue_node_file_updates(&node.config_path(), waypoint, genesis_transaction.clone())?;
+
+        node.start()?;
         wait_for_node(node, expected_to_connect).await?;
     }
 
     println!("7. wait for startup and progress");
+    let res = client.get_index().await?;
+    let block_height_pre = res.inner().block_height.inner();
+
+    std::thread::sleep(Duration::from_secs(5));
+    let i = client.get_index().await?;
+    assert!(
+        i.inner().block_height.inner() > block_height_pre,
+        "chain isn't making progress"
+    );
 
     // show progress
     println!("8. verify transactions work");
-    std::thread::sleep(Duration::from_secs(5));
+
     let second_val = env.validators().nth(1).unwrap().peer_id();
     let old_bal = get_libra_balance(&client, second_val).await?;
     s.mint_and_unlock(second_val, 123456).await?;

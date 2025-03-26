@@ -1,5 +1,6 @@
 use crate::replace_validators_file::replace_validators_blob;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
+use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::time::Instant;
 
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
@@ -136,7 +137,7 @@ impl TwinSwarm {
             // NOTE: you don't need to insert the waypoint as previously thought
             // but it is harmless. You must however set initial safety
             // rules config.
-            // insert_waypoint(&mut node_config, wp);
+            insert_waypoint(&mut node_config, wp);
             ///////
 
             let init_safety = InitialSafetyRulesConfig::from_file(
