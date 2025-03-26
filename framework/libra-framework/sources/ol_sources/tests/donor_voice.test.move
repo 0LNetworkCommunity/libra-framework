@@ -22,7 +22,6 @@ module ol_framework::test_donor_voice {
   use std::vector;
   use std::signer;
 
-  // use diem_std::debug::print;
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun dd_init(root: &signer, alice: &signer, bob: &signer) {

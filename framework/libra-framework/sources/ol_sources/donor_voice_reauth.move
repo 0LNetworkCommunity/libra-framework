@@ -108,11 +108,13 @@ module ol_framework::donor_voice_reauth {
     #[test_only]
     public(friend) fun test_set_authorized(framework: &signer, dv_account: address) acquires DonorAuthorized{
       diem_framework::system_addresses::assert_diem_framework(framework);
-      let now = timestamp::now_seconds();
+
+      let now = timestamp::now_seconds() + 1;
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.timestamp = now;
 
       activity::test_set_activity(framework, dv_account, now);
+
       assert_authorized(dv_account);
     }
 }
