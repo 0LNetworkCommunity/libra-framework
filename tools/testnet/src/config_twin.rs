@@ -2,10 +2,10 @@ use crate::replace_validators_file::replace_validators_blob;
 
 use glob::glob;
 use libra_config::validator_registration::{registration_from_operator_yaml, ValCredentials};
-use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
+use libra_rescue::{
+    cli_bootstrapper::one_step_apply_rescue_on_db, node_config::post_rescue_node_file_updates,
+};
 use std::path::{Path, PathBuf};
-
-use crate::twin_swarm::update_genesis_in_node_config;
 
 /// Configure a twin network based on the specified options
 pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Result<()> {
@@ -107,7 +107,7 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
     println!("Updating configuration files...");
     let config_path = home_path.join("validator.yaml");
 
-    update_genesis_in_node_config(&config_path, &rescue_blob_path, wp)?;
+    post_rescue_node_file_updates(&config_path, wp, &rescue_blob_path)?;
 
     println!("Twin configuration complete");
     Ok(())

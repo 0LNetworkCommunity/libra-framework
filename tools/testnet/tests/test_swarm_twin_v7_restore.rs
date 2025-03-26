@@ -11,6 +11,5 @@ async fn test_twin_swarm_from_v7_rescue() -> anyhow::Result<()> {
     let mut smoke = LibraSmoke::new(Some(1), None).await?;
 
     twin_swarm::awake_frankenswarm(&mut smoke, Some(dir)).await?;
-    tokio::time::sleep(tokio::time::Duration::from_secs(300)).await;
     Ok(())
 }
