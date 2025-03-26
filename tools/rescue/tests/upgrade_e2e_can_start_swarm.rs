@@ -74,11 +74,6 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
     let genesis_blob_path = blob_path.join(UPGRADE_FRAMEWORK_BLOB);
     assert!(genesis_blob_path.exists());
 
-    // let genesis_transaction = {
-    //     let buf = fs::read(&genesis_blob_path).unwrap();
-    //     bcs::from_bytes::<Transaction>(&buf).unwrap()
-    // };
-
     // replace with rescue cli
     println!("5. check we can get a waypoint generally");
     let bootstrap = BootstrapOpts {

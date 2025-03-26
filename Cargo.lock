@@ -6005,6 +6005,7 @@ name = "libra-testnet"
 version = "7.0.4"
 dependencies = [
  "anyhow",
+ "bcs 0.1.4",
  "clap 4.5.20",
  "dialoguer",
  "diem-api-types",
