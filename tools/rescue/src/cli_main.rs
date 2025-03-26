@@ -2,12 +2,14 @@
 //! database bootstrapping, and debugging twin states.
 use crate::{
     cli_bootstrapper::{check_rescue_bootstraps, BootstrapOpts},
+    node_config::post_rescue_node_file_updates,
     transaction_factory::{register_vals, run_script_tx, save_rescue_blob, upgrade_tx},
 };
 
 use clap::{Parser, Subcommand};
+use diem_types::{transaction::Transaction, waypoint::Waypoint};
 use libra_types::exports::AccountAddress;
-use std::{path::PathBuf, time::Duration};
+use std::{fs, path::PathBuf, time::Duration};
 
 /// Constants for blob file names
 pub const REPLACE_VALIDATORS_BLOB: &str = "replace_validators_rescue.blob";
@@ -35,6 +37,18 @@ pub struct RescueCli {
 #[derive(Subcommand)]
 pub enum Sub {
     Bootstrap(BootstrapOpts),
+    /// updates the relevant safety rules in the node files
+    UpdateSafetyRules {
+        #[clap(short, long)]
+        /// path to validator.yaml
+        config_path: PathBuf,
+        /// rescue blob path
+        #[clap(short, long)]
+        blob_path: PathBuf,
+        /// expected waypoint
+        #[clap(short, long)]
+        waypoint: Waypoint,
+    },
     /// Registers new validators, and replaces the validator set.
     RegisterVals {
         #[clap(long)]
@@ -105,6 +119,15 @@ impl RescueCli {
                     .join(RUN_SCRIPT_BLOB);
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
+            }
+            Sub::UpdateSafetyRules {
+                config_path,
+                blob_path,
+                waypoint,
+            } => {
+                let tx_bytes = fs::read(blob_path)?;
+                let tx: Transaction = bcs::from_bytes(tx_bytes.as_slice())?;
+                post_rescue_node_file_updates(config_path, *waypoint, tx)?;
             }
         }
         // hack. let the DB close before exiting

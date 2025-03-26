@@ -1,13 +1,13 @@
 use crate::replace_validators_file::replace_validators_blob;
+use diem_types::transaction::Transaction;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
-use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::time::Instant;
 
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 
 use anyhow::{Context, Result};
 use diem_config::config::NodeConfig;
-use diem_forge::{LocalNode, LocalSwarm, SwarmExt};
+use diem_forge::{LocalSwarm, SwarmExt};
 use diem_temppath::TempPath;
 use diem_types::waypoint::Waypoint;
 use libra_config::validator_registration::ValCredentials;
@@ -55,12 +55,12 @@ impl TwinSwarm {
 
         Ok(())
     }
-    /// Apply the rescue blob to the swarm db
-    fn update_node_config(validator: &mut LocalNode, mut config: NodeConfig) -> anyhow::Result<()> {
-        let node_path = validator.config_path();
-        config.save_to_path(node_path)?;
-        Ok(())
-    }
+    // /// Apply the rescue blob to the swarm db
+    // fn update_node_config(validator: &mut LocalNode, mut config: NodeConfig) -> anyhow::Result<()> {
+    //     let node_path = validator.config_path();
+    //     config.save_to_path(node_path)?;
+    //     Ok(())
+    // }
     /// Prepare the temporary database environment
     pub async fn prepare_temp_database(
         swarm: &mut LocalSwarm,
@@ -117,56 +117,65 @@ impl TwinSwarm {
     }
 
     /// Update waypoint in all validator configs
-    pub async fn update_waypoint(
+    pub async fn update_node_files(
         swarm: &mut LocalSwarm,
         wp: Waypoint,
         rescue_blob: PathBuf,
     ) -> anyhow::Result<()> {
+        let genesis_transaction = {
+            let buf = std::fs::read(rescue_blob.clone()).unwrap();
+            bcs::from_bytes::<Transaction>(&buf).unwrap()
+        };
         for n in swarm.validators_mut() {
-            let mut node_config = n.config().clone();
+            libra_rescue::node_config::post_rescue_node_file_updates(
+                &n.config_path(),
+                wp,
+                genesis_transaction.clone(),
+            )?;
+            // let mut node_config = n.config().clone();
 
-            let configs_dir = &node_config.base.data_dir;
+            // let configs_dir = &node_config.base.data_dir;
 
-            let validator_identity_file = configs_dir.join("validator-identity.yaml");
-            assert!(
-                validator_identity_file.exists(),
-                "validator-identity.yaml not found"
-            );
+            // let validator_identity_file = configs_dir.join("validator-identity.yaml");
+            // assert!(
+            //     validator_identity_file.exists(),
+            //     "validator-identity.yaml not found"
+            // );
 
-            ////////
-            // NOTE: you don't need to insert the waypoint as previously thought
-            // but it is harmless. You must however set initial safety
-            // rules config.
-            insert_waypoint(&mut node_config, wp);
-            ///////
+            // ////////
+            // // NOTE: you don't need to insert the waypoint as previously thought
+            // // but it is harmless. You must however set initial safety
+            // // rules config.
+            // insert_waypoint(&mut node_config, wp);
+            // ///////
 
-            let init_safety = InitialSafetyRulesConfig::from_file(
-                validator_identity_file,
-                WaypointConfig::FromConfig(wp),
-            );
-            node_config
-                .consensus
-                .safety_rules
-                .initial_safety_rules_config = init_safety;
+            // let init_safety = InitialSafetyRulesConfig::from_file(
+            //     validator_identity_file,
+            //     WaypointConfig::FromConfig(wp),
+            // );
+            // node_config
+            //     .consensus
+            //     .safety_rules
+            //     .initial_safety_rules_config = init_safety;
 
-            ////////
-            // Note: Example of getting genesis transaction serialized to include in config.
-            // let genesis_transaction = {
-            //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
-            //     bcs::from_bytes::<Transaction>(&buf).unwrap()
-            // };
-            /////////
+            // ////////
+            // // Note: Example of getting genesis transaction serialized to include in config.
+            // // let genesis_transaction = {
+            // //     let buf = std::fs::read(rescue_blob.clone()).unwrap();
+            // //     bcs::from_bytes::<Transaction>(&buf).unwrap()
+            // // };
+            // /////////
 
-            // NOTE: Must reset the genesis transaction in the config file
-            // Or overwrite with a serialized versions
-            node_config.execution.genesis = None; // see above to use bin: Some(genesis_transaction);
-                                                  // ... and point to file
-            node_config
-                .execution
-                .genesis_file_location
-                .clone_from(&rescue_blob);
+            // // NOTE: Must reset the genesis transaction in the config file
+            // // Or overwrite with a serialized versions
+            // node_config.execution.genesis = None; // see above to use bin: Some(genesis_transaction);
+            //                                       // ... and point to file
+            // node_config
+            //     .execution
+            //     .genesis_file_location
+            //     .clone_from(&rescue_blob);
 
-            Self::update_node_config(n, node_config)?;
+            // Self::update_node_config(n, node_config)?;
         }
         Ok(())
     }
@@ -190,7 +199,7 @@ impl TwinSwarm {
         Self::replace_db_on_swarm_nodes(swarm, temp_db_path).await?;
 
         println!("Updating waypoint in node configs and adding rescue blob");
-        Self::update_waypoint(swarm, waypoint, rescue_blob_path).await?;
+        Self::update_node_files(swarm, waypoint, rescue_blob_path).await?;
 
         Ok(())
     }
@@ -311,6 +320,7 @@ pub async fn awake_frankenswarm(
     // Prepare the temporary database environment
     let (temp_db_path, _, start_version) =
         TwinSwarm::prepare_temp_database(&mut smoke.swarm, reference_db).await?;
+    dbg!(&temp_db_path);
 
     println!("Creating rescue blob from the reference db");
     let rescue_blob_path = replace_validators_blob(&temp_db_path, creds, &temp_db_path).await?;
@@ -322,7 +332,7 @@ pub async fn awake_frankenswarm(
     TwinSwarm::replace_db_all(&mut smoke.swarm, &temp_db_path).await?;
 
     println!("5. Change the waypoint in the node configs and add the rescue blob to the config");
-    TwinSwarm::update_waypoint(&mut smoke.swarm, wp, rescue_blob_path).await?;
+    TwinSwarm::update_node_files(&mut smoke.swarm, wp, rescue_blob_path).await?;
 
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;

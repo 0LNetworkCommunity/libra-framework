@@ -136,6 +136,7 @@ fn e2e_publish_on_restored_v7() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
         info: false,
     };
 
@@ -187,6 +188,7 @@ fn e2e_twin_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
         info: false,
     };
 

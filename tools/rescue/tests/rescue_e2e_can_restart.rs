@@ -86,6 +86,7 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
         genesis_txn_file: genesis_blob_path.clone(),
         waypoint_to_verify: None,
         commit: false, // NOT APPLYING THE TX
+        update_node_config: None,
         info: false,
     };
 
@@ -105,6 +106,7 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
             genesis_txn_file: genesis_blob_path.clone(),
             waypoint_to_verify: None,
             commit: true, // APPLY THE TX
+            update_node_config: None,
             info: false,
         };
 

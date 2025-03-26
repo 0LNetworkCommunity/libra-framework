@@ -88,7 +88,8 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
         db_dir: val_db_path,
         genesis_txn_file: genesis_blob_path,
         waypoint_to_verify: None,
-        commit: false, // NOTE: the tests seem to work even when this is false
+        commit: false, // NOTE: just testing it can apply tx
+        update_node_config: None,
         info: false,
     };
 

@@ -59,6 +59,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         genesis_txn_file: file.clone(),
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
         info: false,
     };
 
@@ -70,6 +71,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: wp,
         commit: true,
+        update_node_config: None,
         info: false,
     };
 
@@ -182,6 +184,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
         info: false,
     };
 

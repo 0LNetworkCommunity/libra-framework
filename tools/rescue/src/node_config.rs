@@ -21,5 +21,6 @@ pub fn post_rescue_node_file_updates(
 
     node_config.save_to_path(config_path)?;
 
+    println!("success: updated safety rules");
     Ok(())
 }
