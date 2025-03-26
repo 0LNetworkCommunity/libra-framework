@@ -1,5 +1,4 @@
 use diem_forge::SwarmExt;
-use diem_types::transaction::Transaction;
 use libra_framework::release::ReleaseTarget;
 use libra_rescue::node_config::post_rescue_node_file_updates;
 use libra_rescue::test_support::{update_node_config_restart, wait_for_node};
@@ -9,9 +8,8 @@ use libra_rescue::{
 };
 use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
-use std::{fs, time::Duration};
+use std::time::Duration;
 
-// #[ignore]
 #[tokio::test]
 /// This test verifies the flow of a genesis transaction after the chain starts.
 /// NOTE: much of this is duplicated in rescue_cli_creates_blob and e2e but we
