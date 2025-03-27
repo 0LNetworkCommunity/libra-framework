@@ -1,20 +1,62 @@
 use anyhow::Result;
-use diem_forge::SwarmExt;
+use diem_forge::{LocalSwarm, SwarmExt};
 use diem_genesis::config::HostAndPort;
+use fs_extra::dir;
 use libra_config::validator_config;
-use libra_framework::release::ReleaseTarget;
 use libra_rescue::cli_main::REPLACE_VALIDATORS_BLOB;
 use libra_rescue::node_config::post_rescue_node_file_updates;
 use libra_rescue::test_support::{update_node_config_restart, wait_for_node};
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
-    cli_main::{RescueCli, Sub, UPGRADE_FRAMEWORK_BLOB},
+    cli_main::{RescueCli, Sub},
 };
-use libra_smoke_tests::{helpers::get_libra_balance, libra_smoke::LibraSmoke};
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_wallet::core::wallet_library::WalletLibrary;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
+use tokio::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+
+// Note: swarm has several limitations
+// Most swarm and LocalNode properties are not mutable
+// after init.
+// For example: it's not possible to point a swarm node to a new config file
+// in a different directory. It is always self.directory.join("node.yaml")
+// Similarly it's not possible to change the directory itself.
+// So these tests are a bit of a hack.
+// we replace some files in the original directories that
+// swarm created, using same file names. The function used is called
+// brain_salad_surgery().
+
+/// swaps out the
+/// preserving the external structure.
+async fn brain_salad_surgery(swarm: &LocalSwarm) -> Result<()> {
+    // Write the modified config back to the original location
+    let swarm_dir = swarm.dir();
+    for (i, n) in swarm.validators().enumerate() {
+        let node_data_path = n.config_path();
+        let node_data_path = node_data_path.parent().unwrap();
+        let to_path = swarm_dir.join(format!("{i}_old"));
+
+        fs::remove_dir_all(&to_path).await?;
+        fs::create_dir_all(&to_path).await?;
+        fs_extra::move_items(&[node_data_path], to_path, &dir::CopyOptions::new())?;
+
+        creates_random_val_account(node_data_path, n.port()).await?;
+    }
+
+    // We've got a ballad
+    // About a salad brain
+    // With assurgence
+    // In a dirty bit again
+
+    // [Verse 2]
+    // Brain salad certainty
+    // It will work for you, it works for me
+    // Brain rot perversity
+    // Brain salad surgery
+    Ok(())
+}
 
 async fn test_setup_start_then_pause() -> Result<LibraSmoke> {
     let num_nodes: usize = 2;
@@ -59,20 +101,24 @@ async fn copy_dir(from: &Path, to: &str) -> Result<()> {
         tokio::fs::remove_dir_all(&to_dir).await?;
     }
     tokio::fs::create_dir_all(&to).await?;
-    fs_extra::dir::copy(from, &to_dir, &fs_extra::dir::CopyOptions::new().content_only(true))?;
+    fs_extra::dir::copy(
+        from,
+        &to_dir,
+        &fs_extra::dir::CopyOptions::new().content_only(true),
+    )?;
     Ok(())
 }
-async fn creates_random_val_account(
-    data_path: &Path,
-    my_host: &HostAndPort,
-) -> anyhow::Result<WalletLibrary> {
+async fn creates_random_val_account(data_path: &Path, port: u16) -> anyhow::Result<WalletLibrary> {
     let wallet = WalletLibrary::new();
     let mnemonic_string = wallet.mnemonic();
+
+    let my_host = HostAndPort::local(port)?;
+
     // Initializes the validator configuration.
     validator_config::initialize_validator(
         Some(data_path.to_path_buf()),
         Some(&mnemonic_string.clone()[..3]),
-        my_host.clone(),
+        my_host,
         Some(mnemonic_string),
         false,
         Some(diem_types::chain_id::NamedChain::TESTING),
@@ -88,8 +134,7 @@ async fn make_test_randos(smoke: &LibraSmoke) -> anyhow::Result<()> {
     let rando_dir = env.dir().join("rando");
 
     for (i, local_node) in env.validators().enumerate() {
-        let host = HostAndPort::local(local_node.port())?;
-        creates_random_val_account(&rando_dir.join(&i.to_string()), &host).await?;
+        creates_random_val_account(&rando_dir.join(i.to_string()), local_node.port()).await?;
     }
     Ok(())
 }
@@ -100,7 +145,7 @@ async fn meta_can_add_random_vals() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
 
-    copy_dir(&s.swarm.dir(), "post_random_init").await?;
+    copy_dir(s.swarm.dir(), "post_random_init").await?;
 
     Ok(())
 }
@@ -113,7 +158,7 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
     let data_dir = s.swarm.dir();
     copy_dir(data_dir, "post_random_init").await?;
 
-    let val_db_path = s.swarm.validators().nth(0).unwrap().config().storage.dir();
+    let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
     // use glob to find the operator.yaml under the data_dir/randos
     // Use glob to find all operator YAML files in the rando directory
@@ -164,7 +209,7 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
     let data_dir = s.swarm.dir();
     copy_dir(data_dir, "post_random_init").await?;
 
-    let val_db_path = s.swarm.validators().nth(0).unwrap().config().storage.dir();
+    let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
     // use glob to find the operator.yaml under the data_dir/randos
     // Use glob to find all operator YAML files in the rando directory
@@ -215,13 +260,90 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
         info: false,
     };
     let wp2 = bootstrap.run()?.expect("waypoint 2 not found");
-    assert!(wp == wp2, "waypints don't match");
+    assert!(wp == wp2, "waypoints don't match");
 
     copy_dir(data_dir, "post_rescue").await?;
 
     Ok(())
 }
 
+#[tokio::test]
+async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
+    let s = test_setup_start_then_pause().await?;
+
+    make_test_randos(&s).await?;
+    let data_dir = s.swarm.dir();
+    copy_dir(data_dir, "post_random_init").await?;
+
+    let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
+
+    // use glob to find the operator.yaml under the data_dir/randos
+    // Use glob to find all operator YAML files in the rando directory
+    let rando_dir = data_dir.join("rando");
+    let operator_yaml_pattern = format!("{}/**/operator.yaml", rando_dir.display());
+    let operator_yamls: Vec<PathBuf> = glob::glob(&operator_yaml_pattern)?
+        .filter_map(Result::ok)
+        .collect();
+
+    if operator_yamls.is_empty() {
+        anyhow::bail!("No operator.yaml files found in rando directory");
+    }
+
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
+        blob_path: Some(data_dir.to_path_buf()), // save to top level test dir
+        command: Sub::RegisterVals {
+            operator_yaml: operator_yamls.clone(),
+            upgrade_mrb: None,
+        },
+    };
+
+    r.run()?;
+
+    copy_dir(data_dir, "post_blob").await?;
+
+    let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
+
+    // check it bootstraps while we are here
+    let bootstrap = BootstrapOpts {
+        db_dir: val_db_path.clone(),
+        genesis_txn_file: genesis_blob_path.clone(),
+        waypoint_to_verify: None,
+        commit: false, // NOT APPLYING THE TX
+        update_node_config: None,
+        info: false,
+    };
+    let wp = bootstrap.run()?.expect("waypoint not found");
+
+    // replace with rescue cli
+    println!("apply on each validator db");
+    let bootstrap = BootstrapOpts {
+        db_dir: val_db_path.clone(),
+        genesis_txn_file: genesis_blob_path.clone(),
+        waypoint_to_verify: Some(wp),
+        commit: true, // APPLY THE TX
+        update_node_config: None,
+        info: false,
+    };
+    let wp2 = bootstrap.run()?.expect("waypoint 2 not found");
+    assert!(wp == wp2, "waypoints don't match");
+
+    copy_dir(data_dir, "post_rescue").await?;
+
+    // copy the modified db into the
+    // data directory of the new accounts.
+    // find the parent account of the randos eg
+    // rando/0/
+    for p in operator_yamls {
+        let parent = p.parent().unwrap();
+        fs_extra::dir::copy(&val_db_path, parent, &fs_extra::dir::CopyOptions::new())?;
+
+        post_rescue_node_file_updates(&parent.join("validator.yaml"), wp, &genesis_blob_path)?;
+    }
+    copy_dir(data_dir, "post_copy").await?;
+
+    Ok(())
+}
 
 // #[tokio::test]
 // async fn can_bootstrap_with_replace_blob_initial_db() -> anyhow::Result<()> {

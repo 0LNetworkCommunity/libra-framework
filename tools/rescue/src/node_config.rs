@@ -1,6 +1,7 @@
-use diem_config::config::{InitialSafetyRulesConfig, NodeConfig, WaypointConfig};
-use diem_types::waypoint::Waypoint;
-use smoke_test::test_utils::swarm_utils::insert_waypoint;
+use diem_config::config::{
+    InitialSafetyRulesConfig, NodeConfig, PersistableConfig, WaypointConfig,
+};
+use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
 use std::path::Path;
 
 /// update the node's files with waypoint information
@@ -8,13 +9,15 @@ pub fn post_rescue_node_file_updates(
     config_path: &Path,  // validator.yaml
     waypoint: Waypoint,  // waypoint
     restore_blob: &Path, // genesis transaction
-) -> anyhow::Result<()> {
-    let mut node_config = NodeConfig::load_from_path(config_path)?;
+) -> anyhow::Result<NodeConfig> {
+    dbg!(&"hi");
 
+    let mut node_config = NodeConfig::load_config(config_path)?;
+    dbg!(&node_config);
     ////////// SETTING WAYPOINT IN SAFETY RULES //////////s
     // TODO: unclear why testnet/swarm tests don't need insert_waypoint()
     // while rescue tests do
-    insert_waypoint(&mut node_config, waypoint);
+    // insert_waypoint(&mut node_config, waypoint);
 
     // TODO: this part is tricky
     // ideally we would not need to access any validator
@@ -59,5 +62,33 @@ pub fn post_rescue_node_file_updates(
     node_config.save_to_path(config_path)?;
 
     println!("success: updated safety rules");
-    Ok(())
+    Ok(node_config)
+}
+
+pub fn set_validator_peers(
+    config_path: &Path,
+    peers: Vec<(PeerId, Vec<NetworkAddress>)>,
+) -> anyhow::Result<NodeConfig> {
+    let mut node_config = NodeConfig::load_config(config_path)?;
+
+    // Update the validator network seed peers
+    if let Some(network) = &mut node_config.validator_network {
+        // Clear existing seeds and add new ones
+        // network.seeds.clear();
+        network.seed_addrs.clear();
+
+        // Add the new peers
+        for (peer_id, addresses) in peers {
+            // network.seeds.insert(peer_id, addresses);
+            network.seed_addrs.insert(peer_id, addresses);
+        }
+        network.verify_seeds()?;
+
+        println!("success: updated validator network seed peers");
+    } else {
+        return Err(anyhow::anyhow!("Validator network configuration not found"));
+    }
+    node_config.save_to_path(config_path)?;
+
+    Ok(node_config)
 }
