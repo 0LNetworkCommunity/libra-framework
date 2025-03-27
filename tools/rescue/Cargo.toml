@@ -48,7 +48,11 @@ tokio = { workspace = true  }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }
+diem-genesis = { workspace = true }
 diem-logger = { workspace = true }
+fs_extra = { workspace = true }
+glob = { workspace = true }
+libra-wallet = { workspace = true }
 regex = { workspace = true }
 serde_json = { workspace = true }
 smoke-test = { workspace = true }

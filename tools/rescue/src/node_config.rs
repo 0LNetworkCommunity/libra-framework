@@ -13,7 +13,7 @@ pub fn post_rescue_node_file_updates(
 
     ////////// SETTING WAYPOINT IN SAFETY RULES //////////s
     // TODO: unclear why testnet/swarm tests don't need insert_waypoint()
-    // while rescue tests do Not always necessary
+    // while rescue tests do
     insert_waypoint(&mut node_config, waypoint);
 
     // TODO: this part is tricky
