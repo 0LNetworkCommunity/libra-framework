@@ -13,9 +13,9 @@ use libra_rescue::{
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_wallet::core::wallet_library::WalletLibrary;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
-use tokio::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use tokio::fs;
 
 // Note: swarm has several limitations
 // Most swarm and LocalNode properties are not mutable
@@ -33,16 +33,79 @@ use std::time::Duration;
 async fn brain_salad_surgery(swarm: &LocalSwarm) -> Result<()> {
     // Write the modified config back to the original location
     let swarm_dir = swarm.dir();
+    let backup_path = swarm_dir.join(format!("bak"));
+
     for (i, n) in swarm.validators().enumerate() {
         let node_data_path = n.config_path();
         let node_data_path = node_data_path.parent().unwrap();
-        let to_path = swarm_dir.join(format!("{i}_old"));
 
-        fs::remove_dir_all(&to_path).await?;
-        fs::create_dir_all(&to_path).await?;
-        fs_extra::move_items(&[node_data_path], to_path, &dir::CopyOptions::new())?;
+        dbg!(&"hi");
+        if !backup_path.exists() {
+            fs::create_dir_all(&backup_path).await?;
+        }
+        dbg!("again");
+        fs_extra::move_items(
+            &[node_data_path],
+            &backup_path,
+            &dir::CopyOptions::new(),
+        )?;
 
+        if !node_data_path.exists() {
+            fs::create_dir_all(&node_data_path).await?;
+        }
         creates_random_val_account(node_data_path, n.port()).await?;
+
+        // Swarm uses a fixed node.yaml for the config file,
+        // while we use role-based names.
+        // we'll deprecate the one we would normally use.
+        fs::rename(
+            node_data_path.join("validator.yaml"),
+            node_data_path.join("validator.depr"),
+        )
+        .await?;
+
+        fs::rename(
+            node_data_path.join("public-keys.yaml"),
+            node_data_path.join("public-identity.yaml"),
+        )
+        .await?;
+        fs::rename(
+            node_data_path.join("private-keys.yaml"),
+            node_data_path.join("private-identity.yaml"),
+        )
+        .await?;
+
+        fs::rename(
+            node_data_path.join("validator-full-node-identity.yaml"),
+            node_data_path.join("vfn-identity.yaml"),
+        )
+        .await?;
+        // now copy back the node.yaml, it has randomly generated addresses
+        // and is generally in a format the swarm tool will understand
+        fs::copy(
+            backup_path.join(&format!("{i}/node.yaml")),
+            node_data_path.join("node.yaml"),
+        )
+        .await?;
+        // now copy back the genesis.blob
+        fs::copy(
+            backup_path.join(&format!("{i}/genesis.blob")),
+            node_data_path.join("genesis.blob"),
+        )
+        .await?;
+
+        fs::copy(
+            backup_path.join(&format!("{i}/secure_storage.json")),
+            node_data_path.join("secure_storage.json"),
+        )
+        .await?;
+
+        // and copy the db which we will modify
+        fs_extra::dir::copy(
+            backup_path.join(&format!("{i}/db")),
+            node_data_path,
+            &dir::CopyOptions::new(),
+        )?;
     }
 
     // We've got a ballad
@@ -55,6 +118,25 @@ async fn brain_salad_surgery(swarm: &LocalSwarm) -> Result<()> {
     // It will work for you, it works for me
     // Brain rot perversity
     // Brain salad surgery
+    Ok(())
+}
+
+#[tokio::test]
+// can restart after brain salad surgery
+// but will not progress
+async fn test_brain_salad() -> anyhow::Result<()> {
+    let mut s = test_setup_start_then_pause().await?;
+    let data_dir = s.swarm.dir();
+    save_debug_dir(data_dir, "init").await?;
+
+    brain_salad_surgery(&s.swarm).await?;
+    save_debug_dir(data_dir, "post_brain").await?;
+
+    for node in s.swarm.validators_mut() {
+        let mut node_config = node.config().clone();
+        node_config.consensus.sync_only = false;
+        update_node_config_restart(node, node_config)?;
+    }
     Ok(())
 }
 
@@ -91,7 +173,7 @@ async fn test_setup_start_then_pause() -> Result<LibraSmoke> {
     Ok(s)
 }
 
-async fn copy_dir(from: &Path, to: &str) -> Result<()> {
+async fn save_debug_dir(from: &Path, to: &str) -> Result<()> {
     // Get the current directory using CARGO_MANIFEST_DIR
     let current_dir: PathBuf = std::env::var("CARGO_MANIFEST_DIR")
         .expect("CARGO_MANIFEST_DIR not set")
@@ -145,7 +227,7 @@ async fn meta_can_add_random_vals() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
 
-    copy_dir(s.swarm.dir(), "post_random_init").await?;
+    save_debug_dir(s.swarm.dir(), "post_random_init").await?;
 
     Ok(())
 }
@@ -156,7 +238,7 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
-    copy_dir(data_dir, "post_random_init").await?;
+    save_debug_dir(data_dir, "post_random_init").await?;
 
     let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
@@ -183,7 +265,7 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
 
     r.run()?;
 
-    copy_dir(data_dir, "post_blob").await?;
+    save_debug_dir(data_dir, "post_blob").await?;
 
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
@@ -207,7 +289,7 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
-    copy_dir(data_dir, "post_random_init").await?;
+    save_debug_dir(data_dir, "post_random_init").await?;
 
     let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
@@ -234,7 +316,7 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
 
     r.run()?;
 
-    copy_dir(data_dir, "post_blob").await?;
+    save_debug_dir(data_dir, "post_blob").await?;
 
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
@@ -262,7 +344,7 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
     let wp2 = bootstrap.run()?.expect("waypoint 2 not found");
     assert!(wp == wp2, "waypoints don't match");
 
-    copy_dir(data_dir, "post_rescue").await?;
+    save_debug_dir(data_dir, "post_rescue").await?;
 
     Ok(())
 }
@@ -273,7 +355,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
-    copy_dir(data_dir, "post_random_init").await?;
+    save_debug_dir(data_dir, "post_random_init").await?;
 
     let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
@@ -300,7 +382,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
 
     r.run()?;
 
-    copy_dir(data_dir, "post_blob").await?;
+    save_debug_dir(data_dir, "post_blob").await?;
 
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
@@ -328,7 +410,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
     let wp2 = bootstrap.run()?.expect("waypoint 2 not found");
     assert!(wp == wp2, "waypoints don't match");
 
-    copy_dir(data_dir, "post_rescue").await?;
+    save_debug_dir(data_dir, "post_rescue").await?;
 
     // copy the modified db into the
     // data directory of the new accounts.
@@ -340,7 +422,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
 
         post_rescue_node_file_updates(&parent.join("validator.yaml"), wp, &genesis_blob_path)?;
     }
-    copy_dir(data_dir, "post_copy").await?;
+    save_debug_dir(data_dir, "post_copy").await?;
 
     Ok(())
 }
