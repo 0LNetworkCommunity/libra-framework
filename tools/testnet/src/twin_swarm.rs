@@ -73,7 +73,7 @@ impl TwinSwarm {
         }
 
         swarm
-            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(300))
+            .wait_for_all_nodes_to_catchup_to_version(start_version + 10, Duration::from_secs(30))
             .await?;
 
         Ok(())

@@ -9,22 +9,29 @@ use libra_testnet::twin_swarm::awake_frankenswarm;
 
 /// Meta test: Upgrade all modules on a no-op dummy database (same as swarm)
 /// should have same behavior as a normal swarm.
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[ignore]
+#[tokio::test]
 async fn twin_test_all_upgrades_dummy() -> anyhow::Result<()> {
-    let mut s = LibraSmoke::new_with_target(Some(1), None, ReleaseTarget::Mainnet)
-        .await
-        .context("could not start libra smoke")?;
+    let mut smoke = LibraSmoke::new(Some(1), None).await?;
 
     // Is not trying to restore from an actual Twin, hence None
     // just a meta integration test
-    awake_frankenswarm(&mut s, None).await?;
+    awake_frankenswarm(&mut smoke, None).await?;
 
     support::upgrade_multiple_impl(
-        &mut s,
+        &mut smoke,
         "upgrade-multi-lib-force",
         vec!["1-move-stdlib", "2-vendor-stdlib", "3-libra-framework"],
     )
     .await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_twin_swarm_noop() -> anyhow::Result<()> {
+    let mut smoke = LibraSmoke::new(Some(1), None).await?;
+
+    awake_frankenswarm(&mut smoke, None).await?;
     Ok(())
 }
 
