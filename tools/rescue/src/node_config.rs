@@ -1,11 +1,11 @@
 use diem_config::config::{
-    InitialSafetyRulesConfig, NodeConfig, PersistableConfig, WaypointConfig,
+    InitialSafetyRulesConfig, NodeConfig, OnDiskStorageConfig, PersistableConfig, SecureBackend,
+    WaypointConfig,
 };
 use diem_forge::node;
 use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::path::Path;
-
 
 /// update the node's files with waypoint information
 pub fn post_rescue_node_file_updates(
@@ -13,9 +13,21 @@ pub fn post_rescue_node_file_updates(
     waypoint: Waypoint,  // waypoint
     restore_blob: &Path, // genesis transaction
 ) -> anyhow::Result<NodeConfig> {
-
     let mut node_config = NodeConfig::load_config(config_path)?;
-    node_config.base.working_dir = Some(node_config.base.data_dir);
+    // node_config.base.working_dir = Some(node_config.base.data_dir.clone());
+    if let SecureBackend::OnDiskStorage(_) = node_config.consensus.safety_rules.backend {
+        node_config
+            .consensus
+            .safety_rules
+            .set_data_dir(node_config.base.data_dir.clone());
+    }
+    //   node_config.consensus.safety_rules.backend = SecureBackend::OnDiskStorage(OnDiskStorageConfig {
+    //     path: todo!(),
+    //     namespace: todo!(),
+    //     data_dir: todo!(),
+    // }
+    //     // (&node_config.base.data_dir.join("secure_storage.json")));
+    // }
     ////////// SETTING WAYPOINT IN SAFETY RULES //////////
     // try to start a blank safety rules file
     // note that this is using a relateive path

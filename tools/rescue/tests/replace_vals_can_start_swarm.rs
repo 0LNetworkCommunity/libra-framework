@@ -389,7 +389,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
     for n in s.swarm.validators() {
         wp = one_step_apply_rescue_on_db(&n.config().storage.dir(), &genesis_blob_path).ok();
 
-        post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
+        // post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
     }
 
     save_debug_dir(data_dir, "post_rescue").await?;
@@ -401,16 +401,24 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
     }
 
     s.swarm.wait_for_startup().await?;
-    // tokio::time::sleep(Duration::from_secs(1)).await;
 
-    // for n in s.swarm.validators_mut() {
-    //     n.stop();
-    //     post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
+    for n in s.swarm.validators_mut() {
+        n.stop();
+        post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
+        n.start()?;
+    }
 
-    //     n.start()?;
-    // }
+    let (_v, client) = s.swarm.get_client_with_newest_ledger_version().await.expect("no client");
+    let res = client.get_index().await.expect("no index").into_inner();
+    let block_height_pre = res.block_height.inner();
+    tokio::time::sleep(Duration::from_secs(5)).await;
 
-    tokio::time::sleep(Duration::from_secs(100)).await;
+    let res = client.get_index().await.expect("no index").into_inner();
+    let block_height_post = res.block_height.inner();
+    assert!(
+        block_height_post > block_height_pre,
+        "chain isn't making progress"
+    );
 
     Ok(())
 }
