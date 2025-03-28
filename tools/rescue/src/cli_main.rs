@@ -37,8 +37,9 @@ pub struct RescueCli {
 #[derive(Subcommand)]
 pub enum Sub {
     Bootstrap(BootstrapOpts),
-    /// updates the relevant safety rules in the node files
-    UpdateSafetyRules {
+    /// once the node is started run this command to update safety rules
+
+    PatchSafetyRules {
         #[clap(short, long)]
         /// path to validator.yaml
         config_path: PathBuf,
@@ -120,7 +121,7 @@ impl RescueCli {
                 let p = save_rescue_blob(tx, &out_dir)?;
                 check_rescue_bootstraps(&self.db_path, &p)?;
             }
-            Sub::UpdateSafetyRules {
+            Sub::PatchSafetyRules {
                 config_path,
                 blob_path,
                 waypoint,
