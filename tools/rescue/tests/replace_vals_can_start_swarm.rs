@@ -15,25 +15,6 @@ use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::path::{Path, PathBuf};
 
 
-async fn save_debug_dir(from: &Path, to: &str) -> Result<()> {
-    // Get the current directory using CARGO_MANIFEST_DIR
-    let current_dir: PathBuf = std::env::var("CARGO_MANIFEST_DIR")
-        .expect("CARGO_MANIFEST_DIR not set")
-        .into();
-    let to_dir = current_dir.join(to);
-    if to_dir.exists() {
-        tokio::fs::remove_dir_all(&to_dir).await?;
-    }
-    tokio::fs::create_dir_all(&to).await?;
-    fs_extra::dir::copy(
-        from,
-        &to_dir,
-        &fs_extra::dir::CopyOptions::new().content_only(true),
-    )?;
-    Ok(())
-}
-
-
 #[tokio::test]
 async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
     let s = LibraSmoke::test_setup_start_then_pause(2).await?;

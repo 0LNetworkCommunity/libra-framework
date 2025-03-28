@@ -82,7 +82,7 @@ pub async fn unlock_libra(
 pub async fn is_making_progress(client: &Client) -> anyhow::Result<bool> {
     let res = client.get_index().await?;
     let block_height_pre = res.inner().block_height.inner();
-    dbg!(&block_height_pre);
+    println!("current block height: {}", &block_height_pre);
     let start_time = std::time::Instant::now();
     let timeout = std::time::Duration::from_secs(30);
 
@@ -185,3 +185,22 @@ pub async fn make_test_randos(smoke: &LibraSmoke) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+// NOTE: Keep this commented code, it's helpful to debug swarm state
+// async fn save_debug_dir(from: &Path, to: &str) -> Result<()> {
+//     // Get the current directory using CARGO_MANIFEST_DIR
+//     let current_dir: PathBuf = std::env::var("CARGO_MANIFEST_DIR")
+//         .expect("CARGO_MANIFEST_DIR not set")
+//         .into();
+//     let to_dir = current_dir.join(to);
+//     if to_dir.exists() {
+//         tokio::fs::remove_dir_all(&to_dir).await?;
+//     }
+//     tokio::fs::create_dir_all(&to).await?;
+//     fs_extra::dir::copy(
+//         from,
+//         &to_dir,
+//         &fs_extra::dir::CopyOptions::new().content_only(true),
+//     )?;
+//     Ok(())
+// }
