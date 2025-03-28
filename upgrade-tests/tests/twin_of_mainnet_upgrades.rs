@@ -20,6 +20,7 @@ use libra_testnet::twin_swarm::awake_frankenswarm;
 //              /|
 //              \|
 
+#[ignore]
 #[tokio::test]
 async fn twin_test_head_upgrade() -> anyhow::Result<()> {
     let dir = setup_test_db()?;

@@ -1,8 +1,8 @@
 use anyhow::Context;
-use diem_types::chain_id::{ChainId, NamedChain};
+use diem_types::chain_id::NamedChain;
 use libra_framework::upgrade_fixtures;
 use libra_query::query_view;
-use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub::Governance},
     txs_cli_governance::GovernanceTxs::{Propose, Resolve, Vote},
@@ -22,8 +22,12 @@ pub async fn upgrade_multiple_impl(
 ) -> anyhow::Result<()> {
     upgrade_fixtures::testsuite_maybe_warmup_fixtures();
 
-    let res = s.client().get_index().await?;
-    let chain_id = ChainId::new(res.inner().chain_id);
+    let d = diem_temppath::TempPath::new();
+
+    let (_, _app_cfg) =
+        configure_validator::init_val_config_files(&mut s.swarm, 0, Some(d.path().to_owned()))
+            .context("could not init validator config")?;
+
     // This step should fail. The view function does not yet exist in the system address.
     // we will upgrade a new binary which will include this function.
     let query_res =
@@ -51,8 +55,8 @@ pub async fn upgrade_multiple_impl(
         })),
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: NamedChain::from_chain_id(&chain_id).ok(),
-        config_path: None,
+        chain_id: Some(NamedChain::TESTING),
+        config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
         tx_cost: Some(TxCost::framework_upgrade()),
