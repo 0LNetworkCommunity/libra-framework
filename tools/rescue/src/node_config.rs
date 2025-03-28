@@ -2,6 +2,7 @@ use diem_config::config::{
     InitialSafetyRulesConfig, NodeConfig, PersistableConfig, WaypointConfig,
 };
 use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
+use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::path::Path;
 
 /// update the node's files with waypoint information
@@ -13,23 +14,24 @@ pub fn post_rescue_node_file_updates(
     dbg!(&"hi");
 
     let mut node_config = NodeConfig::load_config(config_path)?;
-    dbg!(&node_config);
+
     ////////// SETTING WAYPOINT IN SAFETY RULES //////////s
-    // TODO: unclear why testnet/swarm tests don't need insert_waypoint()
-    // while rescue tests do
-    // insert_waypoint(&mut node_config, waypoint);
+    // try to start a blank safety rules file
+    // somehow the set() does not overwrite the field
+    insert_waypoint(&mut node_config, waypoint);
 
     // TODO: this part is tricky
     // ideally we would not need to access any validator
     // identity files to set a new safety rules config
     let configs_dir = config_path.parent().unwrap();
     let validator_identity_file = configs_dir.join("validator-identity.yaml");
-    dbg!(&validator_identity_file);
+
     assert!(
         validator_identity_file.exists(),
         "validator-identity.yaml not found"
     );
 
+    // IF this does not get set, you will see safety rules no initialized.
     let init_safety = InitialSafetyRulesConfig::from_file(
         validator_identity_file,
         WaypointConfig::FromConfig(waypoint),
@@ -57,7 +59,7 @@ pub fn post_rescue_node_file_updates(
     /////////
 
     // just in case our tests set to sync_only=true
-    node_config.consensus.sync_only = false;
+    // node_config.consensus.sync_only = false;
 
     node_config.save_to_path(config_path)?;
 
