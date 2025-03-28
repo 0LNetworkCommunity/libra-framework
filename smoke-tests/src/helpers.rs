@@ -91,7 +91,6 @@ pub async fn is_making_progress(client: &Client) -> anyhow::Result<bool> {
 
         let progress_check = client.get_index().await?;
         let current_height = progress_check.inner().block_height.inner();
-        dbg!(&current_height);
 
         // make 5 blocks at least
         if *current_height > (*block_height_pre + 5) {

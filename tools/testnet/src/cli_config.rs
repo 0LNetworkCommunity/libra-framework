@@ -62,7 +62,6 @@ impl TestnetConfigOpts {
         // 4. use artifacts of #4 to update the config files
         if let Some(p) = twin_db {
             println!("configuring twin...");
-            dbg!(&out_path);
             config_twin::configure_twin(&out_path, &p).await?;
         }
         Ok(())

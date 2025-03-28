@@ -40,7 +40,6 @@ impl AccountStateV5 {
     ) -> Result<&[u8]> {
         let key = legacy_struct_tag.access_vector();
 
-        dbg!(&hex::encode(&key));
         let errmsg = format!("could not find in btree type {}", legacy_struct_tag.module);
 
         Ok(self.0.get(&key).context(errmsg)?)

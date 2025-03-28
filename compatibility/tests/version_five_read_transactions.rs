@@ -33,5 +33,5 @@ async fn parse_tx_chunk() {
     let tx_chunk = read_transaction_chunk(&res.chunks[0].transactions, &archive)
         .await
         .unwrap();
-    dbg!(&tx_chunk.len());
+    // TODO: add assert here
 }

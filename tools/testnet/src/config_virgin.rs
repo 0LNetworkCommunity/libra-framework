@@ -84,13 +84,6 @@ pub async fn setup(
         my_host.host, my_host.port
     );
 
-    // assert!(
-    //     !data_path.exists(),
-    //     "create a clean dir for swarm files please. You have stuff here: {}",
-    //     &data_path.display()
-    // );
-
-    dbg!(&data_path);
     // Initializes the validator configuration.
     validator_config::initialize_validator(
         Some(data_path.clone()),

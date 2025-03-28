@@ -104,7 +104,6 @@ impl RestoreBundle {
     }
 
     pub fn set_version(&mut self) -> anyhow::Result<()> {
-        dbg!(&self.epoch_manifest);
         assert!(
             self.epoch_manifest.exists(),
             "this epoch manifest file does not exist"

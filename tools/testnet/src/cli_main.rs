@@ -38,7 +38,7 @@ pub enum Sub {
     /// configs for genesis
     Configure(TestnetConfigOpts),
     /// start using Diem swarm
-    StartSwarm(SwarmCliOpts),
+    Smoke(SwarmCliOpts),
 }
 
 impl TestnetCli {
@@ -71,7 +71,7 @@ impl TestnetCli {
                 // first configure a vanilla genesis
                 cli.run(self.framework_mrb_path, reference_db).await?;
             }
-            Sub::StartSwarm(cli) => {
+            Sub::Smoke(cli) => {
                 check_bins_path()?;
 
                 println!("starting local testnet using Diem swarm...");

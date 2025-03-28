@@ -55,7 +55,7 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
         .context("no peer ID")?;
 
     let script_path = test_support::make_script(first_validator_address);
-    dbg!(&script_path);
+
     assert!(script_path.exists());
 
     let data_path = TempPath::new();

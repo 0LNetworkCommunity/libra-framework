@@ -62,13 +62,13 @@ fn find_closest_transaction_folder(
         }
     }
 
-    println!("For target version {}, found candidates:", target_version);
-    if let Some((v, name)) = version_below {
-        println!("  Below target: {} ({})", name, v);
-    }
-    if let Some((v, name)) = version_above {
-        println!("  Above target: {} ({})", name, v);
-    }
+    // println!("For target version {}, found candidates:", target_version);
+    // if let Some((v, name)) = version_below {
+    //     println!("  Below target: {} ({})", name, v);
+    // }
+    // if let Some((v, name)) = version_above {
+    //     println!("  Above target: {} ({})", name, v);
+    // }
 
     // Choose the version below target
     version_below
@@ -97,7 +97,7 @@ pub async fn find_closest_epoch_folder(
         .json()
         .await
         .context("Failed to parse snapshots directory contents")?;
-    dbg!(&contents);
+
     // Separate folders by type
     let mut epoch_ending_folders: Vec<(u64, String)> = Vec::new();
     let mut state_epoch_folders: Vec<(u64, String)> = Vec::new();
@@ -226,7 +226,7 @@ pub async fn download_github_folder(
 
             if item.content_type == "file" {
                 if let Some(download_url) = item.download_url {
-                    println!("Downloading file: {}", item.name);
+                    // println!("Downloading file: {}", item.name);
                     let content = client
                         .get(&download_url)
                         .header("User-Agent", "libra-framework-downloader")
