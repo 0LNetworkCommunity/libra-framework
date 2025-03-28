@@ -12,8 +12,7 @@ use libra_rescue::{
 use libra_smoke_tests::brain_salad_surgery::brain_salad_surgery;
 use libra_smoke_tests::helpers::{is_making_progress, make_test_randos};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use std::path::{Path, PathBuf};
-
+use std::path::PathBuf;
 
 #[tokio::test]
 async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
@@ -21,7 +20,6 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
-    save_debug_dir(data_dir, "post_random_init").await?;
 
     let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
@@ -47,8 +45,6 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
     };
 
     r.run()?;
-
-    save_debug_dir(data_dir, "post_blob").await?;
 
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
@@ -72,7 +68,6 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
-    save_debug_dir(data_dir, "post_random_init").await?;
 
     let val_db_path = s.swarm.validators().next().unwrap().config().storage.dir();
 
@@ -98,8 +93,6 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
     };
 
     r.run()?;
-
-    save_debug_dir(data_dir, "post_blob").await?;
 
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
@@ -127,8 +120,6 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
     let wp2 = bootstrap.run()?.expect("waypoint 2 not found");
     assert!(wp == wp2, "waypoints don't match");
 
-    save_debug_dir(data_dir, "post_rescue").await?;
-
     Ok(())
 }
 
@@ -137,10 +128,8 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
     let mut s = LibraSmoke::test_setup_start_then_pause(2).await?;
 
     let data_dir = &s.swarm.dir().to_path_buf();
-    save_debug_dir(data_dir, "init").await?;
 
     brain_salad_surgery(&s.swarm).await?;
-    save_debug_dir(data_dir, "post_brain").await?;
 
     // use glob to find the operator.yaml under the data_dir/
     let operator_yaml_pattern = format!("{}/**/operator.yaml", data_dir.display());
@@ -164,8 +153,6 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
 
     r.run()?;
 
-    save_debug_dir(data_dir, "post_blob").await?;
-
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
     // apply the rescue to the dbs
@@ -173,8 +160,6 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
         let wp = one_step_apply_rescue_on_db(&n.config().storage.dir(), &genesis_blob_path)?;
         post_rescue_node_file_updates(&n.config_path(), wp, &genesis_blob_path)?;
     }
-
-    save_debug_dir(data_dir, "post_rescue").await?;
 
     for node in s.swarm.validators_mut() {
         // Don't load the instantiated config! Get the saved one always!

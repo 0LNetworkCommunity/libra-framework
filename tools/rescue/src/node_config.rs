@@ -6,21 +6,6 @@ use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::path::Path;
 
-// This is a hail mary to force safety rules into an OK state
-// InitialSafetyRulesConfig with the new waypoint as set in the validator.yaml
-// file after bootstrapping
-pub fn runtime_hot_fix(
-    config_path: &Path, // validator.yaml
-    waypoint: Waypoint, // waypoint
-) -> Result<()> {
-    let mut node_config = NodeConfig::load_config(config_path)?;
-
-    insert_waypoint(&mut node_config, waypoint);
-
-    node_config.save_to_path(config_path)?;
-    Ok(())
-}
-
 // NOTE: since safety rules can exist on disk, vault, or in memory
 // we can't really apply it until the node is started.
 // in testnet cases we use disk, and it would be possible to apply
@@ -154,4 +139,25 @@ pub fn _set_validator_peers(
     node_config.save_to_path(config_path)?;
 
     Ok(node_config)
+}
+
+// Unused code for reference:
+// If you want to try to patch the waypoint on a running system
+// TO DEBUG IT, you can try this. THis is because
+// Safety rules may be stored in memory, and can't be edited otherwise.
+// Don't do this in production mkay?
+
+// This is a hail mary to force safety rules into an OK state
+// InitialSafetyRulesConfig with the new waypoint as set in the validator.yaml
+// file after bootstrapping
+pub fn _runtime_hot_fix(
+    config_path: &Path, // validator.yaml
+    waypoint: Waypoint, // waypoint
+) -> Result<()> {
+    let mut node_config = NodeConfig::load_config(config_path)?;
+
+    insert_waypoint(&mut node_config, waypoint);
+
+    node_config.save_to_path(config_path)?;
+    Ok(())
 }
