@@ -1,9 +1,8 @@
 use anyhow::Result;
 use diem_config::config::{
-    InitialSafetyRulesConfig, NodeConfig, OnDiskStorageConfig, PersistableConfig, SecureBackend,
+    InitialSafetyRulesConfig, NodeConfig, PersistableConfig, SecureBackend,
     WaypointConfig,
 };
-use diem_forge::node;
 use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::path::Path;
@@ -35,12 +34,9 @@ pub fn post_rescue_node_file_updates(
 ) -> anyhow::Result<NodeConfig> {
     let mut node_config = NodeConfig::load_config(config_path)?;
 
-        ////////// SETTING WAYPOINT IN SAFETY RULES //////////
-    // Important: this must be set in the safety rules config.
-    // The "waypoint" and "genesis-waypoint" keys
-    // must be set to the same value, which is the
-    // post-rescue waypoint,
-    // NOTHING WILL WORK IF THIS IS NOT SET
+    ////////// SETTING WAYPOINT IN SAFETY RULES //////////
+    // Important: waypoint  must be set in the validator.yaml first
+    // NOTHING WILL WORK IF THIS IS NOT SET CORRECTLY
     //
     //                 ^    ^
     //                / \  //\
@@ -59,41 +55,15 @@ pub fn post_rescue_node_file_updates(
     //   ///.----..&gt;    c   \             _ -~             `.  ^-`   ^-_
     //     ///-._ _ _ _ _ _ _}^ - - - - ~                     ~--,   .-~
 
+    // When a node starts up, and there are no safety rules present
+    // (from a cold start when using memory, or no secure_storage.json in testnet mode)
+    // the safety rules are initialized with this waypoint
+    // NOTE: this will overrule the waypoint set in: InitialSafetyRulesConfig
+    // unclear why that is. So set both to the same value.
     node_config.base.waypoint = WaypointConfig::FromConfig(waypoint.clone());
     /////////////////
 
-    // make sure the config file is not using  a relative path like ./secure_storage.json , but the
-    // canonical path to the validators data_dir
-    // This is a known problem with swarm tests.
-    if let SecureBackend::OnDiskStorage(_) = node_config.consensus.safety_rules.backend {
-        node_config
-            .consensus
-            .safety_rules
-            .set_data_dir(node_config.base.data_dir.clone());
-    }
-
-    // NOTE: it's not clear why the safety rules don't
-    // fully initialize on node start up with with the "initial configs".
-    // on a restore, the node is creating initial configs with the old waypoint
-    // TODO: find out why, might be a bug.
-    let configs_dir = config_path.parent().unwrap();
-    let validator_identity_file = configs_dir.join("validator-identity.yaml");
-
-    assert!(
-        validator_identity_file.exists(),
-        "validator-identity.yaml not found"
-    );
-
-    println!("\n\n\n waypoint: {:?} \n\n\n", waypoint);
-    // IF this does not get set, you will see safety rules no initialized.
-    let init_safety = InitialSafetyRulesConfig::from_file(
-        validator_identity_file,
-        WaypointConfig::FromConfig(waypoint),
-    );
-    node_config
-        .consensus
-        .safety_rules
-        .initial_safety_rules_config = init_safety;
+    make_initial_safety_rules(&mut node_config, waypoint);
 
     //////// SETTING GENESIS TRANSACTION ////////
     // This must reference the latest rescue writeset, not the
@@ -118,8 +88,50 @@ pub fn post_rescue_node_file_updates(
     Ok(node_config)
 }
 
+
+fn make_initial_safety_rules(node_config: &mut NodeConfig, waypoint: Waypoint) {
+    // The initial safety rules config also sets a waypoint and it should be the same
+    // The "waypoint" and "genesis-waypoint" keys
+    // must be set to the same value, which is the
+    // post-rescue waypoint,
+
+    // make sure the config file is not using  a relative path like ./secure_storage.json , but the
+    // canonical path to the validators data_dir
+    // This is a known problem with swarm tests.
+    let data_path = node_config.base.data_dir.clone();
+
+    if let SecureBackend::OnDiskStorage(_) = node_config.consensus.safety_rules.backend {
+        node_config
+            .consensus
+            .safety_rules
+            .set_data_dir(data_path.clone());
+    }
+
+    // NOTE: it's not clear why the safety rules don't
+    // fully initialize on node start up with with the "initial configs".
+    // on a restore, the node is creating initial configs with the old waypoint
+    // TODO: find out why, might be a bug.
+
+    let validator_identity_file = data_path.join("validator-identity.yaml");
+
+    assert!(
+        validator_identity_file.exists(),
+        "validator-identity.yaml not found"
+    );
+    // IF this does not get set, you will see safety rules no initialized.
+    let init_safety = InitialSafetyRulesConfig::from_file(
+        validator_identity_file,
+        WaypointConfig::FromConfig(waypoint),
+    );
+    node_config
+        .consensus
+        .safety_rules
+        .initial_safety_rules_config = init_safety;
+}
+
+
 // TODO: maybe we'll want to facilitate peer discovery.
-pub fn set_validator_peers(
+pub fn _set_validator_peers(
     config_path: &Path,
     peers: Vec<(PeerId, Vec<NetworkAddress>)>,
 ) -> anyhow::Result<NodeConfig> {

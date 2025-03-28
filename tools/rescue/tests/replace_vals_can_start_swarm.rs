@@ -2,7 +2,6 @@ use anyhow::Result;
 use diem_config::config::{NodeConfig, PersistableConfig};
 use diem_forge::{LocalSwarm, SwarmExt};
 use diem_genesis::config::HostAndPort;
-use diem_types::waypoint::Waypoint;
 use fs_extra::dir;
 use libra_config::validator_config;
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
@@ -15,7 +14,6 @@ use libra_rescue::{
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_wallet::core::wallet_library::WalletLibrary;
-use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -88,18 +86,14 @@ async fn brain_salad_surgery(swarm: &LocalSwarm) -> Result<()> {
             node_data_path.join("node.yaml"),
         )
         .await?;
-        // // now copy back the genesis.blob
+
+        // NOTE: devs if you need the swarm genesis.blob in the future uncomment
         // fs::copy(
         //     backup_path.join(&format!("{i}/genesis.blob")),
         //     node_data_path.join("genesis.blob"),
         // )
         // .await?;
 
-        // fs::copy(
-        //     backup_path.join(&format!("{i}/secure_storage.json")),
-        //     node_data_path.join("secure_storage.json"),
-        // )
-        // .await?;
 
         // and copy the db which we will modify
         fs_extra::dir::copy(
@@ -385,11 +379,10 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
 
     let genesis_blob_path = data_dir.join(REPLACE_VALIDATORS_BLOB);
 
-    let mut wp: Option<Waypoint> = None;
     // apply the rescue to the dbs
     for n in s.swarm.validators() {
-        wp = one_step_apply_rescue_on_db(&n.config().storage.dir(), &genesis_blob_path).ok();
-        post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
+        let wp = one_step_apply_rescue_on_db(&n.config().storage.dir(), &genesis_blob_path)?;
+        post_rescue_node_file_updates(&n.config_path(), wp, &genesis_blob_path)?;
     }
 
     save_debug_dir(data_dir, "post_rescue").await?;
@@ -401,28 +394,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
         update_node_config_restart(node, node_config)?;
     }
 
-    // s.swarm.wait_for_startup().await?;
     dbg!("OK");
-
-    // for n in s.swarm.validators_mut() {
-    //     // n.stop();
-    //     // post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
-    //     n.start()?;
-    // }
-
-    tokio::time::sleep(Duration::from_secs(300)).await;
-
-    // let (_v, client) = s.swarm.get_client_with_newest_ledger_version().await.expect("no client");
-    // let res = client.get_index().await.expect("no index").into_inner();
-    // let block_height_pre = res.block_height.inner();
-    // tokio::time::sleep(Duration::from_secs(5)).await;
-
-    // let res = client.get_index().await.expect("no index").into_inner();
-    // let block_height_post = res.block_height.inner();
-    // assert!(
-    //     block_height_post > block_height_pre,
-    //     "chain isn't making progress"
-    // );
 
     Ok(())
 }
