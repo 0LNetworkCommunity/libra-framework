@@ -6118,6 +6118,7 @@ dependencies = [
  "diem-types",
  "libra-framework",
  "libra-query",
+ "libra-rescue",
  "libra-smoke-tests",
  "libra-testnet",
  "libra-txs",

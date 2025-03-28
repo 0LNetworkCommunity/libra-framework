@@ -274,7 +274,8 @@ async fn meta_can_add_random_vals() -> anyhow::Result<()> {
 /// This meta test checks that our tools can control a network
 /// so the nodes stop producing blocks, shut down, and start again.
 async fn test_swarm_can_halt_and_restart() -> anyhow::Result<()> {
-    let s = LibraSmoke::test_setup_start_then_pause(3).await?;
+    use diem_forge::NodeExt;
+    let mut s = LibraSmoke::test_setup_start_then_pause(3).await?;
 
     for node in s.swarm.validators_mut().take(3) {
         assert!(node.liveness_check(1).await.is_err());

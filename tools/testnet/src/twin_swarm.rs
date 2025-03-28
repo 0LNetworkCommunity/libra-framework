@@ -130,10 +130,10 @@ pub async fn awake_frankenswarm(
     println!("Applying the rescue blob to the database & bootstrapping");
     let wp = one_step_apply_rescue_on_db(temp_db_path, &rescue_blob_path)?;
 
-    println!("4. Replace the swarm db with the snapshot db");
+    println!("Replace the swarm db with the snapshot db");
     TwinSwarm::replace_db_all(&mut smoke.swarm, temp_db_path).await?;
 
-    println!("5. Change the waypoint in the node configs and add the rescue blob to the config");
+    println!("Change the waypoint in the node configs and add the rescue blob to the config");
     TwinSwarm::update_node_files(&mut smoke.swarm, wp, rescue_blob_path).await?;
 
     // Restart validators and verify operation
