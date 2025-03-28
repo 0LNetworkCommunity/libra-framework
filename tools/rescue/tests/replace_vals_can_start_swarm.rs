@@ -403,13 +403,12 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
     s.swarm.wait_for_startup().await?;
     // tokio::time::sleep(Duration::from_secs(1)).await;
 
-    for n in s.swarm.validators_mut() {
-        n.stop();
-        let mut node_config = n.config().clone();
-        insert_waypoint(&mut node_config, wp.unwrap());
-        node_config.save_to_path(n.config_path())?;
-        update_node_config_restart(n, node_config)?;
-    }
+    // for n in s.swarm.validators_mut() {
+    //     n.stop();
+    //     post_rescue_node_file_updates(&n.config_path(), wp.unwrap(), &genesis_blob_path)?;
+
+    //     n.start()?;
+    // }
 
     tokio::time::sleep(Duration::from_secs(100)).await;
 

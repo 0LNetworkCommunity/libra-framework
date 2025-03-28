@@ -1,9 +1,11 @@
 use diem_config::config::{
     InitialSafetyRulesConfig, NodeConfig, PersistableConfig, WaypointConfig,
 };
+use diem_forge::node;
 use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
 use std::path::Path;
+
 
 /// update the node's files with waypoint information
 pub fn post_rescue_node_file_updates(
@@ -11,13 +13,14 @@ pub fn post_rescue_node_file_updates(
     waypoint: Waypoint,  // waypoint
     restore_blob: &Path, // genesis transaction
 ) -> anyhow::Result<NodeConfig> {
-    dbg!(&"hi");
 
     let mut node_config = NodeConfig::load_config(config_path)?;
-
-    ////////// SETTING WAYPOINT IN SAFETY RULES //////////s
+    node_config.base.working_dir = Some(node_config.base.data_dir);
+    ////////// SETTING WAYPOINT IN SAFETY RULES //////////
     // try to start a blank safety rules file
-    // somehow the set() does not overwrite the field
+    // note that this is using a relateive path
+    // so you may notice the safety configs
+    // being initialized to a different path
     insert_waypoint(&mut node_config, waypoint);
 
     // TODO: this part is tricky
