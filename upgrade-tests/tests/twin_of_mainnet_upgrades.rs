@@ -4,14 +4,7 @@ use libra_rescue::test_support::setup_test_db;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_testnet::twin_swarm::awake_frankenswarm;
 
-// Here we are testing how a Twin modified swarm responds to an upgrade
-// upgrades are being applied against Mainnet data which is recovered by a snapshot.
-
-/// Should be able to take a production db (twin)
-/// and the new validators upgrade with current HEAD Move code
-///
-/// The holy grail of e2e tests, or the final resting place of the heroes
-
+// The holy grail of e2e tests, or the final resting place of the heroes who tried
 //   ___  _                                ______        _
 //  / (_)| |           o                  (_) |  o      | |    |
 //  \__  | |        ,      __,   _  _        _|_     _  | |  __|   ,
@@ -19,9 +12,13 @@ use libra_testnet::twin_swarm::awake_frankenswarm;
 //  \___/|__/ \_/|/ \/ |_/\_/|_/  |  |_/   (_/   |_/|__/|__/\_/|_/ \/
 //              /|
 //              \|
+// Here we are testing how a Twin modified swarm responds to an upgrade
+// upgrades are being applied against Mainnet data which is recovered by a snapshot.
 
 #[ignore]
 #[tokio::test]
+/// Should be able to take a production db (twin)
+/// and the new validators upgrade with current HEAD Move code
 async fn twin_test_head_upgrade() -> anyhow::Result<()> {
     let dir = setup_test_db()?;
     let mut smoke = LibraSmoke::new(Some(2), None).await?;
