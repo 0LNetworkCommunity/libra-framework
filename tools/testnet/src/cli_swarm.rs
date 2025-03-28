@@ -23,7 +23,7 @@ impl SwarmCliOpts {
         framework_mrb: ReleaseBundle,
         twin_db: Option<PathBuf>,
     ) -> anyhow::Result<()> {
-        let num_validators = self.count_vals.unwrap_or(1);
+        let num_validators = self.count_vals.unwrap_or(2);
 
         let mut smoke =
             LibraSmoke::new_with_bundle(Some(num_validators), None, framework_mrb).await?;
