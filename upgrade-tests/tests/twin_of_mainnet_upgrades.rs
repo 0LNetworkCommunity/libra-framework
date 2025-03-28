@@ -12,7 +12,6 @@ use libra_testnet::twin_swarm::awake_frankenswarm;
 ///
 /// The holy grail of e2e tests, or the final resting place of the heroes
 
-
 //   ___  _                                ______        _
 //  / (_)| |           o                  (_) |  o      | |    |
 //  \__  | |        ,      __,   _  _        _|_     _  | |  __|   ,
@@ -20,7 +19,6 @@ use libra_testnet::twin_swarm::awake_frankenswarm;
 //  \___/|__/ \_/|/ \/ |_/\_/|_/  |  |_/   (_/   |_/|__/|__/\_/|_/ \/
 //              /|
 //              \|
-
 
 #[tokio::test]
 async fn twin_test_head_upgrade() -> anyhow::Result<()> {
