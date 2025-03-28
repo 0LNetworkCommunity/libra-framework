@@ -38,7 +38,6 @@ pub struct RescueCli {
 pub enum Sub {
     Bootstrap(BootstrapOpts),
     /// once the node is started run this command to update safety rules
-
     PatchSafetyRules {
         #[clap(short, long)]
         /// path to validator.yaml

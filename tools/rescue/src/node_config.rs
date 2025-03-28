@@ -1,7 +1,6 @@
 use anyhow::Result;
 use diem_config::config::{
-    InitialSafetyRulesConfig, NodeConfig, PersistableConfig, SecureBackend,
-    WaypointConfig,
+    InitialSafetyRulesConfig, NodeConfig, PersistableConfig, SecureBackend, WaypointConfig,
 };
 use diem_types::{network_address::NetworkAddress, waypoint::Waypoint, PeerId};
 use smoke_test::test_utils::swarm_utils::insert_waypoint;
@@ -13,7 +12,7 @@ use std::path::Path;
 pub fn runtime_hot_fix(
     config_path: &Path, // validator.yaml
     waypoint: Waypoint, // waypoint
-) -> Result<()>{
+) -> Result<()> {
     let mut node_config = NodeConfig::load_config(config_path)?;
 
     insert_waypoint(&mut node_config, waypoint);
@@ -60,7 +59,7 @@ pub fn post_rescue_node_file_updates(
     // the safety rules are initialized with this waypoint
     // NOTE: this will overrule the waypoint set in: InitialSafetyRulesConfig
     // unclear why that is. So set both to the same value.
-    node_config.base.waypoint = WaypointConfig::FromConfig(waypoint.clone());
+    node_config.base.waypoint = WaypointConfig::FromConfig(waypoint);
     /////////////////
 
     make_initial_safety_rules(&mut node_config, waypoint);
@@ -72,7 +71,7 @@ pub fn post_rescue_node_file_updates(
     // You must first reset the genesis transaction in the config file
     // since it may have a serialized version (more below)
     node_config.execution.genesis = None; // clear whatever value is there.
-    // ... and point to the rescue file
+                                          // ... and point to the rescue file
     node_config.execution.genesis_file_location = restore_blob.to_path_buf();
     // NOTE: Alternatively, you can use the following to serialize the genesis transaction
     // Note: Example of getting genesis transaction serialized to include in config.
@@ -87,7 +86,6 @@ pub fn post_rescue_node_file_updates(
     println!("success: updated safety rules");
     Ok(node_config)
 }
-
 
 fn make_initial_safety_rules(node_config: &mut NodeConfig, waypoint: Waypoint) {
     // The initial safety rules config also sets a waypoint and it should be the same
@@ -128,7 +126,6 @@ fn make_initial_safety_rules(node_config: &mut NodeConfig, waypoint: Waypoint) {
         .safety_rules
         .initial_safety_rules_config = init_safety;
 }
-
 
 // TODO: maybe we'll want to facilitate peer discovery.
 pub fn _set_validator_peers(

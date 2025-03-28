@@ -1,172 +1,160 @@
 use anyhow::Result;
 use diem_config::config::{NodeConfig, PersistableConfig};
-use diem_forge::{LocalSwarm, SwarmExt};
-use diem_genesis::config::HostAndPort;
-use fs_extra::dir;
-use libra_config::validator_config;
+use diem_forge::NodeExt;
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use libra_rescue::cli_main::REPLACE_VALIDATORS_BLOB;
 use libra_rescue::node_config::post_rescue_node_file_updates;
-use libra_rescue::test_support::{update_node_config_restart, wait_for_node};
+use libra_rescue::test_support::update_node_config_restart;
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
     cli_main::{RescueCli, Sub},
 };
+use libra_smoke_tests::brain_salad_surgery::brain_salad_surgery;
+use libra_smoke_tests::helpers::{is_making_progress, make_test_randos};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use libra_wallet::core::wallet_library::WalletLibrary;
-use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
-use tokio::fs;
+// // Note: swarm has several limitations
+// // Most swarm and LocalNode properties are not mutable
+// // after init.
+// // For example: it's not possible to point a swarm node to a new config file
+// // in a different directory. It is always self.directory.join("node.yaml")
+// // Similarly it's not possible to change the directory itself.
+// // So these tests are a bit of a hack.
+// // we replace some files in the original directories that
+// // swarm created, using same file names. The function used is called
+// // brain_salad_surgery().
 
-// Note: swarm has several limitations
-// Most swarm and LocalNode properties are not mutable
-// after init.
-// For example: it's not possible to point a swarm node to a new config file
-// in a different directory. It is always self.directory.join("node.yaml")
-// Similarly it's not possible to change the directory itself.
-// So these tests are a bit of a hack.
-// we replace some files in the original directories that
-// swarm created, using same file names. The function used is called
-// brain_salad_surgery().
+// /// swaps out the
+// /// preserving the external structure.
+// async fn brain_salad_surgery(swarm: &LocalSwarm) -> Result<()> {
+//     // Write the modified config back to the original location
+//     let swarm_dir = swarm.dir();
+//     let backup_path = swarm_dir.join("bak".to_string());
 
-/// swaps out the
-/// preserving the external structure.
-async fn brain_salad_surgery(swarm: &LocalSwarm) -> Result<()> {
-    // Write the modified config back to the original location
-    let swarm_dir = swarm.dir();
-    let backup_path = swarm_dir.join("bak".to_string());
+//     for (i, n) in swarm.validators().enumerate() {
+//         let node_data_path = n.config_path();
+//         let node_data_path = node_data_path.parent().unwrap();
 
-    for (i, n) in swarm.validators().enumerate() {
-        let node_data_path = n.config_path();
-        let node_data_path = node_data_path.parent().unwrap();
+//         if !backup_path.exists() {
+//             fs::create_dir_all(&backup_path).await?;
+//         }
+//         fs_extra::move_items(&[node_data_path], &backup_path, &dir::CopyOptions::new())?;
 
-        if !backup_path.exists() {
-            fs::create_dir_all(&backup_path).await?;
-        }
-        fs_extra::move_items(&[node_data_path], &backup_path, &dir::CopyOptions::new())?;
+//         if !node_data_path.exists() {
+//             fs::create_dir_all(&node_data_path).await?;
+//         }
+//         let cfg = n.config();
+//         let net = cfg.validator_network.iter().next().unwrap();
+//         let port = net.listen_address.find_port().expect("to find port");
+//         creates_random_val_account(node_data_path, port).await?;
 
-        if !node_data_path.exists() {
-            fs::create_dir_all(&node_data_path).await?;
-        }
-        let cfg = n.config();
-        let net = cfg.validator_network.iter().next().unwrap();
-        let port = net.listen_address.find_port().expect("to find port");
-        creates_random_val_account(node_data_path, port).await?;
+//         // Swarm uses a fixed node.yaml for the config file,
+//         // while we use role-based names.
+//         // we'll deprecate the one we would normally use.
+//         fs::rename(
+//             node_data_path.join("validator.yaml"),
+//             node_data_path.join("validator.depr"),
+//         )
+//         .await?;
 
-        // Swarm uses a fixed node.yaml for the config file,
-        // while we use role-based names.
-        // we'll deprecate the one we would normally use.
-        fs::rename(
-            node_data_path.join("validator.yaml"),
-            node_data_path.join("validator.depr"),
-        )
-        .await?;
+//         fs::rename(
+//             node_data_path.join("public-keys.yaml"),
+//             node_data_path.join("public-identity.yaml"),
+//         )
+//         .await?;
+//         fs::rename(
+//             node_data_path.join("private-keys.yaml"),
+//             node_data_path.join("private-identity.yaml"),
+//         )
+//         .await?;
 
-        fs::rename(
-            node_data_path.join("public-keys.yaml"),
-            node_data_path.join("public-identity.yaml"),
-        )
-        .await?;
-        fs::rename(
-            node_data_path.join("private-keys.yaml"),
-            node_data_path.join("private-identity.yaml"),
-        )
-        .await?;
+//         fs::rename(
+//             node_data_path.join("validator-full-node-identity.yaml"),
+//             node_data_path.join("vfn-identity.yaml"),
+//         )
+//         .await?;
+//         // now copy back the node.yaml, it has randomly generated addresses
+//         // and is generally in a format the swarm tool will understand
+//         fs::copy(
+//             backup_path.join(format!("{i}/node.yaml")),
+//             node_data_path.join("node.yaml"),
+//         )
+//         .await?;
 
-        fs::rename(
-            node_data_path.join("validator-full-node-identity.yaml"),
-            node_data_path.join("vfn-identity.yaml"),
-        )
-        .await?;
-        // now copy back the node.yaml, it has randomly generated addresses
-        // and is generally in a format the swarm tool will understand
-        fs::copy(
-            backup_path.join(format!("{i}/node.yaml")),
-            node_data_path.join("node.yaml"),
-        )
-        .await?;
+//         // NOTE: devs if you need the swarm genesis.blob in the future uncomment
+//         // fs::copy(
+//         //     backup_path.join(&format!("{i}/genesis.blob")),
+//         //     node_data_path.join("genesis.blob"),
+//         // )
+//         // .await?;
 
-        // NOTE: devs if you need the swarm genesis.blob in the future uncomment
-        // fs::copy(
-        //     backup_path.join(&format!("{i}/genesis.blob")),
-        //     node_data_path.join("genesis.blob"),
-        // )
-        // .await?;
+//         // and copy the db which we will modify
+//         fs_extra::dir::copy(
+//             backup_path.join(format!("{i}/db")),
+//             node_data_path,
+//             &dir::CopyOptions::new(),
+//         )?;
+//     }
 
+//     // We've got a ballad
+//     // About a salad brain
+//     // With assurgence
+//     // In a dirty bit again
 
-        // and copy the db which we will modify
-        fs_extra::dir::copy(
-            backup_path.join(format!("{i}/db")),
-            node_data_path,
-            &dir::CopyOptions::new(),
-        )?;
-    }
+//     // [Verse 2]
+//     // Brain salad certainty
+//     // It will work for you, it works for me
+//     // Brain rot perversity
+//     // Brain salad surgery
+//     Ok(())
+// }
 
-    // We've got a ballad
-    // About a salad brain
-    // With assurgence
-    // In a dirty bit again
+// #[tokio::test]
+// // can restart after brain salad surgery
+// // but will not progress
+// async fn test_brain_salad() -> anyhow::Result<()> {
+//     let mut s = test_setup_start_then_pause().await?;
+//     let data_dir = s.swarm.dir();
+//     save_debug_dir(data_dir, "init").await?;
 
-    // [Verse 2]
-    // Brain salad certainty
-    // It will work for you, it works for me
-    // Brain rot perversity
-    // Brain salad surgery
-    Ok(())
-}
+//     brain_salad_surgery(&s.swarm).await?;
+//     save_debug_dir(data_dir, "post_brain").await?;
 
-#[tokio::test]
-// can restart after brain salad surgery
-// but will not progress
-async fn test_brain_salad() -> anyhow::Result<()> {
-    let mut s = test_setup_start_then_pause().await?;
-    let data_dir = s.swarm.dir();
-    save_debug_dir(data_dir, "init").await?;
+//     for node in s.swarm.validators_mut() {
+//         let mut node_config = node.config().clone();
+//         node_config.consensus.sync_only = false;
+//         update_node_config_restart(node, node_config)?;
+//     }
+//     Ok(())
+// }
 
-    brain_salad_surgery(&s.swarm).await?;
-    save_debug_dir(data_dir, "post_brain").await?;
+// async fn test_setup_start_then_pause() -> anyhow::Result<LibraSmoke> {
+//     let num_nodes: usize = 2;
+//     let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
+//         .await
+//         .expect("could not start libra smoke");
 
-    for node in s.swarm.validators_mut() {
-        let mut node_config = node.config().clone();
-        node_config.consensus.sync_only = false;
-        update_node_config_restart(node, node_config)?;
-    }
-    Ok(())
-}
+//     let env: &mut diem_forge::LocalSwarm = &mut s.swarm;
 
-async fn test_setup_start_then_pause() -> Result<LibraSmoke> {
-    let num_nodes: usize = 2;
-    let mut s = LibraSmoke::new(Some(num_nodes as u8), None)
-        .await
-        .expect("could not start libra smoke");
+//     env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+//         .await
+//         .unwrap();
 
-    let env: &mut diem_forge::LocalSwarm = &mut s.swarm;
+//     println!("1. Set sync_only = true for all nodes and restart");
+//     set_sync_only_bool(env, true)?;
 
-    env.wait_for_all_nodes_to_catchup_to_version(10, Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
-        .await
-        .unwrap();
+//     println!("2. verify all nodes are at the same round and no progress being made");
+//     env.wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+//         .await
+//         .unwrap();
 
-    println!("1. Set sync_only = true for all nodes and restart");
-    for node in env.validators_mut() {
-        let mut node_config = node.config().clone();
-        node_config.consensus.sync_only = true;
-        update_node_config_restart(node, node_config)?;
-        wait_for_node(node, num_nodes - 1).await?;
-    }
+//     println!("3. stop nodes");
 
-    println!("2. verify all nodes are at the same round and no progress being made");
-    env.wait_for_all_nodes_to_catchup(Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
-        .await
-        .unwrap();
-
-    println!("3. stop nodes");
-
-    for node in env.validators_mut() {
-        node.stop();
-    }
-    Ok(s)
-}
+//     for node in env.validators_mut() {
+//         node.stop();
+//     }
+//     Ok(s)
+// }
 
 async fn save_debug_dir(from: &Path, to: &str) -> Result<()> {
     // Get the current directory using CARGO_MANIFEST_DIR
@@ -185,51 +173,51 @@ async fn save_debug_dir(from: &Path, to: &str) -> Result<()> {
     )?;
     Ok(())
 }
-async fn creates_random_val_account(data_path: &Path, port: u16) -> anyhow::Result<WalletLibrary> {
-    let wallet = WalletLibrary::new();
-    let mnemonic_string = wallet.mnemonic();
+// async fn creates_random_val_account(data_path: &Path, port: u16) -> anyhow::Result<WalletLibrary> {
+//     let wallet = WalletLibrary::new();
+//     let mnemonic_string = wallet.mnemonic();
 
-    let my_host = HostAndPort::local(port)?;
+//     let my_host = HostAndPort::local(port)?;
 
-    // Initializes the validator configuration.
-    validator_config::initialize_validator(
-        Some(data_path.to_path_buf()),
-        Some(&mnemonic_string.clone()[..3]),
-        my_host,
-        Some(mnemonic_string),
-        false,
-        Some(diem_types::chain_id::NamedChain::TESTING),
-    )
-    .await?;
+//     // Initializes the validator configuration.
+//     validator_config::initialize_validator(
+//         Some(data_path.to_path_buf()),
+//         Some(&mnemonic_string.clone()[..3]),
+//         my_host,
+//         Some(mnemonic_string),
+//         false,
+//         Some(diem_types::chain_id::NamedChain::TESTING),
+//     )
+//     .await?;
 
-    Ok(wallet)
-}
+//     Ok(wallet)
+// }
 
-async fn make_test_randos(smoke: &LibraSmoke) -> anyhow::Result<()> {
-    let env = &smoke.swarm;
+// async fn make_test_randos(smoke: &LibraSmoke) -> anyhow::Result<()> {
+//     let env = &smoke.swarm;
 
-    let rando_dir = env.dir().join("rando");
+//     let rando_dir = env.dir().join("rando");
 
-    for (i, local_node) in env.validators().enumerate() {
-        creates_random_val_account(&rando_dir.join(i.to_string()), local_node.port()).await?;
-    }
-    Ok(())
-}
+//     for (i, local_node) in env.validators().enumerate() {
+//         creates_random_val_account(&rando_dir.join(i.to_string()), local_node.port()).await?;
+//     }
+//     Ok(())
+// }
 
-#[tokio::test]
-async fn meta_can_add_random_vals() -> anyhow::Result<()> {
-    let s = test_setup_start_then_pause().await?;
+// #[tokio::test]
+// async fn meta_can_add_random_vals() -> anyhow::Result<()> {
+//     let s = LibraSmoke::test_setup_start_then_pause(2).await?;
 
-    make_test_randos(&s).await?;
+//     make_test_randos(&s).await?;
 
-    save_debug_dir(s.swarm.dir(), "post_random_init").await?;
+//     save_debug_dir(s.swarm.dir(), "post_random_init").await?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 #[tokio::test]
 async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
-    let s = test_setup_start_then_pause().await?;
+    let s = LibraSmoke::test_setup_start_then_pause(2).await?;
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
@@ -280,7 +268,7 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
-    let s = test_setup_start_then_pause().await?;
+    let s = LibraSmoke::test_setup_start_then_pause(2).await?;
 
     make_test_randos(&s).await?;
     let data_dir = s.swarm.dir();
@@ -346,7 +334,8 @@ async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
-    let mut s = test_setup_start_then_pause().await?;
+    let mut s = LibraSmoke::test_setup_start_then_pause(2).await?;
+
     let data_dir = &s.swarm.dir().to_path_buf();
     save_debug_dir(data_dir, "init").await?;
 
@@ -389,12 +378,18 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
 
     for node in s.swarm.validators_mut() {
         // Don't load the instantiated config! Get the saved one always!
-        let mut node_config = NodeConfig::load_config(&node.config_path())?;
+        let mut node_config = NodeConfig::load_config(node.config_path())?;
         node_config.consensus.sync_only = false;
         update_node_config_restart(node, node_config)?;
     }
 
-    dbg!("OK");
+    s.swarm.wait_for_startup().await?;
+
+    let client = s.swarm.validators().next().unwrap().rest_client();
+    assert!(
+        is_making_progress(&client).await?,
+        "chain not making blocks"
+    );
 
     Ok(())
 }
