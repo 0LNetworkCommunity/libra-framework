@@ -63,7 +63,7 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn can_write_to_db_from_randos() -> anyhow::Result<()> {
+async fn smoke_can_replace_randos_and_restart() -> anyhow::Result<()> {
     let s = LibraSmoke::test_setup_start_then_pause(2).await?;
 
     make_test_randos(&s).await?;
