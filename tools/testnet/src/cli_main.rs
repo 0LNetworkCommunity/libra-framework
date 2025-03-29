@@ -83,8 +83,7 @@ impl CliCommand<TestnetCliOut> for TestnetCli {
                 check_bins_path()?;
                 println!("starting local testnet using Diem swarm...");
                 assert!(reference_db.is_some(), "no db");
-                smoke.run(move_release, reference_db).await?;
-                Ok(todo!())
+                Ok(smoke.run(move_release, reference_db).await?)
             }
         }
     }

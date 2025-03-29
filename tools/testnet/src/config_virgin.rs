@@ -1,9 +1,6 @@
 use crate::cli_output::TestnetCliOut;
 use anyhow::bail;
-use diem_genesis::{
-    config::{HostAndPort, ValidatorConfiguration},
-    keys::PrivateIdentity,
-};
+use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_config::validator_config;
 use libra_genesis_tools::{genesis_builder, parse_json};

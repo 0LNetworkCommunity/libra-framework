@@ -1,9 +1,9 @@
 use crate::{cli_output::TestnetCliOut, twin_swarm};
-
 use clap::{self, Parser};
-use diem::common::types::{CliCommand, CliTypedResult};
 use diem_framework::ReleaseBundle;
+use diem_genesis::config::HostAndPort;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+use std::str::FromStr;
 use std::{fs, path::PathBuf};
 /// Twin of the network
 #[derive(Parser)]
@@ -23,7 +23,7 @@ impl SwarmCliOpts {
         &self,
         framework_mrb: ReleaseBundle,
         twin_db: Option<PathBuf>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<TestnetCliOut> {
         let num_validators = self.count_vals.unwrap_or(2);
 
         let mut smoke =
@@ -37,13 +37,13 @@ impl SwarmCliOpts {
             smoke
                 .swarm
                 .wait_all_alive(tokio::time::Duration::from_secs(120))
-                .await;
+                .await?;
 
             let api_endpoint = HostAndPort::from_str(&format!(
                 "{}:{}",
-                smoke.api_endpoint.host(),
-                smoke.api_endpoint.port(),
-            ));
+                smoke.api_endpoint.host().unwrap(),
+                smoke.api_endpoint.port().unwrap(),
+            ))?;
             // TODO
             TestnetCliOut {
                 data_dir: smoke.swarm.dir().to_path_buf(),
@@ -53,43 +53,16 @@ impl SwarmCliOpts {
             }
         };
 
-        println!("{:?#}", out);
+        println!("{}", serde_json::to_string_pretty(&out)?);
 
         // NOTE: all validators will stop when the LibraSmoke goes out of context. This is intentional
         // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
         let _ = dialoguer::Input::<String>::new()
             .with_prompt(
-                "\nswarm `libra` processes will keep running until you exit. Press any key to exit\n{FIRE}",
+                "\nsmoke is running `libra` processes until you exit. Press any key to exit\n{FIRE}",
             )
             .interact_text()?;
 
-        Ok(())
+        Ok(out)
     }
 }
-
-pub const FIRE: &str = r#"
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣆⢳⡀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣾⣷⡀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠠⣄⠀⢠⣿⣿⣿⣿⡎⢻⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢸⣧⢸⣿⣿⣿⣿⡇⠀⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣾⣿⣿⣿⣿⠃⠀⢸⣿⣿⣿⣿⣿⣿⠀⣄⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⠏⠀⠀⣸⣿⣿⣿⣿⣿⡿⢀⣿⡆⠀
-⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⣿⣿⣿⣿⣿⣿⠇⣼⣿⣿⡄
-⠀⢰⠀⠀⣴⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⠀⢠⣿⣿⣿⣿⣿⡟⣼⣿⣿⣿⣧
-⠀⣿⡀⢸⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⣸⡿⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⠀⣿⣷⣼⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⢹⠃⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⡄⢻⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⠇
-⢳⣌⢿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⠏⠀
-⠀⢿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⠋⣠⠀
-⠀⠈⢻⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣵⣿⠃⠀
-⠀⠀⠀⠙⢿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡿⠃⠀⠀
-⠀⠀⠀⠀⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠋⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣦⣀⠀⠀⠀⠀⢀⣴⠿⠛⠁⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠓⠂⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-"#;

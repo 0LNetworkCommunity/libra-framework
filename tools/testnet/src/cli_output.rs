@@ -2,7 +2,7 @@
 /// creation, so that we can automate testing.
 /// For example: we need the path of the AppCfg, so we can easily
 /// send transactions using `txs`. We'll also need the private keys.
-use diem_genesis::{config::HostAndPort, keys::PrivateIdentity};
+use diem_genesis::config::HostAndPort;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 

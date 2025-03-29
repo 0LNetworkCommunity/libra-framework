@@ -37,6 +37,7 @@ libra-storage = { workspace = true }
 libra-types = { workspace = true }
 smoke-test = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }
 
@@ -44,5 +45,4 @@ tokio = { workspace = true }
 diem-api-types = { workspace = true }
 diem-logger = { workspace = true }
 regex = { workspace = true }
-serde_json = { workspace = true }
 smoke-test = { workspace = true }
