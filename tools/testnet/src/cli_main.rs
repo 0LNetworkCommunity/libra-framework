@@ -85,8 +85,7 @@ impl CliCommand<TestnetCliOut> for TestnetCli {
             Sub::Configure(config) => Ok(config.run(self.framework_mrb_path, reference_db).await?),
             Sub::Smoke(smoke) => {
                 check_bins_path()?;
-                println!("starting local testnet using Diem swarm...");
-                assert!(reference_db.is_some(), "no db");
+                println!("starting local testnet using Libra Smoke...");
                 Ok(smoke.run(move_release, reference_db).await?)
             }
         }
@@ -96,7 +95,7 @@ impl CliCommand<TestnetCliOut> for TestnetCli {
 // Keep the run method for backwards compatibility
 impl TestnetCli {
     pub async fn run(self) -> anyhow::Result<()> {
-        let is_json = self.json.clone();
+        let is_json = self.json;
         match &self.execute_serialized().await {
             Ok(res) => {
                 if is_json {
