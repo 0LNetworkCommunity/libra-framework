@@ -1,3 +1,4 @@
+use crate::cli_output::TestnetCliOut;
 use crate::restore_helper::one_step_restore_db;
 use crate::{cli_config::TestnetConfigOpts, cli_swarm::SwarmCliOpts};
 use anyhow::Result;
@@ -45,7 +46,7 @@ pub enum Sub {
 }
 
 #[async_trait]
-impl CliCommand<String> for TestnetCli {
+impl CliCommand<TestnetCliOut> for TestnetCli {
     fn command_name(&self) -> &'static str {
         match self.command {
             Sub::Configure(_) => "testnet-configure",
@@ -53,7 +54,7 @@ impl CliCommand<String> for TestnetCli {
         }
     }
 
-    async fn execute(self) -> CliTypedResult<String> {
+    async fn execute(self) -> CliTypedResult<TestnetCliOut> {
         let move_release = if let Some(p) = self.framework_mrb_path.clone() {
             ReleaseBundle::read(p).map_err(CliError::from)?
         } else {
@@ -77,16 +78,13 @@ impl CliCommand<String> for TestnetCli {
         };
 
         match self.command {
-            Sub::Configure(cli) => {
-                cli.run(self.framework_mrb_path, reference_db).await?;
-                Ok("Testnet configured successfully".to_string())
-            }
-            Sub::Smoke(cli) => {
+            Sub::Configure(config) => Ok(config.run(self.framework_mrb_path, reference_db).await?),
+            Sub::Smoke(smoke) => {
                 check_bins_path()?;
                 println!("starting local testnet using Diem swarm...");
                 assert!(reference_db.is_some(), "no db");
-                cli.run(move_release, reference_db).await?;
-                Ok("Testnet smoke test completed successfully".to_string())
+                smoke.run(move_release, reference_db).await?;
+                Ok(todo!())
             }
         }
     }

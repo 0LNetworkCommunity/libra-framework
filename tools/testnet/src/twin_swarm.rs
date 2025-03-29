@@ -1,16 +1,17 @@
-use crate::replace_validators_file::replace_validators_blob;
-use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
-use std::time::Instant;
-
-use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
-
+use crate::{cli_output::TestnetCliOut, replace_validators_file::replace_validators_blob};
 use anyhow::{Context, Result};
 use diem_forge::{LocalSwarm, SwarmExt};
+use diem_genesis::config::HostAndPort;
 use diem_temppath::TempPath;
 use diem_types::waypoint::Waypoint;
 use fs_extra::dir;
 use libra_config::validator_registration::ValCredentials;
+use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use libra_smoke_tests::extract_credentials::extract_swarm_node_credentials;
+use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
+use libra_types::exports::ValidCryptoMaterialStringExt;
+use std::str::FromStr;
+use std::time::Instant;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -85,7 +86,7 @@ impl TwinSwarm {
 pub async fn awake_frankenswarm(
     smoke: &mut LibraSmoke,
     reference_db: Option<PathBuf>,
-) -> anyhow::Result<PathBuf> {
+) -> anyhow::Result<TestnetCliOut> {
     let start_upgrade = Instant::now();
 
     // Collect credentials from all validators
@@ -98,14 +99,18 @@ pub async fn awake_frankenswarm(
         .expect("could not get node status");
 
     // Stop all validators to prevent DB access conflicts
+
     for n in smoke.swarm.validators_mut() {
         n.stop();
     }
 
+    // temp db path (separate from swarm temp path)
+    // we'll do operations on the temp db path not the actual reference
     let temp = TempPath::new();
     temp.create_as_dir()?;
     let temp_db_path = temp.path();
 
+    // use the provided reference_db or get the one from the virgin swarm
     let reference_db = reference_db.unwrap_or(
         smoke
             .swarm
@@ -140,7 +145,7 @@ pub async fn awake_frankenswarm(
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
 
     // Generate CLI config files for validators
-    configure_validator::save_cli_config_all(&mut smoke.swarm)?;
+    let app_cfg_paths = configure_validator::save_cli_config_all(&mut smoke.swarm)?;
 
     let duration_upgrade = start_upgrade.elapsed();
     println!("{}", FIRE);
@@ -148,37 +153,32 @@ pub async fn awake_frankenswarm(
         "SUCCESS: twin smoke started. Time to prepare: {:?}",
         duration_upgrade
     );
-    let temp_dir = smoke.swarm.dir();
-    println!("temp files found at: {}", temp_dir.display());
 
-    println!("\nAPI URL: {:?}", smoke.api_endpoint.to_string());
+    let mut private_tx_keys: Vec<String> = smoke
+        .swarm
+        .validators()
+        .map(|n| {
+            n.account_private_key()
+                .as_ref()
+                .unwrap()
+                .private_key()
+                .to_encoded_string()
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
 
-    Ok(temp_dir.to_owned())
+    let api_endpoint = HostAndPort::from_str(&format!(
+        "{}:{}",
+        smoke.api_endpoint.host(),
+        smoke.api_endpoint.port(),
+    ))?;
+
+    let out = TestnetCliOut {
+        data_dir: smoke.swarm.dir().to_path_buf(),
+        api_endpoint,
+        app_cfg_paths,
+        private_tx_keys,
+    };
+
+    Ok(out)
 }
-
-pub const FIRE: &str = r#"
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣆⢳⡀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣾⣷⡀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠠⣄⠀⢠⣿⣿⣿⣿⡎⢻⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢸⣧⢸⣿⣿⣿⣿⡇⠀⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣾⣿⣿⣿⣿⠃⠀⢸⣿⣿⣿⣿⣿⣿⠀⣄⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⠏⠀⠀⣸⣿⣿⣿⣿⣿⡿⢀⣿⡆⠀
-⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⣿⣿⣿⣿⣿⣿⠇⣼⣿⣿⡄
-⠀⢰⠀⠀⣴⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⠀⢠⣿⣿⣿⣿⣿⡟⣼⣿⣿⣿⣧
-⠀⣿⡀⢸⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⣸⡿⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⠀⣿⣷⣼⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⢹⠃⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⡄⢻⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⠇
-⢳⣌⢿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⠏⠀
-⠀⢿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⠋⣠⠀
-⠀⠈⢻⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣵⣿⠃⠀
-⠀⠀⠀⠙⢿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡿⠃⠀⠀
-⠀⠀⠀⠀⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠋⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣦⣀⠀⠀⠀⠀⢀⣴⠿⠛⠁⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠓⠂⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-"#;

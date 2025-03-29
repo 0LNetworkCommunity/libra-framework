@@ -46,7 +46,7 @@ impl TestnetConfigOpts {
 
         let data_path = self.out_dir.clone().unwrap_or_else(global_config_dir);
 
-        let out_path = config_virgin::setup(
+        let cli_out = config_virgin::setup(
             &self.me,
             &self.host_list,
             chain_name,
@@ -59,15 +59,8 @@ impl TestnetConfigOpts {
         // if it's a twin case, then we need to do brain surgery
         if let Some(p) = twin_db {
             println!("configuring twin...");
-            config_twin::configure_twin(&out_path, &p).await?;
+            config_twin::configure_twin(&cli_out.data_dir, &p).await?;
         }
-
-        let cli_out = TestnetCliOut {
-            temp_data_dir: out_path.clone(),
-            api_endpoint: self.host_list[0].clone(),
-            validator_app_cfg: vec![out_path.join("libra-cli-config.yaml")],
-            validator_tx_keys: vec![],
-        };
 
         Ok(cli_out)
     }

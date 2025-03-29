@@ -9,11 +9,11 @@ use std::path::PathBuf;
 #[derive(Serialize, Deserialize)]
 pub struct TestnetCliOut {
     /// The path to the testnet config file
-    pub temp_data_dir: PathBuf,
+    pub data_dir: PathBuf,
     /// The path to the testnet genesis blob
     pub api_endpoint: HostAndPort,
     /// The path to the testnet genesis blob
-    pub validator_app_cfg: Vec<PathBuf>,
+    pub app_cfg_paths: Vec<PathBuf>,
     /// Keys for the validators
-    pub validator_tx_keys: Vec<PrivateIdentity>,
+    pub private_tx_keys: Vec<String>,
 }

@@ -5,7 +5,10 @@ use crate::{
 use anyhow::{anyhow, bail, Context};
 use dialoguer::{Confirm, Input};
 use diem_crypto::x25519;
-use diem_genesis::{config::HostAndPort, keys::PublicIdentity};
+use diem_genesis::{
+    config::HostAndPort,
+    keys::{PrivateIdentity, PublicIdentity},
+};
 use diem_types::{chain_id::NamedChain, network_address::DnsName};
 use libra_types::{
     core_types::{app_cfg::AppCfg, network_playlist::NetworkPlaylist},
@@ -17,6 +20,8 @@ use std::{
     str::FromStr,
 };
 
+/// initializes a validator node's files
+/// returns 0: the public identity, and 1: the Libra AppCfg
 pub async fn initialize_validator(
     home_path: Option<PathBuf>,
     username: Option<&str>,
@@ -24,8 +29,8 @@ pub async fn initialize_validator(
     mnem: Option<String>,
     keep_legacy_address: bool,
     chain_name: Option<NamedChain>,
-) -> anyhow::Result<PublicIdentity> {
-    let (.., pub_id, keys) =
+) -> anyhow::Result<(PublicIdentity, PrivateIdentity, AppCfg)> {
+    let (.., private_id, pub_id, keys) =
         libra_wallet::keys::refresh_validator_files(mnem, home_path.clone(), keep_legacy_address)?;
     OLProgress::complete("initialized validator key files");
 
@@ -60,7 +65,7 @@ pub async fn initialize_validator(
     ))?;
     OLProgress::complete("saved a user libra-cli-config.yaml file locally");
 
-    Ok(pub_id)
+    Ok((pub_id, private_id, cfg))
 }
 
 // Function to get the external IP address of the host
@@ -117,7 +122,7 @@ pub async fn validator_dialogue(
             )
             .interact()?;
 
-        let pub_id = initialize_validator(
+        let (pub_id, _, _) = initialize_validator(
             Some(data_path.to_path_buf()),
             github_username,
             host.clone(),
