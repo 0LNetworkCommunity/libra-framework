@@ -127,7 +127,6 @@ fn test_parse_manifest() {
     let mut this_path = PathBuf::from_str(env!("CARGO_MANIFEST_DIR")).unwrap();
     this_path.push("fixtures/v7/state_epoch_116_ver_38180075.05af/state.manifest");
     let _r = load_snapshot_manifest(&this_path).expect("parse manifest");
-    // dbg!(&r.epoch);
 }
 
 pub async fn manifest_to_json(manifest_path: PathBuf, out_path: Option<PathBuf>) {

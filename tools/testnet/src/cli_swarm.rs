@@ -9,7 +9,7 @@ use std::{fs, path::PathBuf};
 
 /// Starts a quick testnet locally using Diem swarm
 /// Requires that you have a `libra` binary built and
-/// the ennvar DIEM_FORGE_NODE_BIN_PATH pointed to it
+/// the envvar DIEM_FORGE_NODE_BIN_PATH pointed to it
 /// e.g. DIEM_FORGE_NODE_BIN_PATH=$HOME/.cargo/bin/libra
 pub struct SwarmCliOpts {
     /// number of local validators to start
@@ -20,10 +20,10 @@ impl SwarmCliOpts {
     /// Runner for swarm
     pub async fn run(
         &self,
-        twin_db: Option<PathBuf>,
         framework_mrb: ReleaseBundle,
+        twin_db: Option<PathBuf>,
     ) -> anyhow::Result<()> {
-        let num_validators = self.count_vals.unwrap_or(1);
+        let num_validators = self.count_vals.unwrap_or(2);
 
         let mut smoke =
             LibraSmoke::new_with_bundle(Some(num_validators), None, framework_mrb).await?;
@@ -49,12 +49,4 @@ impl SwarmCliOpts {
 
         Ok(())
     }
-}
-
-#[tokio::test]
-async fn test_twin_swarm() -> anyhow::Result<()> {
-    let mut smoke = LibraSmoke::new(Some(1), None).await?;
-
-    twin_swarm::awake_frankenswarm(&mut smoke, None).await?;
-    Ok(())
 }

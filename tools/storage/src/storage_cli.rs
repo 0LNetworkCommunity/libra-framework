@@ -15,7 +15,7 @@ use crate::{bootstrap, download_bundle, read_snapshot, restore};
 /// DB tools e.g.: backup, restore, export to json
 pub struct StorageCli {
     #[clap(subcommand)]
-    command: Option<Sub>,
+    pub command: Option<Sub>,
 }
 
 #[derive(Subcommand)]

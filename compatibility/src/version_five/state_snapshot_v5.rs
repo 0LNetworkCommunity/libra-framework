@@ -178,14 +178,11 @@ fn sanity_test_bcs() {
         port: Port(8001),
     };
     let b = bcs::to_bytes(&s).unwrap();
-    dbg!(&b);
     let expected_bytes = vec![0x7f, 0x00, 0x00, 0x01, 0x41, 0x1f];
 
     assert!(b == expected_bytes, "not match");
 
     let socket_addr: SocketAddr = bcs::from_bytes(&expected_bytes).unwrap();
-
-    dbg!(&socket_addr);
 
     assert_eq!(socket_addr.ip.0, [127, 0, 0, 1]);
     assert_eq!(socket_addr.port.0, 8001);
@@ -205,7 +202,6 @@ fn decode_encode_v5_struct_tag() {
 
     let bytes = bcs::to_bytes(&s).unwrap();
     let h = hex::encode(bytes);
-    dbg!(&h);
 
     let expected_key =
         "000000000000000000000000000000010b4469656d4163636f756e740b4469656d4163636f756e7400";

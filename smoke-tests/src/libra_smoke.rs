@@ -2,6 +2,7 @@
 
 use anyhow::Context;
 use diem_crypto::traits::ValidCryptoMaterialStringExt;
+use diem_forge::SwarmExt;
 use diem_forge::{LocalSwarm, Node, Swarm};
 use diem_framework::ReleaseBundle;
 use diem_sdk::types::LocalAccount;
@@ -13,10 +14,11 @@ use libra_types::core_types::network_playlist::NetworkPlaylist;
 use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
 use smoke_test::smoke_test_environment;
+use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::path::PathBuf;
 use url::Url;
 
-use crate::helpers;
+use crate::helpers::{self, update_node_config_restart, wait_for_node};
 
 /// We provide the minimal set of structs to conduct most tests: a swarm object, and a validator keys object (LocalAccount)
 pub struct LibraSmoke {
@@ -223,4 +225,61 @@ impl LibraSmoke {
 
         Ok((signers, signer_addresses))
     }
+    pub async fn test_setup_start_then_pause(num_nodes: u8) -> anyhow::Result<Self> {
+        let mut s = LibraSmoke::new(Some(num_nodes), None)
+            .await
+            .expect("could not start libra smoke");
+
+        let env = &mut s.swarm;
+
+        env.wait_for_all_nodes_to_catchup_to_version(
+            10,
+            std::time::Duration::from_secs(MAX_CATCH_UP_WAIT_SECS),
+        )
+        .await
+        .unwrap();
+
+        println!("1. Set sync_only = true for all nodes and restart");
+        for node in env.validators_mut() {
+            let mut node_config = node.config().clone();
+            node_config.consensus.sync_only = true;
+            update_node_config_restart(node, &mut node_config)?;
+            wait_for_node(node, (num_nodes - 1) as usize).await?;
+        }
+
+        println!("2. verify all nodes are at the same round and no progress being made");
+        env.wait_for_all_nodes_to_catchup(std::time::Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+            .await
+            .unwrap();
+
+        println!("3. stop nodes");
+
+        for node in env.validators_mut() {
+            node.stop();
+        }
+        Ok(s)
+    }
+}
+
+#[tokio::test]
+async fn meta_can_add_random_vals() -> anyhow::Result<()> {
+    let s = LibraSmoke::test_setup_start_then_pause(2).await?;
+
+    crate::helpers::make_test_randos(&s).await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+/// This meta test checks that our tools can control a network
+/// so the nodes stop producing blocks, shut down, and start again.
+async fn test_swarm_can_halt_and_restart() -> anyhow::Result<()> {
+    use diem_forge::NodeExt;
+    let mut s = LibraSmoke::test_setup_start_then_pause(3).await?;
+
+    for node in s.swarm.validators_mut().take(3) {
+        assert!(node.liveness_check(1).await.is_err());
+    }
+
+    Ok(())
 }

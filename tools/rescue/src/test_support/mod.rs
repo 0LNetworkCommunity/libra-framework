@@ -1,3 +1,5 @@
+// TODO: Move this and other generally useful
+// test fixtures to its own module.
 #![allow(dead_code)]
 use anyhow::Context;
 use diem_config::config::NodeConfig;

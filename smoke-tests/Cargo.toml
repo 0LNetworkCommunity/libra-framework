@@ -14,6 +14,7 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+diem-config = { workspace = true }
 diem-crypto = { workspace = true }
 diem-forge = { workspace = true}
 diem-framework = { workspace = true }
@@ -21,12 +22,14 @@ diem-genesis = { workspace = true }
 diem-sdk = { workspace = true }
 diem-temppath = { workspace = true }
 diem-types = { workspace = true }
+fs_extra = { workspace = true }
 hex = { workspace = true }
 libra-cached-packages = { workspace = true }
 libra-config  = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
 libra-types = { workspace = true }
+libra-wallet = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml  = { workspace = true }
 smoke-test = { workspace = true }
