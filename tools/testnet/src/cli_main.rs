@@ -33,6 +33,10 @@ pub struct TestnetCli {
     /// You already have a reference db for twin
     pub twin_db: Option<PathBuf>,
 
+    #[clap(long, short)]
+    /// print json output
+    pub json: bool,
+
     #[clap(subcommand)]
     pub command: Sub,
 }
@@ -92,10 +96,19 @@ impl CliCommand<TestnetCliOut> for TestnetCli {
 // Keep the run method for backwards compatibility
 impl TestnetCli {
     pub async fn run(self) -> anyhow::Result<()> {
-        self.execute()
-            .await
-            .map(|_| ())
-            .map_err(|e| anyhow::anyhow!(e.to_string()))
+        let is_json = self.json.clone();
+        match &self.execute_serialized().await {
+            Ok(res) => {
+                if is_json {
+                    println!("{}", res);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                std::process::exit(1);
+            }
+        }
+        Ok(())
     }
 }
 
