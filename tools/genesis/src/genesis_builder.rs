@@ -440,15 +440,12 @@ fn get_config(client: &Client, user: &str, _is_mainnet: bool) -> Result<Validato
     })
 }
 
-/// create validator configs from fixture mnemonics
-pub fn testnet_validator_config(
-    persona: &TestPersona,
+pub fn generate_validator_registration_config(
+    mnem: String,
     host: &HostAndPort,
 ) -> anyhow::Result<ValidatorConfiguration> {
-    let mnem = persona.get_persona_mnem();
     let key_chain = get_keys_from_mnem(mnem)?;
     let (_, _, _, public_identity) = generate_key_objects_from_legacy(&key_chain)?;
-
     Ok(ValidatorConfiguration {
         owner_account_address: public_identity.account_address.into(),
         owner_account_public_key: public_identity.account_public_key.clone(),
@@ -466,6 +463,14 @@ pub fn testnet_validator_config(
         commission_percentage: 1,
         join_during_genesis: true,
     })
+}
+/// create validator configs from fixture mnemonics
+pub fn testnet_validator_config(
+    persona: &TestPersona,
+    host: &HostAndPort,
+) -> anyhow::Result<ValidatorConfiguration> {
+    let mnem = persona.get_persona_mnem();
+    generate_validator_registration_config(mnem, host)
 }
 // TODO: Move into the Crypto libraries
 fn parse_key<T: ValidCryptoMaterial>(num_bytes: usize, str: &str) -> Result<T> {

@@ -1,5 +1,5 @@
+use crate::cli_output::TestnetCliOut;
 use crate::config_virgin;
-
 use anyhow::Result;
 use diem_genesis::config::HostAndPort;
 use diem_types::chain_id::NamedChain;
@@ -35,13 +35,15 @@ impl TestnetConfigOpts {
         &self,
         framework_mrb_path: Option<PathBuf>,
         twin_db: Option<PathBuf>,
-    ) -> Result<()> {
+    ) -> Result<TestnetCliOut> {
         let chain_name = self.chain_name.unwrap_or(NamedChain::TESTNET); // chain_id = 2
-                                                                         // let data_path = self.out_dir.clone().unwrap_or_else(|| {
-                                                                         //     let p = global_config_dir().join("swarm");
-                                                                         //     println!("using default path: {}", p.display());
-                                                                         //     p
-                                                                         // });
+
+        // let data_path = self.out_dir.clone().unwrap_or_else(|| {
+        //     let p = global_config_dir().join("swarm");
+        //     println!("using default path: {}", p.display());
+        //     p
+        // });
+
         let data_path = self.out_dir.clone().unwrap_or_else(global_config_dir);
 
         let out_path = config_virgin::setup(
@@ -55,15 +57,18 @@ impl TestnetConfigOpts {
         .await?;
 
         // if it's a twin case, then we need to do brain surgery
-        // 1. collect all the operator.yaml files created
-        // in first step.
-        // 2. place a database in the default home path
-        // 3. run the twin rescue mission
-        // 4. use artifacts of #4 to update the config files
         if let Some(p) = twin_db {
             println!("configuring twin...");
             config_twin::configure_twin(&out_path, &p).await?;
         }
-        Ok(())
+
+        let cli_out = TestnetCliOut {
+            temp_data_dir: out_path.clone(),
+            api_endpoint: self.host_list[0].clone(),
+            validator_app_cfg: vec![out_path.join("libra-cli-config.yaml")],
+            validator_tx_keys: vec![],
+        };
+
+        Ok(cli_out)
     }
 }

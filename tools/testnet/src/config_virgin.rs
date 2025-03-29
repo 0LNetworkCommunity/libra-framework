@@ -12,8 +12,9 @@ use libra_types::{
     },
     ONCHAIN_DECIMAL_PRECISION,
 };
-use serde_yaml;
-use std::{fs, path::PathBuf}; // Explicitly import serde_yaml
+use std::{fs, path::PathBuf};
+
+// Explicitly import serde_yaml
 
 // Simple function to convert ValidatorConfiguration to OperatorConfiguration
 fn validator_to_operator_config(
@@ -84,56 +85,29 @@ pub async fn setup(
         my_host.host, my_host.port
     );
 
-    // Initializes the validator configuration.
-    validator_config::initialize_validator(
-        Some(data_path.clone()),
-        Some(&me.to_string()),
-        my_host.clone(),
-        Some(me.get_persona_mnem()),
-        false,
-        Some(chain),
-    )
-    .await?;
-
-    // create validator configurations from fixtures
-    // without needing to use a github repo to register and read
-    let val_cfg: Vec<ValidatorConfiguration> = host_list
-        .iter()
-        .enumerate()
-        .filter_map(|(idx, h)| {
-            let p = TestPersona::from(idx).ok()?;
-            genesis_builder::testnet_validator_config(&p, h).ok()
-        })
-        .collect();
-
-    // make a directory under data-path for `operator_files`
     let operator_files_path = data_path.join("operator_files");
     fs::create_dir_all(&operator_files_path)?;
 
-    // save the identity files operator.yaml, we'll need them in cases of twin tests
-    val_cfg.iter().for_each(|v| {
-      match validator_to_operator_config(v) {
-        Ok(o) => {
-          // use serde yaml to write the operator configuration to a file
-          // including the address
-          let operator_file = operator_files_path.join(format!("operator_{}.yaml", v.owner_account_address));
-          match serde_yaml::to_string(&o) {
-              Ok(yaml_str) => {
-                  if let Err(e) = fs::write(&operator_file, yaml_str) {
-                      eprintln!("Could not write operator file to {:?}: {}", operator_file, e);
-                  } else {
-                      println!("Wrote operator file to {:?}", operator_file);
-                  }
-              },
-              Err(e) => eprintln!("Failed to serialize operator config: {}", e),
-          }
-        }
-        Err(e) => {
-            eprintln!("Failed to convert ValidatorConfiguration to OperatorConfiguration for validator {:?}: {}",
-                v.owner_account_address, e);
-        }
-      }
-    });
+    // create validator configurations from fixtures
+    // without needing to use a github repo to register and read
+    let mut val_cfg: Vec<ValidatorConfiguration> = vec![];
+    for (idx, host) in host_list.iter().enumerate() {
+        let p = TestPersona::from(idx)?;
+        let mnem = p.get_persona_mnem();
+        // Initializes every validator configuration.
+        validator_config::initialize_validator(
+            Some(operator_files_path.join(p.to_string())),
+            Some(&p.to_string()),
+            my_host.clone(),
+            Some(mnem.clone()),
+            false,
+            Some(chain),
+        )
+        .await?;
+
+        let v_reg = genesis_builder::generate_validator_registration_config(mnem, host)?;
+        val_cfg.push(v_reg);
+    }
 
     // Determines the path for the recovery data.
     // NOTE: test fixtures located at ./tests/fixtures/sample_export_recovery.json

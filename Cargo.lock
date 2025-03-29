@@ -6011,9 +6011,11 @@ name = "libra-testnet"
 version = "7.0.4"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bcs 0.1.4",
  "clap 4.5.20",
  "dialoguer",
+ "diem",
  "diem-api-types",
  "diem-config",
  "diem-forge",
@@ -6033,6 +6035,7 @@ dependencies = [
  "libra-storage",
  "libra-types",
  "regex",
+ "serde 1.0.214",
  "serde_json",
  "serde_yaml 0.8.26",
  "smoke-test",
