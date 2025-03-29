@@ -13,6 +13,7 @@ use libra_types::{
     },
     ONCHAIN_DECIMAL_PRECISION,
 };
+use libra_wallet::account_keys;
 use std::{fs, path::PathBuf};
 
 // TODO: deprecate
@@ -98,7 +99,7 @@ pub async fn setup(
         let p = TestPersona::from(idx)?;
         let mnem = p.get_persona_mnem();
         // Initializes every validator configuration.
-        let (_, app_cfg) = validator_config::initialize_validator_files(
+        let (_, mut app_cfg) = validator_config::initialize_validator_files(
             Some(operator_files_path.join(p.to_string())),
             Some(&p.to_string()),
             my_host.clone(),
@@ -107,6 +108,13 @@ pub async fn setup(
             Some(chain),
         )
         .await?;
+
+        let w = account_keys::get_keys_from_mnem(mnem.clone())?;
+
+        app_cfg
+            .get_profile_mut(None)
+            .unwrap()
+            .set_private_key(&w.child_0_owner.pri_key);
 
         app_cfg_paths.push(app_cfg.workspace.node_home.join(CONFIG_FILE_NAME));
         // private_tx_keys.push(

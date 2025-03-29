@@ -19,9 +19,7 @@ use serde::Serialize;
 
 use anyhow::anyhow;
 use diem_config::{config::IdentityBlob, keys::ConfigKey};
-use diem_crypto::{
-    bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519,
-};
+use diem_crypto::{bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519};
 use diem_genesis::keys::{PrivateIdentity, PublicIdentity};
 use std::path::{Path, PathBuf};
 

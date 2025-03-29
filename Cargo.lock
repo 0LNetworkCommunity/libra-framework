@@ -6035,6 +6035,7 @@ dependencies = [
  "libra-smoke-tests",
  "libra-storage",
  "libra-types",
+ "libra-wallet",
  "regex",
  "serde 1.0.214",
  "serde_json",

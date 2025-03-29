@@ -35,6 +35,7 @@ libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }
 libra-storage = { workspace = true }
 libra-types = { workspace = true }
+libra-wallet = { workspace = true }
 smoke-test = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
