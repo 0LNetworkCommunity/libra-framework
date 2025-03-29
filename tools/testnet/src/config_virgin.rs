@@ -4,7 +4,6 @@ use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_config::validator_config;
 use libra_genesis_tools::{genesis_builder, parse_json};
-use libra_types::exports::ValidCryptoMaterialStringExt;
 use libra_types::{
     core_types::{app_cfg::CONFIG_FILE_NAME, fixtures::TestPersona},
     exports::{AccountAddress, AuthenticationKey, NamedChain},
@@ -93,13 +92,13 @@ pub async fn setup(
     // without needing to use a github repo to register and read
     let mut val_cfg: Vec<ValidatorConfiguration> = vec![];
     let mut app_cfg_paths: Vec<PathBuf> = vec![];
-    let mut private_tx_keys: Vec<String> = vec![];
+    let private_tx_keys: Vec<String> = vec![];
 
     for (idx, host) in host_list.iter().enumerate() {
         let p = TestPersona::from(idx)?;
         let mnem = p.get_persona_mnem();
         // Initializes every validator configuration.
-        let (_, private_id, app_cfg) = validator_config::initialize_validator(
+        let (_, app_cfg) = validator_config::initialize_validator_files(
             Some(operator_files_path.join(p.to_string())),
             Some(&p.to_string()),
             my_host.clone(),
@@ -110,12 +109,12 @@ pub async fn setup(
         .await?;
 
         app_cfg_paths.push(app_cfg.workspace.node_home.join(CONFIG_FILE_NAME));
-        private_tx_keys.push(
-            private_id
-                .account_private_key
-                .to_encoded_string()
-                .expect("encoded pk string"),
-        );
+        // private_tx_keys.push(
+        //     private_id
+        //         .account_private_key
+        //         .to_encoded_string()
+        //         .expect("encoded pk string"),
+        // );
 
         let v_reg = genesis_builder::generate_validator_registration_config(mnem, host)?;
         val_cfg.push(v_reg);

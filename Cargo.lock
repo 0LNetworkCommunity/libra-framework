@@ -5815,6 +5815,7 @@ dependencies = [
  "diem-config",
  "diem-crypto",
  "diem-genesis",
+ "diem-logger",
  "diem-rest-client",
  "diem-temppath",
  "diem-types",
