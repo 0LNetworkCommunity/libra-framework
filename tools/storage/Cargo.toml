@@ -28,6 +28,7 @@ diem-storage-interface = { workspace = true }
 diem-types = { workspace = true }
 diem-vm = { workspace = true }
 flate2 = { workspace = true }
+fs_extra = { workspace = true }
 glob = { workspace = true }
 libra-backwards-compatibility = { workspace = true }
 libra-config = { workspace = true }
