@@ -20,7 +20,7 @@ use serde::Serialize;
 use anyhow::anyhow;
 use diem_config::{config::IdentityBlob, keys::ConfigKey};
 use diem_crypto::{
-    bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519, ValidCryptoMaterialStringExt,
+    bls12381, ed25519::Ed25519PrivateKey, traits::PrivateKey, x25519,
 };
 use diem_genesis::keys::{PrivateIdentity, PublicIdentity};
 use std::path::{Path, PathBuf};
@@ -135,6 +135,16 @@ fn write_key_file<T: Serialize>(output_dir: &Path, filename: &str, data: T) -> a
     Ok(())
 }
 
+// Create an all-zero private key
+fn create_non_signing_key() -> Ed25519PrivateKey {
+    // Create a 32-byte array filled with zeros
+    let zero_bytes = [0u8; 32];
+
+    // Convert to an Ed25519PrivateKey
+    // This will parse as a structurally valid key but won't sign correctly
+    Ed25519PrivateKey::try_from(zero_bytes.as_ref()).unwrap()
+}
+
 fn save_val_files(
     output_opt: Option<PathBuf>,
     validator_blob: &mut IdentityBlob,
@@ -153,8 +163,8 @@ fn save_val_files(
     // changing the struct to make it optional would
     // cause a bunch of breaking changes. Opting to place a decoy.
     // TODO: refactor identity blob to not have the private key.
-    let decoy_pk = Ed25519PrivateKey::from_encoded_string("you crazy")?;
-    private_identity.account_private_key = decoy_pk;
+
+    private_identity.account_private_key = create_non_signing_key();
     validator_blob.account_private_key = None;
     vfn_blob.account_private_key = None;
 
