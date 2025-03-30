@@ -1,9 +1,7 @@
 use crate::{cli_output::TestInfo, twin_swarm};
 use clap::{self, Parser};
 use diem_framework::ReleaseBundle;
-use diem_genesis::config::HostAndPort;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
-use std::str::FromStr;
 use std::{fs, path::PathBuf};
 /// Twin of the network
 #[derive(Parser)]
@@ -39,19 +37,7 @@ impl SwarmCliOpts {
                 .wait_all_alive(tokio::time::Duration::from_secs(120))
                 .await?;
 
-            let api_endpoint = HostAndPort::from_str(&format!(
-                "{}:{}",
-                smoke.api_endpoint.host().unwrap(),
-                smoke.api_endpoint.port().unwrap(),
-            ))?;
-            // // TODO
-            // TestnetCliOut {
-            //     data_dir: smoke.swarm.dir().to_path_buf(),
-            //     api_endpoint,
-            //     app_cfg_path: vec![],
-            //     private_tx_keys: vec![],
-            // }
-            vec![]
+            TestInfo::from_smoke(&smoke.swarm)?
         };
 
         println!("{}", serde_json::to_string_pretty(&out)?);

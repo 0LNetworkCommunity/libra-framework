@@ -6042,6 +6042,7 @@ dependencies = [
  "serde_yaml 0.8.26",
  "smoke-test",
  "tokio",
+ "url",
 ]
 
 [[package]]

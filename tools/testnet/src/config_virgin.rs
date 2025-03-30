@@ -55,7 +55,7 @@ use std::{fs, path::PathBuf};
 // Sets up the environment for the given test persona.
 // returns the home data path
 pub async fn setup(
-    me: &TestPersona,
+    _me: &TestPersona,
     host_list: &[HostAndPort],
     chain: NamedChain,
     data_dir: PathBuf,
@@ -70,21 +70,21 @@ pub async fn setup(
         bail!("too many hosts provided, you just need 3 or 4 for a good testnet genesis. Exiting.")
     }
 
-    println!("Building genesis config files for a network with:");
-    for (i, h) in host_list.iter().enumerate() {
-        let character = TestPersona::from(i)?;
+    // println!("Building genesis config files for a network with:");
+    // for (i, h) in host_list.iter().enumerate() {
+    //     let character = TestPersona::from(i)?;
 
-        let display = format!("{}:{}", h.host, h.port);
-        println!("persona: {character} - host: {display}");
-        println!("mnemonic: {}\n", character.get_persona_mnem());
-    }
+    //     let display = format!("{}:{}", h.host, h.port);
+    //     println!("persona: {character} - host: {display}");
+    //     println!("mnemonic: {}\n", character.get_persona_mnem());
+    // }
 
-    let index = me.idx();
-    let my_host = host_list.get(index).expect("could not get an IP and index");
-    println!(
-        "your persona '{me}' is expected to use network address: {}:{}\n",
-        my_host.host, my_host.port
-    );
+    // let index = me.idx();
+    // let my_host = host_list.get(index).expect("could not get an IP and index");
+    // println!(
+    //     "your persona '{me}' is expected to use network address: {}:{}\n",
+    //     my_host.host, my_host.port
+    // );
 
     let operator_files_path = data_dir.join("operator_files");
     fs::create_dir_all(&operator_files_path)?;
@@ -92,17 +92,18 @@ pub async fn setup(
     // create validator configurations from fixtures
     // without needing to use a github repo to register and read
     let mut val_cfg: Vec<ValidatorConfiguration> = vec![];
-    let mut app_cfg_paths: Vec<PathBuf> = vec![];
-    let private_tx_keys: Vec<String> = vec![];
+    let mut test_info: Vec<TestInfo> = vec![];
 
     for (idx, host) in host_list.iter().enumerate() {
         let p = TestPersona::from(idx)?;
         let mnem = p.get_persona_mnem();
+
+        let data_dir = operator_files_path.join(p.to_string());
         // Initializes every validator configuration.
         let (_, mut app_cfg) = validator_config::initialize_validator_files(
-            Some(operator_files_path.join(p.to_string())),
+            Some(data_dir.clone()),
             Some(&p.to_string()),
-            my_host.clone(),
+            host.clone(),
             Some(mnem.clone()),
             false,
             Some(chain),
@@ -111,21 +112,25 @@ pub async fn setup(
 
         let w = account_keys::get_keys_from_mnem(mnem.clone())?;
 
+        // Sets private key to file
+        // DANGER: this is only for testnet
         app_cfg
             .get_profile_mut(None)
             .unwrap()
             .set_private_key(&w.child_0_owner.pri_key);
 
-        app_cfg_paths.push(app_cfg.workspace.node_home.join(CONFIG_FILE_NAME));
-        // private_tx_keys.push(
-        //     private_id
-        //         .account_private_key
-        //         .to_encoded_string()
-        //         .expect("encoded pk string"),
-        // );
-
         let v_reg = genesis_builder::generate_validator_registration_config(mnem, host)?;
         val_cfg.push(v_reg);
+
+        // set info output for testnet operator to find paths easily
+        let o = TestInfo {
+            validator_address: app_cfg.get_profile(None).unwrap().account,
+            val_set_index: idx,
+            data_dir,
+            api_endpoint: host.to_owned(),
+            app_cfg_path: app_cfg.workspace.node_home.join(CONFIG_FILE_NAME),
+        };
+        test_info.push(o);
     }
 
     // Determines the path for the recovery data.
@@ -150,14 +155,7 @@ pub async fn setup(
         Some(val_cfg),
     )?;
 
-    // let out = TestnetCliOut {
-    //     data_dir,
-    //     api_endpoint: my_host.to_owned(),
-    //     app_cfg_path: app_cfg_paths
-    // };
-    let out = vec![];
-
-    Ok(out)
+    Ok(test_info)
 }
 
 fn generate_testnet_state_for_vals(vals: &[ValidatorConfiguration]) -> Vec<LegacyRecoveryV6> {

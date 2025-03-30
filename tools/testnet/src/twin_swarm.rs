@@ -1,16 +1,13 @@
 use crate::{cli_output::TestInfo, replace_validators_file::replace_validators_blob};
 use anyhow::{Context, Result};
 use diem_forge::{LocalSwarm, SwarmExt};
-use diem_genesis::config::HostAndPort;
 use diem_temppath::TempPath;
 use diem_types::waypoint::Waypoint;
 use fs_extra::dir;
 use libra_config::validator_registration::ValCredentials;
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use libra_smoke_tests::extract_credentials::extract_swarm_node_credentials;
-use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
-use libra_types::exports::ValidCryptoMaterialStringExt;
-use std::str::FromStr;
+use libra_smoke_tests::libra_smoke::LibraSmoke;
 use std::time::Instant;
 use std::{
     path::{Path, PathBuf},
@@ -144,41 +141,13 @@ pub async fn awake_frankenswarm(
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
 
-    // Generate CLI config files for validators
-    let app_cfg_paths = configure_validator::save_cli_config_all(&mut smoke.swarm)?;
-
     let duration_upgrade = start_upgrade.elapsed();
     println!(
         "SUCCESS: twin smoke started. Time to prepare: {:?}",
         duration_upgrade
     );
 
-    let private_tx_keys: Vec<String> = smoke
-        .swarm
-        .validators()
-        .map(|n| {
-            n.account_private_key()
-                .as_ref()
-                .unwrap()
-                .private_key()
-                .to_encoded_string()
-                .unwrap()
-        })
-        .collect::<Vec<_>>();
+    let test_info = TestInfo::from_smoke(&smoke.swarm)?;
 
-    let api_endpoint = HostAndPort::from_str(&format!(
-        "{}:{}",
-        smoke.api_endpoint.host().unwrap(),
-        smoke.api_endpoint.port().unwrap(),
-    ))?;
-
-    // let out = TestnetCliOut {
-    //     data_dir: smoke.swarm.dir().to_path_buf(),
-    //     api_endpoint,
-    //     app_cfg_path: app_cfg_paths,
-    // };
-
-    let out = vec![];
-
-    Ok(out)
+    Ok(test_info)
 }
