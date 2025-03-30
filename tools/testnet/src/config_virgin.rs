@@ -55,7 +55,6 @@ use std::{fs, path::PathBuf};
 // Sets up the environment for the given test persona.
 // returns the home data path
 pub async fn setup(
-    _me: &TestPersona,
     host_list: &[HostAndPort],
     chain: NamedChain,
     data_dir: PathBuf,

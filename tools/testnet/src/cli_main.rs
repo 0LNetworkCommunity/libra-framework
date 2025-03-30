@@ -5,8 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use clap::Subcommand;
 use clap::{self, Parser};
-use diem::common::types::{CliCommand, CliError, CliTypedResult};
-use diem_framework::ReleaseBundle;
+use diem::common::types::{CliCommand, CliTypedResult};
 use libra_types::global_config_dir;
 use std::path::PathBuf;
 #[derive(Parser)]
@@ -21,21 +20,25 @@ pub struct TestnetCli {
     /// at ./framework/releases/head.mrb
     pub framework_mrb_path: Option<PathBuf>,
 
-    #[clap(long, conflicts_with = "twin_db")]
+    #[clap(short('t'), long, conflicts_with = "twin_reference_db")]
     /// Run a twin of mainnet, instead of a virgin network
-    pub twin_epoch: Option<u64>,
+    pub twin_epoch_restore: Option<u64>,
 
-    #[clap(long, requires = "twin_epoch")]
+    #[clap(long, requires = "twin_epoch_restore")]
     /// Data path to use for the restore files and twin db, defaults to $HOME/.libra/
-    pub data_path: Option<PathBuf>,
+    pub restore_out_dir: Option<PathBuf>,
 
-    #[clap(long, conflicts_with = "twin_epoch")]
-    /// You already have a reference db for twin
-    pub twin_db: Option<PathBuf>,
+    #[clap(short('r'), long, conflicts_with = "twin_epoch_restore")]
+    /// You already have a reference db for twin (don't download and restore)
+    pub twin_reference_db: Option<PathBuf>,
 
     #[clap(long, short)]
     /// print json output
     pub json: bool,
+
+    /// save json output to file instead of printing
+    #[clap(long)]
+    pub json_file: Option<PathBuf>,
 
     #[clap(subcommand)]
     pub command: Sub,
@@ -59,19 +62,12 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
     }
 
     async fn execute(self) -> CliTypedResult<Vec<TestInfo>> {
-        let move_release = if let Some(p) = self.framework_mrb_path.clone() {
-            ReleaseBundle::read(p).map_err(CliError::from)?
-        } else {
-            println!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
-            libra_framework::testing_local_release_bundle()
-        };
-
         // we have a reference db we'd like to use
-        let reference_db = if self.twin_db.is_some() {
-            println!("using reference database: {:?}", self.twin_db);
-            self.twin_db.clone()
-        } else if let Some(e) = self.twin_epoch {
-            let data_path = self.data_path.unwrap_or_else(global_config_dir);
+        let reference_db = if self.twin_reference_db.is_some() {
+            println!("using reference database: {:?}", self.twin_reference_db);
+            self.twin_reference_db.clone()
+        } else if let Some(e) = self.twin_epoch_restore {
+            let data_path = self.restore_out_dir.unwrap_or_else(global_config_dir);
             println!("downloading restore archive and creating a new db");
             one_step_restore_db(data_path, e, None, None, None)
                 .await
@@ -86,7 +82,7 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
             Sub::Smoke(smoke) => {
                 check_bins_path()?;
                 println!("starting local testnet using Libra Smoke...");
-                Ok(smoke.run(move_release, reference_db).await?)
+                Ok(smoke.run(self.framework_mrb_path, reference_db).await?)
             }
         }
     }

@@ -3,31 +3,25 @@ use crate::config_virgin;
 use anyhow::Result;
 use diem_genesis::config::HostAndPort;
 use diem_types::chain_id::NamedChain;
-use libra_types::{core_types::fixtures::TestPersona, global_config_dir};
+use libra_types::global_config_dir;
 use std::path::PathBuf;
 
 use crate::config_twin;
 
 #[derive(clap::Parser)]
 pub struct TestnetConfigOpts {
+    /// ordered list of dns/ip with port for alice..dave, use :6180 for production validator port
+    #[clap(long)]
+    host: Vec<HostAndPort>,
     #[clap(short, long)]
-    /// location for the default data directory
-    out_dir: Option<PathBuf>,
-    /// name of the type of chain we are starting
+    /// optional, location for the default data directory, otherwise will be temp
+    test_dir: Option<PathBuf>,
+    /// optional, of the type of chain we are starting defaults to id=2 TESTNET
     #[clap(short, long)]
     chain_name: Option<NamedChain>,
-    /// sensible defaults for testnet, does not need a genesis repo
-    /// accounts are created from fixture mnemonics for alice, bob, carol, dave
-    /// which persona is this machine going to register as
-    #[clap(short, long)]
-    me: TestPersona,
-    /// ordered list of dns/ip with port for alice..dave
-    /// use 6180 for production validator port
-    #[clap(short('i'), long)]
-    host_list: Vec<HostAndPort>,
     /// path to file for legacy migration file
     #[clap(short, long)]
-    json_legacy: Option<PathBuf>,
+    migrate_legacy: Option<PathBuf>,
 }
 
 impl TestnetConfigOpts {
@@ -38,20 +32,13 @@ impl TestnetConfigOpts {
     ) -> Result<Vec<TestInfo>> {
         let chain_name = self.chain_name.unwrap_or(NamedChain::TESTNET); // chain_id = 2
 
-        // let data_path = self.out_dir.clone().unwrap_or_else(|| {
-        //     let p = global_config_dir().join("swarm");
-        //     println!("using default path: {}", p.display());
-        //     p
-        // });
-
-        let data_path = self.out_dir.clone().unwrap_or_else(global_config_dir);
+        let data_path = self.test_dir.clone().unwrap_or_else(global_config_dir);
 
         let cli_out = config_virgin::setup(
-            &self.me,
-            &self.host_list,
+            &self.host,
             chain_name,
             data_path.clone(),
-            self.json_legacy.to_owned(),
+            self.migrate_legacy.to_owned(),
             framework_mrb_path,
         )
         .await?;

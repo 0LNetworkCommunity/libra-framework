@@ -19,13 +19,19 @@ impl SwarmCliOpts {
     /// Runner for swarm
     pub async fn run(
         &self,
-        framework_mrb: ReleaseBundle,
+        framework_mrb_path: Option<PathBuf>,
         twin_db: Option<PathBuf>,
     ) -> anyhow::Result<Vec<TestInfo>> {
         let num_validators = self.count_vals.unwrap_or(2);
 
-        let mut smoke =
-            LibraSmoke::new_with_bundle(Some(num_validators), None, framework_mrb).await?;
+        let bundle = if let Some(p) = framework_mrb_path.clone() {
+            ReleaseBundle::read(p)?
+        } else {
+            println!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
+            libra_framework::testing_local_release_bundle()
+        };
+
+        let mut smoke = LibraSmoke::new_with_bundle(Some(num_validators), None, bundle).await?;
 
         let out = if let Some(p) = twin_db {
             let db_path = fs::canonicalize(p)?;
