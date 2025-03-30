@@ -16,42 +16,6 @@ use libra_types::{
 use libra_wallet::account_keys;
 use std::{fs, path::PathBuf};
 
-// TODO: deprecate
-// // Simple function to convert ValidatorConfiguration to OperatorConfiguration
-// fn validator_to_operator_config(
-//     config: &ValidatorConfiguration,
-// ) -> anyhow::Result<OperatorConfiguration> {
-//     let consensus_public_key = config
-//         .consensus_public_key
-//         .clone()
-//         .context("Consensus public key is required for operator configuration")?;
-
-//     let consensus_proof_of_possession = config
-//         .proof_of_possession
-//         .clone()
-//         .context("Proof of possession is required for operator configuration")?;
-
-//     let validator_network_public_key = config
-//         .validator_network_public_key
-//         .context("Validator network public key is required for operator configuration")?;
-
-//     let validator_host = config
-//         .validator_host
-//         .clone()
-//         .context("Validator host is required for operator configuration")?;
-
-//     Ok(OperatorConfiguration {
-//         operator_account_address: config.operator_account_address,
-//         operator_account_public_key: config.operator_account_public_key.clone(),
-//         consensus_public_key,
-//         consensus_proof_of_possession,
-//         validator_network_public_key,
-//         validator_host,
-//         full_node_network_public_key: config.full_node_network_public_key,
-//         full_node_host: config.full_node_host.clone(),
-//     })
-// }
-
 // Sets up the environment for the given test persona.
 // returns the home data path
 pub async fn setup(
@@ -68,22 +32,6 @@ pub async fn setup(
     if host_list.len() > 4 {
         bail!("too many hosts provided, you just need 3 or 4 for a good testnet genesis. Exiting.")
     }
-
-    // println!("Building genesis config files for a network with:");
-    // for (i, h) in host_list.iter().enumerate() {
-    //     let character = TestPersona::from(i)?;
-
-    //     let display = format!("{}:{}", h.host, h.port);
-    //     println!("persona: {character} - host: {display}");
-    //     println!("mnemonic: {}\n", character.get_persona_mnem());
-    // }
-
-    // let index = me.idx();
-    // let my_host = host_list.get(index).expect("could not get an IP and index");
-    // println!(
-    //     "your persona '{me}' is expected to use network address: {}:{}\n",
-    //     my_host.host, my_host.port
-    // );
 
     let operator_files_path = data_dir.join("operator_files");
     fs::create_dir_all(&operator_files_path)?;

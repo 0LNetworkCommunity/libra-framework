@@ -29,24 +29,6 @@ pub fn find_operator_configs(start_path: &Path) -> anyhow::Result<Vec<ValCredent
                 );
                 val_credentials.push(cred);
             }
-            // You know a man of my ability
-            // He should be smokin' on a big cigar
-            // But 'til I get myself straight I guess I'll just have to wait
-            // In my rubber suit rubbin' these cars
-            // Well, all I can do is to shake my head
-            // You might not believe that it's true
-            // For workin' at this end of Niagara Falls
-            // Is an undiscovered Howard Hughes
-            // So baby, don't expect to see me
-            // With no double martini in any high brow society news
-            // 'Cause I got them steadily depressin', low down mind messin'
-            // Workin' at the car wash blues
-            // So baby, don't expect to see me
-            // With no double martini in any high brow society news
-            // 'Cause I got them steadily depressin', low down mind messin'
-            // Workin' at the car wash blues
-            // Yeah, I got them steadily depressin', low down mind messin'
-            // Workin' at the car wash blues
             Err(e) => println!("Error parsing operator file: {}", e),
         }
     }
