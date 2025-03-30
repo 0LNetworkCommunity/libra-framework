@@ -1,4 +1,4 @@
-use crate::cli_output::TestnetCliOut;
+use crate::cli_output::TestInfo;
 use crate::restore_helper::one_step_restore_db;
 use crate::{cli_config::TestnetConfigOpts, cli_swarm::SwarmCliOpts};
 use anyhow::Result;
@@ -50,7 +50,7 @@ pub enum Sub {
 }
 
 #[async_trait]
-impl CliCommand<TestnetCliOut> for TestnetCli {
+impl CliCommand<Vec<TestInfo>> for TestnetCli {
     fn command_name(&self) -> &'static str {
         match self.command {
             Sub::Configure(_) => "testnet-configure",
@@ -58,7 +58,7 @@ impl CliCommand<TestnetCliOut> for TestnetCli {
         }
     }
 
-    async fn execute(self) -> CliTypedResult<TestnetCliOut> {
+    async fn execute(self) -> CliTypedResult<Vec<TestInfo>> {
         let move_release = if let Some(p) = self.framework_mrb_path.clone() {
             ReleaseBundle::read(p).map_err(CliError::from)?
         } else {

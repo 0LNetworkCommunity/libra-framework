@@ -1,4 +1,4 @@
-use crate::{cli_output::TestnetCliOut, twin_swarm};
+use crate::{cli_output::TestInfo, twin_swarm};
 use clap::{self, Parser};
 use diem_framework::ReleaseBundle;
 use diem_genesis::config::HostAndPort;
@@ -23,7 +23,7 @@ impl SwarmCliOpts {
         &self,
         framework_mrb: ReleaseBundle,
         twin_db: Option<PathBuf>,
-    ) -> anyhow::Result<TestnetCliOut> {
+    ) -> anyhow::Result<Vec<TestInfo>> {
         let num_validators = self.count_vals.unwrap_or(2);
 
         let mut smoke =
@@ -44,13 +44,14 @@ impl SwarmCliOpts {
                 smoke.api_endpoint.host().unwrap(),
                 smoke.api_endpoint.port().unwrap(),
             ))?;
-            // TODO
-            TestnetCliOut {
-                data_dir: smoke.swarm.dir().to_path_buf(),
-                api_endpoint,
-                app_cfg_paths: vec![],
-                private_tx_keys: vec![],
-            }
+            // // TODO
+            // TestnetCliOut {
+            //     data_dir: smoke.swarm.dir().to_path_buf(),
+            //     api_endpoint,
+            //     app_cfg_path: vec![],
+            //     private_tx_keys: vec![],
+            // }
+            vec![]
         };
 
         println!("{}", serde_json::to_string_pretty(&out)?);

@@ -1,4 +1,4 @@
-use crate::cli_output::TestnetCliOut;
+use crate::cli_output::TestInfo;
 use anyhow::bail;
 use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
@@ -61,7 +61,7 @@ pub async fn setup(
     data_dir: PathBuf,
     legacy_data_path: Option<PathBuf>,
     framework_mrb_path: Option<PathBuf>,
-) -> anyhow::Result<TestnetCliOut> {
+) -> anyhow::Result<Vec<TestInfo>> {
     // config the host address for this persona
     if host_list.len() < 3 {
         bail!("cannot start a testnet with less than 3 nodes, use --host-list for each of Alice, Bob, Carol and Dave but not more. Exiting.")
@@ -150,12 +150,12 @@ pub async fn setup(
         Some(val_cfg),
     )?;
 
-    let out = TestnetCliOut {
-        data_dir,
-        api_endpoint: my_host.to_owned(),
-        app_cfg_paths,
-        private_tx_keys,
-    };
+    // let out = TestnetCliOut {
+    //     data_dir,
+    //     api_endpoint: my_host.to_owned(),
+    //     app_cfg_path: app_cfg_paths
+    // };
+    let out = vec![];
 
     Ok(out)
 }

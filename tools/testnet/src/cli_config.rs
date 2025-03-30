@@ -1,4 +1,4 @@
-use crate::cli_output::TestnetCliOut;
+use crate::cli_output::TestInfo;
 use crate::config_virgin;
 use anyhow::Result;
 use diem_genesis::config::HostAndPort;
@@ -35,7 +35,7 @@ impl TestnetConfigOpts {
         &self,
         framework_mrb_path: Option<PathBuf>,
         twin_db: Option<PathBuf>,
-    ) -> Result<TestnetCliOut> {
+    ) -> Result<Vec<TestInfo>> {
         let chain_name = self.chain_name.unwrap_or(NamedChain::TESTNET); // chain_id = 2
 
         // let data_path = self.out_dir.clone().unwrap_or_else(|| {
@@ -50,7 +50,7 @@ impl TestnetConfigOpts {
             &self.me,
             &self.host_list,
             chain_name,
-            data_path,
+            data_path.clone(),
             self.json_legacy.to_owned(),
             framework_mrb_path,
         )
@@ -59,7 +59,7 @@ impl TestnetConfigOpts {
         // if it's a twin case, then we need to do brain surgery
         if let Some(p) = twin_db {
             println!("configuring twin...");
-            config_twin::configure_twin(&cli_out.data_dir, &p).await?;
+            config_twin::configure_twin(&data_path, &p).await?;
         }
 
         Ok(cli_out)

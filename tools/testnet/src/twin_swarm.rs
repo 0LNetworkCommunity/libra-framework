@@ -1,4 +1,4 @@
-use crate::{cli_output::TestnetCliOut, replace_validators_file::replace_validators_blob};
+use crate::{cli_output::TestInfo, replace_validators_file::replace_validators_blob};
 use anyhow::{Context, Result};
 use diem_forge::{LocalSwarm, SwarmExt};
 use diem_genesis::config::HostAndPort;
@@ -86,7 +86,7 @@ impl TwinSwarm {
 pub async fn awake_frankenswarm(
     smoke: &mut LibraSmoke,
     reference_db: Option<PathBuf>,
-) -> anyhow::Result<TestnetCliOut> {
+) -> anyhow::Result<Vec<TestInfo>> {
     let start_upgrade = Instant::now();
 
     // Collect credentials from all validators
@@ -172,12 +172,13 @@ pub async fn awake_frankenswarm(
         smoke.api_endpoint.port().unwrap(),
     ))?;
 
-    let out = TestnetCliOut {
-        data_dir: smoke.swarm.dir().to_path_buf(),
-        api_endpoint,
-        app_cfg_paths,
-        private_tx_keys,
-    };
+    // let out = TestnetCliOut {
+    //     data_dir: smoke.swarm.dir().to_path_buf(),
+    //     api_endpoint,
+    //     app_cfg_path: app_cfg_paths,
+    // };
+
+    let out = vec![];
 
     Ok(out)
 }
