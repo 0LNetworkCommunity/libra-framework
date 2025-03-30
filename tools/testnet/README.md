@@ -3,25 +3,31 @@
 This package provides tools for creating and managing test networks for the Libra Framework, allowing both clean-slate testing and production-identical testing environments.
 
 # Quick Start
-``` bash
+```bash
 # make sure you have `libra` compiled and exported
 export DIEM_FORGE_NODE_BIN_PATH=$HOME/.cargo/bin/libra
 
 # assuming you are using source you want to have the latest Move framework MRB ready
 # the code defaults to <source code path>/framework/releases/head.mbr
 cd libra-framework && libra move framework release
-
 ```
 
 ## Smoke - starts a managed local testnet
-``` bash
+```bash
 # run locally a virgin testnet with alice, bob, carol default test accounts
 libra testnet smoke
 
 # start local twin of mainnet forking from an archive backup at epoch number
-libra testnet --twin_epoch_restore=344 smoke
+libra testnet --twin-epoch-restore=344 smoke
 
-# export a json file so you know the paths and urls needed to play
+# predefine a test dir to easily find configs for sending transactions etc.
+libra testnet --test-dir ./my_test/ smoke
+libra txs --config-path ./my_test/alice/libra-cli-configs.yaml \
+transfer \
+--to-account 0xCAFE \
+--amount100
+
+# Or, export a json file so you know all the paths and urls needed to play
 libra testnet --json-file ./testnet.json smoke
 
 # Using prebuilt Move framework assuming you have downloaded a file like `release-7.0.3.mrb`
@@ -31,16 +37,20 @@ libra testnet --framework-mrb-path ./release-7.0.3.mrb smoke
 ```
 
 ## Config only - configure the data so you can start nodes yourself on independent hosts or containers.
-``` bash
-# configure a testnet with alice, bob, carol test accounts, and assign hosts to them in (ordered). Do this on each host.
+```bash
+# configure a testnet with alice, bob, carol test accounts, and assign hosts to them in (ordered)
+libra testnet configure --host 0.0.0.1:6180 --host 0.0.0.2:6180 --host 0.0.0.3:6180
 
-libra testnet \
---test-dir ./saved_here/ \
-configure --host 0.0.0.1:6180 --host 0.0.0.2:6180 --host 0.0.0.3:6180
-
-# then on each host start the node as you would in production, with each host choosing one of the test personas by path.
-libra node --config-path ./saved_here/alice/validator.yaml
+# then on each host start the node as you would in production, with each host choosing one of the test personas by path
+libra node --config-path /path/to/operator_files/alice/validator.yaml
 ```
+
+## Use an existing DB for twin mode
+```bash
+# If you already have a database you want to use for twin mode
+libra testnet --twin-reference-db /path/to/db smoke
+```
+
 ## Core Features
 
 The testnet tools support two key operational modes:
@@ -104,7 +114,6 @@ libra testnet smoke
 
 # Create a twin of mainnet for testing
 libra testnet --twin-epoch-restore=344 smoke
-
 ```
 
 ## Configuration

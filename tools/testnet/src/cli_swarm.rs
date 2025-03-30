@@ -21,6 +21,8 @@ impl SwarmCliOpts {
         &self,
         framework_mrb_path: Option<PathBuf>,
         twin_db: Option<PathBuf>,
+        json_output: bool,
+        json_file: Option<PathBuf>,
     ) -> anyhow::Result<Vec<TestInfo>> {
         let num_validators = self.count_vals.unwrap_or(2);
 
@@ -46,7 +48,21 @@ impl SwarmCliOpts {
             TestInfo::from_smoke(&smoke.swarm)?
         };
 
-        println!("{}", serde_json::to_string_pretty(&out)?);
+        // Print or write JSON output before the interactive prompt
+        if json_output {
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+
+        // Write to JSON file if specified - do this before waiting for user input
+        if let Some(file_path) = json_file {
+            println!("Writing test info to JSON file: {:?}", file_path);
+            fs::write(&file_path, serde_json::to_string_pretty(&out)?)
+                .map_err(|e| anyhow::anyhow!("Failed to write to JSON file: {}", e))?;
+            println!("Successfully wrote test info to {:?}", file_path);
+        } else {
+            // If not writing to file, print the regular output
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        }
 
         // NOTE: all validators will stop when the LibraSmoke goes out of context. This is intentional
         // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.

@@ -7,7 +7,8 @@ use clap::Subcommand;
 use clap::{self, Parser};
 use diem::common::types::{CliCommand, CliTypedResult};
 use libra_types::global_config_dir;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
+
 #[derive(Parser)]
 
 /// Setup testnet files, or start a LibraSmoke.
@@ -82,7 +83,14 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
             Sub::Smoke(smoke) => {
                 check_bins_path()?;
                 println!("starting local testnet using Libra Smoke...");
-                Ok(smoke.run(self.framework_mrb_path, reference_db).await?)
+                Ok(smoke
+                    .run(
+                        self.framework_mrb_path,
+                        reference_db,
+                        self.json,
+                        self.json_file,
+                    )
+                    .await?)
             }
         }
     }
@@ -92,10 +100,20 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
 impl TestnetCli {
     pub async fn run(self) -> anyhow::Result<()> {
         let is_json = self.json;
+        let json_file = self.json_file.clone();
+
         match &self.execute_serialized().await {
             Ok(res) => {
                 if is_json {
                     println!("{}", res);
+                }
+
+                // Write to JSON file if specified
+                if let Some(file_path) = json_file {
+                    println!("Writing test info to JSON file: {:?}", file_path);
+                    fs::write(&file_path, res)
+                        .map_err(|e| anyhow::anyhow!("Failed to write to JSON file: {}", e))?;
+                    println!("Successfully wrote test info to {:?}", file_path);
                 }
             }
             Err(e) => {
