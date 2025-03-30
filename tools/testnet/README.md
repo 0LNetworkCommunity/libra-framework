@@ -97,19 +97,14 @@ e.g. DIEM_FORGE_NODE_BIN_PATH=$HOME/.cargo/bin/libra
 
 ```bash
 # Configure a new virgin testnet
-cargo run --package testnet -- configure
+libra testnet configure
 
-# Start a container-based virgin testnet
-cargo run --package testnet -- start-container
-
-# Start a swarm-based virgin testnet
-cargo run --package testnet -- start-swarm
+# Start a Libra Smoke swarm-based virgin testnet
+libra testnet smoke
 
 # Create a twin of mainnet for testing
-cargo run --package testnet -- --twin start-container
+libra testnet --twin-epoch-restore=344 smoke
 
-# Create a mainnet twin using swarm
-cargo run --package testnet -- --twin start-swarm
 ```
 
 ## Configuration
