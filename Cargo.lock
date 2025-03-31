@@ -5759,6 +5759,7 @@ dependencies = [
  "libra-query",
  "libra-rescue",
  "libra-storage",
+ "libra-testnet",
  "libra-txs",
  "libra-types",
  "libra-wallet",
