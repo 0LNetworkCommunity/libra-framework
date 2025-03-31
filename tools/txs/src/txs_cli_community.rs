@@ -28,8 +28,6 @@ pub enum CommunityTxs {
     Batch(BatchTx),
     /// Donors to Donor Voice addresses can vote to reject transactions
     Veto(VetoTx),
-    /// Migrate legacy account to initialize offer structure
-    Migration(MigrateOfferTx), // TODO remove after migration complete
     /// Donor can vote in reauthorization poll
     Reauthorize(ReauthVoteTx),
 }
@@ -58,8 +56,10 @@ impl CommunityTxs {
                 .await
                 .map(|_| "community wallet transfer proposed"),
             CommunityTxs::Veto(tx) => tx.run(sender).await.map(|_| "veto vote submitted"),
-            CommunityTxs::Batch(tx) => tx.run(sender).await.map(|_| ""),
-            CommunityTxs::Migration(tx) => tx.run(sender).await.map(|_| ""),
+            CommunityTxs::Batch(tx) => tx
+                .run(sender)
+                .await
+                .map(|_| "batch of transactions proposed"),
             CommunityTxs::Reauthorize(tx) => {
                 tx.run(sender).await.map(|_| "reauthorize vote submitted")
             }
@@ -471,9 +471,6 @@ pub struct ReauthVoteTx {
     #[clap(short, long)]
     /// The Slow Wallet recipient of funds
     pub community_wallet: AccountAddress,
-    #[clap(short, long)]
-    /// Proposal number
-    pub proposal_id: u64,
 }
 
 impl ReauthVoteTx {

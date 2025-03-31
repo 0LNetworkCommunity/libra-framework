@@ -5,9 +5,7 @@ use diem_types::account_address::AccountAddress;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub, TxsSub::Transfer};
-use libra_txs::txs_cli_community::{
-    AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, OfferTx,
-};
+use libra_txs::txs_cli_community::{AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, OfferTx};
 use libra_types::core_types::app_cfg::TxCost;
 use std::path::PathBuf;
 use url::Url;
