@@ -65,6 +65,11 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
     async fn execute(self) -> CliTypedResult<Vec<TestInfo>> {
         // we have a reference db we'd like to use
         let reference_db = if self.twin_reference_db.is_some() {
+            // check that the path exists
+            assert!(
+                self.twin_reference_db.as_ref().unwrap().exists(),
+                "twin reference db path does not exist"
+            );
             println!("using reference database: {:?}", self.twin_reference_db);
             self.twin_reference_db.clone()
         } else if let Some(e) = self.twin_epoch_restore {
