@@ -13,6 +13,7 @@ rust-version = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
+bcs = { workspace = true }
 clap = { workspace = true }
 dialoguer = { workspace = true }
 
@@ -31,7 +32,9 @@ libra-framework = { workspace = true }
 libra-genesis-tools = { workspace = true }
 libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }
+libra-storage = { workspace = true }
 libra-types = { workspace = true }
+smoke-test = { workspace = true }
 serde_yaml = { workspace = true }
 tokio = { workspace = true }
 

@@ -1,5 +1,3 @@
-mod support;
-
 use anyhow::Context;
 use diem_forge::SwarmExt;
 use diem_temppath::TempPath;
@@ -7,13 +5,12 @@ use diem_types::transaction::Transaction;
 use libra_rescue::{
     cli_bootstrapper::BootstrapOpts,
     cli_main::RUN_SCRIPT_BLOB,
+    test_support::{self, update_node_config_restart, wait_for_node},
     transaction_factory::{run_script_tx, save_rescue_blob},
 };
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::{fs, time::Duration};
-
-use crate::support::{update_node_config_restart, wait_for_node};
 
 #[tokio::test]
 /// Tests we can create a genesis blob from the smoke test e2e environment.
@@ -57,8 +54,8 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
         .get_peer_id()
         .context("no peer ID")?;
 
-    let script_path = support::make_script(first_validator_address);
-    dbg!(&script_path);
+    let script_path = test_support::make_script(first_validator_address);
+
     assert!(script_path.exists());
 
     let data_path = TempPath::new();
@@ -91,7 +88,8 @@ async fn test_create_e2e_rescue_tx() -> anyhow::Result<()> {
         db_dir: val_db_path,
         genesis_txn_file: genesis_blob_path,
         waypoint_to_verify: None,
-        commit: false, // NOTE: the tests seem to work even when this is false
+        commit: false, // NOTE: just testing it can apply tx
+        update_node_config: None,
         info: false,
     };
 

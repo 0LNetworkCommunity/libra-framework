@@ -28,6 +28,9 @@ diem-temppath = { workspace = true }
 diem-types = { workspace = true }
 diem-vm = { workspace = true }
 diem-vm-types = { workspace = true }
+
+flate2 = { workspace = true }
+
 libra-config = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
@@ -40,13 +43,16 @@ move-vm-runtime = { workspace = true  }
 move-vm-types = { workspace = true }
 
 smoke-test = { workspace = true }
+tar = { workspace = true }
 tokio = { workspace = true  }
 
 [dev-dependencies]
 diem-api-types = { workspace = true }
+diem-genesis = { workspace = true }
 diem-logger = { workspace = true }
-flate2 = { workspace = true }
+fs_extra = { workspace = true }
+glob = { workspace = true }
+libra-wallet = { workspace = true }
 regex = { workspace = true }
 serde_json = { workspace = true }
 smoke-test = { workspace = true }
-tar = { workspace = true }
