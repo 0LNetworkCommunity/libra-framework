@@ -529,10 +529,10 @@ module ol_framework::donor_voice_txs {
 
 
   /// REAUTHORIZATION
-  fun propose_reauthorization_impl(donor: &signer, multisig_address: address, days: u64) acquires TxSchedule {
+  fun propose_reauthorization_impl(donor: &signer, multisig_address: address) acquires TxSchedule {
     donor_voice_governance::assert_is_voter(donor, multisig_address);
     let state = borrow_global<TxSchedule>(multisig_address);
-    donor_voice_governance::propose_reauth(&state.guid_capability, days);
+    donor_voice_governance::propose_reauth(&state.guid_capability);
   }
 
   /// propose and vote on the veto of a specific transaction.
@@ -875,15 +875,22 @@ module ol_framework::donor_voice_txs {
 
 
   // REAUTH TXs
-  /// A donor of the program can propose to reauth a DV account
-  public entry fun propose_reauth_tx(donor: &signer, multisig_address: address, days_duration: u64) acquires TxSchedule {
-    propose_reauthorization_impl(donor, multisig_address, days_duration);
-  }
 
+  // TODO: unclear if we need a standalone propose reauth tx entry function.
+  // /// A donor of the program can propose to reauth a DV account
+  // public entry fun propose_reauth_tx(donor: &signer, multisig_address: address, days_duration: u64) acquires TxSchedule {
+  //   propose_reauthorization_impl(donor, multisig_address);
+  // }
 
   /// After proposed, subsequent donors can vote to reauth an account
   public entry fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
-    reauthorize_handler(donor, multisig_address);
+    if (donor_voice_governance::is_reauth_proposed(multisig_address)) {
+      // if the reauthorization is already proposed, then we can vote on it.
+      reauthorize_handler(donor, multisig_address);
+    } else {
+      // go a head and propose it
+      propose_reauthorization_impl(donor, multisig_address);
+    }
   }
 
   // LIQUIDATE TXS
