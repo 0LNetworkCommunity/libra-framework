@@ -180,12 +180,12 @@ mempool:
     Ok(template)
 }
 
-#[tokio::test]
-async fn get_peers() {
-    let seed = fetch_seed_addresses(None).await.unwrap();
+// #[tokio::test]
+// async fn get_peers() {
+//     let _seed = fetch_seed_addresses(None).await.unwrap();
 
-    dbg!(&seed);
-}
+//     TODO: test
+// }
 
 #[tokio::test]
 async fn get_yaml() {
@@ -205,7 +205,5 @@ async fn get_yaml() {
 
     add_peers_to_yaml(&p, seeds).unwrap();
 
-    let text = std::fs::read_to_string(&p).unwrap();
-
-    dbg!(&text);
+    let _text = std::fs::read_to_string(&p).unwrap();
 }

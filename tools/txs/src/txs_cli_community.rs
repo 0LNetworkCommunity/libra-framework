@@ -351,7 +351,7 @@ impl BatchTx {
                 .collect();
 
             let is_approved = prop.get("approved").unwrap().as_bool().unwrap();
-            dbg!(&is_approved);
+
             let found = ProposePay {
                 recipient: recipient.to_canonical_string(),
                 parsed: Some(recipient),

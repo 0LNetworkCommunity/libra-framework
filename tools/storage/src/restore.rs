@@ -70,7 +70,7 @@ pub async fn full_restore(db_destination: &Path, bundle: &RestoreBundle) -> Resu
 }
 
 /// Perform a complete epoch restore from a bundle to a destination DB
-pub async fn epoch_restore(bundle_path: PathBuf, destination_db: PathBuf) -> Result<()> {
+pub async fn epoch_restore(bundle_path: PathBuf, destination_db: PathBuf) -> Result<PathBuf> {
     if !bundle_path.exists() {
         bail!("Bundle directory not found: {}", &bundle_path.display());
     }
@@ -105,7 +105,7 @@ pub async fn epoch_restore(bundle_path: PathBuf, destination_db: PathBuf) -> Res
         bundle.epoch, bundle.version
     );
 
-    Ok(())
+    Ok(destination_db)
 }
 
 #[cfg(test)]

@@ -21,17 +21,19 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::node_config;
+
 #[derive(Parser)]
 #[clap(
     name = "diem-db-bootstrapper",
     about = "Calculate, verify and commit the genesis to local DB without a consensus among validators."
 )]
 pub struct BootstrapOpts {
-    #[clap(value_parser)]
+    #[clap(short, long)]
     /// DB directory
     pub db_dir: PathBuf,
 
-    #[clap(short, long, value_parser)]
+    #[clap(short, long)]
     /// path to genesis tx file
     pub genesis_txn_file: PathBuf,
 
@@ -42,6 +44,10 @@ pub struct BootstrapOpts {
     #[clap(long, requires("waypoint_to_verify"))]
     /// commit to db (requires --waypoint-to-verify)
     pub commit: bool,
+
+    #[clap(long, requires = "commit")]
+    /// Update the node configs in a single step
+    pub update_node_config: Option<PathBuf>,
 
     #[clap(long)]
     /// get info on DB and exit
@@ -134,7 +140,15 @@ impl BootstrapOpts {
             committer
                 .commit()
                 .with_context(|| format_err!("Committing genesis to DB."))?;
-            println!("Successfully committed genesis.")
+            println!("Successfully committed genesis.");
+
+            if let Some(p) = &self.update_node_config {
+                node_config::post_rescue_node_file_updates(
+                    p,
+                    output_waypoint,
+                    &self.genesis_txn_file,
+                )?;
+            }
         }
 
         Ok(Some(output_waypoint))
@@ -171,6 +185,7 @@ fn test_bootstrap_db() -> anyhow::Result<()> {
         genesis_txn_file: blob_path,
         waypoint_to_verify: None,
         commit: true,
+        update_node_config: None,
         info: false,
     };
 
@@ -189,6 +204,8 @@ pub fn check_rescue_bootstraps(db_path: &Path, blob_path: &Path) -> Result<()> {
         genesis_txn_file: blob_path.to_owned(),
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
+
         info: false,
     };
     if let Some(wp) = b.run()? {
@@ -209,6 +226,7 @@ pub fn one_step_apply_rescue_on_db(
         genesis_txn_file: rescue_blob.to_owned(),
         waypoint_to_verify: None,
         commit: false, // NOT APPLYING THE TX
+        update_node_config: None,
         info: false,
     };
 
@@ -222,6 +240,7 @@ pub fn one_step_apply_rescue_on_db(
         genesis_txn_file: rescue_blob.to_owned(),
         waypoint_to_verify: Some(waypoint_to_check),
         commit: true, // APPLY THE TX
+        update_node_config: None,
         info: false,
     };
 

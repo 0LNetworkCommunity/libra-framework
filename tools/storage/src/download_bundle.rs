@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 #[derive(Deserialize, Debug)]
@@ -62,13 +62,13 @@ fn find_closest_transaction_folder(
         }
     }
 
-    println!("For target version {}, found candidates:", target_version);
-    if let Some((v, name)) = version_below {
-        println!("  Below target: {} ({})", name, v);
-    }
-    if let Some((v, name)) = version_above {
-        println!("  Above target: {} ({})", name, v);
-    }
+    // println!("For target version {}, found candidates:", target_version);
+    // if let Some((v, name)) = version_below {
+    //     println!("  Below target: {} ({})", name, v);
+    // }
+    // if let Some((v, name)) = version_above {
+    //     println!("  Above target: {} ({})", name, v);
+    // }
 
     // Choose the version below target
     version_below
@@ -97,7 +97,7 @@ pub async fn find_closest_epoch_folder(
         .json()
         .await
         .context("Failed to parse snapshots directory contents")?;
-    dbg!(&contents);
+
     // Separate folders by type
     let mut epoch_ending_folders: Vec<(u64, String)> = Vec::new();
     let mut state_epoch_folders: Vec<(u64, String)> = Vec::new();
@@ -226,7 +226,7 @@ pub async fn download_github_folder(
 
             if item.content_type == "file" {
                 if let Some(download_url) = item.download_url {
-                    println!("Downloading file: {}", item.name);
+                    // println!("Downloading file: {}", item.name);
                     let content = client
                         .get(&download_url)
                         .header("User-Agent", "libra-framework-downloader")
@@ -255,7 +255,7 @@ pub async fn download_restore_bundle(
     branch: &str,
     epoch_num: &u64,
     destination: &Path,
-) -> Result<()> {
+) -> Result<PathBuf> {
     // Create the bundle-specific directory
     let bundle_dir = destination.join(format!("epoch_{}_restore_bundle", epoch_num));
     if !bundle_dir.exists() {
@@ -289,7 +289,7 @@ pub async fn download_restore_bundle(
         epoch_num,
         bundle_dir.display()
     );
-    Ok(())
+    Ok(bundle_dir)
 }
 
 #[cfg(test)]
