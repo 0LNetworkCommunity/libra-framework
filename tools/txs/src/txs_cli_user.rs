@@ -53,6 +53,9 @@ impl UserTxs {
                     }
                 }
             }
+            UserTxs::Vouch(vouch_tx) => {
+                vouch_tx.run(sender).await?;
+            }
         }
 
         Ok(())
@@ -324,8 +327,9 @@ pub fn revoke_rotation_capability(
     Ok(payload)
 }
 
+#[derive(clap::Args)]
 /// Vouch for accounts
-struct VouchTx {
+pub struct VouchTx {
     #[clap(short, long)]
     /// Vouch for another account, usually for validators
     vouch_for: AccountAddress,
@@ -337,15 +341,10 @@ struct VouchTx {
 impl VouchTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = if self.revoke {
-            VouchTxsRevoke {
-                friend_account: *vouch_acct,
-            }
+            libra_stdlib::vouch_txs_revoke(self.vouch_for)
         } else {
-            VouchTxsVouchFor {
-                friend_account: *vouch_acct,
-            }
+            libra_stdlib::vouch_txs_vouch_for(self.vouch_for)
         };
-
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
