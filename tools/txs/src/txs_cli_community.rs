@@ -496,6 +496,23 @@ impl VetoTx {
     }
 }
 
+#[derive(clap::Args)]
+pub struct ReauthVoteTx {
+    #[clap(short, long)]
+    /// The Slow Wallet recipient of funds
+    pub community_wallet: AccountAddress,
+    #[clap(short, long)]
+    /// Proposal number
+    pub proposal_id: u64,
+}
+
+impl ReauthVoteTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
 // TODO remove after migration is completed
 #[derive(clap::Args)]
 pub struct MigrateOfferTx {
