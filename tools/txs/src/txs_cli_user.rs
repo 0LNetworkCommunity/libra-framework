@@ -24,6 +24,7 @@ pub enum UserTxs {
     SetSlow(SetSlowTx),
     RotationCapability(RotationCapabilityTx),
     RotateKey(RotateKeyTx),
+    Vouch(VouchTx),
 }
 
 impl UserTxs {
@@ -321,4 +322,31 @@ pub fn revoke_rotation_capability(
     let payload = libra_stdlib::account_revoke_rotation_capability(delegate_account);
 
     Ok(payload)
+}
+
+/// Vouch for accounts
+struct VouchTx {
+    #[clap(short, long)]
+    /// Vouch for another account, usually for validators
+    vouch_for: AccountAddress,
+    #[clap(short, long)]
+    /// Revoke a vouch for an account
+    revoke: bool,
+}
+
+impl VouchTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = if self.revoke {
+            VouchTxsRevoke {
+                friend_account: *vouch_acct,
+            }
+        } else {
+            VouchTxsVouchFor {
+                friend_account: *vouch_acct,
+            }
+        };
+
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
 }
