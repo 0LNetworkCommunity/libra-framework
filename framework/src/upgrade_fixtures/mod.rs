@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::builder::framework_generate_upgrade_proposal::make_framework_upgrade_artifacts;
+use crate::release::ReleaseTarget;
 use anyhow::Context;
 
 use std::sync::Once;
@@ -93,6 +94,11 @@ pub fn generate_fixtures(
         &Some(modules),
         force_incompatible_upgrade,
     )?;
+
+    // Create an MRB file which contains the all_your_base.move module
+    // so we can test if rescue missions are running latest code
+    ReleaseTarget::Head.create_release(true, Some(output_path.join("head_all_your_base.mrb")))?;
+
     // ok, cleanup
     insert_test_file(&destination_module, true)?;
 
