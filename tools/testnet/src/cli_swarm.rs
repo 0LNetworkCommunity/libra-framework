@@ -24,6 +24,14 @@ impl SwarmCliOpts {
         json_output: bool,
         json_file: Option<PathBuf>,
     ) -> anyhow::Result<Vec<TestInfo>> {
+        let type_of = if let Some(p) = &twin_db {
+            format!("twin (epoch: {:?})", p)
+        } else {
+            "virgin".to_string()
+        };
+
+        println!("starting local {} testnet using Libra Smoke...", type_of);
+
         let num_validators = self.count_vals.unwrap_or(2);
 
         let bundle = if let Some(p) = framework_mrb_path.clone() {

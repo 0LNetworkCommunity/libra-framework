@@ -75,9 +75,8 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
         } else if let Some(e) = self.twin_epoch_restore {
             let data_path = self.restore_out_dir.unwrap_or_else(global_config_dir);
             println!("downloading restore archive and creating a new db");
-            one_step_restore_db(data_path, e, None, None, None)
-                .await
-                .ok()
+            let out = one_step_restore_db(data_path, e, None, None, None).await?;
+            Some(out)
         } else {
             println!("configuring virgin network...");
             None
@@ -87,7 +86,6 @@ impl CliCommand<Vec<TestInfo>> for TestnetCli {
             Sub::Configure(config) => Ok(config.run(self.framework_mrb_path, reference_db).await?),
             Sub::Smoke(smoke) => {
                 check_bins_path()?;
-                println!("starting local testnet using Libra Smoke...");
                 Ok(smoke
                     .run(
                         self.framework_mrb_path,
