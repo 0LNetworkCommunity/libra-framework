@@ -136,6 +136,9 @@ pub enum EntryFunctionCall {
         cap_update_table: Vec<u8>,
     },
 
+    /// A user has touched the system, mostly for debugging
+    ActivityTouch {},
+
     /// User opts into burns being sent to community (recycle burn).
     /// default is false (burn is final).
     BurnSetSendCommunity {
@@ -450,6 +453,10 @@ pub enum EntryFunctionCall {
     },
 
     /// Helper for smoke tests to create accounts.
+    /// this is in production code because:
+    /// it is used for genesis transactions regarding mainnet
+    /// e.g. test_correct_supply_arithmetic_single
+    /// plus, a  #[test_only] pragma will not work for smoke tests
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -610,6 +617,7 @@ impl EntryFunctionCall {
                 new_public_key_bytes,
                 cap_update_table,
             ),
+            ActivityTouch {} => activity_touch(),
             BurnSetSendCommunity { community } => burn_set_send_community(community),
             CodePublishPackageTxn {
                 metadata_serialized,
@@ -1108,6 +1116,22 @@ pub fn account_rotate_authentication_key_with_rotation_capability(
             bcs::to_bytes(&new_public_key_bytes).unwrap(),
             bcs::to_bytes(&cap_update_table).unwrap(),
         ],
+    ))
+}
+
+/// A user has touched the system, mostly for debugging
+pub fn activity_touch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("activity").to_owned(),
+        ),
+        ident_str!("touch").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2070,6 +2094,10 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
 }
 
 /// Helper for smoke tests to create accounts.
+/// this is in production code because:
+/// it is used for genesis transactions regarding mainnet
+/// e.g. test_correct_supply_arithmetic_single
+/// plus, a  #[test_only] pragma will not work for smoke tests
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2503,6 +2531,14 @@ mod decoder {
                     cap_update_table: bcs::from_bytes(script.args().get(3)?).ok()?,
                 },
             )
+        } else {
+            None
+        }
+    }
+
+    pub fn activity_touch(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::ActivityTouch {})
         } else {
             None
         }
@@ -3312,6 +3348,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "account_rotate_authentication_key_with_rotation_capability".to_string(),
             Box::new(decoder::account_rotate_authentication_key_with_rotation_capability),
+        );
+        map.insert(
+            "activity_touch".to_string(),
+            Box::new(decoder::activity_touch),
         );
         map.insert(
             "burn_set_send_community".to_string(),
