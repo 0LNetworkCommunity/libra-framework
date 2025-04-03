@@ -1,4 +1,4 @@
-use crate::{cli_output::TestInfo, twin_swarm};
+use crate::{cli_output::TestInfo, replace_validators_file::set_chain_id_in_app_cfg, twin_swarm};
 use clap::{self, Parser};
 use diem_framework::ReleaseBundle;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
@@ -55,6 +55,9 @@ impl SwarmCliOpts {
 
             TestInfo::from_smoke(&smoke.swarm)?
         };
+
+        // maybe the chain id changed in a rescue or restore
+        set_chain_id_in_app_cfg(&mut smoke).await?;
 
         // Print or write JSON output before the interactive prompt
         if json_output {
