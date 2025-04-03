@@ -25,6 +25,7 @@ pub enum UserTxs {
     RotationCapability(RotationCapabilityTx),
     RotateKey(RotateKeyTx),
     Vouch(VouchTx),
+    Touch,
 }
 
 impl UserTxs {
@@ -55,6 +56,11 @@ impl UserTxs {
             }
             UserTxs::Vouch(vouch_tx) => {
                 vouch_tx.run(sender).await?;
+            }
+            UserTxs::Touch => {
+                println!("Touching the account...");
+                let payload = libra_stdlib::activity_touch();
+                sender.sign_submit_wait(payload).await?;
             }
         }
 

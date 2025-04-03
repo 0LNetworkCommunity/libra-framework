@@ -46,6 +46,12 @@ module ol_framework::activity {
     }
   }
 
+  /// A user has touched the system, mostly for debugging
+  public entry fun touch(user: &signer) acquires Activity {
+    let now = timestamp::now_seconds();
+    increment(user, now);
+  }
+
 
   #[view]
   // check if this is an account that has activity
