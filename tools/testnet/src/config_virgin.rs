@@ -46,7 +46,7 @@ pub async fn setup(
         let mnem = p.get_persona_mnem();
 
         let data_dir = operator_files_path.join(p.to_string());
-        // Initializes every validator configuration.
+
         let (_, mut app_cfg) = validator_config::initialize_validator_files(
             Some(data_dir.clone()),
             Some(&p.to_string()),

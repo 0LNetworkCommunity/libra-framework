@@ -1,21 +1,23 @@
 //! The smoke tests should be located in each module (not in the test harness folder), e.g. (tools/txs). This provides wrapper for other modules to import as a dev_dependency. It produces a default swarm with libra configurations and returns the needed types to run tests.
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use diem_crypto::traits::ValidCryptoMaterialStringExt;
 use diem_forge::SwarmExt;
 use diem_forge::{LocalSwarm, Node, Swarm};
 use diem_framework::ReleaseBundle;
+use diem_logger::info;
 use diem_sdk::types::LocalAccount;
 use diem_temppath::TempPath;
 use diem_types::chain_id::NamedChain;
 use libra_framework::release::ReleaseTarget;
 use libra_types::core_types::app_cfg::AppCfg;
 use libra_types::core_types::network_playlist::NetworkPlaylist;
-use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
+use libra_types::exports::{AccountAddress, AuthenticationKey};
 use smoke_test::smoke_test_environment;
 use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::path::PathBuf;
+use std::str::FromStr;
 use url::Url;
 
 use crate::helpers::{self, update_node_config_restart, wait_for_node};
@@ -25,13 +27,13 @@ pub struct LibraSmoke {
     /// the swarm object
     pub swarm: LocalSwarm,
     /// the first validator account
-    pub first_account: LocalAccount,
+    pub first_account: LocalAccount, // TODO: do we use this?
     /// we often need the encoded private key to test 0L cli tools, so we add it here as a convenience.
-    pub encoded_pri_key: String,
-    /// Api endpoint
+    pub encoded_pri_key: String, // TODO: do we use this?
+    /// An api endpoint, of the first validator
     pub api_endpoint: Url,
-
-    pub validator_private_keys: Vec<String>,
+    /// A list of the private keys of the validators
+    pub validator_private_keys: Vec<String>, // TODO: Dd we use it?
 }
 
 // like DropTemp, but tries to make all the nodes stop on drop.
@@ -89,34 +91,21 @@ impl LibraSmoke {
             bundle,
         )
         .await;
-
+        let chain_name =
+            NamedChain::from_chain_id(&swarm.chain_info().chain_id).map_err(|e| anyhow!(e))?;
         // First, collect the validator addresses
-        let validator_addresses: Vec<_> = swarm.validators().map(|node| node.peer_id()).collect();
+        let mut validator_addresses: Vec<AccountAddress> = vec![];
 
         // Initialize an empty Vec to store the private keys
         let mut validator_private_keys = Vec::new();
 
         // Iterate over the validator addresses
-        for &validator_address in &validator_addresses {
+        for local_node in swarm.validators() {
+            let v_addr = local_node.peer_id();
+            validator_addresses.push(v_addr.to_owned());
             // Create a mutable borrow of `swarm` within the loop to limit its scope
-            let mut pub_info = swarm.diem_public_info();
-            println!("Minting coins to {:?}", validator_address);
 
-            // Mint and unlock coins
-            helpers::mint_libra(&mut pub_info, validator_address, 1000 * 1_000_000)
-                .await
-                .context("could not mint to account")?;
-            helpers::unlock_libra(&mut pub_info, validator_address, 1000 * 1_000_000)
-                .await
-                .context("could not unlock coins")?;
-
-            // commit note: unsure why we are dropping this
-            // Drop the mutable borrow of `swarm` by dropping `pub_info`
-            // drop(pub_info);
-
-            // Now it's safe to immutably borrow `swarm`
-            let node = swarm.validator(validator_address).unwrap(); // Adjust as needed
-            let pri_key = node
+            let pri_key = local_node
                 .account_private_key()
                 .as_ref()
                 .context("no private key for validator")?;
@@ -127,6 +116,40 @@ impl LibraSmoke {
 
             // Store the encoded private key
             validator_private_keys.push(encoded_pri_key);
+
+            // now create the appCfg
+            let mut app_cfg = AppCfg::init_app_configs(
+                AuthenticationKey::from_str(v_addr.to_string().as_str())?, // TODO: these should be the same at the swarm start.
+                v_addr.to_owned(),
+                Some(local_node.config_path().parent().unwrap().to_path_buf()),
+                Some(chain_name),
+                Some(NetworkPlaylist::new(
+                    Some(local_node.rest_api_endpoint()),
+                    Some(chain_name),
+                )),
+            )?;
+
+            // Sets private key to file
+            // DANGER: this is only for testnet
+            app_cfg
+                .get_profile_mut(None)
+                .unwrap()
+                .set_private_key(&pri_key.private_key());
+            app_cfg.save_file()?;
+        }
+
+        // mint to each
+        let mut pub_info = swarm.diem_public_info();
+
+        for v_addr in validator_addresses {
+            // Mint and unlock coins
+            info!("Minting coins to {:?}", &v_addr);
+            helpers::mint_libra(&mut pub_info, v_addr, 1000 * 1_000_000)
+                .await
+                .context("could not mint to account")?;
+            helpers::unlock_libra(&mut pub_info, v_addr, 1000 * 1_000_000)
+                .await
+                .context("could not unlock coins")?;
         }
 
         let node = swarm
