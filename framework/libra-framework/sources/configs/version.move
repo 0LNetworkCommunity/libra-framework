@@ -50,7 +50,7 @@ module diem_framework::version {
     }
 
     /// set the git commit of a current upgrade.
-    // NOTE: easier to troublshoot than the code.move manifests
+    // NOTE: easier to troubleshoot than the code.move manifests
     public fun upgrade_set_git(framework: &signer, hash: vector<u8>) acquires Git {
       if (!exists<Git>(@ol_framework)) {
         move_to(framework, Git {
@@ -60,6 +60,13 @@ module diem_framework::version {
         let state = borrow_global_mut<Git>(@ol_framework);
         state.hash = hash;
       }
+    }
+
+    #[view]
+    /// useful check to see what version the chain is on
+    public fun get_git_hash(): vector<u8> acquires Git {
+      let state = borrow_global<Git>(@ol_framework);
+      state.hash
     }
 
     /// Only called in tests and testnets. This allows the core resources account, which only exists in tests/testnets,

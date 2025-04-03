@@ -136,6 +136,9 @@ pub enum EntryFunctionCall {
         cap_update_table: Vec<u8>,
     },
 
+    /// A user has touched the system, mostly for debugging
+    ActivityTouch {},
+
     /// User opts into burns being sent to community (recycle burn).
     /// default is false (burn is final).
     BurnSetSendCommunity {
@@ -449,7 +452,11 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
-    /// Helper for smoke tests to create acounts.
+    /// Helper for smoke tests to create accounts.
+    /// this is in production code because:
+    /// it is used for genesis transactions regarding mainnet
+    /// e.g. test_correct_supply_arithmetic_single
+    /// plus, a  #[test_only] pragma will not work for smoke tests
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -540,20 +547,11 @@ pub enum EntryFunctionCall {
         major: u64,
     },
 
-    /// you may want to add people who are related to you
-    /// there are no known use cases for this at the moment.
-    VouchInsistVouchFor {
+    VouchTxsRevoke {
         friend_account: AccountAddress,
     },
 
-    VouchRevoke {
-        friend_account: AccountAddress,
-    },
-
-    /// will only successfully vouch if the two are not related by ancestry
-    /// prevents spending a vouch that would not be counted.
-    /// to add a vouch and ignore this check use insist_vouch
-    VouchVouchFor {
+    VouchTxsVouchFor {
         friend_account: AccountAddress,
     },
 }
@@ -619,6 +617,7 @@ impl EntryFunctionCall {
                 new_public_key_bytes,
                 cap_update_table,
             ),
+            ActivityTouch {} => activity_touch(),
             BurnSetSendCommunity { community } => burn_set_send_community(community),
             CodePublishPackageTxn {
                 metadata_serialized,
@@ -871,9 +870,8 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             VersionSetVersion { major } => version_set_version(major),
-            VouchInsistVouchFor { friend_account } => vouch_insist_vouch_for(friend_account),
-            VouchRevoke { friend_account } => vouch_revoke(friend_account),
-            VouchVouchFor { friend_account } => vouch_vouch_for(friend_account),
+            VouchTxsRevoke { friend_account } => vouch_txs_revoke(friend_account),
+            VouchTxsVouchFor { friend_account } => vouch_txs_vouch_for(friend_account),
         }
     }
 
@@ -1118,6 +1116,22 @@ pub fn account_rotate_authentication_key_with_rotation_capability(
             bcs::to_bytes(&new_public_key_bytes).unwrap(),
             bcs::to_bytes(&cap_update_table).unwrap(),
         ],
+    ))
+}
+
+/// A user has touched the system, mostly for debugging
+pub fn activity_touch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("activity").to_owned(),
+        ),
+        ident_str!("touch").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2079,7 +2093,11 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
     ))
 }
 
-/// Helper for smoke tests to create acounts.
+/// Helper for smoke tests to create accounts.
+/// this is in production code because:
+/// it is used for genesis transactions regarding mainnet
+/// e.g. test_correct_supply_arithmetic_single
+/// plus, a  #[test_only] pragma will not work for smoke tests
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2379,31 +2397,14 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
     ))
 }
 
-/// you may want to add people who are related to you
-/// there are no known use cases for this at the moment.
-pub fn vouch_insist_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
+pub fn vouch_txs_revoke(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("vouch").to_owned(),
-        ),
-        ident_str!("insist_vouch_for").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&friend_account).unwrap()],
-    ))
-}
-
-pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vouch").to_owned(),
+            ident_str!("vouch_txs").to_owned(),
         ),
         ident_str!("revoke").to_owned(),
         vec![],
@@ -2411,17 +2412,14 @@ pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
     ))
 }
 
-/// will only successfully vouch if the two are not related by ancestry
-/// prevents spending a vouch that would not be counted.
-/// to add a vouch and ignore this check use insist_vouch
-pub fn vouch_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
+pub fn vouch_txs_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("vouch").to_owned(),
+            ident_str!("vouch_txs").to_owned(),
         ),
         ident_str!("vouch_for").to_owned(),
         vec![],
@@ -2533,6 +2531,14 @@ mod decoder {
                     cap_update_table: bcs::from_bytes(script.args().get(3)?).ok()?,
                 },
             )
+        } else {
+            None
+        }
+    }
+
+    pub fn activity_touch(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::ActivityTouch {})
         } else {
             None
         }
@@ -3278,9 +3284,9 @@ mod decoder {
         }
     }
 
-    pub fn vouch_insist_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn vouch_txs_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchInsistVouchFor {
+            Some(EntryFunctionCall::VouchTxsRevoke {
                 friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
@@ -3288,19 +3294,9 @@ mod decoder {
         }
     }
 
-    pub fn vouch_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn vouch_txs_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchRevoke {
-                friend_account: bcs::from_bytes(script.args().first()?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vouch_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchVouchFor {
+            Some(EntryFunctionCall::VouchTxsVouchFor {
                 friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
@@ -3352,6 +3348,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "account_rotate_authentication_key_with_rotation_capability".to_string(),
             Box::new(decoder::account_rotate_authentication_key_with_rotation_capability),
+        );
+        map.insert(
+            "activity_touch".to_string(),
+            Box::new(decoder::activity_touch),
         );
         map.insert(
             "burn_set_send_community".to_string(),
@@ -3598,13 +3598,12 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::version_set_version),
         );
         map.insert(
-            "vouch_insist_vouch_for".to_string(),
-            Box::new(decoder::vouch_insist_vouch_for),
+            "vouch_txs_revoke".to_string(),
+            Box::new(decoder::vouch_txs_revoke),
         );
-        map.insert("vouch_revoke".to_string(), Box::new(decoder::vouch_revoke));
         map.insert(
-            "vouch_vouch_for".to_string(),
-            Box::new(decoder::vouch_vouch_for),
+            "vouch_txs_vouch_for".to_string(),
+            Box::new(decoder::vouch_txs_vouch_for),
         );
         map
     });

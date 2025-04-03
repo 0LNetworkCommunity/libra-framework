@@ -6,8 +6,7 @@ module ol_framework::test_cumu_deposits {
     use ol_framework::cumulative_deposits;
     use ol_framework::receipts;
     use ol_framework::mock;
-    // use std::vector;
-    // use diem_std::debug::print;
+    use std::timestamp;
 
     #[test(root = @ol_framework, alice = @0x1000a)]
     fun cumu_deposits_init(root: &signer, alice: &signer) {
@@ -35,10 +34,12 @@ module ol_framework::test_cumu_deposits {
       assert!(receipts::is_init(@0x1000b), 7357003);
 
       let bob_donation = 42;
+      let new_time = 1000;
+      timestamp::fast_forward_seconds(new_time);
       ol_account::transfer(bob, @0x1000a, bob_donation); // this should track
 
       let (a, b, c) = receipts::read_receipt(@0x1000b, @0x1000a);
-      assert!(a > 0, 7357004); // timestamp is not genesis
+      assert!(a == new_time, 7357004); // timestamp is not genesis
       assert!(b == bob_donation, 7357005); // last payment
       assert!(c == bob_donation, 7357006); // cumulative payments
 
@@ -47,20 +48,3 @@ module ol_framework::test_cumu_deposits {
 
     }
 }
-
-      // // mock more funds in Carol's account
-      // DiemAccount::slow_wallet_epoch_drip(&dr, 100000);
-
-      // let carols_donation = 1000;
-
-      // let cap = DiemAccount::extract_withdraw_capability(&sender);
-      // DiemAccount::pay_from<GAS>(&cap, @Alice, carols_donation, b"thanks", b"");
-      // DiemAccount::restore_withdraw_capability(cap);
-
-      // let (a, b, c) = Receipts::read_receipt(@Carol, @Alice);
-      // assert!(a == 0, 7357004); // timestamp is 0
-      // assert!(b == carols_donation, 7357005); // last payment
-      // assert!(c == carols_donation, 7357006); // cumulative payments
-
-      // let alice_cumu = DiemAccount::get_cumulative_deposits(@Alice);
-      // assert!(alice_cumu == carols_donation, 7357007);
