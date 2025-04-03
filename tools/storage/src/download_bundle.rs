@@ -3,6 +3,7 @@ use crate::parse_folder_names::{
 };
 use anyhow::bail;
 use anyhow::{Context, Result};
+use diem_logger::info;
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
@@ -138,10 +139,10 @@ pub async fn find_closest_epoch_folder(
     let closest_transaction = find_closest_transaction_folder(&transaction_folders, state_version)
         .context("Failed to find suitable transaction folder")?;
 
-    println!("Found closest folders for epoch {}:", target_epoch);
-    println!("  epoch_ending: {}", closest_ending);
-    println!("  state_epoch:  {}", closest_state);
-    println!("  transaction:  {}", closest_transaction);
+    info!("Found closest folders for epoch {}:", target_epoch);
+    info!("  epoch_ending: {}", closest_ending);
+    info!("  state_epoch:  {}", closest_state);
+    info!("  transaction:  {}", closest_transaction);
 
     Ok(EpochFolders {
         epoch_ending: closest_ending,
@@ -199,7 +200,7 @@ pub async fn download_github_folder(
             owner, repo, current_path, branch
         );
 
-        println!("Downloading from: {}", api_url);
+        info!("Downloading from: {}", api_url);
 
         let contents: Vec<GitHubContent> = client
             .get(&api_url)
