@@ -1,6 +1,6 @@
 mod support;
 
-use libra_rescue::test_support::setup_test_db;
+use libra_rescue::test_support::setup_v7_reference_twin_db;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_testnet::twin_swarm::awake_frankenswarm;
 
@@ -20,7 +20,7 @@ use libra_testnet::twin_swarm::awake_frankenswarm;
 /// Should be able to take a production db (twin)
 /// and the new validators upgrade with current HEAD Move code
 async fn twin_test_head_upgrade() -> anyhow::Result<()> {
-    let dir = setup_test_db()?;
+    let dir = setup_v7_reference_twin_db()?;
     let mut smoke = LibraSmoke::new(Some(2), None).await?;
 
     // Is not trying to restore from an actual Twin, hence None
