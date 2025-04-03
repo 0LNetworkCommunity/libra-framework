@@ -14,5 +14,17 @@ async fn test_twin_smoke_from_v7_rescue_and_upgrade() -> anyhow::Result<()> {
     twin_swarm::awake_frankenswarm(&mut smoke, Some(dir), framework_mrb_path).await?;
 
     // checks if 0x1::founder module is present
+    // should use api to list the modules installed on 0x1
+    let client = smoke.client();
+    let modules = client.get_account_modules("0x1".parse()?).await?;
+
+    let exists = modules.inner().iter().any(|module| {
+        let new_m = module.clone().try_parse_abi().expect("failed to parse module");
+        if let Some(m) = &new_m.abi {
+            return m.name.to_string().contains("libra_coin")
+        }
+        false
+    });
+    println!("module exists: {}", exists);
     Ok(())
 }
