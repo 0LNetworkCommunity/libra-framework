@@ -46,7 +46,7 @@ impl SwarmCliOpts {
         let out = if let Some(p) = twin_db {
             let db_path = fs::canonicalize(p)?;
 
-            twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path)).await?
+            twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path), framework_mrb_path).await?
         } else {
             smoke
                 .swarm

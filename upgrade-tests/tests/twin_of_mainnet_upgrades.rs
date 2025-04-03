@@ -25,7 +25,7 @@ async fn twin_test_head_upgrade() -> anyhow::Result<()> {
 
     // Is not trying to restore from an actual Twin, hence None
     // just a meta integration test
-    awake_frankenswarm(&mut smoke, Some(dir)).await?;
+    awake_frankenswarm(&mut smoke, Some(dir), None).await?;
 
     support::upgrade_multiple_impl(
         &mut smoke,

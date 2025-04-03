@@ -15,6 +15,7 @@ use crate::BYTECODE_VERSION;
 // ===============================================================================================
 // Release Targets
 
+// TODO: this one should be renamed or we should extend diem ReleaseTarget
 /// Represents the available release targets. `Current` is in sync with the current client branch,
 /// which is ensured by tests.
 #[derive(clap::ValueEnum, Clone, Copy, Debug)]

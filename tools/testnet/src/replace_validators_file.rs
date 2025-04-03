@@ -13,10 +13,15 @@ pub async fn replace_validators_blob(
     db_path: &Path,
     creds: Vec<ValCredentials>,
     output_dir: &Path,
+    upgrade_mrb_path: Option<PathBuf>,
 ) -> anyhow::Result<PathBuf> {
     println!("run session to create validator onboarding tx (replace_validators_rescue.blob)");
 
-    let cs = session_tools::register_and_replace_validators_changeset(db_path, creds, &None)?;
+    let cs = session_tools::register_and_replace_validators_changeset(
+        db_path,
+        creds,
+        &upgrade_mrb_path,
+    )?;
 
     let gen_tx = Transaction::GenesisTransaction(WriteSetPayload::Direct(cs));
     let out = output_dir.join(REPLACE_VALIDATORS_BLOB);

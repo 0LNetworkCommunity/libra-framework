@@ -39,14 +39,14 @@ impl TestnetConfigOpts {
             chain_name,
             data_path.clone(),
             self.migrate_legacy.to_owned(),
-            framework_mrb_path,
+            framework_mrb_path.clone(),
         )
         .await?;
 
         // if it's a twin case, then we need to do brain surgery
         if let Some(p) = twin_db {
             println!("configuring twin...");
-            config_twin::configure_twin(&data_path, &p).await?;
+            config_twin::configure_twin(&data_path, &p, framework_mrb_path).await?;
         }
 
         Ok(cli_out)

@@ -4,10 +4,14 @@ use libra_config::validator_registration::ValCredentials;
 use libra_rescue::{
     cli_bootstrapper::one_step_apply_rescue_on_db, node_config::post_rescue_node_file_updates,
 };
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Configure a twin network based on the specified options
-pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Result<()> {
+pub async fn configure_twin(
+    home_path: &Path,
+    reference_db: &Path,
+    upgrade_mrb_path: Option<PathBuf>,
+) -> anyhow::Result<()> {
     // don't do any operations on the reference db
 
     assert!(home_path.exists(), "home data path should exist");
@@ -35,7 +39,7 @@ pub async fn configure_twin(home_path: &Path, reference_db: &Path) -> anyhow::Re
     // Create and apply rescue blob
     println!("Creating rescue blob from the reference db");
     let rescue_blob_path =
-        replace_validators_blob(reference_db, val_credentials, home_path).await?;
+        replace_validators_blob(reference_db, val_credentials, home_path, upgrade_mrb_path).await?;
     println!("Created rescue blob at: {}", rescue_blob_path.display());
 
     println!("Applying the rescue blob to the database & bootstrapping");

@@ -8,6 +8,6 @@ use libra_testnet::twin_swarm;
 async fn test_twin_swarm_noop() -> anyhow::Result<()> {
     let mut smoke = LibraSmoke::new(Some(2), None).await?;
 
-    twin_swarm::awake_frankenswarm(&mut smoke, None).await?;
+    twin_swarm::awake_frankenswarm(&mut smoke, None, None).await?;
     Ok(())
 }
