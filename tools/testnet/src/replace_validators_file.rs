@@ -49,6 +49,9 @@ pub async fn set_chain_id_in_app_cfg(smoke: &mut LibraSmoke) -> anyhow::Result<(
         let mut app_cfg = AppCfg::load(Some(cfg_path))?;
         let net = app_cfg.get_network_profile_mut(None)?;
         net.chain_name = chain_name;
+        // only change this after the profile is updated
+        app_cfg.workspace.default_chain_id = chain_name;
+
         app_cfg.save_file()?;
     }
 
