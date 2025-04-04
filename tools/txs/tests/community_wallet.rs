@@ -5,9 +5,7 @@ use diem_types::account_address::AccountAddress;
 use libra_query::query_view;
 use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
 use libra_txs::txs_cli::{TxsCli, TxsSub, TxsSub::Transfer};
-use libra_txs::txs_cli_community::{
-    AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, MigrateOfferTx, OfferTx,
-};
+use libra_txs::txs_cli_community::{AdminTx, CageTx, ClaimTx, CommunityTxs, InitTx, OfferTx};
 use libra_types::core_types::app_cfg::TxCost;
 use std::path::PathBuf;
 use url::Url;
@@ -1764,105 +1762,4 @@ async fn setup_community_wallet_caged(
     run_cli_community_cage(donor_pk, num_signitures, api_endpoint, config_path).await;
 }
 
-// Test Offer migration of a legacy account
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn test_offer_migration() -> Result<(), anyhow::Error> {
-    // 1. Setup environment
-    let (mut smoke, dir, _account_address, _, _) = setup_environment().await;
-    let config_path = dir.path().to_owned().join("libra-cli-config.yaml");
-    let api_endpoint = smoke.api_endpoint.clone();
-    // let client = smoke.client();
-
-    // 2. Setup legacy account
-    let (signers, addresses) = smoke.create_accounts(1).await?;
-    for (signer_address, validator_private_key) in
-        addresses.iter().zip(smoke.validator_private_keys.iter())
-    {
-        // Transfer funds to ensure the account exists on-chain using the specific validator's private key
-        run_cli_transfer(
-            *signer_address,
-            10.0,
-            validator_private_key.clone(),
-            smoke.api_endpoint.clone(),
-            config_path.clone(),
-        )
-        .await;
-    }
-    let community_wallet_pk = signers[0]
-        .private_key()
-        .to_encoded_string()
-        .expect("cannot decode pri key");
-    let community_wallet_address = addresses[0];
-
-    // 3. Initialize deprecated governance
-    let init_gov_deprecated = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::GovInitDeprectated)),
-        mnemonic: None,
-        test_private_key: Some(community_wallet_pk.clone()),
-        chain_id: None,
-        config_path: Some(config_path.clone()),
-        url: Some(api_endpoint.clone()),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-        legacy_address: false,
-    };
-
-    init_gov_deprecated
-        .run()
-        .await
-        .expect("CLI could not propose offer");
-
-    // Certify the account does not have an offer
-    let is_offer_query_res = query_view::get_view(
-        &smoke.client(),
-        "0x1::multi_action::exists_offer",
-        None,
-        Some(community_wallet_address.clone().to_string()),
-    )
-    .await
-    .expect("Query failed: community wallet offer check");
-
-    assert!(
-        !is_offer_query_res.as_array().unwrap()[0].as_bool().unwrap(),
-        "Account should not have an offer"
-    );
-
-    // 4. Run offer migration
-    let offer_migration = TxsCli {
-        subcommand: Some(TxsSub::Community(CommunityTxs::Migration(MigrateOfferTx {
-            community_wallet: community_wallet_address,
-        }))),
-        mnemonic: None,
-        test_private_key: Some(community_wallet_pk),
-        chain_id: None,
-        config_path: Some(config_path),
-        url: Some(api_endpoint),
-        tx_profile: None,
-        tx_cost: Some(TxCost::default_baseline_cost()),
-        estimate_only: false,
-        legacy_address: false,
-    };
-
-    offer_migration
-        .run()
-        .await
-        .expect("CLI could not propose offer");
-
-    // certify the account has an offer
-    let is_offer_query_res = query_view::get_view(
-        &smoke.client(),
-        "0x1::multi_action::exists_offer",
-        None,
-        Some(community_wallet_address.clone().to_string()),
-    )
-    .await
-    .expect("Query failed: community wallet offer check");
-
-    assert!(
-        is_offer_query_res.as_array().unwrap()[0].as_bool().unwrap(),
-        "Account should have an offer"
-    );
-
-    Ok(())
-}
+// COMMIT NOTE: deprecated
