@@ -24,6 +24,7 @@ libra-genesis-tools = { workspace = true }
 libra-query = { workspace = true }
 libra-rescue = { workspace = true }
 libra-storage = { workspace = true }
+libra-testnet = { workspace = true }
 libra-txs = { workspace = true }
 libra-types = { workspace = true }
 libra-wallet = { workspace = true }

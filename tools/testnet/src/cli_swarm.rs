@@ -1,5 +1,4 @@
-use crate::twin_swarm;
-
+use crate::{cli_output::TestInfo, replace_validators_file::set_chain_id_in_app_cfg, twin_swarm};
 use clap::{self, Parser};
 use diem_framework::ReleaseBundle;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
@@ -20,33 +19,97 @@ impl SwarmCliOpts {
     /// Runner for swarm
     pub async fn run(
         &self,
-        framework_mrb: ReleaseBundle,
+        framework_mrb_path: Option<PathBuf>,
         twin_db: Option<PathBuf>,
-    ) -> anyhow::Result<()> {
+        json_output: bool,
+        json_file: Option<PathBuf>,
+    ) -> anyhow::Result<Vec<TestInfo>> {
+        let type_of = if let Some(p) = &twin_db {
+            format!("twin (epoch: {:?})", p)
+        } else {
+            "virgin".to_string()
+        };
+
+        println!("starting local {} testnet using Libra Smoke...", type_of);
+
         let num_validators = self.count_vals.unwrap_or(2);
 
-        let mut smoke =
-            LibraSmoke::new_with_bundle(Some(num_validators), None, framework_mrb).await?;
+        let bundle = if let Some(p) = framework_mrb_path.clone() {
+            ReleaseBundle::read(p)?
+        } else {
+            println!("assuming you are running this in the source repo. Will try to search in this path at ./framework/releases/head.mrb");
+            libra_framework::testing_local_release_bundle()
+        };
 
-        if let Some(p) = twin_db {
+        let mut smoke = LibraSmoke::new_with_bundle(Some(num_validators), None, bundle).await?;
+
+        let out = if let Some(p) = twin_db {
             let db_path = fs::canonicalize(p)?;
 
-            twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path)).await?;
+            twin_swarm::awake_frankenswarm(&mut smoke, Some(db_path), framework_mrb_path).await?
         } else {
             smoke
                 .swarm
                 .wait_all_alive(tokio::time::Duration::from_secs(120))
                 .await?;
+
+            TestInfo::from_smoke(&smoke.swarm)?
+        };
+
+        // maybe the chain id changed in a rescue or restore
+        set_chain_id_in_app_cfg(&mut smoke).await?;
+
+        // Print or write JSON output before the interactive prompt
+        if json_output {
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+
+        // Write to JSON file if specified - do this before waiting for user input
+        if let Some(file_path) = json_file {
+            println!("Writing test info to JSON file: {:?}", file_path);
+            fs::write(&file_path, serde_json::to_string_pretty(&out)?)
+                .map_err(|e| anyhow::anyhow!("Failed to write to JSON file: {}", e))?;
+            println!("Successfully wrote test info to {:?}", file_path);
+        } else {
+            // If not writing to file, print the regular output
+            println!("{}", serde_json::to_string_pretty(&out)?);
         }
 
         // NOTE: all validators will stop when the LibraSmoke goes out of context. This is intentional
         // but since it's borrowed in this function you should assume it will continue until the caller goes out of scope.
         let _ = dialoguer::Input::<String>::new()
             .with_prompt(
-                "\nswarm `libra` processes will keep running until you exit. Press any key to exit",
+                format!("\n{FIRE}\nsmoke success: {num_validators} `libra` processes are running until you exit. Press any key to exit"),
             )
             .interact_text()?;
 
-        Ok(())
+        Ok(out)
     }
 }
+
+pub const FIRE: &str = r#"
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣆⢳⡀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣾⣷⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠠⣄⠀⢠⣿⣿⣿⣿⡎⢻⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢸⣧⢸⣿⣿⣿⣿⡇⠀⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣾⣿⣿⣿⣿⠃⠀⢸⣿⣿⣿⣿⣿⣿⠀⣄⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⠏⠀⠀⣸⣿⣿⣿⣿⣿⡿⢀⣿⡆⠀
+⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⣿⣿⣿⣿⣿⣿⠇⣼⣿⣿⡄
+⠀⢰⠀⠀⣴⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⠀⢠⣿⣿⣿⣿⣿⡟⣼⣿⣿⣿⣧
+⠀⣿⡀⢸⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⣸⡿⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⠀⣿⣷⣼⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⢹⠃⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿
+⡄⢻⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⠇
+⢳⣌⢿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⠏⠀
+⠀⢿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⠋⣠⠀
+⠀⠈⢻⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣵⣿⠃⠀
+⠀⠀⠀⠙⢿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡿⠃⠀⠀
+⠀⠀⠀⠀⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠋⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣦⣀⠀⠀⠀⠀⢀⣴⠿⠛⠁⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠓⠂⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+"#;

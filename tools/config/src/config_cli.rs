@@ -50,6 +50,7 @@ enum ConfigSub {
         #[clap(long)]
         playlist_url: Option<Url>,
     },
+    /// replace API URL, reset an address, remove a profile.
     Fix {
         /// optional, reset the address from mnemonic. Will also lookup on the chain for the actual address if you forgot it, or rotated your authkey.
         #[clap(short('a'), long)]
@@ -90,6 +91,27 @@ impl ConfigCli {
                 remove_profile,
                 force_url,
             }) => {
+                // Validate exactly one argument is provided
+                let args_count = [
+                    *reset_address,
+                    remove_profile.is_some(),
+                    force_url.is_some(),
+                ]
+                .iter()
+                .filter(|&&x| x)
+                .count();
+
+                if args_count == 0 {
+                    return Err(anyhow!(
+                        "At least one argument must be provided to 'fix' command"
+                    ));
+                }
+                if args_count > 1 {
+                    return Err(anyhow!(
+                        "Only one argument can be provided to 'fix' command"
+                    ));
+                }
+
                 // Load configuration file
                 let mut cfg = AppCfg::load(self.path.clone())
                     .map_err(|e| anyhow!("no config file found for libra tools, {}", e))?;

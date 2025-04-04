@@ -21,6 +21,7 @@ diem = { workspace = true }
 diem-config = { workspace = true }
 diem-crypto = { workspace = true }
 diem-genesis = { workspace = true }
+diem-logger = { workspace = true }
 diem-rest-client = { workspace = true }
 diem-types = { workspace = true }
 libra-types = { workspace = true }

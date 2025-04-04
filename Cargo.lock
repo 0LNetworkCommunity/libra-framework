@@ -5759,6 +5759,7 @@ dependencies = [
  "libra-query",
  "libra-rescue",
  "libra-storage",
+ "libra-testnet",
  "libra-txs",
  "libra-types",
  "libra-wallet",
@@ -5815,6 +5816,7 @@ dependencies = [
  "diem-config",
  "diem-crypto",
  "diem-genesis",
+ "diem-logger",
  "diem-rest-client",
  "diem-temppath",
  "diem-types",
@@ -6011,9 +6013,11 @@ name = "libra-testnet"
 version = "7.0.4"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bcs 0.1.4",
  "clap 4.5.20",
  "dialoguer",
+ "diem",
  "diem-api-types",
  "diem-config",
  "diem-forge",
@@ -6032,11 +6036,14 @@ dependencies = [
  "libra-smoke-tests",
  "libra-storage",
  "libra-types",
+ "libra-wallet",
  "regex",
+ "serde 1.0.214",
  "serde_json",
  "serde_yaml 0.8.26",
  "smoke-test",
  "tokio",
+ "url",
 ]
 
 [[package]]

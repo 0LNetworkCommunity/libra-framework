@@ -45,8 +45,6 @@ pub trait ClientExt {
         chain_id_opt: Option<NamedChain>,
     ) -> anyhow::Result<(Client, ChainId)>;
 
-    async fn find_good_upstream(list: Vec<Url>) -> anyhow::Result<(Client, ChainId)>;
-
     fn from_vendor_config() -> anyhow::Result<Client>;
 
     async fn lookup_originating_address(
@@ -100,21 +98,6 @@ impl ClientExt for Client {
         let res = client.get_index().await?;
 
         Ok((client, ChainId::new(res.inner().chain_id)))
-    }
-
-    async fn find_good_upstream(_list: Vec<Url>) -> anyhow::Result<(Client, ChainId)> {
-        // TODO: iterate through all and find a valid one.
-
-        //   let metadata =  future::select_all(
-        //     nodes.into_iter().find_map(|u| async {
-        //         let client = Client::new(u);
-        //         match client.get_index().await {
-        //             Ok(index) => Some((client, index.inner().chain_id)),
-        //             _ => None,
-        //         }
-        //     })
-        // ).await?;
-        todo!()
     }
 
     fn from_vendor_config() -> anyhow::Result<Client> {
@@ -275,7 +258,6 @@ impl ClientExt for Client {
         let array = self
             .view(&request, None)
             .await
-            .context("Failed to execute View request")
             .map(|res| res.inner().to_owned())?;
         Ok(Value::Array(array))
     }

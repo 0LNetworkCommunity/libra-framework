@@ -1,16 +1,14 @@
-use crate::replace_validators_file::replace_validators_blob;
-use libra_smoke_tests::{configure_validator, libra_smoke::LibraSmoke};
-use std::time::Instant;
-
-use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
-
+use crate::{cli_output::TestInfo, replace_validators_file::replace_validators_blob};
 use anyhow::{Context, Result};
 use diem_forge::{LocalSwarm, SwarmExt};
 use diem_temppath::TempPath;
 use diem_types::waypoint::Waypoint;
 use fs_extra::dir;
 use libra_config::validator_registration::ValCredentials;
+use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use libra_smoke_tests::extract_credentials::extract_swarm_node_credentials;
+use libra_smoke_tests::libra_smoke::LibraSmoke;
+use std::time::Instant;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -85,7 +83,8 @@ impl TwinSwarm {
 pub async fn awake_frankenswarm(
     smoke: &mut LibraSmoke,
     reference_db: Option<PathBuf>,
-) -> anyhow::Result<PathBuf> {
+    framework_mrb_path: Option<PathBuf>,
+) -> anyhow::Result<Vec<TestInfo>> {
     let start_upgrade = Instant::now();
 
     // Collect credentials from all validators
@@ -98,14 +97,18 @@ pub async fn awake_frankenswarm(
         .expect("could not get node status");
 
     // Stop all validators to prevent DB access conflicts
+
     for n in smoke.swarm.validators_mut() {
         n.stop();
     }
 
+    // temp db path (separate from swarm temp path)
+    // we'll do operations on the temp db path not the actual reference
     let temp = TempPath::new();
     temp.create_as_dir()?;
     let temp_db_path = temp.path();
 
+    // use the provided reference_db or get the one from the virgin swarm
     let reference_db = reference_db.unwrap_or(
         smoke
             .swarm
@@ -125,7 +128,8 @@ pub async fn awake_frankenswarm(
     .context("cannot copy to new db dir")?;
 
     println!("Creating rescue blob from the reference db");
-    let rescue_blob_path = replace_validators_blob(temp_db_path, creds, temp_db_path).await?;
+    let rescue_blob_path =
+        replace_validators_blob(temp_db_path, creds, temp_db_path, framework_mrb_path).await?;
 
     println!("Applying the rescue blob to the database & bootstrapping");
     let wp = one_step_apply_rescue_on_db(temp_db_path, &rescue_blob_path)?;
@@ -139,46 +143,13 @@ pub async fn awake_frankenswarm(
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;
 
-    // Generate CLI config files for validators
-    configure_validator::save_cli_config_all(&mut smoke.swarm)?;
-
     let duration_upgrade = start_upgrade.elapsed();
-    println!("{}", FIRE);
     println!(
         "SUCCESS: twin smoke started. Time to prepare: {:?}",
         duration_upgrade
     );
-    let temp_dir = smoke.swarm.dir();
-    println!("temp files found at: {}", temp_dir.display());
 
-    println!("\nAPI URL: {:?}", smoke.api_endpoint.to_string());
+    let test_info = TestInfo::from_smoke(&smoke.swarm)?;
 
-    Ok(temp_dir.to_owned())
+    Ok(test_info)
 }
-
-pub const FIRE: &str = r#"
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣆⢳⡀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⣿⣾⣷⡀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠠⣄⠀⢠⣿⣿⣿⣿⡎⢻⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢸⣧⢸⣿⣿⣿⣿⡇⠀⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣾⣿⣿⣿⣿⠃⠀⢸⣿⣿⣿⣿⣿⣿⠀⣄⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⠏⠀⠀⣸⣿⣿⣿⣿⣿⡿⢀⣿⡆⠀
-⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⣿⣿⣿⣿⣿⣿⠇⣼⣿⣿⡄
-⠀⢰⠀⠀⣴⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⠀⢠⣿⣿⣿⣿⣿⡟⣼⣿⣿⣿⣧
-⠀⣿⡀⢸⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⣸⡿⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⠀⣿⣷⣼⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⢹⠃⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿
-⡄⢻⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⠇
-⢳⣌⢿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⣿⣿⣿⣿⣿⠏⠀
-⠀⢿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⠋⣠⠀
-⠀⠈⢻⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣵⣿⠃⠀
-⠀⠀⠀⠙⢿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡿⠃⠀⠀
-⠀⠀⠀⠀⠀⠙⢿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠋⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣿⣦⣀⠀⠀⠀⠀⢀⣴⠿⠛⠁⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠓⠂⠀⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-"#;
