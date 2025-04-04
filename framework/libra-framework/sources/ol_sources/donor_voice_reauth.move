@@ -100,6 +100,9 @@ module ol_framework::donor_voice_reauth {
     #[view]
     /// Account authorized to be active
     public fun is_authorized(dv_account: address): bool acquires DonorAuthorized {
+      if (!exists<DonorAuthorized>(dv_account)) {
+        return false
+      };
       is_within_authorize_window(dv_account) &&
       has_activity_in_last_year(dv_account)
     }
