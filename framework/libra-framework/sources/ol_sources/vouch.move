@@ -246,7 +246,7 @@ module ol_framework::vouch {
 
     fun assert_max_vouches(grantor_acc: address) acquires GivenVouches, ReceivedVouches, VouchesLifetime {
       assert_safety_ceiling_vouches(grantor_acc);
-      // assert_max_vouches_by_score(grantor_acc);
+      assert_max_vouches_by_score(grantor_acc);
       assert_received_limit_vouches(grantor_acc);
       assert_epoch_vouches_limit(grantor_acc);
     }
@@ -276,12 +276,14 @@ module ol_framework::vouch {
         // Calculate the quality from the list of true friends
         let total_quality = vouch_metrics::calculate_quality_from_list(account, &true_friends_list);
 
-        // Advanced case: For accounts with higher quality vouches,
-        // we can provide more outgoing vouches
-        let max_allowed = 0;
+        // For accounts with low quality vouchers,
+        // we restrict further how many they can vouch for
 
+        let max_allowed = 1;
+
+        // TODO: collect analytics data to review this
         if (total_quality >= 2 && total_quality < 200) {
-            max_allowed = 1;
+            max_allowed = 3;
         } else if (total_quality >= 200 && total_quality < 400) {
             max_allowed = 5;
         } else if (total_quality >= 400) {
@@ -298,7 +300,7 @@ module ol_framework::vouch {
       let max_allowed = calculate_score_limit(grantor_acc);
 
       assert!(
-        vector::length(&given_vouches) < max_allowed,
+        vector::length(&given_vouches) <= max_allowed,
         error::invalid_state(EMAX_LIMIT_GIVEN_BY_SCORE)
       );
     }
