@@ -6,6 +6,7 @@ module ol_framework::test_validator_vouch {
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
 
+  use diem_std::debug::print;
 
   // Happy Day scenarios
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
@@ -129,29 +130,40 @@ module ol_framework::test_validator_vouch {
     mock::create_vals(root, 2, false);
     vouch::set_vouch_price(root, 0);
 
+    print(&11000);
+    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
+    print(&given_vouches);
+    print(&given_epochs);
     // alice vouches for bob
     vouch::vouch_for(alice, @0x1000b);
 
     // check alice
+    print(&11001);
+
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
     assert!(given_vouches == vector[@0x1000b], 73570005);
     assert!(given_epochs == vector[0], 73570006);
+    print(&11001);
 
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
     assert!(received_vouches == vector[@0x1000a], 73570007);
     assert!(received_epochs == vector[0], 73570008);
+    print(&11003);
 
     // fast forward to epoch 1
     mock::trigger_epoch(root);
+    print(&11004);
 
     // alice vouches for bob again
     vouch::vouch_for(alice, @0x1000b);
+    print(&11005);
 
     // check alice
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
     assert!(given_vouches == vector[@0x1000b], 73570005);
     assert!(given_epochs == vector[1], 73570006);
+    print(&11006);
 
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
@@ -193,7 +205,7 @@ module ol_framework::test_validator_vouch {
   }
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, v1 = @0x10001, v2 = @0x10002, v3 = @0x10003, v4 = @0x10004, v5 = @0x10005, v6 = @0x10006, v7 = @0x10007, v8 = @0x10008, v9 = @0x10009, v10 = @0x10010)]
-  #[expected_failure(abort_code = 0x30004, location = ol_framework::vouch)]
+  #[expected_failure(abort_code = 196618, location = ol_framework::vouch)]
   fun vouch_over_max(root: &signer, alice: &signer, v1: &signer, v2: &signer, v3: &signer, v4: &signer, v5: &signer, v6: &signer, v7: &signer, v8: &signer, v9: &signer, v10: &signer) {
     // create vals without vouches
     mock::create_vals(root, 2, false);
