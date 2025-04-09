@@ -7,6 +7,7 @@ module ol_framework::ancestry {
     use diem_framework::system_addresses;
 
     friend ol_framework::vouch;
+    friend ol_framework::vouch_metrics;
     friend ol_framework::ol_account;
     friend ol_framework::community_wallet_init;
     friend ol_framework::vouch_score;

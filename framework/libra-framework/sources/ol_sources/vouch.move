@@ -6,6 +6,7 @@ module ol_framework::vouch {
     use ol_framework::ancestry;
     use ol_framework::epoch_helper;
     use diem_framework::system_addresses;
+    use ol_framework::vouch_metrics;
 
     use diem_std::debug::print;
 
@@ -37,6 +38,31 @@ module ol_framework::vouch {
     /// Maximum number of vouches
     const BASE_MAX_VOUCHES: u64 = 10;
 
+    /*
+        Anti-Sybil Protection:
+
+        The vouch system needs protection against sybil attack vectors. A malicious actor could:
+        1. Obtain vouches from honest users
+        2. Use those vouches to create many sybil identities by quickly vouching for and revoking from
+           accounts they control
+        3. Use these identities to gain undue influence (e.g., for Founder status)
+
+        To prevent this, we implement:
+        - A limit on revocations per epoch
+        - A cooldown period after revocation before new vouches can be given
+        - Lifetime tracking of vouching activity
+
+        This ensures that even if a malicious user receives multiple valid vouches, they cannot
+        rapidly reuse those vouches to create many sybil identities.
+    */
+
+    // Add these constants for revocation limits
+    /// Maximum number of revocations allowed in a single epoch
+    const MAX_REVOCATIONS_PER_EPOCH: u64 = 2;
+
+    /// Cooldown period (in epochs) required after a revocation before giving a new vouch
+    const REVOCATION_COOLDOWN_EPOCHS: u64 = 3;
+
 
     //////// ERROR CODES ////////
 
@@ -64,14 +90,6 @@ module ol_framework::vouch {
     /// Cooldown period after revocation not yet passed
     const ECOOLDOWN_PERIOD_ACTIVE: u64 = 8;
 
-    // Add these constants for revocation limits
-    /// Maximum number of revocations allowed in a single epoch
-    const MAX_REVOCATIONS_PER_EPOCH: u64 = 2;
-
-    /// Cooldown period (in epochs) required after a revocation before giving a new vouch
-    const REVOCATION_COOLDOWN_EPOCHS: u64 = 3;
-
-
     //////// STRUCTS ////////
 
     // TODO: someday this should be renamed to ReceivedVouches
@@ -80,6 +98,7 @@ module ol_framework::vouch {
       epoch_vouched: vector<u64>,
     }
 
+    // Make this public for vouch_metrics.move access
     struct ReceivedVouches has key {
       incoming_vouches: vector<address>,
       epoch_vouched: vector<u64>,
@@ -178,7 +197,7 @@ module ol_framework::vouch {
       if (state.current_tracked_epoch != current_epoch) {
         state.revocations_this_epoch = 0;
         state.current_tracked_epoch = current_epoch;
-      }
+      };
 
       // Check if user has exceeded revocations in this epoch
       assert!(
@@ -195,7 +214,7 @@ module ol_framework::vouch {
       // Skip check if no revocations have been made yet
       if (state.last_revocation_epoch == 0) {
         return
-      }
+      };
 
       assert!(
         current_epoch >= state.last_revocation_epoch + REVOCATION_COOLDOWN_EPOCHS,
@@ -203,15 +222,51 @@ module ol_framework::vouch {
       );
     }
 
-    // a user should not be able to give more vouches than valid
-    // vouches received. An allowance of +1 more than the
-    // current given vouches allows a vouch to be given before received
+    // Calculate the maximum number of vouches a user should be able to give based on their vouches received
+    public fun calculate_max_vouches_limit(account: address): u64 acquires ReceivedVouches {
+        // Get the received vouches that aren't expired
+        let received_vouches = get_received_vouches_not_expired(account);
+        let received_count = vector::length(&received_vouches);
+
+        // Base case: Always allow at least vouches received + 1
+        let max_allowed = received_count + 1;
+
+        // Get true friends (not expired, not related by ancestry)
+        let true_friends_list = true_friends(account);
+
+        // Calculate the quality from the list of true friends
+        let total_quality = vouch_metrics::calculate_quality_from_list(account, &true_friends_list);
+
+        // Advanced case: For accounts with higher quality vouches,
+        // we can provide more outgoing vouches
+        let bonus = 0;
+
+        if (total_quality >= 2 && total_quality < 200) {
+            bonus = 1;
+        } else if (total_quality >= 200 && total_quality < 400) {
+            bonus = 2;
+        } else if (total_quality >= 400) {
+            bonus = 3;
+        };
+
+        max_allowed = max_allowed + bonus;
+
+        // Hard cap at BASE_MAX_VOUCHES to prevent abuse
+        if (max_allowed > BASE_MAX_VOUCHES) {
+            max_allowed = BASE_MAX_VOUCHES;
+        };
+
+        max_allowed
+    }
+
+    // a user should not be able to give more vouches than their quality score allows
     fun assert_max_vouches(grantor_acc: address) acquires GivenVouches, ReceivedVouches {
       // check if the grantor has already reached the limit of vouches
       let given_vouches = get_given_vouches_not_expired(grantor_acc);
-      let received_vouches = get_received_vouches_not_expired(grantor_acc);
+      let max_allowed = calculate_max_vouches_limit(grantor_acc);
+
       assert!(
-        vector::length(&given_vouches) <= (vector::length(&received_vouches) + 1),
+        vector::length(&given_vouches) < max_allowed,
         error::invalid_state(EMAX_LIMIT_GIVEN)
       );
     }
@@ -334,7 +389,7 @@ module ol_framework::vouch {
     /// will only successfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public(friend) fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches {
+    public(friend) fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       vouch_impl(grantor, friend_account, true);
     }
 
@@ -546,10 +601,11 @@ module ol_framework::vouch {
     #[view]
     /// filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
-      if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
-      let not_expired = all_not_expired(addr);
-      let filtered_ancestry = ancestry::list_unrelated(not_expired);
-      filtered_ancestry
+        if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
+        // Get non-expired vouches
+        let not_expired = all_not_expired(addr);
+        // Filter for ancestry relationships
+        vouch_metrics::filter_unrelated(not_expired)
     }
 
     #[view]
@@ -576,6 +632,14 @@ module ol_framework::vouch {
       };
 
       (buddies_in_list, vector::length(&buddies_in_list))
+    }
+
+    #[view]
+    /// Calculate the total vouch quality score for a user
+    /// This is used by the founder module to evaluate if an account is verified
+    public fun calculate_total_vouch_quality(user: address): u64 acquires ReceivedVouches {
+        let valid_vouchers = true_friends(user);
+        vouch_metrics::calculate_quality_from_list(user, &valid_vouchers)
     }
 
     #[test_only]
@@ -620,7 +684,7 @@ module ol_framework::vouch {
     #[test_only]
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public(friend) fun insist_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches {
+    public(friend) fun insist_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       vouch_impl(grantor, friend_account, false);
     }
 
