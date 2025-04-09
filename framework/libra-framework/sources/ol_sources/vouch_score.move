@@ -4,12 +4,10 @@ module ol_framework::vouch_score {
   use ol_framework::ancestry;
   use ol_framework::vouch;
 
-  /// the threshold score for a user to be considered vouched
-  const THRESHOLD_SCORE: u64 = 2;
-
+  #[view]
   /// get voucher's score
   /// score is percent, out of 100
-  fun calculate_voucher_score(voucher: address, user: address): u64 {
+  public fun calculate_voucher_score(voucher: address, user: address): u64 {
       let opt = ancestry::get_degree(voucher, user);
       if (option::is_none(&opt)) {
         return 0
@@ -26,7 +24,8 @@ module ol_framework::vouch_score {
   }
 
 
-  fun get_total_vouch_score(user: address): u64 {
+  #[view]
+  public fun get_total_vouch_score(user: address): u64 {
     // we only want the vouchers which are not expired
     // and do not belong to the same family
     let valid_vouchers = vouch::true_friends(user);
