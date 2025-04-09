@@ -323,7 +323,7 @@ module ol_framework::vouch {
 
     // lazily remove expired vouches prior to setting any new ones
     // ... by popular request
-    fun garbage_collect_expired(user: address) acquires GivenVouches, ReceivedVouches {
+    public (friend) fun garbage_collect_expired(user: address) acquires GivenVouches, ReceivedVouches {
       let valid_vouches = vector::empty<address>();
       let valid_epochs = vector::empty<u64>();
       let current_epoch = epoch_helper::get_current_epoch();
