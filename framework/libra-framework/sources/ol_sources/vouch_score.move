@@ -42,13 +42,4 @@ module ol_framework::vouch_score {
     total_score
   }
 
-
-  #[view]
-
-  /// counting all vouchers and their score
-  /// does it add up to 2 root of trust accounts?
-  /// @return true if the user is vouched
-  public fun is_voucher_score_valid(user: address): bool {
-    get_total_vouch_score(user) > THRESHOLD_SCORE
-  }
 }
