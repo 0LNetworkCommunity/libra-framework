@@ -29,6 +29,10 @@ module ol_framework::vouch_txs {
     vouch::revoke(grantor, friend_account);
   }
 
+  public entry fun clean_expired(user_sig: &signer) {
+    vouch::garbage_collect_expired(signer::address_of(user_sig));
+  }
+
   /// validators vouching has a cost
   // this fee is paid to the system, cannot be reclaimed
   // TODO: refactor validator vouch into own module
