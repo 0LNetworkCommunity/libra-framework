@@ -12,6 +12,9 @@ module ol_framework::ancestry {
     friend ol_framework::community_wallet_init;
     friend ol_framework::vouch_score;
 
+    #[test_only]
+    friend ol_framework::test_validator_vouch;
+
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
     /// no ancestry tree state on chain, this is probably a migration bug.
@@ -253,6 +256,19 @@ module ol_framework::ancestry {
         vm,
         child_sig,
         migrate_tree
+      );
+    }
+
+    #[test_only]
+    public fun test_adopt(
+      framework: &signer,
+      parent_sig: &signer,
+      child_sig: &signer
+    ) acquires Ancestry {
+      system_addresses::assert_diem_framework(framework);
+      adopt_this_child(
+        parent_sig,
+        child_sig
       );
     }
 }
