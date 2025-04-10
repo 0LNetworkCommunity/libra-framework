@@ -25,7 +25,7 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
   use ol_framework::testnet;
-  use ol_framework::ancestry;  // Added missing import
+  // use ol_framework::ancestry;  // Added missing import
 
   use diem_std::debug::print;
 
@@ -350,21 +350,26 @@ module ol_framework::mock {
   /// @param root - framework signer
   /// @param target_account - the account that will have a vouch score of 100
   /// @return validators - the list of validators created/used for vouching
-  public fun mock_vouch_score_100(root: &signer, target_account: address): vector<address> {
+  public fun mock_vouch_score_100(framework: &signer, target_account: address): vector<address> {
+    system_addresses::assert_diem_framework(framework);
+
+    let parent_account = @0xdeadbeef;
+    ol_account::create_account(framework, parent_account);
+    ol_mint_to(framework, parent_account, 10000);
+    print(&1000);
+
     // Get the current validator set instead of creating a new genesis
+    // TODO: replace for root of trust implementation
     let vals = stake::get_current_validators();
+    print(&10001);
 
-    // Make sure we have enough validators (at least 4)
-    assert!(vector::length(&vals) >= 4, 735710);
-
-    // Make sure target account exists and is initialized
-    if (!account::exists_at(target_account)) {
-      ol_account::create_account(root, target_account);
-    };
-
-    // Initialize vouch for target account
+    // Do the typical onboarding process: by transfer
+    let parent_sig = account::create_signer_for_test(parent_account);
     let target_signer = account::create_signer_for_test(target_account);
-    ancestry::test_fork_migrate(root, &target_signer, vector::empty());
+    ol_account::transfer(&parent_sig, target_account, 1000);
+    // vouch will be missing unless the initialized it through filo_migration
+    vouch::init(&target_signer);
+    print(&10002);
 
 
     // Each validator vouches
@@ -374,14 +379,15 @@ module ol_framework::mock {
         let val_signer = account::create_signer_for_test(val_addr);
 
         // Initialize vouch module for validator if not already done
-        ancestry::test_adopt(root, &val_signer, &target_signer);
+        vouch::vouch_for(&val_signer, target_account);
 
         i = i + 1;
     };
+    print(&10003);
+
     // Verify the score is approximately 100
     let score = vouch::calculate_total_vouch_quality(target_account);
     print(&score);
-    // assert!(score >= 100 && score < 150, 735700);
 
     vals
   }
