@@ -1,6 +1,7 @@
 //! Validator subcommands
 
 use crate::submit_transaction::Sender;
+use diem_logger::error;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_query::{account_queries, query_view};
@@ -11,7 +12,7 @@ use std::{collections::HashMap, fs, path::PathBuf};
 #[derive(clap::Subcommand)]
 pub enum CommunityTxs {
     /// Initialize a DonorVoice multi-sig by proposing an offer to initial authorities.
-    /// NOTE: Then authorities need to claim the offer, and the donor have to cage the account to become a multi-sig account.
+    //  NOTE: Then authorities need to claim the offer, and the donor have to cage the account to become a multi-sig account.
     GovInit(InitTx),
     /// Update proposed offer to initial authorities
     GovOffer(OfferTx),
@@ -27,91 +28,49 @@ pub enum CommunityTxs {
     Batch(BatchTx),
     /// Donors to Donor Voice addresses can vote to reject transactions
     Veto(VetoTx),
-    /// Migrate legacy account to initialize offer structure
-    Migration(MigrateOfferTx), // TODO remove after migration complete
-    /// Initilize legacy multi-sig account governance
-    GovInitDeprectated, // TODO remove after migration complete
+    /// Donor can vote in reauthorization poll
+    Reauthorize(ReauthVoteTx),
 }
 
 impl CommunityTxs {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        match &self {
-            CommunityTxs::GovInit(init) => match init.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet initialized"),
-                Err(e) => {
-                    println!(
-                        "ERROR: could not initialize Community Wallet, message: {}",
-                        e
-                    );
-                }
-            },
-            CommunityTxs::GovOffer(offer) => match offer.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet offer proposed"),
-                Err(e) => {
-                    println!("ERROR: could not propose offer, message: {}", e);
-                }
-            },
-            CommunityTxs::GovClaim(claim) => match claim.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet offer claimed"),
-                Err(e) => {
-                    println!("ERROR: could not claim offer, message: {}", e);
-                }
-            },
-            CommunityTxs::GovCage(cage) => match cage.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet finalized"),
-                Err(e) => {
-                    println!("ERROR: could not finalize wallet, message: {}", e);
-                }
-            },
-            CommunityTxs::GovAdmin(admin) => match admin.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet admin proposed"),
-                Err(e) => {
-                    println!("ERROR: could not propose new admin, message: {}", e);
-                }
-            },
-            CommunityTxs::Propose(propose) => match propose.run(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet transfer proposed"),
-                Err(e) => {
-                    println!("ERROR: community wallet transfer rejected, message: {}", e);
-                }
-            },
-            CommunityTxs::Veto(veto) => match veto.run(sender).await {
-                Ok(_) => println!("SUCCESS: veto vote submitted"),
-                Err(e) => {
-                    println!("ERROR: veto vote rejected, message: {}", e);
-                }
-            },
-            CommunityTxs::Batch(batch) => match batch.run(sender).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("ERROR: could not add admin, message: {}", e);
-                }
-            },
-            CommunityTxs::Migration(migration) => match migration.run(sender).await {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("ERROR: could not migrate, message: {}", e);
-                }
-            },
-            // for tests only - TODO Remove when migration is finished
-            CommunityTxs::GovInitDeprectated => match self.run_init_deprecated(sender).await {
-                Ok(_) => println!("SUCCESS: community wallet initialized"),
-                Err(e) => {
-                    println!(
-                        "ERROR: could not initialize Community Wallet, message: {}",
-                        e
-                    );
-                }
-            },
+        let result = match self {
+            CommunityTxs::GovInit(tx) => {
+                tx.run(sender).await.map(|_| "community wallet initialized")
+            }
+            CommunityTxs::GovOffer(tx) => tx
+                .run(sender)
+                .await
+                .map(|_| "community wallet offer proposed"),
+            CommunityTxs::GovClaim(tx) => tx
+                .run(sender)
+                .await
+                .map(|_| "community wallet offer claimed"),
+            CommunityTxs::GovCage(tx) => tx.run(sender).await.map(|_| "community wallet finalized"),
+            CommunityTxs::GovAdmin(tx) => tx
+                .run(sender)
+                .await
+                .map(|_| "community wallet admin proposed"),
+            CommunityTxs::Propose(tx) => tx
+                .run(sender)
+                .await
+                .map(|_| "community wallet transfer proposed"),
+            CommunityTxs::Veto(tx) => tx.run(sender).await.map(|_| "veto vote submitted"),
+            CommunityTxs::Batch(tx) => tx
+                .run(sender)
+                .await
+                .map(|_| "batch of transactions proposed"),
+            CommunityTxs::Reauthorize(tx) => {
+                tx.run(sender).await.map(|_| "reauthorize vote submitted")
+            }
+        };
+
+        match result {
+            Ok(message) if !message.is_empty() => println!("SUCCESS: {}", message),
+            Err(e) => error!("Operation failed: {}", e),
+            _ => {}
         }
 
-        Ok(())
-    }
-
-    // for tests only - TODO Remove when migration is finished
-    async fn run_init_deprecated(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::multi_action_init_gov_deprecated();
-        sender.sign_submit_wait(payload).await?;
         Ok(())
     }
 }
@@ -298,88 +257,99 @@ struct ProposePay {
 // (an atomic batch).
 impl BatchTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let data = fs::read_to_string(&self.file).expect("Unable to read file");
-        let mut list: Vec<ProposePay> = serde_json::from_str(&data).expect("Unable to parse");
+        let data = fs::read_to_string(&self.file)?;
+        let mut list: Vec<ProposePay> = serde_json::from_str(&data)?;
 
         let ballots =
             account_queries::multi_auth_ballots(sender.client(), self.community_wallet).await?;
-        let d = ballots.as_object().unwrap();
-        let v = d.get("vote").unwrap().as_object().unwrap();
-        let mut approved = v
-            .get("ballots_approved")
-            .unwrap()
-            .as_array()
-            .unwrap()
-            .to_owned();
 
-        let mut p = v
-            .get("ballots_pending")
-            .unwrap()
-            .as_array()
-            .unwrap()
-            .to_owned();
-        p.append(&mut approved);
+        let mut pending_or_approved = HashMap::new();
+        if let Some(d) = ballots.as_object() {
+            if let Some(v) = d.get("vote").and_then(|v| v.as_object()) {
+                let mut approved = v
+                    .get("ballots_approved")
+                    .and_then(|a| a.as_array())
+                    .cloned()
+                    .unwrap_or_default();
 
-        let mut pending_or_approved: HashMap<AccountAddress, ProposePay> = HashMap::new();
-        p.iter().for_each(|e| {
-            let o = e.as_object().unwrap();
-            let prop = o.get("tally_type").unwrap().as_object().unwrap();
-            let data = prop.get("proposal_data").unwrap().as_object().unwrap();
+                let mut pending = v
+                    .get("ballots_pending")
+                    .and_then(|p| p.as_array())
+                    .cloned()
+                    .unwrap_or_default();
 
-            let recipient: AccountAddress = data
-                .get("payee")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .parse()
-                .unwrap();
-            let amount: u64 = data
-                .get("value")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .parse()
-                .unwrap();
+                pending.append(&mut approved);
 
-            let voters: Vec<AccountAddress> = prop
-                .get("votes")
-                .unwrap()
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|e| e.as_str().unwrap().parse::<AccountAddress>().unwrap())
-                .collect();
+                for ballot in pending {
+                    if let Some(ballot_obj) = ballot.as_object() {
+                        if let Some(prop) = ballot_obj.get("tally_type").and_then(|t| t.as_object())
+                        {
+                            if let Some(data) =
+                                prop.get("proposal_data").and_then(|p| p.as_object())
+                            {
+                                if let (Some(recipient_str), Some(amount_str)) = (
+                                    data.get("payee").and_then(|p| p.as_str()),
+                                    data.get("value").and_then(|v| v.as_str()),
+                                ) {
+                                    if let (Ok(recipient), Ok(amount)) = (
+                                        recipient_str.parse::<AccountAddress>(),
+                                        amount_str.parse::<u64>(),
+                                    ) {
+                                        let voters: Vec<AccountAddress> = prop
+                                            .get("votes")
+                                            .and_then(|v| v.as_array())
+                                            .map(|votes| {
+                                                votes
+                                                    .iter()
+                                                    .filter_map(|e| e.as_str())
+                                                    .filter_map(|s| s.parse().ok())
+                                                    .collect()
+                                            })
+                                            .unwrap_or_default();
 
-            let is_approved = prop.get("approved").unwrap().as_bool().unwrap();
+                                        let is_approved = prop
+                                            .get("approved")
+                                            .and_then(|a| a.as_bool())
+                                            .unwrap_or(false);
 
-            let found = ProposePay {
-                recipient: recipient.to_canonical_string(),
-                parsed: Some(recipient),
-                amount,
-                description: "debugging".to_string(),
-                is_slow: None,
-                proposed: None,
-                approved: Some(is_approved),
-                voters: Some(voters),
-                error: None,
-                note: None,
-            };
-
-            pending_or_approved.insert(recipient, found);
-        });
+                                        pending_or_approved.insert(
+                                            recipient,
+                                            ProposePay {
+                                                recipient: recipient.to_canonical_string(),
+                                                parsed: Some(recipient),
+                                                amount,
+                                                description: "debugging".to_string(),
+                                                is_slow: None,
+                                                proposed: None,
+                                                approved: Some(is_approved),
+                                                voters: Some(voters),
+                                                error: None,
+                                                note: None,
+                                            },
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         for inst in &mut list {
-            let addr: AccountAddress = inst
-                .recipient
-                .parse()
-                .unwrap_or_else(|_| panic!("could not parse {}", &inst.recipient));
+            let addr = match inst.recipient.parse::<AccountAddress>() {
+                Ok(addr) => addr,
+                Err(_) => {
+                    error!("Could not parse address: {}", inst.recipient);
+                    continue;
+                }
+            };
 
             inst.parsed = Some(addr);
-
             println!("account: {:?}", &inst.recipient);
 
-            // if this instruction exists, just update our JSON file
-            if let Some((_, pp)) = pending_or_approved.get_key_value(&addr) {
+            // Check if this instruction already exists
+            if let Some(pp) = pending_or_approved.get(&addr) {
                 if pp.amount == gas_coin::cast_decimal_to_coin(inst.amount as f64) {
                     inst.proposed = Some(true);
                     inst.voters.clone_from(&pp.voters);
@@ -388,17 +358,17 @@ impl BatchTx {
                 }
             };
 
+            // Check if it's a slow wallet
             let res_slow = query_view::get_view(
                 sender.client(),
                 "0x1::slow_wallet::is_slow",
                 None,
-                Some(inst.recipient.to_string()),
+                Some(inst.recipient.clone()),
             )
             .await?
             .as_array()
-            .unwrap()[0]
-                .as_bool()
-                .unwrap();
+            .and_then(|arr| arr.first()?.as_bool())
+            .unwrap_or(false);
 
             inst.is_slow = Some(res_slow);
             if !res_slow {
@@ -406,8 +376,9 @@ impl BatchTx {
                 continue;
             }
 
-            if let Some(v) = &inst.voters {
-                if v.contains(&sender.local_account.address()) {
+            // Skip if already voted
+            if let Some(voters) = &inst.voters {
+                if voters.contains(&sender.local_account.address()) {
                     println!("... already voted, skipping");
                     continue;
                 }
@@ -424,39 +395,38 @@ impl BatchTx {
                     inst.proposed = Some(true);
                 }
                 Err(e) => {
-                    println!("transaction failed");
+                    error!("Transaction failed: {}", e);
                     inst.proposed = Some(false);
-                    inst.error = Some(e.to_string())
+                    inst.error = Some(e.to_string());
                 }
             }
         }
 
         if self.check {
-            list.iter().for_each(|e| {
-                if let Some(s) = e.is_slow {
-                    if !s {
+            for item in &list {
+                if let Some(is_slow) = item.is_slow {
+                    if !is_slow {
                         println!(
                             "not slow: {} : {}",
-                            e.note.as_ref().unwrap_or(&"n/a".to_string()),
-                            e.recipient
+                            item.note.as_deref().unwrap_or("n/a"),
+                            item.recipient
                         );
                     }
                 }
-            });
+            }
             println!("checks completed");
         } else {
             println!("Transfers proposed and voted on. Note: transactions are not atomic, some of the transfers may have been ignored. JSON file will be updated.");
         }
 
         let json = serde_json::to_string(&list)?;
-        let p = if let Some(out_path) = &self.out {
-            out_path
-        } else {
-            println!("overwriting {}", &self.file.display());
-            &self.file
-        };
+        let output_path = self.out.as_ref().unwrap_or(&self.file);
 
-        fs::write(p, json)?;
+        if self.out.is_none() {
+            println!("overwriting {}", self.file.display());
+        }
+
+        fs::write(output_path, json)?;
 
         Ok(())
     }
@@ -491,6 +461,21 @@ impl VetoTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload =
             libra_stdlib::donor_voice_txs_propose_veto_tx(self.community_wallet, self.proposal_id);
+        sender.sign_submit_wait(payload).await?;
+        Ok(())
+    }
+}
+
+#[derive(clap::Args)]
+pub struct ReauthVoteTx {
+    #[clap(short, long)]
+    /// The Slow Wallet recipient of funds
+    pub community_wallet: AccountAddress,
+}
+
+impl ReauthVoteTx {
+    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }

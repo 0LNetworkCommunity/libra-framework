@@ -386,7 +386,7 @@
     //////// GETTERS ////////
 
     /// get current tally percentage scaled
-    fun get_current_ballot_participation<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+    public(friend) fun get_current_ballot_participation<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       let total = ballot.votes_approve + ballot.votes_reject;
       if (ballot.votes_approve + ballot.votes_reject > ballot.max_votes) {
         return 0
@@ -408,6 +408,15 @@
       return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve ,total))
     }
 
+    /// Get the current expiration epoch for a ballot
+    public(friend) fun get_expiration_epoch<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+      // Return the extended deadline if it exists, otherwise the original deadline
+      if (ballot.extended_deadline > ballot.cfg_deadline) {
+        ballot.extended_deadline
+      } else {
+        ballot.cfg_deadline
+      }
+    }
 
     public(friend) fun get_tally_data<Data: store>(ballot: &TurnoutTally<Data>): &Data {
       &ballot.data
