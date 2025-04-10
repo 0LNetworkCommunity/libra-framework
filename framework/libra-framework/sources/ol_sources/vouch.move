@@ -2,7 +2,6 @@ module ol_framework::vouch {
     use std::error;
     use std::signer;
     use std::vector;
-    use std::string;
     use ol_framework::ancestry;
     use ol_framework::epoch_helper;
     use diem_framework::system_addresses;
@@ -535,9 +534,6 @@ module ol_framework::vouch {
         outgoing_vouches: new_outgoing_vouches,
         epoch_vouched: new_epoch_vouched,
       });
-
-      print(&string::utf8(b">>> Migrated GivenVouches for "));
-      print(&account);
     }
 
     // TODO: remove/deprecate after migration is completed
@@ -566,9 +562,6 @@ module ol_framework::vouch {
 
       // remove deprecated MyVouches struct
       move_from<MyVouches>(account);
-
-      print(&string::utf8(b">>> Migrated ReceivedVouches for "));
-      print(&account);
     }
 
     ///////// GETTERS //////////
@@ -660,7 +653,10 @@ module ol_framework::vouch {
     #[view]
     /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
+        print(&13000);
         if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
+        print(&130001);
+
         // Get non-expired vouches
         let not_expired = all_not_expired(addr);
         // Filter for ancestry relationships
@@ -698,6 +694,8 @@ module ol_framework::vouch {
     /// This is used by the founder module to evaluate if an account is verified
     public fun calculate_total_vouch_quality(user: address): u64 acquires ReceivedVouches {
         let valid_vouchers = true_friends(user);
+        print(&12000);
+        print(&valid_vouchers);
         vouch_metrics::calculate_quality_from_list(user, &valid_vouchers)
     }
 

@@ -5,15 +5,13 @@ module ol_framework::ancestry {
     use std::error;
     use std::option::{Self, Option};
     use diem_framework::system_addresses;
+    use diem_std::debug::print;
 
     friend ol_framework::vouch;
     friend ol_framework::vouch_metrics;
     friend ol_framework::ol_account;
     friend ol_framework::community_wallet_init;
     friend ol_framework::vouch_score;
-
-    #[test_only]
-    friend ol_framework::test_validator_vouch;
 
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
@@ -89,8 +87,11 @@ module ol_framework::ancestry {
     /// if they are related. Assumes ancestor is in the tree of User.
     public(friend) fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
       let user_tree = get_tree(user);
+      print(&user);
+      print(&user_tree);
       let len = vector::length(&user_tree);
-      assert!(len == 0, error::invalid_state(ENO_ANCESTRY_TREE));
+      print(&len);
+      assert!(len != 0, error::invalid_state(ENO_ANCESTRY_TREE));
       let (found, idx) = vector::index_of(&user_tree, &ancestor);
       if (!found) {
         return option::none()
