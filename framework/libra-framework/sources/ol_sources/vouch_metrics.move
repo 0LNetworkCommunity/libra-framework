@@ -13,12 +13,19 @@ module ol_framework::vouch_metrics {
     use std::vector;
     use ol_framework::ancestry;
 
-    /// Get the quality score for a voucher based on social distance
+    use diem_std::debug::print;
+
+    /// Get the score for the social distance between two accounts
     /// Score is a percentage, out of 100
-    /// A higher score represents a closer social connection
-    public fun calculate_voucher_quality(voucher: address, user: address): u64 {
-        let opt = ancestry::get_degree(voucher, user);
+    /// A higher score represents a closer social connections
+    public fun social_distance(left: address, right: address): u64 {
+        print(&20000);
+        print(&left);
+        print(&right);
+        let opt = ancestry::get_degree(left, right);
+        print(&opt);
         if (option::is_none(&opt)) {
+            // please maintain social distance
             return 0
         };
         let degree = *option::borrow(&opt);
@@ -32,15 +39,15 @@ module ol_framework::vouch_metrics {
         100 / degree
     }
 
-    /// Calculate the total quality of vouches for a user given a list of valid vouchers
-    /// This is a pure function that doesn't access storage directly
-    public fun calculate_quality_from_list(user: address, vouchers: &vector<address>): u64 {
+    /// Calculate the total social score for a user versus a list of accounts
+    /// e.g. used for distance to a root of trust
+    public fun calculate_total_social_score(user: address, list: &vector<address>): u64 {
         let total_score = 0;
 
         let i = 0;
-        while (i < vector::length(vouchers)) {
-            let one_voucher = vector::borrow(vouchers, i);
-            let score = calculate_voucher_quality(*one_voucher, user);
+        while (i < vector::length(list)) {
+            let one_root = vector::borrow(list, i);
+            let score = social_distance(*one_root, user);
             total_score = total_score + score;
             i = i + 1;
         };
