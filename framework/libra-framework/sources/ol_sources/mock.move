@@ -347,10 +347,10 @@ module ol_framework::mock {
   #[test_only]
   /// Creates a vouching network where target_account has a vouch score of 100
   /// This will create validators if they don't exist, and set up vouches
-  /// @param root - framework signer
+  /// @param framework - framework signer
   /// @param target_account - the account that will have a vouch score of 100
   /// @return validators - the list of validators created/used for vouching
-  public fun mock_vouch_score_100(framework: &signer, target_account: address): vector<address> {
+  public fun mock_vouch_score_50(framework: &signer, target_account: address): vector<address> {
     system_addresses::assert_diem_framework(framework);
 
     let parent_account = @0xdeadbeef;
@@ -471,15 +471,17 @@ module ol_framework::mock {
   }
 
   #[test(root = @ol_framework)]
-  fun test_mock_vouch_score_100(root: &signer) {
+  fun test_mock_vouch_score_50(root: &signer) {
     // Set up genesis with validators first
     let _vals = genesis_n_vals(root, 4);
     ol_initialize_coin_and_fund_vals(root, 10000, true);
     // Set up a target account that should receive a vouch score of ~100
     let target_address = @0x12345;
 
-    let _vouch_vals = mock_vouch_score_100(root, target_address);
+    mock_vouch_score_50(root, target_address);
 
+    let score = vouch::calculate_total_vouch_quality(target_address);
+    assert!(score == 50, 735700);
     // // Make sure target account doesn't exist before our test
     // if (account::exists_at(target_address)) {
     //   // This shouldn't happen in tests but just in case
