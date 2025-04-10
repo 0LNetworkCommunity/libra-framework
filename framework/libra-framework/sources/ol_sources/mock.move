@@ -25,9 +25,6 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
   use ol_framework::testnet;
-  // use ol_framework::ancestry;  // Added missing import
-
-  use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -356,12 +353,10 @@ module ol_framework::mock {
     let parent_account = @0xdeadbeef;
     ol_account::create_account(framework, parent_account);
     ol_mint_to(framework, parent_account, 10000);
-    print(&1000);
 
     // Get the current validator set instead of creating a new genesis
     // TODO: replace for root of trust implementation
     let vals = stake::get_current_validators();
-    print(&10001);
 
     // Do the typical onboarding process: by transfer
     let parent_sig = account::create_signer_for_test(parent_account);
@@ -369,7 +364,6 @@ module ol_framework::mock {
     ol_account::transfer(&parent_sig, target_account, 1000);
     // vouch will be missing unless the initialized it through filo_migration
     vouch::init(&target_signer);
-    print(&10002);
 
 
     // Each validator vouches
@@ -383,13 +377,11 @@ module ol_framework::mock {
 
         i = i + 1;
     };
-    print(&10003);
 
-    // Verify the score is approximately 100
+    // Verify the score is exactly 50
     let score = vouch::calculate_total_vouch_quality(target_account);
-    print(&10004);
+    assert!(score == 50, 735700);
 
-    print(&score);
 
     vals
   }
@@ -482,45 +474,5 @@ module ol_framework::mock {
 
     let score = vouch::calculate_total_vouch_quality(target_address);
     assert!(score == 50, 735700);
-    // // Make sure target account doesn't exist before our test
-    // if (account::exists_at(target_address)) {
-    //   // This shouldn't happen in tests but just in case
-    //   assert!(vouch::calculate_total_vouch_quality(target_address) == 0, 735701);
-    // } else {
-    //   // Create the account first
-    //   ol_account::create_account(root, target_address);
-    // };
-
-    // // Apply the mock vouch score
-    // let vouch_vals = mock_vouch_score_100(root, target_address);
-
-    // // Verify we got validators back - should be the same as our genesis validators
-    // assert!(vector::length(&vouch_vals) == n_vals, 735702);
-
-    // // Verify the target account has the expected vouch score
-    // let score = vouch::calculate_total_vouch_quality(target_address);
-
-    // // Check that score is within expected range (100-150)
-    // assert!(score >= 100, 735703);
-    // assert!(score < 150, 735704);
-
-    // // Check that we have at least 2 validators who vouched for the target
-    // let (received_vouches, _) = vouch::get_received_vouches(target_address);
-    // assert!(vector::length(&received_vouches) >= 2, 735705);
-
-    // // Check that the vouches are valid (not expired, unrelated by ancestry)
-    // let true_friends = vouch::true_friends(target_address);
-    // assert!(vector::length(&true_friends) >= 2, 735706);
-
-    // // Verify all validators have high quality scores themselves
-    // let validator1 = *vector::borrow(&vouch_vals, 0);
-    // let validator2 = *vector::borrow(&vouch_vals, 1);
-
-    // let val1_score = vouch::calculate_total_vouch_quality(validator1);
-    // let val2_score = vouch::calculate_total_vouch_quality(validator2);
-
-    // // Both validators should have high quality scores
-    // assert!(val1_score > 50, 735707);
-    // assert!(val2_score > 50, 735708);
   }
 }

@@ -13,17 +13,11 @@ module ol_framework::vouch_metrics {
     use std::vector;
     use ol_framework::ancestry;
 
-    use diem_std::debug::print;
-
     /// Get the score for the social distance between two accounts
     /// Score is a percentage, out of 100
     /// A higher score represents a closer social connections
     public fun social_distance(left: address, right: address): u64 {
-        print(&20000);
-        print(&left);
-        print(&right);
         let opt = ancestry::get_degree(left, right);
-        print(&opt);
         if (option::is_none(&opt)) {
             // please maintain social distance
             return 0

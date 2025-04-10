@@ -7,8 +7,6 @@ module ol_framework::vouch {
     use diem_framework::system_addresses;
     use ol_framework::vouch_metrics;
 
-    use diem_std::debug::print;
-
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
@@ -654,9 +652,7 @@ module ol_framework::vouch {
     #[view]
     /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
-        print(&13000);
         if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
-        print(&130001);
 
         // Get non-expired vouches
         let not_expired = all_not_expired(addr);
@@ -697,7 +693,6 @@ module ol_framework::vouch {
         // TODO: placeholder
         // until merge root of trust
         let root_of_trust = vector[@0x1];
-        print(&12000);
         vouch_metrics::calculate_total_social_score(user, &root_of_trust)
     }
 
