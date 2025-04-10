@@ -195,7 +195,7 @@ module ol_framework::test_donor_voice {
       // NOTE: there is a tx function that can propose and vote in single step
       donor_voice_txs::vote_veto_tx(eve, donor_voice_address, id_num);
 
-      let (approve_pct, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let (approve_pct, _turnout, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
