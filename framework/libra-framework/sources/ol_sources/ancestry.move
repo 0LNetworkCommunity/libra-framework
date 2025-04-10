@@ -1,4 +1,3 @@
-
 module ol_framework::ancestry {
     use std::signer;
     use std::vector;
@@ -9,11 +8,17 @@ module ol_framework::ancestry {
     friend ol_framework::vouch;
     friend ol_framework::ol_account;
     friend ol_framework::community_wallet_init;
+    friend ol_framework::vouch_score;
+
+    #[test_only]
+    friend ol_framework::root_of_trust_tests;
 
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
     /// no ancestry tree state on chain, this is probably a migration bug.
     const ENO_ANCESTRY_TREE: u64 = 2;
+    /// ancestor account not in user tree.
+    const ENOT_ANCESTOR: u64 = 3;
 
     struct Ancestry has key {
       // the full tree back to genesis set
@@ -64,9 +69,46 @@ module ol_framework::ancestry {
     // Commit NOTE: any transitive function that the VM calls needs to check
     // this struct exists.
     public fun get_tree(addr: address): vector<address> acquires Ancestry {
-      assert!(exists<Ancestry>(addr), ENO_ANCESTRY_TREE);
+      if(!exists<Ancestry>(addr)) {
+        return vector::empty<address>()
+      };
 
       *&borrow_global<Ancestry>(addr).tree
+    }
+
+
+
+    #[view]
+    /// Getter to see if a account exists in a tree (direct ancestor)
+    public fun is_in_tree(ancestor: address, user: address): bool acquires Ancestry {
+      let (found, _idx) = vector::index_of(&get_tree(user), &ancestor);
+      found
+    }
+
+    /// get the degree (hops) between two accounts
+    /// if they are related. Assumes ancestor is in the tree of User.
+    public(friend) fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
+        // Handle self-reference case
+        if (ancestor == user) {
+            return option::some(1)
+        };
+
+        // Will still abort if no Ancestry struct - this is expected
+        let user_tree = get_tree(user);
+        let len = vector::length(&user_tree);
+        let (found, idx) = vector::index_of(&user_tree, &ancestor);
+
+        if (!found) {
+            option::none()
+        } else {
+            // Calculate actual distance:
+            // Length of path from user -> ancestor = len - idx
+            // Example:
+            // Tree: [great_grandparent, grandparent, parent]
+            // To find distance to grandparent (idx 1):
+            // len = 3, idx = 1, distance = 3 - 1 = 2 hops
+            option::some(len - idx)
+        }
     }
 
     /// helper function to check on transactions (e.g. vouch) if accounts are related
