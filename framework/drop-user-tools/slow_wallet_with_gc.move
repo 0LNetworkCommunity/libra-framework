@@ -351,14 +351,13 @@ module ol_framework::slow_wallet {
     //////// TEST HELPERS /////////
 
     #[test_only]
-    public fun test_fork_migrate_slow_wallet(
+    public fun test_set_slow_wallet(
       vm: &signer,
       user: &signer,
       unlocked: u64,
       transferred: u64,
-      // split_factor: u64,
     ) acquires SlowWallet, SlowWalletList {
-      fork_migrate_slow_wallet(
+      set_slow_wallet_state(
         vm,
         user,
         unlocked,

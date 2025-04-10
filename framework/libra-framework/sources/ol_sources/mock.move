@@ -2,7 +2,9 @@
 #[test_only]
 module ol_framework::mock {
   use std::vector;
+  use diem_framework::chain_status;
   use diem_framework::coin;
+  use diem_framework::chain_id;
   use diem_framework::block;
   use diem_framework::stake;
   use diem_framework::account;
@@ -22,13 +24,13 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
-
-  // use diem_std::debug::print;
+  use ol_framework::testnet;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
   /// coin supply does not match expected
   const ESUPPLY_MISMATCH: u64 = 3;
+  const EPOCH_DURATION: u64 = 60;
 
   #[test_only]
   public fun reset_val_perf_one(vm: &signer, addr: address) {
@@ -132,7 +134,7 @@ module ol_framework::mock {
     (bids, expiry)
   }
 
-  use diem_framework::chain_status;
+
   #[test_only]
   public fun ol_test_genesis(root: &signer) {
     system_addresses::assert_ol(root);
@@ -223,6 +225,10 @@ module ol_framework::mock {
     let tx_fees = coin::test_mint(initial_fees, &mint_cap);
     transaction_fee::vm_pay_fee(root, @ol_framework, tx_fees);
 
+    // OL Network has no central treasury
+    // the infra escrow came from prior miner
+    // contributions
+
     // Forge Bruce
     let fortune = 100_000_000_000;
     let bruce_address = @0xBA7;
@@ -231,8 +237,8 @@ module ol_framework::mock {
     // Bruce mints a fortune
     let bruce = account::create_signer_for_test(bruce_address);
     let fortune_mint = coin::test_mint(fortune, &mint_cap);
-    ol_account::deposit_coins(bruce_address, fortune_mint);
 
+    ol_account::deposit_coins(bruce_address, fortune_mint);
     // Bruce funds infra escrow
     infra_escrow::init_escrow_with_deposit(root, &bruce, 37_000_000_000);
 
@@ -263,9 +269,10 @@ module ol_framework::mock {
   /// mock up to 6 validators alice..frank
   public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
     // create vals with vouches
+
     create_vals(root, num, true);
 
-    timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
+    // timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
     stake::test_reconfigure(root, validator_universe::get_eligible_validators());
 
     stake::get_current_validators()
@@ -286,7 +293,8 @@ module ol_framework::mock {
       let val = vector::borrow(&val_addr, i);
       let sig = account::create_signer_for_test(*val);
       let (_sk, pk, pop) = stake::generate_identity();
-      validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, true);
+      let should_end_epoch = false;
+      validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, should_end_epoch);
 
       vouch::init(&sig);
       if (with_vouches) {
@@ -297,8 +305,6 @@ module ol_framework::mock {
     };
   }
 
-  #[test_only]
-  const EPOCH_DURATION: u64 = 60;
 
   #[test_only]
   // NOTE: The order of these is very important.
@@ -314,6 +320,7 @@ module ol_framework::mock {
     );
   }
 
+  #[test_only]
   public fun trigger_epoch_exactly_at(root: &signer, old_epoch: u64, round: u64) {
     timestamp::fast_forward_seconds(EPOCH_DURATION);
     epoch_boundary::ol_reconfigure_for_test(root, old_epoch, round);
@@ -326,6 +333,58 @@ module ol_framework::mock {
     assert!(reconfiguration::get_current_epoch() == epoch_helper::get_current_epoch(), 666);
   }
 
+  #[test_only]
+  public fun create_v7_account_for_test(root: &signer) {
+    testnet::assert_testnet(root);
+    let v7 = @0x10007;
+    ol_account::create_account(root, v7);
+  }
+
+
+  #[test_only]
+  /// Creates a vouching network where target_account has a vouch score of 100
+  /// This will create validators if they don't exist, and set up vouches
+  /// @param framework - framework signer
+  /// @param target_account - the account that will have a vouch score of 100
+  /// @return validators - the list of validators created/used for vouching
+  public fun mock_vouch_score_50(framework: &signer, target_account: address): vector<address> {
+    system_addresses::assert_diem_framework(framework);
+
+    let parent_account = @0xdeadbeef;
+    ol_account::create_account(framework, parent_account);
+    ol_mint_to(framework, parent_account, 10000);
+
+    // Get the current validator set instead of creating a new genesis
+    // TODO: replace for root of trust implementation
+    let vals = stake::get_current_validators();
+
+    // Do the typical onboarding process: by transfer
+    let parent_sig = account::create_signer_for_test(parent_account);
+    let target_signer = account::create_signer_for_test(target_account);
+    ol_account::transfer(&parent_sig, target_account, 1000);
+    // vouch will be missing unless the initialized it through filo_migration
+    vouch::init(&target_signer);
+
+
+    // Each validator vouches
+    let i = 0;
+    while (i < vector::length(&vals)) {
+        let val_addr = *vector::borrow(&vals, i);
+        let val_signer = account::create_signer_for_test(val_addr);
+
+        // Initialize vouch module for validator if not already done
+        vouch::vouch_for(&val_signer, target_account);
+
+        i = i + 1;
+    };
+
+    // Verify the score is exactly 50
+    let score = vouch::calculate_total_vouch_quality(target_account);
+    assert!(score == 50, 735700);
+
+
+    vals
+  }
 
   //////// META TESTS ////////
   #[test(root=@ol_framework)]
@@ -398,6 +457,22 @@ module ol_framework::mock {
 
   #[test(framework = @0x1, bob = @0x10002)]
   fun meta_test_minimal_account_init(framework: &signer, bob: address) {
+    timestamp::set_time_has_started_for_testing(framework);
+    chain_id::initialize_for_test(framework, 4);
     ol_mint_to(framework, bob, 123);
+  }
+
+  #[test(root = @ol_framework)]
+  fun test_mock_vouch_score_50(root: &signer) {
+    // Set up genesis with validators first
+    let _vals = genesis_n_vals(root, 4);
+    ol_initialize_coin_and_fund_vals(root, 10000, true);
+    // Set up a target account that should receive a vouch score of ~100
+    let target_address = @0x12345;
+
+    mock_vouch_score_50(root, target_address);
+
+    let score = vouch::calculate_total_vouch_quality(target_address);
+    assert!(score == 50, 735700);
   }
 }

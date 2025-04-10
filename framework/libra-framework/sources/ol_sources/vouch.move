@@ -1,31 +1,29 @@
-
 module ol_framework::vouch {
     use std::error;
     use std::signer;
     use std::vector;
-    use std::string;
     use ol_framework::ancestry;
-    use ol_framework::ol_account;
     use ol_framework::epoch_helper;
-
     use diem_framework::system_addresses;
-    use diem_framework::transaction_fee;
-
-    use diem_std::debug::print;
+    use ol_framework::vouch_metrics;
 
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;
     friend ol_framework::jail;
     friend ol_framework::epoch_boundary;
     friend ol_framework::vouch_migration; // TODO: remove after vouch migration is completed
+    friend ol_framework::filo_migration;
     friend ol_framework::validator_universe;
+    friend ol_framework::vouch_txs;
 
     #[test_only]
     friend ol_framework::mock;
     #[test_only]
     friend ol_framework::test_pof;
     #[test_only]
-    friend ol_framework::test_vouch;
+    friend ol_framework::test_user_vouch;
+    #[test_only]
+    friend ol_framework::test_validator_vouch;
     #[test_only]
     friend ol_framework::test_vouch_migration;
 
@@ -37,6 +35,33 @@ module ol_framework::vouch {
     /// Maximum number of vouches
     const BASE_MAX_VOUCHES: u64 = 10;
 
+    /*
+        Anti-Sybil Protection:
+
+        The vouch system needs protection against sybil attack vectors. A malicious actor could:
+        1. Obtain vouches from honest users
+        2. Use those vouches to create many sybil identities by quickly vouching for and revoking from
+           accounts they control
+        3. Use these identities to gain undue influence (e.g., for Founder status)
+
+        To prevent this, we implement:
+        - A limit on revocations per epoch
+        - A cooldown period after revocation before new vouches can be given
+        - Lifetime tracking of vouching activity
+
+        This ensures that even if a malicious user receives multiple valid vouches, they cannot
+        rapidly reuse those vouches to create many sybil identities.
+    */
+
+    // Add these constants for revocation limits
+    /// Maximum number of revocations allowed in a single epoch
+    const MAX_REVOCATIONS_PER_EPOCH: u64 = 2;
+
+    /// Cooldown period (in epochs) required after a revocation before giving a new vouch
+    const REVOCATION_COOLDOWN_EPOCHS: u64 = 3;
+
+    /// Maximum number of vouches allowed to be given per epoch
+    const MAX_VOUCHES_PER_EPOCH: u64 = 1;
 
     //////// ERROR CODES ////////
 
@@ -49,15 +74,29 @@ module ol_framework::vouch {
     /// Cannot query vouches because the GivenVouches state is not initialized
     const EGIVEN_VOUCHES_NOT_INIT: u64 = 3;
 
-    /// Limit reached. You cannot give any new vouches.
-    const EMAX_LIMIT_GIVEN: u64 = 4;
-
     /// Vouch not found
     const EVOUCH_NOT_FOUND: u64 = 5;
 
     /// Grantor state is not initialized
     const EGRANTOR_NOT_INIT: u64 = 6;
 
+    /// Revocation limit reached. You cannot revoke any more vouches in this epoch.
+    const EREVOCATION_LIMIT_REACHED: u64 = 7;
+
+    /// Cooldown period after revocation not yet passed
+    const ECOOLDOWN_PERIOD_ACTIVE: u64 = 8;
+
+    /// Vouch limit reached: above max ceiling
+    const EMAX_LIMIT_GIVEN_CEILING: u64 = 9;
+
+    /// Vouch limit reached: above number of vouches received
+    const EMAX_LIMIT_GIVEN_BY_RECEIPT: u64 = 10;
+
+    /// Vouch limit reached: because of quality of your voucher
+    const EMAX_LIMIT_GIVEN_BY_SCORE: u64 = 11;
+
+    /// Vouch limit reached: too many given in current epoch
+    const EMAX_VOUCHES_PER_EPOCH: u64 = 12;
 
     //////// STRUCTS ////////
 
@@ -67,6 +106,7 @@ module ol_framework::vouch {
       epoch_vouched: vector<u64>,
     }
 
+    // Make this public for vouch_metrics.move access
     struct ReceivedVouches has key {
       incoming_vouches: vector<address>,
       epoch_vouched: vector<u64>,
@@ -75,6 +115,22 @@ module ol_framework::vouch {
     struct GivenVouches has key {
       outgoing_vouches: vector<address>,
       epoch_vouched: vector<u64>,
+    }
+
+    // TODO: this struct should be merged
+    // with GivenVouches whenever a cleanup is possible
+    /// Every period a voucher can get a limit
+    /// of vouches to give.
+    /// But also limit the revocations
+    struct VouchesLifetime has key {
+      given: u64,
+      given_revoked: u64,
+      received: u64,
+      received_revoked: u64,
+      last_revocation_epoch: u64,      // Track when last revocation happened
+      revocations_this_epoch: u64,     // Count revocations in current epoch
+      vouches_this_epoch: u64,         // Count vouches in current epoch
+      current_tracked_epoch: u64,      // Current epoch being tracked
     }
 
     /// struct to store the price to vouch for someone
@@ -110,6 +166,19 @@ module ol_framework::vouch {
           epoch_vouched: vector::empty(),
         });
       };
+
+      if (!exists<VouchesLifetime>(acc)) {
+        move_to<VouchesLifetime>(new_account_sig, VouchesLifetime {
+          given: 0,
+          given_revoked: 0,
+          received: 0,
+          received_revoked: 0,
+          last_revocation_epoch: 0,
+          revocations_this_epoch: 0,
+          vouches_this_epoch: 0,
+          current_tracked_epoch: epoch_helper::get_current_epoch(),
+        });
+      };
     }
 
     public(friend) fun set_vouch_price(framework: &signer, amount: u64) acquires VouchPrice {
@@ -122,7 +191,185 @@ module ol_framework::vouch {
       };
     }
 
-    fun vouch_impl(grantor: &signer, friend_account: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchPrice {
+    /// REVOCATION CHECKS
+    /// within a period a user might try to add and revoke
+    /// many users. As such there are some checks to make on
+    /// revocation.
+    /// 1. Over a lifetime of the account you cannot revoke more
+    /// than you have vouched for.
+    /// 2. You cannot revoke more times than the current
+    /// amount of vouches you currently have received.
+
+    fun assert_revoke_limit(grantor_acc: address) acquires VouchesLifetime {
+      let current_epoch = epoch_helper::get_current_epoch();
+      let state = borrow_global_mut<VouchesLifetime>(grantor_acc);
+
+      // Reset counter if we're in a new epoch
+      if (state.current_tracked_epoch != current_epoch) {
+        state.revocations_this_epoch = 0;
+        state.current_tracked_epoch = current_epoch;
+      };
+
+      // Check if user has exceeded revocations in this epoch
+      assert!(
+        state.revocations_this_epoch < MAX_REVOCATIONS_PER_EPOCH,
+        error::invalid_state(EREVOCATION_LIMIT_REACHED)
+      );
+    }
+
+    // Check if enough time has passed since last revocation before giving a new vouch
+    fun assert_cooldown_period(grantor_acc: address) acquires VouchesLifetime {
+      let current_epoch = epoch_helper::get_current_epoch();
+      let state = borrow_global<VouchesLifetime>(grantor_acc);
+
+      // Skip check if no revocations have been made yet
+      if (state.last_revocation_epoch == 0) {
+        return
+      };
+
+      assert!(
+        current_epoch >= state.last_revocation_epoch + REVOCATION_COOLDOWN_EPOCHS,
+        error::invalid_state(ECOOLDOWN_PERIOD_ACTIVE)
+      );
+    }
+
+    /// GIVEN VOUCHES CHECK
+    /// The maximum number of vouches which can be given
+    /// is the lowest of three numbers:
+    /// a. below the max safety threshold of the system
+    /// b. below the count of active vouches received + 1
+    /// c. below the max vouches as calculated by the users' vouch score quality
+    /// d. no more than 1 vouch per epoch
+
+    fun assert_max_vouches(grantor_acc: address) acquires GivenVouches, ReceivedVouches, VouchesLifetime {
+      assert_safety_ceiling_vouches(grantor_acc);
+      assert_max_vouches_by_score(grantor_acc);
+      assert_received_limit_vouches(grantor_acc);
+      assert_epoch_vouches_limit(grantor_acc);
+    }
+
+    fun assert_safety_ceiling_vouches(account: address) acquires GivenVouches {
+        // Get the received vouches that aren't expired
+        let given_vouches = vector::length(&get_given_vouches_not_expired(account));
+
+        assert!(given_vouches <= BASE_MAX_VOUCHES, error::invalid_state(EMAX_LIMIT_GIVEN_CEILING));
+    }
+
+      fun assert_received_limit_vouches(account: address) acquires GivenVouches, ReceivedVouches{
+        // Get the received vouches that aren't expired
+        let received_vouches = true_friends(account);
+        let received_count = vector::length(&received_vouches);
+        let given_vouches = vector::length(&get_given_vouches_not_expired(account));
+        // Base case: Always allow at least vouches received + 1
+        let max_allowed = received_count + 1;
+        assert!(given_vouches <= max_allowed, error::invalid_state(EMAX_LIMIT_GIVEN_BY_RECEIPT));
+    }
+    // Calculate the maximum number of vouches a user should be able to give based on their vouches received
+    public fun calculate_score_limit(account: address): u64 {
+
+        // TODO: placeholder until there is a root of trust
+        // module
+        let root_of_trust = vector[@0x1];
+
+        // Calculate the quality from the list of true friends
+        let total_quality = vouch_metrics::calculate_total_social_score(account, &root_of_trust);
+
+        // For accounts with low quality vouchers,
+        // we restrict further how many they can vouch for
+
+        let max_allowed = 1;
+
+        // TODO: collect analytics data to review this
+        if (total_quality >= 2 && total_quality < 200) {
+            max_allowed = 3;
+        } else if (total_quality >= 200 && total_quality < 400) {
+            max_allowed = 5;
+        } else if (total_quality >= 400) {
+            max_allowed = 10;
+        };
+
+        max_allowed
+    }
+
+    // a user should not be able to give more vouches than their quality score allows
+    fun assert_max_vouches_by_score(grantor_acc: address) acquires GivenVouches {
+      // check if the grantor has already reached the limit of vouches
+      let given_vouches = get_given_vouches_not_expired(grantor_acc);
+      let max_allowed = calculate_score_limit(grantor_acc);
+
+      assert!(
+        vector::length(&given_vouches) <= max_allowed,
+        error::invalid_state(EMAX_LIMIT_GIVEN_BY_SCORE)
+      );
+    }
+
+    // Check if user has already given the maximum number of vouches allowed per epoch
+    fun assert_epoch_vouches_limit(grantor_acc: address) acquires VouchesLifetime {
+      let current_epoch = epoch_helper::get_current_epoch();
+      let state = borrow_global_mut<VouchesLifetime>(grantor_acc);
+
+      // Reset counter if we're in a new epoch
+      if (state.current_tracked_epoch != current_epoch) {
+        state.vouches_this_epoch = 0;
+        state.current_tracked_epoch = current_epoch;
+      };
+
+      // Check if user has exceeded vouches in this epoch
+      assert!(
+        state.vouches_this_epoch < MAX_VOUCHES_PER_EPOCH,
+        error::invalid_state(EMAX_VOUCHES_PER_EPOCH)
+      );
+    }
+
+    // lazily remove expired vouches prior to setting any new ones
+    // ... by popular request
+    public (friend) fun garbage_collect_expired(user: address) acquires GivenVouches, ReceivedVouches {
+      let valid_vouches = vector::empty<address>();
+      let valid_epochs = vector::empty<u64>();
+      let current_epoch = epoch_helper::get_current_epoch();
+
+      let state = borrow_global_mut<GivenVouches>(user);
+
+      let i = 0;
+      while (i < vector::length(&state.outgoing_vouches)) {
+        let vouch_received = vector::borrow(&state.outgoing_vouches, i);
+        let when_vouched = *vector::borrow(&state.epoch_vouched, i);
+        // check if the vouch is expired
+        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+          vector::push_back(&mut valid_vouches, *vouch_received);
+          vector::push_back(&mut valid_epochs, when_vouched);
+
+        };
+        i = i + 1;
+      };
+      state.outgoing_vouches = valid_vouches;
+      state.epoch_vouched = valid_epochs;
+
+      //////// RECEIVED ////////
+      // TODO: Gross code duplication, only because field incoming_vouches is different, otherwise could be generic type.
+      let valid_vouches = vector::empty<address>();
+      let valid_epochs = vector::empty<u64>();
+      let current_epoch = epoch_helper::get_current_epoch();
+
+      let state = borrow_global_mut<ReceivedVouches>(user);
+
+      let i = 0;
+      while (i < vector::length(&state.incoming_vouches)) {
+        let vouch_received = vector::borrow(&state.incoming_vouches, i);
+        let when_vouched = *vector::borrow(&state.epoch_vouched, i);
+        // check if the vouch is expired
+        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+          vector::push_back(&mut valid_vouches, *vouch_received);
+          vector::push_back(&mut valid_epochs, when_vouched);
+
+        };
+        i = i + 1;
+      };
+      state.incoming_vouches = valid_vouches;
+      state.epoch_vouched = valid_epochs;
+    }
+
+    fun vouch_impl(grantor: &signer, friend_account: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
@@ -130,22 +377,15 @@ module ol_framework::vouch {
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
       assert!(is_init(friend_account), error::invalid_state(ERECEIVER_NOT_INIT));
 
+
+
+      // while we are here.
+      garbage_collect_expired(grantor_acc);
+      garbage_collect_expired(friend_account);
+
+
       if (check_unrelated) {
         ancestry::assert_unrelated(grantor_acc, friend_account);
-      };
-
-      // check if the grantor has already reached the limit of vouches
-      let (given_vouches, _) = get_given_vouches(grantor_acc);
-      assert!(
-        vector::length(&given_vouches) < BASE_MAX_VOUCHES,
-        error::invalid_state(EMAX_LIMIT_GIVEN)
-      );
-
-      // this fee is paid to the system, cannot be reclaimed
-      let price = get_vouch_price();
-      if (price > 0) {
-        let vouch_cost = ol_account::withdraw(grantor, price);
-        transaction_fee::user_pay_fee(grantor, vouch_cost);
       };
 
       let epoch = epoch_helper::get_current_epoch();
@@ -155,13 +395,18 @@ module ol_framework::vouch {
 
       // add grantor to friend received vouches
       add_received_vouches(friend_account, grantor_acc, epoch);
+
+      // Update lifetime tracking
+      let lifetime = borrow_global_mut<VouchesLifetime>(grantor_acc);
+      lifetime.given = lifetime.given + 1;
     }
 
     // Function to add given vouches
-    public fun add_given_vouches(grantor_acc: address, vouched_account: address, epoch: u64) acquires GivenVouches {
+    public fun add_given_vouches(grantor_acc: address, vouched_account: address, epoch: u64) acquires GivenVouches, VouchesLifetime, ReceivedVouches {
       let given_vouches = borrow_global_mut<GivenVouches>(grantor_acc);
       let (found, i) = vector::index_of(&given_vouches.outgoing_vouches, &vouched_account);
 
+      // don't check max vouches if we are just extending the expiration
       if (found) {
         // Update the epoch if the vouched account is already present
         let epoch_value = vector::borrow_mut(&mut given_vouches.epoch_vouched, i);
@@ -170,6 +415,15 @@ module ol_framework::vouch {
         // Add new vouched account and epoch if not already present
         vector::push_back(&mut given_vouches.outgoing_vouches, vouched_account);
         vector::push_back(&mut given_vouches.epoch_vouched, epoch);
+        // abort if we pass the limits of vouching and revoking
+        // Check if cooldown period has passed since last revocation
+        assert_cooldown_period(grantor_acc);
+        // are we hitting the limit of max vouches
+        assert_max_vouches(grantor_acc);
+
+        // Update epoch tracking for vouching
+        let lifetime = borrow_global_mut<VouchesLifetime>(grantor_acc);
+        lifetime.vouches_this_epoch = lifetime.vouches_this_epoch + 1;
       }
     }
 
@@ -192,21 +446,18 @@ module ol_framework::vouch {
     /// will only successfully vouch if the two are not related by ancestry
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
-    public entry fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
+    public(friend) fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       vouch_impl(grantor, friend_account, true);
     }
 
-    /// you may want to add people who are related to you
-    /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchPrice {
-      vouch_impl(grantor, friend_account, false);
-    }
-
-    public entry fun revoke(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches {
+    public(friend) fun revoke(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
 
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
+
+      // Check revocation limits
+      assert_revoke_limit(grantor_acc);
 
       // remove friend from grantor given vouches
       let v = borrow_global_mut<GivenVouches>(grantor_acc);
@@ -221,6 +472,13 @@ module ol_framework::vouch {
       assert!(found, error::invalid_argument(EVOUCH_NOT_FOUND));
       vector::remove(&mut v.incoming_vouches, i);
       vector::remove(&mut v.epoch_vouched, i);
+
+      // Update lifetime tracking for revocation
+      let current_epoch = epoch_helper::get_current_epoch();
+      let lifetime = borrow_global_mut<VouchesLifetime>(grantor_acc);
+      lifetime.given_revoked = lifetime.given_revoked + 1;
+      lifetime.last_revocation_epoch = current_epoch;
+      lifetime.revocations_this_epoch = lifetime.revocations_this_epoch + 1;
     }
 
     public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires ReceivedVouches {
@@ -275,9 +533,6 @@ module ol_framework::vouch {
         outgoing_vouches: new_outgoing_vouches,
         epoch_vouched: new_epoch_vouched,
       });
-
-      print(&string::utf8(b">>> Migrated GivenVouches for "));
-      print(&account);
     }
 
     // TODO: remove/deprecate after migration is completed
@@ -306,9 +561,6 @@ module ol_framework::vouch {
 
       // remove deprecated MyVouches struct
       move_from<MyVouches>(account);
-
-      print(&string::utf8(b">>> Migrated ReceivedVouches for "));
-      print(&account);
     }
 
     ///////// GETTERS //////////
@@ -319,6 +571,7 @@ module ol_framework::vouch {
     }
 
     #[view]
+    /// @return (vector of buddies, vector of epoch when vouched)
     public fun get_received_vouches(acc: address): (vector<address>, vector<u64>) acquires ReceivedVouches {
       if (!exists<ReceivedVouches>(acc)) {
         return (vector::empty(), vector::empty())
@@ -354,16 +607,21 @@ module ol_framework::vouch {
     }
 
     #[view]
+    // Deprecation notice, function will renamed, pass through until then.
     /// gets the received vouches not expired
     public fun all_not_expired(addr: address): vector<address> acquires ReceivedVouches {
+      get_received_vouches_not_expired(addr)
+    }
+
+
+    fun filter_expired(list_addr: vector<address>, epoch_vouched: vector<u64>): vector<address> {
       let valid_vouches = vector::empty<address>();
 
-      let (all_received, epoch_vouched) = get_received_vouches(addr);
       let current_epoch = epoch_helper::get_current_epoch();
 
       let i = 0;
-      while (i < vector::length(&all_received)) {
-        let vouch_received = vector::borrow(&all_received, i);
+      while (i < vector::length(&list_addr)) {
+        let vouch_received = vector::borrow(&list_addr, i);
         let when_vouched = *vector::borrow(&epoch_vouched, i);
         // check if the vouch is expired
         if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
@@ -376,12 +634,30 @@ module ol_framework::vouch {
     }
 
     #[view]
-    /// filter expired vouches, and do ancestry check
+    /// gets the received vouches not expired
+    public fun get_received_vouches_not_expired(addr: address): vector<address> acquires ReceivedVouches {
+
+      let (all_received, epoch_vouched) = get_received_vouches(addr);
+      filter_expired(all_received, epoch_vouched)
+    }
+
+    #[view]
+    /// gets the given vouches not expired
+    public fun get_given_vouches_not_expired(addr: address): vector<address> acquires GivenVouches {
+      let (all_received, epoch_vouched) = get_given_vouches(addr);
+      filter_expired(all_received, epoch_vouched)
+    }
+
+
+    #[view]
+    /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
-      if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
-      let not_expired = all_not_expired(addr);
-      let filtered_ancestry = ancestry::list_unrelated(not_expired);
-      filtered_ancestry
+        if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
+
+        // Get non-expired vouches
+        let not_expired = all_not_expired(addr);
+        // Filter for ancestry relationships
+        vouch_metrics::filter_unrelated(not_expired)
     }
 
     #[view]
@@ -410,6 +686,16 @@ module ol_framework::vouch {
       (buddies_in_list, vector::length(&buddies_in_list))
     }
 
+    #[view]
+    /// Calculate the total vouch quality score for a user
+    /// This is used by the founder module to evaluate if an account is verified
+    public fun calculate_total_vouch_quality(user: address): u64 {
+        // TODO: placeholder
+        // until merge root of trust
+        let root_of_trust = vector[@0x1];
+        vouch_metrics::calculate_total_social_score(user, &root_of_trust)
+    }
+
     #[test_only]
     public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires ReceivedVouches {
       bulk_set(val, buddy_list);
@@ -435,10 +721,6 @@ module ol_framework::vouch {
       if (!exists<MyVouches>(wanna_be_my_friend)) return;
       let epoch = epoch_helper::get_current_epoch();
 
-      // this fee is paid to the system, cannot be reclaimed
-      // let c = ol_account::withdraw(ill_be_your_friend, vouch_cost_microlibra());
-      // transaction_fee::user_pay_fee(ill_be_your_friend, c);
-
       let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
 
       let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
@@ -450,6 +732,14 @@ module ol_framework::vouch {
         vector::push_back(&mut v.my_buddies, buddy_acc);
         vector::push_back(&mut v.epoch_vouched, epoch);
       }
+    }
+
+
+    #[test_only]
+    /// you may want to add people who are related to you
+    /// there are no known use cases for this at the moment.
+    public(friend) fun insist_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
+      vouch_impl(grantor, friend_account, false);
     }
 
     #[test_only]

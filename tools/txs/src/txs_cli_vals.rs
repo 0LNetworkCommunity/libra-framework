@@ -7,7 +7,7 @@ use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
     ProofOfFeePofUpdateBidNetReward, StakeUpdateNetworkAndFullnodeAddresses,
-    ValidatorUniverseRegisterValidator, VouchRevoke, VouchVouchFor,
+    ValidatorUniverseRegisterValidator, VouchTxsRevoke, VouchTxsVouchFor,
 };
 use libra_config::validator_registration;
 use libra_types::global_config_dir;
@@ -106,16 +106,18 @@ impl ValidatorTxs {
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
                 addr: unjail_acct.to_owned(),
             },
+            // TODO: kept here for compatibility
+            // should be deprecated in favor of txs_cli_user
             ValidatorTxs::Vouch {
                 vouch_for: vouch_acct,
                 revoke,
             } => {
                 if *revoke {
-                    VouchRevoke {
+                    VouchTxsRevoke {
                         friend_account: *vouch_acct,
                     }
                 } else {
-                    VouchVouchFor {
+                    VouchTxsVouchFor {
                         friend_account: *vouch_acct,
                     }
                 }
