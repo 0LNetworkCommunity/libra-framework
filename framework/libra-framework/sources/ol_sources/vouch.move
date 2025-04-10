@@ -267,13 +267,14 @@ module ol_framework::vouch {
         assert!(given_vouches <= max_allowed, error::invalid_state(EMAX_LIMIT_GIVEN_BY_RECEIPT));
     }
     // Calculate the maximum number of vouches a user should be able to give based on their vouches received
-    public fun calculate_score_limit(account: address): u64 acquires ReceivedVouches {
+    public fun calculate_score_limit(account: address): u64 {
 
-        // Get true friends (not expired, not related by ancestry)
-        let true_friends_list = true_friends(account);
+        // TODO: placeholder until there is a root of trust
+        // module
+        let root_of_trust = vector[@0x1];
 
         // Calculate the quality from the list of true friends
-        let total_quality = vouch_metrics::calculate_quality_from_list(account, &true_friends_list);
+        let total_quality = vouch_metrics::calculate_total_social_score(account, &root_of_trust);
 
         // For accounts with low quality vouchers,
         // we restrict further how many they can vouch for
@@ -293,7 +294,7 @@ module ol_framework::vouch {
     }
 
     // a user should not be able to give more vouches than their quality score allows
-    fun assert_max_vouches_by_score(grantor_acc: address) acquires GivenVouches, ReceivedVouches {
+    fun assert_max_vouches_by_score(grantor_acc: address) acquires GivenVouches {
       // check if the grantor has already reached the limit of vouches
       let given_vouches = get_given_vouches_not_expired(grantor_acc);
       let max_allowed = calculate_score_limit(grantor_acc);
@@ -692,11 +693,12 @@ module ol_framework::vouch {
     #[view]
     /// Calculate the total vouch quality score for a user
     /// This is used by the founder module to evaluate if an account is verified
-    public fun calculate_total_vouch_quality(user: address): u64 acquires ReceivedVouches {
-        let valid_vouchers = true_friends(user);
+    public fun calculate_total_vouch_quality(user: address): u64 {
+        // TODO: placeholder
+        // until merge root of trust
+        let root_of_trust = vector[@0x1];
         print(&12000);
-        print(&valid_vouchers);
-        vouch_metrics::calculate_quality_from_list(user, &valid_vouchers)
+        vouch_metrics::calculate_total_social_score(user, &root_of_trust)
     }
 
     #[test_only]

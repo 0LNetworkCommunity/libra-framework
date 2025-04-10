@@ -387,6 +387,8 @@ module ol_framework::mock {
 
     // Verify the score is approximately 100
     let score = vouch::calculate_total_vouch_quality(target_account);
+    print(&10004);
+
     print(&score);
 
     vals
