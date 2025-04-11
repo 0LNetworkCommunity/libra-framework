@@ -8,7 +8,7 @@ module ol_framework::migrations {
   use diem_std::debug::print;
 
   // migrations
-  use ol_framework::vouch_migration;
+  // use ol_framework::vouch_migration;
 
   //////// CONST ////////
   const EMIGRATIONS_NOT_INITIALIZED: u64 = 1;
@@ -31,7 +31,8 @@ module ol_framework::migrations {
 
     // execute all migrations
     if (apply_migration(root, 1, b"Vouch migration initializes GivenVouches, ReceivedVouches, and drop MyVouches")) {
-      vouch_migration::migrate_my_vouches();
+      // Should have concluded in V7
+      // vouch_migration::migrate_my_vouches();
     };
 
   }
