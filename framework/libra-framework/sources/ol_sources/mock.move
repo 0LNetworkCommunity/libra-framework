@@ -298,7 +298,7 @@ module ol_framework::mock {
 
       vouch::init(&sig);
       if (with_vouches) {
-        vouch::test_set_buddies(*val, val_addr);
+        vouch::test_set_received_list(*val, val_addr);
       };
 
       i = i + 1;

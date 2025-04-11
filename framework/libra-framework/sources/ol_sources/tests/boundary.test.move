@@ -126,7 +126,7 @@ module ol_framework::test_boundary {
   //   mock::mock_bids(&vals);
 
   //   // MARLON HAS MANY FRIENDS
-  //   vouch::test_set_buddies(@0x12345, vals);
+  //   vouch::test_set_received_list(@0x12345, vals);
 
   //   let (errs, _pass) = proof_of_fee::audit_qualification(@0x12345);
   //   assert!(vector::length(&errs) == 0, 7357002);
@@ -230,7 +230,7 @@ module ol_framework::test_boundary {
     mock::mock_bids(&vals);
 
     // MARLON HAS MANY FRIENDS
-    vouch::test_set_buddies(@0x12345, vals);
+    vouch::test_set_received_list(@0x12345, vals);
 
     let (errs, _pass) = proof_of_fee::audit_qualification(@0x12345);
     assert!(vector::length(&errs) == 0, 7357002);

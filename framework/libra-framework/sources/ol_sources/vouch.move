@@ -481,24 +481,52 @@ module ol_framework::vouch {
       lifetime.revocations_this_epoch = lifetime.revocations_this_epoch + 1;
     }
 
-    public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires ReceivedVouches {
+    public(friend) fun vm_migrate(vm: &signer, val: address, buddy_list: vector<address>) acquires ReceivedVouches, GivenVouches {
       system_addresses::assert_ol(vm);
-      bulk_set(val, buddy_list);
+      bulk_set(val, buddy_list, buddy_list);
     }
 
-    fun bulk_set(val: address, buddy_list: vector<address>) acquires ReceivedVouches {
-      if (!exists<ReceivedVouches>(val)) return;
+    fun bulk_set(val: address, received_list: vector<address>, given_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+      // Handle received vouches
+      if (exists<ReceivedVouches>(val)) {
+        // take self out of list
+        let received_buddies = received_list;
+        let (is_found, i) = vector::index_of(&received_buddies, &val);
+        if (is_found) {
+          vector::swap_remove<address>(&mut received_buddies, i);
+        };
 
-      // take self out of list
-      let v = borrow_global_mut<ReceivedVouches>(val);
-      let (is_found, i) = vector::index_of(&buddy_list, &val);
-      if (is_found) {
-        vector::swap_remove<address>(&mut buddy_list, i);
+        let v = borrow_global_mut<ReceivedVouches>(val);
+        v.incoming_vouches = received_buddies;
+
+        let epoch_data: vector<u64> = vector::map_ref(&received_buddies, |_e| { 0u64 });
+        v.epoch_vouched = epoch_data;
       };
-      v.incoming_vouches = buddy_list;
 
-      let epoch_data: vector<u64> = vector::map_ref(&buddy_list, |_e| { 0u64 } );
-      v.epoch_vouched = epoch_data;
+      // Handle given vouches
+      if (exists<GivenVouches>(val)) {
+        // No need to check for self in given_list as you can't vouch for yourself
+        let v = borrow_global_mut<GivenVouches>(val);
+        v.outgoing_vouches = given_list;
+
+        let epoch_data: vector<u64> = vector::map_ref(&given_list, |_e| { 0u64 });
+        v.epoch_vouched = epoch_data;
+      };
+    }
+
+    #[test_only]
+    public fun test_set_received_list(val: address, buddy_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+      bulk_set(val, buddy_list, vector::empty<address>());
+    }
+
+    #[test_only]
+    public fun test_set_given_list(val: address, vouch_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+      bulk_set(val, vector::empty<address>(), vouch_list);
+    }
+
+    #[test_only]
+    public fun test_set_both_lists(val: address, received_list: vector<address>, given_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+      bulk_set(val, received_list, given_list);
     }
 
     // // The struct GivenVouches cannot not be lazy initialized because
@@ -696,10 +724,20 @@ module ol_framework::vouch {
         vouch_metrics::calculate_total_social_score(user, &root_of_trust)
     }
 
-    #[test_only]
-    public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires ReceivedVouches {
-      bulk_set(val, buddy_list);
-    }
+    // #[test_only]
+    // public fun test_set_received_list(val: address, buddy_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+    //   bulk_set(val, buddy_list, vector::empty<address>());
+    // }
+
+    // #[test_only]
+    // public fun test_set_given_list(val: address, vouch_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+    //   bulk_set(val, vector::empty<address>(), vouch_list);
+    // }
+
+    // #[test_only]
+    // public fun test_set_both_lists(val: address, received_list: vector<address>, given_list: vector<address>) acquires ReceivedVouches, GivenVouches {
+    //   bulk_set(val, received_list, given_list);
+    // }
 
     // #[test_only]
     // public fun legacy_init(new_account_sig: &signer) {
@@ -738,9 +776,10 @@ module ol_framework::vouch {
     #[test_only]
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public(friend) fun insist_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
+    public(friend) fun test_helper_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       vouch_impl(grantor, friend_account, false);
     }
+
 
     // #[test_only]
     // public fun get_legacy_vouches(acc: address): (vector<address>, vector<u64>) acquires MyVouches {

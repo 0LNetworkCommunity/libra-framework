@@ -224,19 +224,19 @@ module ol_framework::test_validator_vouch {
     vouch::init(v10);
 
     // alice vouches for 10 validators
-    vouch::insist_vouch_for(alice, @0x10001);
-    vouch::insist_vouch_for(alice, @0x10002);
-    vouch::insist_vouch_for(alice, @0x10003);
-    vouch::insist_vouch_for(alice, @0x10004);
-    vouch::insist_vouch_for(alice, @0x10005);
-    vouch::insist_vouch_for(alice, @0x10006);
-    vouch::insist_vouch_for(alice, @0x10007);
-    vouch::insist_vouch_for(alice, @0x10008);
-    vouch::insist_vouch_for(alice, @0x10009);
-    vouch::insist_vouch_for(alice, @0x10010);
+    vouch::test_helper_vouch_for(alice, @0x10001);
+    vouch::test_helper_vouch_for(alice, @0x10002);
+    vouch::test_helper_vouch_for(alice, @0x10003);
+    vouch::test_helper_vouch_for(alice, @0x10004);
+    vouch::test_helper_vouch_for(alice, @0x10005);
+    vouch::test_helper_vouch_for(alice, @0x10006);
+    vouch::test_helper_vouch_for(alice, @0x10007);
+    vouch::test_helper_vouch_for(alice, @0x10008);
+    vouch::test_helper_vouch_for(alice, @0x10009);
+    vouch::test_helper_vouch_for(alice, @0x10010);
 
     // alice try to vouch for one more
-    vouch::insist_vouch_for(alice, @0x1000b);
+    vouch::test_helper_vouch_for(alice, @0x1000b);
 
     // check alice
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
