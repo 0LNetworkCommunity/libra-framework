@@ -1,4 +1,4 @@
-module ol_framework::page_rank_lazy {
+module ol_framework::page_rank_lazy_with_revoke {
     use std::error;
     use std::signer;
     use std::vector;
