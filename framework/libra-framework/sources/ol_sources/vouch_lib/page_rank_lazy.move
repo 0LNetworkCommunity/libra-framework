@@ -7,7 +7,6 @@ module ol_framework::page_rank_lazy {
     // Constants
     const DEFAULT_WALK_DEPTH: u64 = 4;
     const DEFAULT_NUM_WALKS: u64 = 10;
-    const DEFAULT_INWARD_MAX_DEPTH: u64 = 10; // Maximum depth for inward path search
     const SCORE_TTL_SECONDS: u64 = 1000; // Score validity period in seconds
     const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
     const DEFAULT_ROOT_REGISTRY: address = @0x1; // Default registry address for root of trust
@@ -26,8 +25,7 @@ module ol_framework::page_rank_lazy {
         score_computed_at_timestamp: u64,
         // Whether this node's trust data is stale and needs recalculation
         is_stale: bool,
-        // Cached shortest path distance to any root node (MAX_U64 if no path exists)
-        shortest_path_to_root: u64,
+        // Shortest path to root now handled in a separate module
     }
 
     // Initialize a user trust record if it doesn't exist
@@ -38,7 +36,6 @@ module ol_framework::page_rank_lazy {
                 cached_score: 0,
                 score_computed_at_timestamp: 0,
                 is_stale: true,
-                shortest_path_to_root: 0xFFFFFFFFFFFFFFFF, // MAX_U64, indicating no path calculated yet
             });
         };
     }
@@ -88,7 +85,6 @@ module ol_framework::page_rank_lazy {
     }
 
     // Monte Carlo approximation for trust score
-    // Remove the unnecessary "acquires UserTrustRecord" since we don't access it directly
     fun monte_carlo_trust_score(roots: &vector<address>, target: address, num_walks: u64, depth: u64): u64 {
         let hits = 0;
         let i = 0;
@@ -228,9 +224,37 @@ module ol_framework::page_rank_lazy {
                 cached_score: 0,
                 score_computed_at_timestamp: 0,
                 is_stale: true,
-                shortest_path_to_root: 0xFFFFFFFFFFFFFFFF, // MAX_U64, indicating no path calculated yet
             });
         };
+    }
+
+    // Check if a trust record exists
+    public fun has_trust_record(addr: address): bool {
+        exists<UserTrustRecord>(addr)
+    }
+
+    // Check if a trust record is fresh (not stale and not expired)
+    public fun is_fresh_record(addr: address, current_timestamp: u64): bool acquires UserTrustRecord {
+        if (!exists<UserTrustRecord>(addr)) {
+            return false
+        };
+
+        let user_record = borrow_global<UserTrustRecord>(addr);
+
+        !user_record.is_stale
+            && current_timestamp < user_record.score_computed_at_timestamp + SCORE_TTL_SECONDS
+            && user_record.score_computed_at_timestamp > 0
+    }
+
+    // Registry existence check helper for other modules
+    public fun registry_exists(registry_addr: address): bool {
+        // Just pass through to root_of_trust to check if registry exists
+        !vector::is_empty(&root_of_trust::get_current_roots_at_registry(registry_addr))
+    }
+
+    // Helper for other modules to check if an address is a root node
+    public fun is_root_node(addr: address): bool {
+        root_of_trust::is_root_at_registry(DEFAULT_ROOT_REGISTRY, addr)
     }
 
     // Testing helpers
@@ -589,45 +613,5 @@ module ol_framework::page_rank_lazy {
     // Accessor functions for use by other modules - now using vouch module
     public fun vouches_for(voucher_addr: address, target_addr: address): bool {
         vouch::is_valid_voucher_for(voucher_addr, target_addr)
-    }
-
-    // Get the cached shortest path to root
-    public fun get_shortest_path(addr: address): u64 acquires UserTrustRecord {
-        if (!exists<UserTrustRecord>(addr)) {
-            return 0xFFFFFFFFFFFFFFFF
-        };
-
-        let user_record = borrow_global<UserTrustRecord>(addr);
-        user_record.shortest_path_to_root
-    }
-
-    // Update the shortest path to root
-    public fun update_path_length(addr: address, path_found: bool, path_length: u64) acquires UserTrustRecord {
-        if (!exists<UserTrustRecord>(addr)) {
-            return
-        };
-
-        let record = borrow_global_mut<UserTrustRecord>(addr);
-
-        if (path_found) {
-            record.shortest_path_to_root = path_length;
-        } else {
-            // No path found, set to MAX_U64
-            record.shortest_path_to_root = 0xFFFFFFFFFFFFFFFF;
-        };
-    }
-
-    // Check if the path data is fresh and valid
-    public fun has_fresh_path(addr: address, current_timestamp: u64): bool acquires UserTrustRecord {
-        if (!exists<UserTrustRecord>(addr)) {
-            return false
-        };
-
-        let user_record = borrow_global<UserTrustRecord>(addr);
-
-        !user_record.is_stale
-            && current_timestamp < user_record.score_computed_at_timestamp + SCORE_TTL_SECONDS
-            && user_record.score_computed_at_timestamp > 0
-            && user_record.shortest_path_to_root != 0xFFFFFFFFFFFFFFFF
     }
 }

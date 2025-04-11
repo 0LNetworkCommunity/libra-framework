@@ -15,12 +15,12 @@ We're working in a constrained compute/storage environment (e.g., a blockchain V
 ### 2. Core Design: Distributed Trust Graph with Lazy Evaluation
 
 #### A. Distributed Storage Model
-- Each user stores their own "active vouches" list.
-- Trust data is stored at the user level, not centralized.
+- Trust relationships (vouches) are managed by a separate `vouch` module.
+- Trust score data is stored at the user level, not centralized.
 - Scores are computed on-demand rather than tracking a global state.
 
 #### B. Explicit Revocation Handling
-- Revocation is handled by removing addresses from active vouches.
+- Revocation is handled by removing vouches through the `vouch` module.
 - No separate revocation graph needed, simplifying the model.
 - When a user revokes trust, all downstream scores are marked as stale.
 
@@ -60,22 +60,25 @@ Score depends on frequency of reaching a node via random walks from roots throug
 #### A. Per-User Trust Record Structure
 ```plaintext
 UserTrustRecord {
-    active_vouches: vector<address>,
     cached_score: u64,
     score_computed_at_timestamp: u64,
     is_stale: bool,
 }
 ```
 
-#### B. Score Computation Flow
+#### B. External Module Dependencies
+- `root_of_trust`: Provides the root nodes for trust calculations
+- `vouch`: Manages the actual vouching relationships between addresses
+
+#### C. Score Computation Flow
 1. Check if cached score is valid (not stale & within TTL)
 2. If valid, return cached score
 3. Otherwise, compute fresh score via Monte Carlo walks
 4. Update cache with new score and timestamp
 
-#### C. Handling Trust Changes
+#### D. Handling Trust Changes
 When user A changes their vouches (adding/removing):
-1. Update A's active_vouches list
+1. Update A's vouches through the `vouch` module
 2. Mark affected nodes as stale
 3. Recursively propagate staleness to downstream nodes
 4. Apply circuit breaker to prevent excessive computation
@@ -86,7 +89,7 @@ When user A changes their vouches (adding/removing):
 
 #### A. Storage Efficiency
 - No centralized graph storage
-- Each user stores only their outbound trust edges
+- Vouch relationships managed by dedicated `vouch` module
 - Minimal metadata required per user
 
 #### B. Computation Efficiency
@@ -105,8 +108,8 @@ When user A changes their vouches (adding/removing):
 ### 6. Future Improvements
 
 #### A. Randomization
-- Currently using deterministic neighbor selection for testing
-- Could be enhanced with proper randomization for production
+- Currently using deterministic neighbor selection
+- Could be enhanced with proper randomization for better score distribution
 
 #### B. Parallelization
 - Monte Carlo approach naturally supports parallelization
