@@ -1,116 +1,63 @@
 module ol_framework::page_rank_lazy {
-    use std::error;
     use std::signer;
     use std::vector;
+    use ol_framework::root_of_trust;
+    use ol_framework::vouch;
 
     // Constants
-    const MAX_ROOTS: u64 = 20;
     const DEFAULT_WALK_DEPTH: u64 = 4;
     const DEFAULT_NUM_WALKS: u64 = 10;
+    const DEFAULT_INWARD_MAX_DEPTH: u64 = 10; // Maximum depth for inward path search
     const SCORE_TTL_SECONDS: u64 = 1000; // Score validity period in seconds
     const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
+    const DEFAULT_ROOT_REGISTRY: address = @0x1; // Default registry address for root of trust
 
     // Error codes
-    const EROOT_LIMIT_EXCEEDED: u64 = 1;
     const ENODE_NOT_FOUND: u64 = 2;
-    const EALREADY_INITIALIZED: u64 = 3;
     const ENOT_INITIALIZED: u64 = 4;
-    const EUNAUTHORIZED: u64 = 5;
     const EPROCESSING_LIMIT_REACHED: u64 = 6;
-
-    // Data structures
-    struct TrustRegistry has key {
-        // Root nodes (trusted by default)
-        roots: vector<address>,
-    }
 
     // Per-user trust record - each user stores their own trust data
     struct UserTrustRecord has key, drop {
-        // List of accounts this user actively vouches for
-        active_vouches: vector<address>,
+        // No need to store active_vouches - we'll get this from vouch module
         // Cached trust score
         cached_score: u64,
         // When the score was last computed (timestamp)
         score_computed_at_timestamp: u64,
         // Whether this node's trust data is stale and needs recalculation
         is_stale: bool,
+        // Cached shortest path distance to any root node (MAX_U64 if no path exists)
+        shortest_path_to_root: u64,
     }
 
-    // Initialize the trust registry
-    public fun initialize(account: &signer, initial_roots: vector<address>) {
-        // Ensure only the framework address can initialize the system
-        assert!(signer::address_of(account) == @0x1, error::permission_denied(EUNAUTHORIZED));
-
+    // Initialize a user trust record if it doesn't exist
+    public fun maybe_initialize_trust_record(account: &signer) {
         let addr = signer::address_of(account);
-
-        assert!(!exists<TrustRegistry>(addr), error::already_exists(EALREADY_INITIALIZED));
-        assert!(vector::length(&initial_roots) <= MAX_ROOTS, error::invalid_argument(EROOT_LIMIT_EXCEEDED));
-
-        move_to(account, TrustRegistry {
-            roots: initial_roots,
-        });
-
-        // Root accounts will initialize themselves when needed
-    }
-
-    // A user vouches for another user
-    public fun vouch_for(account: &signer, for_address: address) acquires UserTrustRecord {
-        let from = signer::address_of(account);
-
-        // Create user trust record if it doesn't exist
-        if (!exists<UserTrustRecord>(from)) {
+        if (!exists<UserTrustRecord>(addr)) {
             move_to(account, UserTrustRecord {
-                active_vouches: vector::empty(),
                 cached_score: 0,
                 score_computed_at_timestamp: 0,
                 is_stale: true,
+                shortest_path_to_root: 0xFFFFFFFFFFFFFFFF, // MAX_U64, indicating no path calculated yet
             });
-        };
-
-        let user_record = borrow_global_mut<UserTrustRecord>(from);
-
-        // Add vouch if not already present
-        if (!vector::contains(&user_record.active_vouches, &for_address)) {
-            vector::push_back(&mut user_record.active_vouches, for_address);
-
-            // Mark the target's score as stale since they gained a new voucher
-            mark_as_stale(for_address);
         };
     }
 
-    // A user revokes trust in another user by removing them from their active vouches
-    public fun revoke_trust(account: &signer, for_address: address) acquires UserTrustRecord {
-        let from = signer::address_of(account);
-
-        if (!exists<UserTrustRecord>(from)) {
-            // Nothing to revoke if user has no trust record
-            return
-        };
-
-        let user_record = borrow_global_mut<UserTrustRecord>(from);
-        let (found, index) = vector::index_of(&user_record.active_vouches, &for_address);
-
-        if (found) {
-            // Remove the address from active vouches
-            vector::remove(&mut user_record.active_vouches, index);
-
-            // Mark the target's score as stale since they lost a voucher
-            mark_as_stale(for_address);
+    // Mark a user's trust record as stale when their vouching relationships change
+    public fun mark_record_stale(user: address) acquires UserTrustRecord {
+        if (exists<UserTrustRecord>(user)) {
+            let user_record = borrow_global_mut<UserTrustRecord>(user);
+            user_record.is_stale = true;
         };
     }
 
     // Calculate or retrieve cached trust score
-    public fun get_trust_score(addr: address, current_timestamp: u64): u64 acquires TrustRegistry, UserTrustRecord {
-        let registry_addr = @0x1; // Registry address
-
-        assert!(exists<TrustRegistry>(registry_addr), error::not_found(ENOT_INITIALIZED));
-
+    public fun get_trust_score(addr: address, current_timestamp: u64): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         if (!exists<UserTrustRecord>(addr)) {
             return 0
         };
 
-        let registry = borrow_global<TrustRegistry>(registry_addr);
         let user_record = borrow_global<UserTrustRecord>(addr);
 
         // Check if cached score is still valid and not stale
@@ -122,7 +69,9 @@ module ol_framework::page_rank_lazy {
         };
 
         // Cache is stale or expired - compute fresh score
-        let score = compute_score_monte_carlo(addr, &registry.roots, current_timestamp);
+        // Get roots from root_of_trust module instead of local registry
+        let roots = root_of_trust::get_current_roots_at_registry(DEFAULT_ROOT_REGISTRY);
+        let score = compute_score_monte_carlo(addr, &roots, current_timestamp);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
@@ -134,12 +83,13 @@ module ol_framework::page_rank_lazy {
     }
 
     // Compute trust score using Monte Carlo walks
-    fun compute_score_monte_carlo(target: address, roots: &vector<address>, _current_timestamp: u64): u64 acquires UserTrustRecord {
+    fun compute_score_monte_carlo(target: address, roots: &vector<address>, _current_timestamp: u64): u64 {
         monte_carlo_trust_score(roots, target, DEFAULT_NUM_WALKS, DEFAULT_WALK_DEPTH)
     }
 
     // Monte Carlo approximation for trust score
-    fun monte_carlo_trust_score(roots: &vector<address>, target: address, num_walks: u64, depth: u64): u64 acquires UserTrustRecord {
+    // Remove the unnecessary "acquires UserTrustRecord" since we don't access it directly
+    fun monte_carlo_trust_score(roots: &vector<address>, target: address, num_walks: u64, depth: u64): u64 {
         let hits = 0;
         let i = 0;
 
@@ -183,13 +133,12 @@ module ol_framework::page_rank_lazy {
     }
 
     // Get a random unvisited neighbor that this user vouches for
-    fun get_random_unvisited_neighbor(user: address, visited: &vector<address>): (address, bool) acquires UserTrustRecord {
-        if (!exists<UserTrustRecord>(user)) {
-            return (@0x0, false) // Return dummy address with false flag
-        };
+    // Now uses vouch module instead of local storage
+    fun get_random_unvisited_neighbor(user: address, visited: &vector<address>): (address, bool) {
+        // Get the active vouches from the vouch module
+        let (active_vouches, _) = vouch::get_given_vouches(user);
 
-        let record = borrow_global<UserTrustRecord>(user);
-        let vouches_len = vector::length(&record.active_vouches);
+        let vouches_len = vector::length(&active_vouches);
 
         if (vouches_len == 0) {
             return (@0x0, false) // Return dummy address with false flag
@@ -198,7 +147,7 @@ module ol_framework::page_rank_lazy {
         // Try to find an unvisited neighbor
         let i = 0;
         while (i < vouches_len) {
-            let neighbor = *vector::borrow(&record.active_vouches, i);
+            let neighbor = *vector::borrow(&active_vouches, i);
 
             // If this neighbor hasn't been visited yet, return it
             if (!vector::contains(visited, &neighbor)) {
@@ -221,6 +170,7 @@ module ol_framework::page_rank_lazy {
     }
 
     // Internal helper function with cycle detection for marking nodes as stale
+    // Uses vouch module to get outgoing vouches
     fun mark_as_stale_with_visited(
         user: address,
         visited: &vector<address>,
@@ -239,44 +189,32 @@ module ol_framework::page_rank_lazy {
         // Increment the number of addresses we've processed
         *processed_count = *processed_count + 1;
 
+        // Mark this user's record as stale if it exists
         if (exists<UserTrustRecord>(user)) {
-            // Create a new visited list that includes the current node
-            let new_visited = *visited; // Clone the visited list
-            vector::push_back(&mut new_visited, user);
+            let record = borrow_global_mut<UserTrustRecord>(user);
+            record.is_stale = true;
+        };
 
-            // First gather all downstream addresses we need to mark as stale
-            let downstream_addresses = vector::empty<address>();
-            {
-                let record = borrow_global<UserTrustRecord>(user);
-                let i = 0;
-                let len = vector::length(&record.active_vouches);
+        // Get outgoing vouches from vouch module
+        let (outgoing_vouches, _) = vouch::get_given_vouches(user);
 
-                while (i < len) {
-                    vector::push_back(&mut downstream_addresses, *vector::borrow(&record.active_vouches, i));
-                    i = i + 1;
-                };
-            }; // Release the borrow here
+        // Create a new visited list that includes the current node
+        let new_visited = *visited; // Clone the visited list
+        vector::push_back(&mut new_visited, user);
 
-            // Mark the current user's record as stale
-            {
-                let record = borrow_global_mut<UserTrustRecord>(user);
-                record.is_stale = true;
-            }; // Release the mutable borrow
+        // Recursively process downstream addresses
+        let i = 0;
+        let len = vector::length(&outgoing_vouches);
+        while (i < len) {
+            // Pass the updated visited list to avoid cycles
+            mark_as_stale_with_visited(*vector::borrow(&outgoing_vouches, i), &new_visited, processed_count);
 
-            // Now recursively process downstream addresses without holding any references
-            let i = 0;
-            let len = vector::length(&downstream_addresses);
-            while (i < len) {
-                // Pass the updated visited list to avoid cycles
-                mark_as_stale_with_visited(*vector::borrow(&downstream_addresses, i), &new_visited, processed_count);
-
-                // If we've hit the circuit breaker, stop processing
-                if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-                    break
-                };
-
-                i = i + 1;
+            // If we've hit the circuit breaker, stop processing
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+                break
             };
+
+            i = i + 1;
         };
     }
 
@@ -287,22 +225,15 @@ module ol_framework::page_rank_lazy {
 
         if (!exists<UserTrustRecord>(addr)) {
             move_to(account, UserTrustRecord {
-                active_vouches: vector::empty(),
                 cached_score: 0,
                 score_computed_at_timestamp: 0,
                 is_stale: true,
+                shortest_path_to_root: 0xFFFFFFFFFFFFFFFF, // MAX_U64, indicating no path calculated yet
             });
         };
     }
 
     // Testing helpers
-    #[test_only]
-    public fun initialize_test_registry(admin: &signer) {
-        let roots = vector::empty<address>();
-        vector::push_back(&mut roots, @0x42);
-        initialize(admin, roots);
-    }
-
     #[test_only]
     public fun setup_mock_trust_network(
         admin: &signer,
@@ -310,11 +241,15 @@ module ol_framework::page_rank_lazy {
         user1: &signer,
         user2: &signer,
         user3: &signer
-    ) acquires UserTrustRecord {
-        // Setup roots
+    ) {
+        // Remove 'acquires UserTrustRecord' as we don't directly access it
+        // Get the addresses for test setup
+        let root_addr = signer::address_of(root);
+
+        // Setup mock roots in root_of_trust module using the correct initialization
         let roots = vector::empty<address>();
-        vector::push_back(&mut roots, signer::address_of(root));
-        initialize(admin, roots);
+        vector::push_back(&mut roots, root_addr);
+        root_of_trust::framework_migration(admin, roots, 1, 30); // minimum_cohort=1, rotation_days=30
 
         // Initialize trust records for all accounts
         initialize_user_trust_record(root);
@@ -322,68 +257,74 @@ module ol_framework::page_rank_lazy {
         initialize_user_trust_record(user2);
         initialize_user_trust_record(user3);
 
-        // Setup vouch relationships
+        // Setup vouch relationships using vouch_txs instead of direct vouch calls
         // Root vouches for user1
-        vouch_for(root, signer::address_of(user1));
+        ol_framework::vouch_txs::vouch_for(root, signer::address_of(user1));
 
         // User1 vouches for user2
-        vouch_for(user1, signer::address_of(user2));
+        ol_framework::vouch_txs::vouch_for(user1, signer::address_of(user2));
 
         // User2 vouches for user3
-        vouch_for(user2, signer::address_of(user3));
+        ol_framework::vouch_txs::vouch_for(user2, signer::address_of(user3));
 
         // Now testing a scenario where root vouched for user3 but then revoked it
-        vouch_for(root, signer::address_of(user3));
-        revoke_trust(root, signer::address_of(user3));
+        ol_framework::vouch_txs::vouch_for(root, signer::address_of(user3));
+        ol_framework::vouch_txs::revoke(root, signer::address_of(user3));
     }
 
     // Tests
     #[test(admin = @0x1, root = @0x42)]
     fun test_initialize(admin: signer, root: signer) {
-        initialize_test_registry(&admin);
+        // Initialize with proper framework_migration call
+        let roots = vector::empty<address>();
+        vector::push_back(&mut roots, @0x42);
+        root_of_trust::framework_migration(&admin, roots, 1, 30);
 
-        // In the test environment, we need to explicitly initialize the user trust record
-        // because our initialize function can't create resources at other addresses
         initialize_user_trust_record(&root);
-
         let root_addr = signer::address_of(&root);
-
-        // In real testing we would verify the scores properly
-        assert!(exists<TrustRegistry>(@0x1), 73570001);
         assert!(exists<UserTrustRecord>(root_addr), 73570002);
     }
 
     #[test(admin = @0x1, root = @0x42, user = @0x43)]
-    fun test_vouch(admin: signer, root: signer, user: signer) acquires UserTrustRecord {
-        initialize_test_registry(&admin);
+    fun test_vouch(admin: signer, root: signer, user: signer) {
+        // Remove 'acquires UserTrustRecord' as we don't directly access it
+        // Initialize with proper framework_migration call
+        let roots = vector::empty<address>();
+        vector::push_back(&mut roots, @0x42);
+        root_of_trust::framework_migration(&admin, roots, 1, 30);
 
         let root_addr = signer::address_of(&root);
         let user_addr = signer::address_of(&user);
 
-        vouch_for(&root, user_addr);
+        // Use vouch_txs instead of direct vouch call
+        ol_framework::vouch_txs::vouch_for(&root, user_addr);
 
-        // Verify the vouch was recorded
+        // Verify the vouch was recorded - now using existence check directly
+        // without borrowing from global storage
         assert!(exists<UserTrustRecord>(root_addr), 73570003);
-        let record = borrow_global<UserTrustRecord>(root_addr);
-        assert!(vector::contains(&record.active_vouches, &user_addr), 73570004);
+        assert!(vouch::is_valid_voucher_for(root_addr, user_addr), 73570004);
     }
 
     #[test(admin = @0x1, root = @0x42, user = @0x43)]
     fun test_revoke(admin: signer, root: signer, user: signer) acquires UserTrustRecord {
-        initialize_test_registry(&admin);
+        // Add the missing 'acquires UserTrustRecord' for the borrow_global call
+        // Initialize with proper framework_migration call
+        let roots = vector::empty<address>();
+        vector::push_back(&mut roots, @0x42);
+        root_of_trust::framework_migration(&admin, roots, 1, 30);
 
         let root_addr = signer::address_of(&root);
         let user_addr = signer::address_of(&user);
 
-        // First vouch for the user
-        vouch_for(&root, user_addr);
-        assert!(vector::contains(&borrow_global<UserTrustRecord>(root_addr).active_vouches, &user_addr), 73570010);
+        // First vouch for the user using vouch_txs
+        ol_framework::vouch_txs::vouch_for(&root, user_addr);
+        assert!(vouch::is_valid_voucher_for(root_addr, user_addr), 73570010);
 
-        // Now revoke trust
-        revoke_trust(&root, user_addr);
+        // Now revoke trust using vouch_txs
+        ol_framework::vouch_txs::revoke(&root, user_addr);
 
         // Verify the vouch was removed
-        assert!(!vector::contains(&borrow_global<UserTrustRecord>(root_addr).active_vouches, &user_addr), 73570011);
+        assert!(!vouch::is_valid_voucher_for(root_addr, user_addr), 73570011);
 
         // Verify user record is marked as stale
         if (exists<UserTrustRecord>(user_addr)) {
@@ -398,7 +339,7 @@ module ol_framework::page_rank_lazy {
         user: signer,
         user2: signer,
         user3: signer
-    ) acquires TrustRegistry, UserTrustRecord {
+    ) acquires UserTrustRecord {
         setup_mock_trust_network(&admin, &root, &user, &user2, &user3);
 
         // Simulate scores at timestamp 1
@@ -435,9 +376,11 @@ module ol_framework::page_rank_lazy {
         root: signer,
         user1: signer,
         user2: signer
-    ) acquires TrustRegistry, UserTrustRecord {
-        // Initialize trust registry
-        initialize_test_registry(&admin);
+    ) acquires UserTrustRecord {
+        // Initialize with proper framework_migration call
+        let roots = vector::empty<address>();
+        vector::push_back(&mut roots, @0x42);
+        root_of_trust::framework_migration(&admin, roots, 1, 30);
 
         // Initialize user records
         initialize_user_trust_record(&root);
@@ -449,9 +392,10 @@ module ol_framework::page_rank_lazy {
         let user2_addr = signer::address_of(&user2);
 
         // Set up a cycle: root -> user1 -> user2 -> user1 (cycle back to user1)
-        vouch_for(&root, user1_addr);
-        vouch_for(&user1, user2_addr);
-        vouch_for(&user2, user1_addr); // This creates a cycle
+        // Use vouch_txs instead of direct vouch calls
+        ol_framework::vouch_txs::vouch_for(&root, user1_addr);
+        ol_framework::vouch_txs::vouch_for(&user1, user2_addr);
+        ol_framework::vouch_txs::vouch_for(&user2, user1_addr); // This creates a cycle
 
         // Get scores at timestamp 1
         let current_timestamp = 1;
@@ -474,5 +418,50 @@ module ol_framework::page_rank_lazy {
 
         // In a non-cyclic Monte Carlo approach, users farther from root should have lower scores
         assert!(user1_score >= user2_score, 73570022);
+    }
+
+    // Accessor functions for use by other modules - now using vouch module
+    public fun vouches_for(voucher_addr: address, target_addr: address): bool {
+        vouch::is_valid_voucher_for(voucher_addr, target_addr)
+    }
+
+    // Get the cached shortest path to root
+    public fun get_shortest_path(addr: address): u64 acquires UserTrustRecord {
+        if (!exists<UserTrustRecord>(addr)) {
+            return 0xFFFFFFFFFFFFFFFF
+        };
+
+        let user_record = borrow_global<UserTrustRecord>(addr);
+        user_record.shortest_path_to_root
+    }
+
+    // Update the shortest path to root
+    public fun update_path_length(addr: address, path_found: bool, path_length: u64) acquires UserTrustRecord {
+        if (!exists<UserTrustRecord>(addr)) {
+            return
+        };
+
+        let record = borrow_global_mut<UserTrustRecord>(addr);
+
+        if (path_found) {
+            record.shortest_path_to_root = path_length;
+        } else {
+            // No path found, set to MAX_U64
+            record.shortest_path_to_root = 0xFFFFFFFFFFFFFFFF;
+        };
+    }
+
+    // Check if the path data is fresh and valid
+    public fun has_fresh_path(addr: address, current_timestamp: u64): bool acquires UserTrustRecord {
+        if (!exists<UserTrustRecord>(addr)) {
+            return false
+        };
+
+        let user_record = borrow_global<UserTrustRecord>(addr);
+
+        !user_record.is_stale
+            && current_timestamp < user_record.score_computed_at_timestamp + SCORE_TTL_SECONDS
+            && user_record.score_computed_at_timestamp > 0
+            && user_record.shortest_path_to_root != 0xFFFFFFFFFFFFFFFF
     }
 }
