@@ -11,6 +11,14 @@ module ol_framework::page_rank_lazy {
     const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
     const DEFAULT_ROOT_REGISTRY: address = @0x1; // Default registry address for root of trust
 
+    // Algorithm selection constants
+    const ALGORITHM_MONTE_CARLO: u8 = 0;
+    const ALGORITHM_FULL_GRAPH: u8 = 1;
+    const DEFAULT_ALGORITHM: u8 = 0;
+
+    // Full graph walk constants
+    const FULL_WALK_MAX_DEPTH: u64 = 6; // Maximum path length for full graph traversal
+
     // Error codes
     const ENODE_NOT_FOUND: u64 = 2;
     const ENOT_INITIALIZED: u64 = 4;
@@ -50,6 +58,11 @@ module ol_framework::page_rank_lazy {
 
     // Calculate or retrieve cached trust score
     public fun get_trust_score(addr: address, current_timestamp: u64): u64 acquires UserTrustRecord {
+        get_trust_score_with_algorithm(addr, current_timestamp, DEFAULT_ALGORITHM)
+    }
+
+    // Calculate or retrieve cached trust score with specific algorithm
+    public fun get_trust_score_with_algorithm(addr: address, current_timestamp: u64, algorithm: u8): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         if (!exists<UserTrustRecord>(addr)) {
             return 0
@@ -68,7 +81,9 @@ module ol_framework::page_rank_lazy {
         // Cache is stale or expired - compute fresh score
         // Get roots from root_of_trust module instead of local registry
         let roots = root_of_trust::get_current_roots_at_registry(DEFAULT_ROOT_REGISTRY);
-        let score = compute_score_monte_carlo(addr, &roots, current_timestamp);
+
+        // Compute score using selected algorithm
+        let score = compute_trust_score(&roots, addr, algorithm);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
@@ -79,53 +94,178 @@ module ol_framework::page_rank_lazy {
         score
     }
 
-    // Compute trust score using Monte Carlo walks
-    fun compute_score_monte_carlo(target: address, roots: &vector<address>, _current_timestamp: u64): u64 {
-        monte_carlo_trust_score(roots, target, DEFAULT_NUM_WALKS, DEFAULT_WALK_DEPTH)
+    // Unified function to compute trust score with selected algorithm
+    fun compute_trust_score(roots: &vector<address>, target: address, algorithm: u8): u64 {
+        if (algorithm == ALGORITHM_FULL_GRAPH) {
+            // Full graph traversal
+            traverse_graph(roots, target, FULL_WALK_MAX_DEPTH, true)
+        } else {
+            // Monte Carlo random walks
+            traverse_graph(roots, target, DEFAULT_WALK_DEPTH, false)
+        }
     }
 
-    // Monte Carlo approximation for trust score
-    fun monte_carlo_trust_score(roots: &vector<address>, target: address, num_walks: u64, depth: u64): u64 {
-        let hits = 0;
-        let i = 0;
+    // Unified graph traversal function that supports both algorithms
+    // is_exhaustive=true for full graph walk, false for Monte Carlo
+    fun traverse_graph(
+        roots: &vector<address>,
+        target: address,
+        max_depth: u64,
+        is_exhaustive: bool
+    ): u64 {
+        // For Monte Carlo, we need to track the number of walks
+        let num_walks = if (is_exhaustive) { 1 } else { DEFAULT_NUM_WALKS };
+        let score = 0;
+        let walk = 0;
 
-        while (i < num_walks) {
-            // For each root, do random walks
-            let j = 0;
+        while (walk < num_walks) {
+            // For each root, do walks
+            let root_idx = 0;
             let roots_len = vector::length(roots);
 
-            while (j < roots_len) {
-                let curr = *vector::borrow(roots, j);
-                let k = 0;
+            while (root_idx < roots_len) {
+                let root = *vector::borrow(roots, root_idx);
 
-                // Keep track of visited nodes to avoid cycles
-                let visited = vector::empty<address>();
-                vector::push_back(&mut visited, curr); // Mark root as visited
+                // Direct match
+                if (root == target) {
+                    score = score + 1;
+                } else {
+                    // Start a walk from this root
+                    let visited = vector::empty<address>();
+                    vector::push_back(&mut visited, root);
 
-                // Random walk through vouch graph
-                while (k < depth) {
-                    if (curr == target) {
-                        hits = hits + 1;
+                    if (is_exhaustive) {
+                        // Full graph walk - explore all paths
+                        score = score + walk_from_node(root, target, &mut visited, 1, max_depth, is_exhaustive);
+                    } else {
+                        // Monte Carlo - do a single random walk
+                        let found_target = random_walk_from_node(root, target, &mut visited, max_depth);
+                        if (found_target) {
+                            score = score + 1;
+                        };
                     };
-
-                    // Find users that current user vouches for
-                    let (next_addr, has_neighbor) = get_random_unvisited_neighbor(curr, &visited);
-                    if (!has_neighbor) {
-                        break
-                    };
-
-                    curr = next_addr;
-                    vector::push_back(&mut visited, curr); // Mark as visited
-                    k = k + 1;
                 };
 
-                j = j + 1;
+                root_idx = root_idx + 1;
             };
 
-            i = i + 1;
+            walk = walk + 1;
         };
 
-        hits
+        score
+    }
+
+    // Full graph traversal from a single node - returns weighted score
+    fun walk_from_node(
+        current: address,
+        target: address,
+        visited: &mut vector<address>,
+        current_depth: u64,
+        max_depth: u64,
+        is_exhaustive: bool
+    ): u64 {
+        // Stop if we've reached maximum depth
+        if (current_depth >= max_depth) {
+            return 0
+        };
+
+        // If this node is the target, we found a path
+        if (current == target) {
+            // Weight the path by its inverse depth (shorter paths worth more)
+            return max_depth - current_depth + 1
+        };
+
+        // Get all neighbors this node vouches for
+        let (neighbors, _) = vouch::get_given_vouches(current);
+        let neighbor_count = vector::length(&neighbors);
+
+        // No neighbors means no path
+        if (neighbor_count == 0) {
+            return 0
+        };
+
+        // Track the total score from all paths
+        let total_score = 0;
+
+        if (is_exhaustive) {
+            // Full graph - Check ALL neighbors for paths to target
+            let i = 0;
+            while (i < neighbor_count) {
+                let neighbor = *vector::borrow(&neighbors, i);
+
+                // Only visit neighbors we haven't seen yet (avoid cycles)
+                if (!vector::contains(visited, &neighbor)) {
+                    // Mark this neighbor as visited
+                    vector::push_back(visited, neighbor);
+
+                    // Recursive search from this neighbor
+                    let path_score = walk_from_node(
+                        neighbor,
+                        target,
+                        visited,
+                        current_depth + 1,
+                        max_depth,
+                        is_exhaustive
+                    );
+
+                    // Add to our total
+                    total_score = total_score + path_score;
+
+                    // Remove from visited since we're backtracking
+                    let last_idx = vector::length(visited) - 1;
+                    vector::remove(visited, last_idx);
+                };
+
+                i = i + 1;
+            };
+        } else {
+            // Monte Carlo - Pick ONE unvisited neighbor randomly
+            let (neighbor, has_neighbor) = get_random_unvisited_neighbor(current, visited);
+
+            if (has_neighbor) {
+                vector::push_back(visited, neighbor);
+
+                // Continue the random walk from this neighbor
+                if (neighbor == target || random_walk_from_node(
+                    neighbor,
+                    target,
+                    visited,
+                    max_depth - current_depth
+                )) {
+                    total_score = 1;
+                };
+            };
+        };
+
+        total_score
+    }
+
+    // Monte Carlo random walk from a node
+    fun random_walk_from_node(
+        current: address,
+        target: address,
+        visited: &mut vector<address>,
+        steps_remaining: u64
+    ): bool {
+        // Base case - found target
+        if (current == target) {
+            return true
+        };
+
+        // Base case - no steps left
+        if (steps_remaining == 0) {
+            return false
+        };
+
+        // Get a random unvisited neighbor
+        let (next_addr, has_neighbor) = get_random_unvisited_neighbor(current, visited);
+        if (!has_neighbor) {
+            return false
+        };
+
+        // Add to visited list and continue walk
+        vector::push_back(visited, next_addr);
+        random_walk_from_node(next_addr, target, visited, steps_remaining - 1)
     }
 
     // Get a random unvisited neighbor that this user vouches for
@@ -608,6 +748,54 @@ module ol_framework::page_rank_lazy {
 
         // Since user1 is closer to the root than user2, user1 should have a higher score
         assert!(user1_score >= user2_score, 73570022);
+    }
+
+    #[test(admin = @0x1, root = @0x42, user = @0x43, user2 = @0x44, user3 = @0x45)]
+    fun test_full_graph_walk(
+        admin: signer,
+        root: signer,
+        user: signer,
+        user2: signer,
+        user3: signer
+    ) acquires UserTrustRecord {
+        // Initialize the test trust network
+        setup_mock_trust_network(&admin, &root, &user, &user2, &user3);
+
+        // Simulate scores at timestamp 1
+        let current_timestamp = 1;
+
+        // Calculate trust scores using full graph walk
+        let score1 = get_trust_score_with_algorithm(signer::address_of(&user), current_timestamp, ALGORITHM_FULL_GRAPH);
+        let score2 = get_trust_score_with_algorithm(signer::address_of(&user2), current_timestamp, ALGORITHM_FULL_GRAPH);
+        let score3 = get_trust_score_with_algorithm(signer::address_of(&user3), current_timestamp, ALGORITHM_FULL_GRAPH);
+
+        // Debug scores
+        std::debug::print(&score1);
+        std::debug::print(&score2);
+        std::debug::print(&score3);
+
+        // In our full graph implementation, scores depend on path length from root
+        // with weights assigned based on shorter distances being more valuable
+        assert!(score1 > 0, 73570030); // User1 should have a positive score (direct connection)
+        assert!(score2 > 0, 73570031); // User2 should have a positive score (direct connection)
+        assert!(score3 > 0, 73570032); // User3 should have a positive score (indirect connection)
+
+        // User1 and User2 should have equal scores as they're both 1 hop from root
+        assert!(score1 == score2, 73570033);
+
+        // User3 should have a lower score than User1 and User2 as it's further from root
+        assert!(score1 > score3, 73570034);
+        assert!(score2 > score3, 73570035);
+
+        // Compare with Monte Carlo approach
+        let mc_score1 = get_trust_score_with_algorithm(signer::address_of(&user), current_timestamp, ALGORITHM_MONTE_CARLO);
+        let mc_score3 = get_trust_score_with_algorithm(signer::address_of(&user3), current_timestamp, ALGORITHM_MONTE_CARLO);
+
+        // Scores can be different between algorithms but should maintain the same relationship
+        // User1 should have higher or equal score than User3 in both algorithms
+        if (mc_score1 > 0 && mc_score3 > 0) {
+            assert!(mc_score1 >= mc_score3, 73570036);
+        };
     }
 
     // Accessor functions for use by other modules - now using vouch module
