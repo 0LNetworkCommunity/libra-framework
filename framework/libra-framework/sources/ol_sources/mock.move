@@ -18,6 +18,7 @@ module ol_framework::mock {
   use std::bcs;
   use ol_framework::grade;
   use ol_framework::vouch;
+  use ol_framework::vouch_metrics;
   use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
@@ -384,7 +385,7 @@ module ol_framework::mock {
     };
 
     // Verify the score is exactly 50
-    let score = vouch::calculate_total_vouch_quality(target_account);
+    let score = vouch_metrics::calculate_total_vouch_quality(target_account);
     assert!(score == 50, 735700);
 
 
@@ -477,7 +478,7 @@ module ol_framework::mock {
 
     mock_vouch_score_50(root, target_address);
 
-    let score = vouch::calculate_total_vouch_quality(target_address);
+    let score = vouch_metrics::calculate_total_vouch_quality(target_address);
     assert!(score == 50, 735700);
   }
 

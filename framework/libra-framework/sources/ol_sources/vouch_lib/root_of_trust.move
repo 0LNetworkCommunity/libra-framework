@@ -34,7 +34,6 @@ module ol_framework::root_of_trust {
     use std::vector;
     use std::signer;
     use std::error;  // Add error module
-    use ol_framework::vouch_score;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
 
@@ -90,27 +89,14 @@ module ol_framework::root_of_trust {
         maybe_initialize(framework, roots, minimum_cohort, rotation_days);
     }
 
-    #[view]
-    /// Score a participant's connection to the root of trust
-    public fun score_connection(registry: address, user: address): u64 acquires RootOfTrust {
-        // gets the root of trust list.
-        // users vouch_score
-        let list = get_current_roots_at_registry(registry);
-        vouch_score::evaluate_score_for_registry(list, user)
-    }
-
-    #[view]
-    /// Check if rotation is possible for a given registry
-    public fun can_rotate(registry: address): bool acquires RootOfTrust {
-        if (!exists<RootOfTrust>(registry)) {
-            false
-        } else {
-            let root_of_trust = borrow_global<RootOfTrust>(registry);
-            let elapsed_secs = timestamp::now_seconds() - root_of_trust.last_updated_secs;
-            let required_secs = root_of_trust.rotate_window_days * SECONDS_IN_DAY;
-            elapsed_secs >= required_secs
-        }
-    }
+    // #[view]
+    // /// Score a participant's connection to the root of trust
+    // public fun score_connection(registry: address, user: address): u64 acquires RootOfTrust {
+    //     // gets the root of trust list.
+    //     // users vouch_score
+    //     let list = get_current_roots_at_registry(registry);
+    //     vouch_score::evaluate_score_for_registry(list, user)
+    // }
 
     /// Rotate the root of trust set by adding and removing addresses
     public(friend) fun rotate_roots(user_sig: &signer, adds: vector<address>, removes: vector<address>) acquires RootOfTrust {
@@ -163,6 +149,12 @@ module ol_framework::root_of_trust {
     }
 
     #[view]
+    /// checks if registry is initialized
+    public fun is_initialized(registry: address): bool {
+        exists<RootOfTrust>(registry)
+    }
+
+    #[view]
     /// Get the current set of root addresses
     public fun get_current_roots_at_registry(registry: address): vector<address> acquires RootOfTrust {
        // return empty vector if the root of trust is not initialized
@@ -183,6 +175,19 @@ module ol_framework::root_of_trust {
             vector::contains(&list, &account)
         } else {
             false
+        }
+    }
+
+    #[view]
+    /// Check if rotation is possible for a given registry
+    public fun can_rotate(registry: address): bool acquires RootOfTrust {
+        if (!exists<RootOfTrust>(registry)) {
+            false
+        } else {
+            let root_of_trust = borrow_global<RootOfTrust>(registry);
+            let elapsed_secs = timestamp::now_seconds() - root_of_trust.last_updated_secs;
+            let required_secs = root_of_trust.rotate_window_days * SECONDS_IN_DAY;
+            elapsed_secs >= required_secs
         }
     }
 }

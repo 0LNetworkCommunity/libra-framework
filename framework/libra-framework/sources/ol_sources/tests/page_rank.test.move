@@ -8,8 +8,10 @@ module ol_framework::test_page_rank {
   use ol_framework::root_of_trust;
   use ol_framework::mock;
   use ol_framework::vouch;
+  use ol_framework::page_rank_lazy;
   use std::signer;
   use std::vector;
+  // use std::string::utf8;
 
   use diem_std::debug::print;
 
@@ -33,7 +35,7 @@ module ol_framework::test_page_rank {
 
   // create a test base and check we have 10 root of trust accounts.
   #[test(framework = @ol_framework)]
-  fun test_base_creates_ten_root_accounts(framework: &signer) {
+  fun c(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
 
@@ -50,60 +52,156 @@ module ol_framework::test_page_rank {
     }
   }
 
-  // starts a test base, and creates an additional 10 user accounts
-  // then each of root of trust accounts will issue vouches
-  // The first root, will vouch only for the first user account.
-  // the second root, will vouch for both the first and second user accounts.
-  fun add_users_and_vouches(framework: &signer, root_sigs: &vector<signer>, vouch_column: u64, distance_row: u64, user_id_idx: u64) {
-    let new_users_sig = mock::create_test_signers(framework,(vouch_column * distance_row), user_id_idx);
-    let users_len = vector::length(&new_users_sig);
-    print(&users_len);
-
-    // we will mock these users depth-first
-    let v = 0;
-    // start with users that will receive 1 vouch
-    while (v < vouch_column) {
-      print(&11111);
-      // the first grantor in this column is a root of trust account
-      let grantor = vector::borrow(root_sigs, v);
-
-      // populates all remaining accounts after a column is
-      // completed, such that the last column accumulates all vouches.
-      let user_idx = v*distance_row;
-      print(&user_idx);
-      print(&signer::address_of(grantor));
-
-      while (user_idx < users_len) {
-        print(&22222);
-
-        let recipient_sig = vector::borrow(&new_users_sig, user_idx);
-
-        let recipient_addr = signer::address_of(recipient_sig);
-        print(&recipient_addr);
-        vouch::init(grantor);
-        vouch::init(recipient_sig);
-
-        vouch::test_helper_vouch_for(grantor, recipient_addr);
-
-        let (v_list, _) = vouch::get_received_vouches(recipient_addr);
-        print(&v_list);
-        // users should have the number of vouches in this column
-        assert!(vector::length(&v_list) == v+1, 1002);
-        // then next level down, the grantor will be the current recipient
-        grantor = recipient_sig;
-        user_idx = user_idx + 1;
-      };
-      v = v + 1;
-    }
-  }
-
-  // test we can populate vouch columns vertically with one column
+  // Test with one user with one root vouch - both for vouch quality and page rank score
   #[test(framework = @ol_framework)]
-  fun test_populate_one_column(framework: &signer) {
+  fun test_one_user_one_root(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
-    let next_idx = vector::length(&roots_sig);
-    add_users_and_vouches(framework, &roots_sig, 2, 3, next_idx);
+    let new_user_sig = mock::create_signer_from_u64(framework, 11);
+    let new_user_addr = signer::address_of(&new_user_sig);
+    let root_sig = vector::borrow(&roots_sig, 0);
 
+    vouch::init(root_sig);
+    vouch::init(&new_user_sig);
+    // // Initialize page rank for the new user
+    page_rank_lazy::initialize_user_trust_record(&new_user_sig);
+
+    // // Setup one vouch from the first root
+
+    vouch::vouch_for(root_sig, new_user_addr);
+
+    // // Now check the page rank score (should be 100)
+    let current_timestamp = 1;
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr, current_timestamp);
+    print(&page_rank_score);
+    assert!(page_rank_score == 50, 7357001);
   }
+
+  // Test with one user with ten root vouches - both for vouch quality and page rank score
+  #[test(framework = @ol_framework)]
+  fun test_one_user_ten_root(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+    let count_roots = vector::length(&roots_sig);
+    let new_user_sig = mock::create_signer_from_u64(framework, 11);
+    let new_user_addr = signer::address_of(&new_user_sig);
+    let root_sig = vector::borrow(&roots_sig, 0);
+
+    vouch::init(root_sig);
+    vouch::init(&new_user_sig);
+    // // Initialize page rank for the new user
+    page_rank_lazy::initialize_user_trust_record(&new_user_sig);
+
+    // // Setup one vouch from the first root
+
+    vouch::vouch_for(root_sig, new_user_addr);
+
+    // // Now check the page rank score (should be 100)
+    let current_timestamp = 1;
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr, current_timestamp);
+    print(&page_rank_score);
+    assert!(page_rank_score == 50, 7357001);
+    // Setup NINE vouches (from remaining roots)
+    let i = 1; // start at SECOND root of trust
+    while (i < vector::length(&roots_sig)) {
+      let grantor = vector::borrow(&roots_sig, i);
+      vouch::init(grantor);
+      vouch::vouch_for(grantor, new_user_addr);
+
+      i = i + 1;
+    };
+
+    // // Verify we have all 10 vouches
+    let (received, _) = vouch::get_received_vouches(new_user_addr);
+    assert!(vector::length(&received) == count_roots, 7357002);
+
+    // // Check vouch quality score (will always be 100 with vouch_metrics)
+    // let vouch_quality_score = vouch_metrics::calculate_total_vouch_quality(new_user_addr);
+    // print(&vouch_quality_score);
+
+    // // Now check the page rank score (should be 1000 = 10 roots * 100 points)
+    // fast forward into the future
+    let current_timestamp = 10000;
+    let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr, current_timestamp);
+    print(&page_rank_score_later);
+    // NOTE: this should be 10X the previous test
+    assert!(page_rank_score_later == 500, 7357003);
+    assert!(page_rank_score_later == (count_roots * page_rank_score), 7357004);
+  }
+
+  // // starts a test base, and creates an additional 10 user accounts
+  // // then each of root of trust accounts will issue vouches
+  // // The first root, will vouch only for the first user account.
+  // // the second root, will vouch for both the first and second user accounts.
+  // // returns the new users created
+  // fun add_users_and_vouches_matrix(framework: &signer, root_sigs: &vector<signer>, vouch_column: u64, distance_row: u64, user_id_idx: u64): vector<signer> {
+  //   // need to create signer types outside of the loop below
+  //   let new_users_sig = mock::create_test_signers(framework,(vouch_column * distance_row), user_id_idx);
+  //   let users_len = vector::length(&new_users_sig);
+  //   print(&utf8(b"users_len"));
+  //   print(&users_len);
+
+  //   // we will mock these users depth-first
+  //   let v = 0;
+  //   // start with users that will receive 1 vouch
+  //   while (v < vouch_column) {
+
+  //     print(&11111);
+  //     print(&utf8(b"root"));
+
+  //     // the first grantor in this column is a root of trust account
+  //     let grantor = vector::borrow(root_sigs, v);
+
+  //     // populates all remaining accounts after a column is
+  //     // completed, such that the last column accumulates all vouches.
+  //     let user_idx = v*distance_row;
+  //     print(&signer::address_of(grantor));
+
+  //     print(&utf8(b"start index:"));
+  //     print(&user_idx);
+
+
+  //     while (user_idx < users_len) {
+  //       print(&22222);
+  //             print(&utf8(b"grantor:"));
+  //             print(&signer::address_of(grantor));
+
+
+  //       let recipient_sig = vector::borrow(&new_users_sig, user_idx);
+
+  //       let recipient_addr = signer::address_of(recipient_sig);
+  //       print(&utf8(b"recipient:"));
+
+  //       print(&recipient_addr);
+  //       vouch::init(grantor);
+  //       vouch::init(recipient_sig);
+
+  //       vouch::vouch_for(grantor, recipient_addr);
+
+  //       let (v_list, _) = vouch::get_received_vouches(recipient_addr);
+  //       print(&v_list);
+  //       // users should have the number of vouches in this column
+  //       assert!(vector::length(&v_list) == v+1, 1002);
+  //       // then next level down, the grantor will be the current recipient
+  //       grantor = recipient_sig;
+  //       user_idx = user_idx + 1;
+  //     };
+  //     v = v + 1;
+  //   };
+
+  //   new_users_sig
+  // }
+
+  // // test we can populate vouch columns vertically with one column
+  // #[test(framework = @ol_framework)]
+  // fun test_populate_one_column(framework: &signer) {
+  //   // Set up the test base
+  //   let roots_sig = test_base(framework);
+  //   let next_idx = vector::length(&roots_sig);
+  //   let columns = 1;
+  //   let rows = 3;
+  //   let new_users = add_users_and_vouches_matrix(framework, &roots_sig, columns, rows, next_idx);
+  //   assert!(vector::length(&new_users) == 3, 7357001);
+
+  // }
 }

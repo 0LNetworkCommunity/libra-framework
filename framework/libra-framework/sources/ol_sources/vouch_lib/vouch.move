@@ -6,6 +6,7 @@ module ol_framework::vouch {
     use ol_framework::epoch_helper;
     use diem_framework::system_addresses;
     use ol_framework::vouch_metrics;
+    use std::string::utf8;
 
     use diem_std::debug::print;
 
@@ -17,6 +18,7 @@ module ol_framework::vouch {
     friend ol_framework::filo_migration;
     friend ol_framework::validator_universe;
     friend ol_framework::vouch_txs;
+    friend ol_framework::page_rank_lazy;
 
     #[test_only]
     friend ol_framework::mock;
@@ -26,8 +28,6 @@ module ol_framework::vouch {
     friend ol_framework::test_user_vouch;
     #[test_only]
     friend ol_framework::test_validator_vouch;
-    #[test_only]
-    friend ol_framework::page_rank_lazy;
     #[test_only]
     friend ol_framework::test_page_rank;
 
@@ -151,7 +151,6 @@ module ol_framework::vouch {
     // init the struct on a validators account.
     public(friend) fun init(new_account_sig: &signer) {
       let acc = signer::address_of(new_account_sig);
-
       // if (exists<MyVouches>(acc)) {
       //   // let migration handle the initialization of new structs
       //   return
@@ -268,38 +267,12 @@ module ol_framework::vouch {
         let max_allowed = received_count + 1;
         assert!(given_vouches <= max_allowed, error::invalid_state(EMAX_LIMIT_GIVEN_BY_RECEIPT));
     }
-    // Calculate the maximum number of vouches a user should be able to give based on their vouches received
-    public fun calculate_score_limit(account: address): u64 {
-
-        // TODO: placeholder until there is a root of trust
-        // module
-        let root_of_trust = vector[@0x1];
-
-        // Calculate the quality from the list of true friends
-        let total_quality = vouch_metrics::calculate_total_social_score(account, &root_of_trust);
-
-        // For accounts with low quality vouchers,
-        // we restrict further how many they can vouch for
-
-        let max_allowed = 1;
-
-        // TODO: collect analytics data to review this
-        if (total_quality >= 2 && total_quality < 200) {
-            max_allowed = 3;
-        } else if (total_quality >= 200 && total_quality < 400) {
-            max_allowed = 5;
-        } else if (total_quality >= 400) {
-            max_allowed = 10;
-        };
-
-        max_allowed
-    }
 
     // a user should not be able to give more vouches than their quality score allows
     fun assert_max_vouches_by_score(grantor_acc: address) acquires GivenVouches {
       // check if the grantor has already reached the limit of vouches
       let given_vouches = get_given_vouches_not_expired(grantor_acc);
-      let max_allowed = calculate_score_limit(grantor_acc);
+      let max_allowed = vouch_metrics::calculate_score_limit(grantor_acc);
 
       assert!(
         vector::length(&given_vouches) <= max_allowed,
@@ -456,6 +429,8 @@ module ol_framework::vouch {
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
     public(friend) fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
+      print(&utf8(b"vouch for"));
+      print(&friend_account);
       vouch_impl(grantor, friend_account, true);
     }
 
@@ -724,88 +699,6 @@ module ol_framework::vouch {
     }
 
     #[view]
-    /// Calculate the total vouch quality score for a user
-    /// This is used by the founder module to evaluate if an account is verified
-    public fun calculate_total_vouch_quality(user: address): u64 {
-        // TODO: placeholder
-        // until merge root of trust
-        let root_of_trust = vector[@0x1];
-        vouch_metrics::calculate_total_social_score(user, &root_of_trust)
-    }
-
-    // #[test_only]
-    // public fun test_set_received_list(val: address, buddy_list: vector<address>) acquires ReceivedVouches, GivenVouches {
-    //   bulk_set(val, buddy_list, vector::empty<address>());
-    // }
-
-    // #[test_only]
-    // public fun test_set_given_list(val: address, vouch_list: vector<address>) acquires ReceivedVouches, GivenVouches {
-    //   bulk_set(val, vector::empty<address>(), vouch_list);
-    // }
-
-    // #[test_only]
-    // public fun test_set_both_lists(val: address, received_list: vector<address>, given_list: vector<address>) acquires ReceivedVouches, GivenVouches {
-    //   bulk_set(val, received_list, given_list);
-    // }
-
-    // #[test_only]
-    // public fun legacy_init(new_account_sig: &signer) {
-    //   let acc = signer::address_of(new_account_sig);
-
-    //   if (!exists<MyVouches>(acc)) {
-    //     move_to<MyVouches>(new_account_sig, MyVouches {
-    //       my_buddies: vector::empty(),
-    //       epoch_vouched: vector::empty(),
-    //     });
-    //   };
-    // }
-
-    // #[test_only]
-    // public fun legacy_vouch_for(ill_be_your_friend: &signer, wanna_be_my_friend: address) acquires MyVouches {
-    //   let buddy_acc = signer::address_of(ill_be_your_friend);
-    //   assert!(buddy_acc != wanna_be_my_friend, ETRY_SELF_VOUCH_REALLY);
-
-    //   if (!exists<MyVouches>(wanna_be_my_friend)) return;
-    //   let epoch = epoch_helper::get_current_epoch();
-
-    //   let v = borrow_global_mut<MyVouches>(wanna_be_my_friend);
-
-    //   let (found, i) = vector::index_of(&v.my_buddies, &buddy_acc);
-    //   if (found) { // prevent duplicates
-    //     // update date
-    //     let e = vector::borrow_mut(&mut v.epoch_vouched, i);
-    //     *e = epoch;
-    //   } else {
-    //     vector::push_back(&mut v.my_buddies, buddy_acc);
-    //     vector::push_back(&mut v.epoch_vouched, epoch);
-    //   }
-    // }
-
-
-    #[test_only]
-    /// you may want to add people who are related to you
-    /// there are no known use cases for this at the moment.
-    public(friend) fun test_helper_vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
-      vouch_impl(grantor, friend_account, false);
-    }
-
-
-    // #[test_only]
-    // public fun get_legacy_vouches(acc: address): (vector<address>, vector<u64>) acquires MyVouches {
-    //   if (!exists<MyVouches>(acc)) {
-    //     return (vector::empty(), vector::empty())
-    //   };
-
-    //   let state = borrow_global<MyVouches>(acc);
-    //   (*&state.my_buddies, *&state.epoch_vouched)
-    // }
-
-    // #[test_only]
-    // public fun is_legacy_init(acc: address): bool {
-    //   exists<MyVouches>(acc)
-    // }
-
-    #[view]
     /// Returns the number of vouches a user can still give based on system limits.
     /// This takes into account all constraints:
     /// 1. Base maximum limit (10 vouches)
@@ -824,7 +717,7 @@ module ol_framework::vouch {
 
       // Calculate all limits
       let base_limit = BASE_MAX_VOUCHES;
-      let score_limit = calculate_score_limit(addr);
+      let score_limit = vouch_metrics::calculate_score_limit(addr);
 
       // Received limit: non-expired received vouches + 1
       let received_vouches = true_friends(addr);

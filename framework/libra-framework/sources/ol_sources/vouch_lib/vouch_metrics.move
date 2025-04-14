@@ -5,7 +5,7 @@
   without directly accessing vouch data. This avoids circular dependencies between modules.
 
   The module only contains stateless helper functions that can be used by both
-  vouch.move and founder.move without creating dependency cycles.
+  vouch.move and page_rank_lazy.move without creating dependency cycles.
 */
 
 module ol_framework::vouch_metrics {
@@ -47,6 +47,36 @@ module ol_framework::vouch_metrics {
         };
 
         total_score
+    }
+
+    /// Calculate the total vouch quality for a user (used by founder and other modules)
+    /// Uses the social distance based approach to eliminate circular dependency
+    public fun calculate_total_vouch_quality(user: address): u64 {
+        // Use a hardcoded default root of trust (@0x1) to avoid circular dependencies
+        let root_of_trust = vector[@0x1];
+        calculate_total_social_score(user, &root_of_trust)
+    }
+
+    /// Calculate the maximum number of vouches a user should be able to give based on their trust score
+    public fun calculate_score_limit(account: address): u64 {
+        // Calculate the quality using the social distance method
+        // This avoids dependency on page_rank_lazy
+        let total_quality = calculate_total_vouch_quality(account);
+
+        // For accounts with low quality vouchers,
+        // we restrict further how many they can vouch for
+        let max_allowed = 1;
+
+        // TODO: collect analytics data to review this
+        if (total_quality >= 2 && total_quality < 200) {
+            max_allowed = 3;
+        } else if (total_quality >= 200 && total_quality < 400) {
+            max_allowed = 5;
+        } else if (total_quality >= 400) {
+            max_allowed = 10;
+        };
+
+        max_allowed
     }
 
     /// Filter a list of addresses to include only those unrelated by ancestry

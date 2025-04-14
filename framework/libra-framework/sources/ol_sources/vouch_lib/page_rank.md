@@ -103,9 +103,28 @@ When user A changes their vouches (adding/removing):
 - Cycle detection in both score calculation and staleness propagation
 - Self-healing through automatic cache expiration
 
----
 
-### 6. Future Improvements
+### 6. Current Implementation
+
+- Trust Flow with Decay:
+
+Trust now flows through the network using a 50% decay model per hop
+Each node passes half of its trust value to its neighbors
+This creates a natural diminishing effect as distance increases
+
+Direct Trust Recognition:
+
+Root accounts that directly vouch for a user give a full 100 points
+This means a user with 10 root vouches will get 1000 points directly, versus 100 points for 1 root vouch
+
+- Path-based Weighting:
+
+The algorithm now correctly considers both path length and number of vouchers
+Users further away from roots receive less trust (50% less per hop)
+Multiple paths to the same user are additive, reinforcing trust
+
+---
+### 7. Future Improvements
 
 #### A. Randomization
 - Currently using deterministic neighbor selection
