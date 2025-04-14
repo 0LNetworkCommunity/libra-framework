@@ -13,6 +13,8 @@ module ol_framework::vouch_metrics {
     use std::vector;
     use ol_framework::ancestry;
 
+    use diem_std::debug::print;
+
     /// Get the score for the social distance between two accounts
     /// Score is a percentage, out of 100
     /// A higher score represents a closer social connections
@@ -62,6 +64,7 @@ module ol_framework::vouch_metrics {
         // Calculate the quality using the social distance method
         // This avoids dependency on page_rank_lazy
         let total_quality = calculate_total_vouch_quality(account);
+        print(&total_quality);
 
         // For accounts with low quality vouchers,
         // we restrict further how many they can vouch for

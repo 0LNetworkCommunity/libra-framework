@@ -1,5 +1,6 @@
 module ol_framework::page_rank_lazy {
     use std::signer;
+    use std::timestamp;
     use std::vector;
     use ol_framework::vouch;
     use ol_framework::root_of_trust;
@@ -57,12 +58,15 @@ module ol_framework::page_rank_lazy {
     }
 
     // Calculate or retrieve cached trust score
-    public fun get_trust_score(addr: address, current_timestamp: u64): u64 acquires UserTrustRecord {
-        get_trust_score_with_algorithm(addr, current_timestamp, DEFAULT_ALGORITHM)
+    // TODO: remove this
+    public fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
+        get_trust_score_with_algorithm(addr)
     }
 
     // Calculate or retrieve cached trust score with specific algorithm
-    public fun get_trust_score_with_algorithm(addr: address, current_timestamp: u64, algorithm: u8): u64 acquires UserTrustRecord {
+    public fun get_trust_score_with_algorithm(addr: address): u64 acquires UserTrustRecord {
+        let current_timestamp = timestamp::now_seconds();
+
         // If user has no trust record, they have no score
         if (!exists<UserTrustRecord>(addr)) {
             return 0
@@ -83,7 +87,7 @@ module ol_framework::page_rank_lazy {
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
 
         // Compute score using selected algorithm
-        let score = compute_trust_score(&roots, addr, algorithm);
+        let score = compute_trust_score(&roots, addr, 0);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);

@@ -5,11 +5,13 @@
 // and tests the page rank score calculation.
 module ol_framework::test_page_rank {
   // use diem_framework::account;
+
   use ol_framework::root_of_trust;
   use ol_framework::mock;
   use ol_framework::vouch;
   use ol_framework::page_rank_lazy;
   use std::signer;
+  use std::timestamp;
   use std::vector;
   // use std::string::utf8;
 
@@ -71,8 +73,7 @@ module ol_framework::test_page_rank {
     vouch::vouch_for(root_sig, new_user_addr);
 
     // // Now check the page rank score (should be 100)
-    let current_timestamp = 1;
-    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr, current_timestamp);
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     print(&page_rank_score);
     assert!(page_rank_score == 50, 7357001);
   }
@@ -96,9 +97,8 @@ module ol_framework::test_page_rank {
 
     vouch::vouch_for(root_sig, new_user_addr);
 
-    // // Now check the page rank score (should be 100)
-    let current_timestamp = 1;
-    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr, current_timestamp);
+    // Now check the page rank score (should be 50)
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     print(&page_rank_score);
     assert!(page_rank_score == 50, 7357001);
     // Setup NINE vouches (from remaining roots)
@@ -122,7 +122,8 @@ module ol_framework::test_page_rank {
     // // Now check the page rank score (should be 1000 = 10 roots * 100 points)
     // fast forward into the future
     let current_timestamp = 10000;
-    let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr, current_timestamp);
+    timestamp::fast_forward_seconds(current_timestamp);
+    let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
     print(&page_rank_score_later);
     // NOTE: this should be 10X the previous test
     assert!(page_rank_score_later == 500, 7357003);

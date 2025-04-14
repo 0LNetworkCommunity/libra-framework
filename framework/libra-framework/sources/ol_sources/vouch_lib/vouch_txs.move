@@ -8,9 +8,10 @@ module ol_framework::vouch_txs {
   use ol_framework::founder;
   use ol_framework::ol_account;
   use ol_framework::vouch;
-
+  use ol_framework::vouch_limits;
 
   public entry fun vouch_for(grantor: &signer, friend_account: address) {
+    vouch_limits::assert_under_limit(signer::address_of(grantor), friend_account);
     vouch::vouch_for(grantor, friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
     founder::maybe_set_friendly_founder(friend_account);
@@ -26,6 +27,7 @@ module ol_framework::vouch_txs {
     // If you're so hurt, why then don't you show it?
     // You say you've lost your faith, but that's not where its at
     // You have no faith to lose, and ya know it
+    vouch_limits::assert_revoke_limit(signer::address_of(grantor));
     vouch::revoke(grantor, friend_account);
   }
 

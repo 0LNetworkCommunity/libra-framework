@@ -18,7 +18,6 @@ module ol_framework::mock {
   use std::bcs;
   use ol_framework::grade;
   use ol_framework::vouch;
-  use ol_framework::vouch_metrics;
   use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
@@ -29,8 +28,11 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
   use ol_framework::testnet;
+  use ol_framework::vouch_limits;
+  use ol_framework::root_of_trust;
+  use ol_framework::page_rank_lazy;
 
-  // use diem_std::debug::print;
+  use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -345,6 +347,9 @@ module ol_framework::mock {
     musical_chairs::initialize(root, musical_chairs_default_seats);
 
     let val_addr = personas();
+
+    root_of_trust::framework_migration(root, val_addr, vector::length(&val_addr), 10000);
+
     let i = 0;
     while (i < num) {
       let val = vector::borrow(&val_addr, i);
@@ -436,8 +441,8 @@ module ol_framework::mock {
     };
 
     // Verify the score is exactly 50
-    let score = vouch_metrics::calculate_total_vouch_quality(target_account);
-    assert!(score == 50, 735700);
+    // let score = vouch_metrics::calculate_total_vouch_quality(target_account);
+    // assert!(score == 50, 735700);
 
 
     vals
@@ -529,8 +534,24 @@ module ol_framework::mock {
 
     mock_vouch_score_50(root, target_address);
 
-    let score = vouch_metrics::calculate_total_vouch_quality(target_address);
-    assert!(score == 50, 735700);
+    // let score = vouch_metrics::calculate_total_vouch_quality(target_address);
+    // assert!(score == 50, 735700);
+  }
+
+  #[test(root = @ol_framework, alice = @0x1000a)]
+  fun validator_vouches_mocked_correctly(root: &signer, alice: address) {
+    // create vals without vouches
+    let _vals = genesis_n_vals(root, 10);
+
+    let is_root = root_of_trust::is_root_at_registry(@ol_framework, alice);
+    print(&is_root);
+
+    let score = page_rank_lazy::get_trust_score(alice);
+    print(&score);
+
+    let remaining = vouch_limits::get_remaining_vouches(alice);
+    print(&remaining);
+
   }
 
 

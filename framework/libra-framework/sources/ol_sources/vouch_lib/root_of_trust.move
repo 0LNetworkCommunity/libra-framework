@@ -44,6 +44,8 @@ module ol_framework::root_of_trust {
     friend ol_framework::root_of_trust_tests;
     #[test_only]
     friend ol_framework::test_page_rank;
+    #[test_only]
+    friend ol_framework::mock;
 
     /// Struct to store the root of trust configuration
     struct RootOfTrust has key {

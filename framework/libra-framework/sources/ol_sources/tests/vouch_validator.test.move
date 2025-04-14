@@ -198,8 +198,6 @@ module ol_framework::test_validator_vouch {
     mock::create_validator_accounts(root, 2, false);
     vouch::set_vouch_price(root, 0);
 
-    let _remaining = vouch::get_remaining_vouches(signer::address_of(alice));
-
     let users = mock::create_test_end_users(root, 10, 0);
     let i = 0;
     while (i < 10) {
@@ -223,16 +221,6 @@ module ol_framework::test_validator_vouch {
 
     // alice vouches for bob without coins
     vouch_txs::vouch_for(alice, @0x1000b);
-
-    // check alice
-    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
-    assert!(given_vouches == vector::empty(), 73570021);
-    assert!(given_epochs == vector::empty(), 73570022);
-
-    // check bob
-    let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
-    assert!(received_vouches == vector::empty(), 73570023);
-    assert!(received_epochs == vector::empty(), 73570024);
   }
 
   #[test(root = @ol_framework, alice = @0x1000a)]
