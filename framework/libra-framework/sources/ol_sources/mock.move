@@ -30,7 +30,7 @@ module ol_framework::mock {
   use ol_framework::infra_escrow;
   use ol_framework::testnet;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
@@ -276,7 +276,7 @@ module ol_framework::mock {
   public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
     // create vals with vouches
 
-    create_vals(root, num, true);
+    create_validator_accounts(root, num, true);
 
     // timestamp::fast_forward_seconds(2); // or else reconfigure wont happen
     stake::test_reconfigure(root, validator_universe::get_eligible_validators());
@@ -284,8 +284,59 @@ module ol_framework::mock {
     stake::get_current_validators()
   }
 
+    // Helper function to create a bunch of test signers
+  public fun create_test_end_users(framework: &signer, count: u64, start_idx: u64): vector<signer> {
+    system_addresses::assert_diem_framework(framework);
+
+    let signers = vector::empty<signer>();
+    let i = 0;
+    while (i < count) {
+      let sig = create_user_from_u64(framework, start_idx + i);
+      vector::push_back(&mut signers, sig);
+      i = i + 1;
+    };
+    signers
+  }
+
+  // Create signer from u64, good for creating many accounts
+  public fun create_user_from_u64(framework: &signer, idx: u64): signer {
+    system_addresses::assert_diem_framework(framework);
+
+    let idx = 0xA + idx;
+    // Create a vector of bytes to represent the address
+    // Convert u64 to bytes first using BCS serialization
+    let addr_bytes = bcs::to_bytes(&idx);
+
+    // When idx is small, the BCS representation will be short
+    // Pad with zeros if needed to get a valid address (32 bytes for Move addresses)
+    while (vector::length(&addr_bytes) < 32) {
+      vector::push_back(&mut addr_bytes, 0);
+    };
+
+    // Convert bytes to address using from_bcs module
+    let addr_as_addr = from_bcs::to_address(addr_bytes);
+
+    ol_account::create_account(framework, addr_as_addr);
+
+    // Create test signer from the generated address
+    account::create_signer_for_test(addr_as_addr)
+  }
+
+  // Helper to extract addresses from signers
+  public fun collect_addresses(signers: &vector<signer>): vector<address> {
+    let addresses = vector::empty<address>();
+    let i = 0;
+    let len = vector::length(signers);
+    while (i < len) {
+      let addr = signer::address_of(vector::borrow(signers, i));
+      vector::push_back(&mut addresses, addr);
+      i = i + 1;
+    };
+    addresses
+  }
+
   #[test_only]
-  public fun create_vals(root: &signer, num: u64, with_vouches: bool) {
+  public fun create_validator_accounts(root: &signer, num: u64, with_vouches: bool) {
     system_addresses::assert_ol(root);
     let framework_sig = account::create_signer_for_test(@diem_framework);
     ol_test_genesis(&framework_sig);
@@ -482,55 +533,5 @@ module ol_framework::mock {
     assert!(score == 50, 735700);
   }
 
-  // Helper function to create a bunch of test signers
-  public fun create_test_signers(framework: &signer, count: u64, start_idx: u64): vector<signer> {
-    system_addresses::assert_diem_framework(framework);
 
-    let signers = vector::empty<signer>();
-    let i = 0;
-    while (i < count) {
-      let sig = create_signer_from_u64(framework, start_idx + i);
-      vector::push_back(&mut signers, sig);
-      i = i + 1;
-    };
-    signers
-  }
-
-  // Create signer from u64, good for creating many accounts
-  public fun create_signer_from_u64(framework: &signer, idx: u64): signer {
-    system_addresses::assert_diem_framework(framework);
-
-    let idx = 0xA + idx;
-    // Create a vector of bytes to represent the address
-    // Convert u64 to bytes first using BCS serialization
-    let addr_bytes = bcs::to_bytes(&idx);
-
-    // When idx is small, the BCS representation will be short
-    // Pad with zeros if needed to get a valid address (32 bytes for Move addresses)
-    while (vector::length(&addr_bytes) < 32) {
-      vector::push_back(&mut addr_bytes, 0);
-    };
-
-    // Convert bytes to address using from_bcs module
-    let addr_as_addr = from_bcs::to_address(addr_bytes);
-    print(&addr_as_addr);
-
-    ol_account::create_account(framework, addr_as_addr);
-
-    // Create test signer from the generated address
-    account::create_signer_for_test(addr_as_addr)
-  }
-
-  // Helper to extract addresses from signers
-  public fun collect_addresses(signers: &vector<signer>): vector<address> {
-    let addresses = vector::empty<address>();
-    let i = 0;
-    let len = vector::length(signers);
-    while (i < len) {
-      let addr = signer::address_of(vector::borrow(signers, i));
-      vector::push_back(&mut addresses, addr);
-      i = i + 1;
-    };
-    addresses
-  }
 }

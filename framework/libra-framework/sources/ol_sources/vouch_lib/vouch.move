@@ -6,9 +6,9 @@ module ol_framework::vouch {
     use ol_framework::epoch_helper;
     use diem_framework::system_addresses;
     use ol_framework::vouch_metrics;
-    use std::string::utf8;
+    // use std::string::utf8;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;
@@ -380,19 +380,16 @@ module ol_framework::vouch {
 
     // Function to add given vouches
     public fun add_given_vouches(grantor_acc: address, vouched_account: address, epoch: u64) acquires GivenVouches, VouchesLifetime, ReceivedVouches {
-      print(&31);
       let given_vouches = borrow_global_mut<GivenVouches>(grantor_acc);
-      print(given_vouches);
+
       let (found, i) = vector::index_of(&given_vouches.outgoing_vouches, &vouched_account);
 
       // don't check max vouches if we are just extending the expiration
       if (found) {
-        print(&32);
         // Update the epoch if the vouched account is already present
         let epoch_value = vector::borrow_mut(&mut given_vouches.epoch_vouched, i);
         *epoch_value = epoch;
       } else {
-                print(&33);
 
         // Add new vouched account and epoch if not already present
         vector::push_back(&mut given_vouches.outgoing_vouches, vouched_account);
@@ -429,8 +426,6 @@ module ol_framework::vouch {
     /// prevents spending a vouch that would not be counted.
     /// to add a vouch and ignore this check use insist_vouch
     public(friend) fun vouch_for(grantor: &signer, friend_account: address) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
-      print(&utf8(b"vouch for"));
-      print(&friend_account);
       vouch_impl(grantor, friend_account, true);
     }
 

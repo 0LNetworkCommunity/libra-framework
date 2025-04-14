@@ -127,6 +127,7 @@ module ol_framework::ancestry {
       // if there is no ancestry info this is a bug, assume related
       // NOTE: we don't want to error here, since the VM calls this
       // on epoch boundary
+      // TODO: make it abort, now that epoch boundary is not a problem.
       if (!exists<Ancestry>(left)) return (true, @0x666);
       if (!exists<Ancestry>(right)) return (true, @0x666);
 

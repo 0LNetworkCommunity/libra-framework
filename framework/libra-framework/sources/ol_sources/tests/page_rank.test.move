@@ -23,7 +23,7 @@ module ol_framework::test_page_rank {
     mock::ol_initialize_coin_and_fund_vals(framework, 100, false);
 
     // create 10 root of trust accounts
-    let roots_sig = mock::create_test_signers(framework, 10, 0);
+    let roots_sig = mock::create_test_end_users(framework, 10, 0);
     // get a vec of addresses from roots_sig
     let root_users = mock::collect_addresses(&roots_sig);
 
@@ -57,7 +57,7 @@ module ol_framework::test_page_rank {
   fun test_one_user_one_root(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
-    let new_user_sig = mock::create_signer_from_u64(framework, 11);
+    let new_user_sig = mock::create_user_from_u64(framework, 11);
     let new_user_addr = signer::address_of(&new_user_sig);
     let root_sig = vector::borrow(&roots_sig, 0);
 
@@ -83,7 +83,7 @@ module ol_framework::test_page_rank {
     // Set up the test base
     let roots_sig = test_base(framework);
     let count_roots = vector::length(&roots_sig);
-    let new_user_sig = mock::create_signer_from_u64(framework, 11);
+    let new_user_sig = mock::create_user_from_u64(framework, 11);
     let new_user_addr = signer::address_of(&new_user_sig);
     let root_sig = vector::borrow(&roots_sig, 0);
 
@@ -136,7 +136,7 @@ module ol_framework::test_page_rank {
   // // returns the new users created
   // fun add_users_and_vouches_matrix(framework: &signer, root_sigs: &vector<signer>, vouch_column: u64, distance_row: u64, user_id_idx: u64): vector<signer> {
   //   // need to create signer types outside of the loop below
-  //   let new_users_sig = mock::create_test_signers(framework,(vouch_column * distance_row), user_id_idx);
+  //   let new_users_sig = mock::create_test_end_users(framework,(vouch_column * distance_row), user_id_idx);
   //   let users_len = vector::length(&new_users_sig);
   //   print(&utf8(b"users_len"));
   //   print(&users_len);

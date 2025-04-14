@@ -1,18 +1,19 @@
 #[test_only]
 module ol_framework::test_validator_vouch {
+  use std::signer;
   use std::vector;
   use ol_framework::vouch;
   use ol_framework::vouch_txs;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
 
-  use diem_std::debug::print;
+  // use diem_std::debug::print;
 
   // Happy Day scenarios
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
   fun vouch_for_unrelated(root: &signer, alice: &signer, carol: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 3, false);
+    mock::create_validator_accounts(root, 3, false);
     vouch::set_vouch_price(root, 0);
 
     // check that no vouches exist
@@ -63,7 +64,7 @@ module ol_framework::test_validator_vouch {
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
   fun revoke_vouch(root: &signer, alice: &signer, carol: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 3, false);
+    mock::create_validator_accounts(root, 3, false);
     vouch::set_vouch_price(root, 0);
 
     // alice and carol vouches for bob
@@ -127,43 +128,29 @@ module ol_framework::test_validator_vouch {
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
   fun update_vouch(root: &signer, alice: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 2, false);
+    mock::create_validator_accounts(root, 2, false);
     vouch::set_vouch_price(root, 0);
 
-    print(&11000);
-    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
-    print(&given_vouches);
-    print(&given_epochs);
     // alice vouches for bob
     vouch::vouch_for(alice, @0x1000b);
-
-    // check alice
-    print(&11001);
 
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
     assert!(given_vouches == vector[@0x1000b], 73570005);
     assert!(given_epochs == vector[0], 73570006);
-    print(&11001);
-
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
     assert!(received_vouches == vector[@0x1000a], 73570007);
     assert!(received_epochs == vector[0], 73570008);
-    print(&11003);
 
     // fast forward to epoch 1
     mock::trigger_epoch(root);
-    print(&11004);
 
     // alice vouches for bob again
     vouch::vouch_for(alice, @0x1000b);
-    print(&11005);
-
     // check alice
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
     assert!(given_vouches == vector[@0x1000b], 73570005);
     assert!(given_epochs == vector[1], 73570006);
-    print(&11006);
 
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
@@ -177,7 +164,7 @@ module ol_framework::test_validator_vouch {
   #[expected_failure(abort_code = 0x10001, location = ol_framework::vouch)]
   fun vouch_for_self(root: &signer, alice: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 1, false);
+    mock::create_validator_accounts(root, 1, false);
     vouch::set_vouch_price(root, 0);
 
     // alice vouches for herself
@@ -188,7 +175,7 @@ module ol_framework::test_validator_vouch {
   #[expected_failure(abort_code = 0x10001, location = ol_framework::vouch)]
   fun revoke_self_vouch(root: &signer, alice: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 1, false);
+    mock::create_validator_accounts(root, 1, false);
 
     // alice try to revoke herself
     vouch::revoke(alice, @0x1000a);
@@ -198,62 +185,40 @@ module ol_framework::test_validator_vouch {
   #[expected_failure(abort_code = 0x10005, location = ol_framework::vouch)]
   fun revoke_not_vouched(root: &signer, alice: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 2, false);
+    mock::create_validator_accounts(root, 2, false);
 
     // alice vouches for bob
     vouch::revoke(alice, @0x1000b);
   }
 
-  #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, v1 = @0x10001, v2 = @0x10002, v3 = @0x10003, v4 = @0x10004, v5 = @0x10005, v6 = @0x10006, v7 = @0x10007, v8 = @0x10008, v9 = @0x10009, v10 = @0x10010)]
+  #[test(root = @ol_framework, alice = @0x1000a)]
   #[expected_failure(abort_code = 196618, location = ol_framework::vouch)]
-  fun vouch_over_max(root: &signer, alice: &signer, v1: &signer, v2: &signer, v3: &signer, v4: &signer, v5: &signer, v6: &signer, v7: &signer, v8: &signer, v9: &signer, v10: &signer) {
+  fun vouch_over_max(root: &signer, alice: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 2, false);
+    mock::create_validator_accounts(root, 2, false);
     vouch::set_vouch_price(root, 0);
 
-    // init vouch for 10 validators
-    vouch::init(v1);
-    vouch::init(v2);
-    vouch::init(v3);
-    vouch::init(v4);
-    vouch::init(v5);
-    vouch::init(v6);
-    vouch::init(v7);
-    vouch::init(v8);
-    vouch::init(v9);
-    vouch::init(v10);
+    let _remaining = vouch::get_remaining_vouches(signer::address_of(alice));
 
-    // alice vouches for 10 validators
-    vouch::vouch_for(alice, @0x10001);
-    vouch::vouch_for(alice, @0x10002);
-    vouch::vouch_for(alice, @0x10003);
-    vouch::vouch_for(alice, @0x10004);
-    vouch::vouch_for(alice, @0x10005);
-    vouch::vouch_for(alice, @0x10006);
-    vouch::vouch_for(alice, @0x10007);
-    vouch::vouch_for(alice, @0x10008);
-    vouch::vouch_for(alice, @0x10009);
-    vouch::vouch_for(alice, @0x10010);
+    let users = mock::create_test_end_users(root, 10, 0);
+    let i = 0;
+    while (i < 10) {
+      let sig = vector::borrow(&users, i);
+      // init vouch for 10 validators
+      vouch::init(sig);
+      // alice vouches for 10 validators
+      vouch::vouch_for(alice, signer::address_of(sig));
+      i = i + 1;
+    };
 
-    // alice try to vouch for one more
-    vouch::vouch_for(alice, @0x1000b);
-
-    // check alice
-    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
-    assert!(given_vouches == vector[@0x10001, @0x10002, @0x10003, @0x10004, @0x10005, @0x10006, @0x10007, @0x10008, @0x10009, @0x10010], 73570017);
-    assert!(given_epochs == vector[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 73570018);
-
-    // check bob
-    let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
-    assert!(received_vouches == vector::empty(), 73570019);
-    assert!(received_epochs == vector::empty(), 73570020);
+    // should fail
   }
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
   #[expected_failure(abort_code = 0x30006, location = ol_framework::ol_account)]
   fun vouch_without_coins(root: &signer, alice: &signer) {
     // create vals without vouches
-    mock::create_vals(root, 2, false);
+    mock::create_validator_accounts(root, 2, false);
     vouch::set_vouch_price(root, 9_999);
 
     // alice vouches for bob without coins
@@ -280,7 +245,7 @@ module ol_framework::test_validator_vouch {
   #[test(root = @ol_framework, alice = @0x1000a)]
   #[expected_failure(abort_code = 0x30002, location = ol_framework::vouch)]
   fun vouch_for_account_not_init(root: &signer, alice: &signer) {
-    mock::create_vals(root, 1, false);
+    mock::create_validator_accounts(root, 1, false);
 
     // alice vouches for bob without init
     vouch::vouch_for(alice, @0x1000b);
@@ -296,7 +261,7 @@ module ol_framework::test_validator_vouch {
   #[test(root = @ol_framework, alice = @0x1000a)]
   #[expected_failure(abort_code = 0x10005, location = ol_framework::vouch)]
   fun revoke_account_not_vouched(root: &signer, alice: &signer) {
-    mock::create_vals(root, 2, false);
+    mock::create_validator_accounts(root, 2, false);
 
     // alice try to revoke bob without vouch
     vouch::revoke(alice, @0x1000b);
