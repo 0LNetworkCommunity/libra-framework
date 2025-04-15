@@ -90,7 +90,7 @@ impl RescueCli {
                 upgrade_mrb,
                 chain_id,
             } => {
-                let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb, chain_id)?;
+                let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb, *chain_id)?;
 
                 let out_file = self
                     .blob_path
