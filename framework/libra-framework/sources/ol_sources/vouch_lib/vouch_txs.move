@@ -33,7 +33,6 @@ module ol_framework::vouch_txs {
     // You have no faith to lose, and ya know it
     vouch_limits::assert_revoke_limit(signer::address_of(grantor));
     vouch::revoke(grantor, friend_account);
-    page_rank_lazy::mark_as_stale(signer::address_of(grantor));
     page_rank_lazy::mark_as_stale(friend_account);
   }
 

@@ -59,9 +59,18 @@ module ol_framework::page_rank_lazy {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
 
+        // If we've calculated the score recently
+        // and it's not stale, return the cached score
+        let user_record = borrow_global<UserTrustRecord>(addr);
+        if (!user_record.is_stale) {
+            return user_record.cached_score
+        };
+
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
+
+        // if the users's score is not stale skip traversing
 
         // Compute score using selected algorithm
         let score = traverse_graph(&roots, addr, FULL_WALK_MAX_DEPTH);
@@ -118,16 +127,18 @@ module ol_framework::page_rank_lazy {
     ): u64 {
         assert!(vouch::is_init(current), error::invalid_state(ENOT_INITIALIZED));
 
-        // Stop conditions
-        if (current_depth >= max_depth || current_power < 2) {
-            return 0
-        };
-
-        // Target found - return current trust power
+        // Great, we found the target!
+        // then we get to return the power
+        // otherwise it will be zero
+        // when we run out of power or depth
         if (current == target) {
             return current_power
         };
 
+        // Stop conditions
+        if (current_depth >= max_depth || current_power < 2) {
+            return 0
+        };
 
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
@@ -238,7 +249,25 @@ module ol_framework::page_rank_lazy {
         };
     }
 
-    // Testing helpers
+    //////// GETTERS ////////
+    #[view]
+    /// Get the cached trust score for a user
+    public fun get_cached_score(addr: address): u64 acquires UserTrustRecord {
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
+        let record = borrow_global<UserTrustRecord>(addr);
+        record.cached_score
+    }
+
+    #[view]
+    // check if it's stale
+    public fun is_stale(addr: address): bool acquires UserTrustRecord {
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
+        let record = borrow_global<UserTrustRecord>(addr);
+        record.is_stale
+    }
+
+    //////// TEST HELPERS ///////
+
     #[test_only]
     public fun setup_mock_trust_network(
         admin: &signer,

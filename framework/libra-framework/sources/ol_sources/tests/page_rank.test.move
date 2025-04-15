@@ -8,10 +8,12 @@ module ol_framework::test_page_rank {
   use ol_framework::root_of_trust;
   use ol_framework::mock;
   use ol_framework::vouch;
+  use ol_framework::vouch_txs;
   use ol_framework::page_rank_lazy;
   use std::signer;
-  use std::timestamp;
   use std::vector;
+
+  use diem_std::debug::print;
 
   // sets up a network with 10 root of trust accounts (which are
   // not the validators). Returns a list of signers from the 10 roots.
@@ -72,7 +74,7 @@ module ol_framework::test_page_rank {
 
     vouch::vouch_for(root_sig, new_user_addr);
 
-    // // Now check the page rank score (should be 100)
+    // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     assert!(page_rank_score == 50, 7357001);
   }
@@ -92,15 +94,7 @@ module ol_framework::test_page_rank {
     // // Initialize page rank for the new user
     page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
 
-    // // Setup one vouch from the first root
-
-    vouch::vouch_for(root_sig, new_user_addr);
-
-    // Now check the page rank score (should be 50)
-    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-    assert!(page_rank_score == 50, 7357001);
-    // Setup NINE vouches (from remaining roots)
-    let i = 1; // start at SECOND root of trust
+    let i = 0;
     while (i < vector::length(&roots_sig)) {
       let grantor = vector::borrow(&roots_sig, i);
       vouch::init(grantor);
@@ -113,13 +107,44 @@ module ol_framework::test_page_rank {
     let (received, _) = vouch::get_received_vouches(new_user_addr);
     assert!(vector::length(&received) == count_roots, 7357002);
 
-    // // Now check the page rank score (should be 1000 = 10 roots * 100 points)
-    // fast forward into the future
-    let current_timestamp = 10000;
-    timestamp::fast_forward_seconds(current_timestamp);
     let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
     // NOTE: this should be 10X the previous test
     assert!(page_rank_score_later == 500, 7357003);
-    assert!(page_rank_score_later == (count_roots * page_rank_score), 7357004);
+  }
+
+  #[test(framework = @ol_framework)]
+  fun test_stale_trust(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+    let new_user_sig = mock::create_user_from_u64(framework, 11);
+    let new_user_addr = signer::address_of(&new_user_sig);
+    let root_sig = vector::borrow(&roots_sig, 0);
+
+    vouch::init(root_sig);
+    vouch::init(&new_user_sig);
+    // Initialize page rank for the new user
+    page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
+
+    // Setup one vouch from the first root
+
+    vouch::vouch_for(root_sig, new_user_addr);
+
+    // Now check the page rank score (should be 100)
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
+    assert!(page_rank_score == 50, 7357001);
+    let stale = page_rank_lazy::is_stale(new_user_addr);
+    assert!(!stale, 7357002);
+
+    ///// THE TEST
+    // should mark stale
+    vouch_txs::revoke(root_sig, new_user_addr);
+    ///////////////
+
+    let stale = page_rank_lazy::is_stale(new_user_addr);
+    assert!(stale, 7357003);
+
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
+    assert!(page_rank_score == 0, 7357004);
+    print(&page_rank_score);
   }
 }
