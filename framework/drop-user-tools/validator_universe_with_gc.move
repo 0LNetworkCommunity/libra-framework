@@ -47,6 +47,8 @@ module diem_framework::validator_universe {
   ) acquires ValidatorUniverse {
       stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
       vouch::init(account);
+      page_rank_lazy::maybe_initialize_trust_record(account);
+
       // 0L specific,
       add(account);
       jail::init(account);

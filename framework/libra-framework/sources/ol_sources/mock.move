@@ -16,6 +16,7 @@ module ol_framework::mock {
   use diem_framework::transaction_fee;
   use diem_std::from_bcs;
   use std::bcs;
+  use ol_framework::ancestry;
   use ol_framework::grade;
   use ol_framework::vouch;
   use ol_framework::slow_wallet;
@@ -258,7 +259,10 @@ module ol_framework::mock {
   }
 
   #[test_only]
-  public fun personas(): vector<address> {
+  public fun personas(count: u64): vector<address> {
+    assert!(count > 0, 735701);
+    assert!(count < 11, 735702);
+
     let val_addr = vector::empty<address>();
     vector::push_back(&mut val_addr, @0x1000a);
     vector::push_back(&mut val_addr, @0x1000b);
@@ -270,6 +274,9 @@ module ol_framework::mock {
     vector::push_back(&mut val_addr, @0x10011); // h
     vector::push_back(&mut val_addr, @0x10012); // i
     vector::push_back(&mut val_addr, @0x10013); // k
+
+    vector::trim(&mut val_addr, count);
+
     val_addr
   }
 
@@ -277,6 +284,9 @@ module ol_framework::mock {
   /// mock up to 6 validators alice..frank
   public fun genesis_n_vals(root: &signer, num: u64): vector<address> {
     // create vals with vouches
+    system_addresses::assert_ol(root);
+    let framework_sig = account::create_signer_for_test(@diem_framework);
+    ol_test_genesis(&framework_sig);
 
     create_validator_accounts(root, num, true);
 
@@ -286,7 +296,8 @@ module ol_framework::mock {
     stake::get_current_validators()
   }
 
-    // Helper function to create a bunch of test signers
+  #[test_only]
+  // Helper function to create a bunch of test signers
   public fun create_test_end_users(framework: &signer, count: u64, start_idx: u64): vector<signer> {
     system_addresses::assert_diem_framework(framework);
 
@@ -300,6 +311,7 @@ module ol_framework::mock {
     signers
   }
 
+  #[test_only]
   // Create signer from u64, good for creating many accounts
   public fun create_user_from_u64(framework: &signer, idx: u64): signer {
     system_addresses::assert_diem_framework(framework);
@@ -324,6 +336,7 @@ module ol_framework::mock {
     account::create_signer_for_test(addr_as_addr)
   }
 
+  #[test_only]
   // Helper to extract addresses from signers
   public fun collect_addresses(signers: &vector<signer>): vector<address> {
     let addresses = vector::empty<address>();
@@ -339,14 +352,12 @@ module ol_framework::mock {
 
   #[test_only]
   public fun create_validator_accounts(root: &signer, num: u64, with_vouches: bool) {
-    system_addresses::assert_ol(root);
-    let framework_sig = account::create_signer_for_test(@diem_framework);
-    ol_test_genesis(&framework_sig);
+
     // need to initialize musical chairs separate from genesis.
     let musical_chairs_default_seats = 10;
     musical_chairs::initialize(root, musical_chairs_default_seats);
 
-    let val_addr = personas();
+    let val_addr = personas(num);
 
     root_of_trust::framework_migration(root, val_addr, vector::length(&val_addr), 10000);
 
@@ -359,12 +370,30 @@ module ol_framework::mock {
       validator_universe::test_register_validator(root, &pk, &pop, &sig, 100, true, should_end_epoch);
 
       vouch::init(&sig);
-      if (with_vouches) {
-        vouch::test_set_received_list(*val, val_addr);
-      };
+      page_rank_lazy::maybe_initialize_trust_record(&sig);
 
       i = i + 1;
     };
+
+    if (with_vouches) {
+      vouch::set_vouch_price(root, 0);
+      let k = 0;
+      while (k < num) {
+        let grantor = vector::borrow(&val_addr, k);
+        let grantor_sig = account::create_signer_for_test(*grantor);
+        let f = 0;
+            while (f < vector::length(&val_addr)) {
+              let recipient = vector::borrow(&val_addr, f);
+
+              if (grantor != recipient) {
+                vouch::vouch_for(&grantor_sig, *recipient);
+              };
+              f = f + 1;
+            };
+          k = k + 1;
+        };
+
+    }
   }
 
 
@@ -426,6 +455,7 @@ module ol_framework::mock {
     ol_account::transfer(&parent_sig, target_account, 1000);
     // vouch will be missing unless the initialized it through filo_migration
     vouch::init(&target_signer);
+    page_rank_lazy::maybe_initialize_trust_record(&target_signer);
 
 
     // Each validator vouches
@@ -541,13 +571,32 @@ module ol_framework::mock {
   #[test(root = @ol_framework, alice = @0x1000a)]
   fun validator_vouches_mocked_correctly(root: &signer, alice: address) {
     // create vals without vouches
-    let _vals = genesis_n_vals(root, 10);
+    let vals = genesis_n_vals(root, 10);
 
+    let i = 0;
+    while (i < vector::length(&vals)) {
+      let val = vector::borrow(&vals, i);
+      // check we have ancestry initialized
+      let ancestry = ancestry::get_tree(*val);
+      // all validators have ancestr
+      let parent = vector::borrow(&ancestry, 0);
+      assert!(parent == &@diem_framework, 7357000);
+      i = i + 1;
+    };
+
+    // in testnet the genesis validators are the seed root of trust for human verification
     let is_root = root_of_trust::is_root_at_registry(@ol_framework, alice);
-    print(&is_root);
+    assert!(is_root, 7357001);
+
+    let (given_vouches, _ ) = vouch::get_given_vouches(alice);
+    assert!(vector::length(&given_vouches) == 9, 7357002);
+    let (received_vouches, _) = vouch::get_received_vouches(alice);
+    assert!(vector::length(&received_vouches) == 9, 7357002);
 
     let score = page_rank_lazy::get_trust_score(alice);
-    print(&score);
+    // excluding self, the voucher has 9 vouches of remaining validator
+    // set which are also roots of trust
+    assert!(score == vector::length(&received_vouches) * 50, 7357002);
 
     let remaining = vouch_limits::get_remaining_vouches(alice);
     print(&remaining);

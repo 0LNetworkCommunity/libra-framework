@@ -12,8 +12,6 @@ module ol_framework::test_filo_migration {
   use ol_framework::reauthorization;
   use ol_framework::vouch;
 
-  // use diem_std::debug::print;
-
   /// two state initializations happen on first
   /// transaction
   fun simulate_transaction_validation(sender: &signer) {

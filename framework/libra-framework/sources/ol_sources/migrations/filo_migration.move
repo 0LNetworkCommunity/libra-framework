@@ -4,10 +4,13 @@ module ol_framework::filo_migration {
   use ol_framework::founder;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
+  use ol_framework::page_rank_lazy;
 
   friend diem_framework::transaction_validation;
   #[test_only]
   friend ol_framework::test_filo_migration;
+  #[test_only]
+  friend ol_framework::test_page_rank;
 
   // Welcome to Level 8
 
@@ -52,6 +55,9 @@ module ol_framework::filo_migration {
       if (!vouch::is_init(addr)) {
         vouch::init(user_sig);
       };
+
+      page_rank_lazy::maybe_initialize_trust_record(user_sig);
+
     };
 
 

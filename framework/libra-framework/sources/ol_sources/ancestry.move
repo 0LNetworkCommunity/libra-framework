@@ -49,7 +49,6 @@ module ol_framework::ancestry {
 
       // add the parent to the tree
       vector::push_back(&mut new_tree, parent);
-
       if (!exists<Ancestry>(child)) {
         move_to<Ancestry>(new_account_sig, Ancestry {
           tree: new_tree,
@@ -121,14 +120,21 @@ module ol_framework::ancestry {
     // will return true, and the common ancestor at the intersection.
     public fun is_family(left: address, right: address): (bool, address) acquires Ancestry {
       let is_family = false;
-      let common_ancestor = @0x0;
+      let common_ancestor = @diem_framework; // genesis accounts will have 0x1 as the parent address
+
+      // don't bother checking if we are at the root of the tree
+      if (system_addresses::is_reserved_address(left) || system_addresses::is_reserved_address(right)) {
+        return (false, common_ancestor)
+      };
 
       // if there is no ancestry info this is a bug, assume related
       // NOTE: we don't want to error here, since the VM calls this
       // on epoch boundary
       // TODO: make it abort, now that epoch boundary is not a problem.
-      if (!exists<Ancestry>(left)) return (true, @0x666);
-      if (!exists<Ancestry>(right)) return (true, @0x666);
+      assert!(exists<Ancestry>(left), ENO_ANCESTRY_TREE);
+      assert!(exists<Ancestry>(right), ENO_ANCESTRY_TREE);
+      // if (!exists<Ancestry>(left)) return (true, @0x666);
+      // if (!exists<Ancestry>(right)) return (true, @0x666);
 
       let left_tree = get_tree(left);
       let right_tree = get_tree(right);
@@ -221,12 +227,19 @@ module ol_framework::ancestry {
           // skip if you're the same person
           if (comparison_acc != target_acc) {
             // check ancestry algo
-            let (is_fam, _) = is_family(*comparison_acc, *target_acc);
+            let (is_fam, _parent) = is_family(*comparison_acc, *target_acc);
+            // print_str(&b"comparison_acc");
+            // print(comparison_acc);
+            // print_str(&b"target_acc");
+            // print(target_acc);
+            // print_str(&b"is_fam");
+            // print(&is_fam);
+
             if (!is_fam) {
               if (!vector::contains(&unrelated_buddies, target_acc)) {
                 vector::push_back<address>(&mut unrelated_buddies, *target_acc)
               }
-            }
+            };
           };
           k = k + 1;
         };

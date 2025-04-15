@@ -478,7 +478,6 @@ module ol_framework::vouch {
     /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
         if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
-
         // Get non-expired vouches
         let not_expired = all_not_expired(addr);
         // Filter for ancestry relationships

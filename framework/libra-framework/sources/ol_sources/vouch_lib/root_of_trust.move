@@ -83,12 +83,18 @@ module ol_framework::root_of_trust {
     /// At the time of V8 upgrade, the framework
     /// will migrate the prior root of trust implementation
     /// to the new explicit one.
-    public(friend) fun framework_migration(framework: &signer, roots: vector<address>, minimum_cohort: u64, rotation_days: u64) {
+    public(friend) fun framework_migration(framework: &signer, roots: vector<address>, minimum_cohort: u64, rotation_days: u64) acquires RootOfTrust {
         // Verify this is called by the framework account
         system_addresses::assert_diem_framework(framework);
 
         // Initialize the root of trust at the framework address
-        maybe_initialize(framework, roots, minimum_cohort, rotation_days);
+        if (is_initialized(@ol_framework)) {
+            let root_of_trust = borrow_global_mut<RootOfTrust>(@ol_framework);
+            root_of_trust.roots = roots;
+
+        } else {
+          maybe_initialize(framework, roots, minimum_cohort, rotation_days);
+        }
     }
 
     // #[view]
