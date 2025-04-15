@@ -41,6 +41,7 @@ pub fn register_vals(
     db_path: &Path,
     reg_files: &[PathBuf],
     upgrade_mrb: &Option<PathBuf>,
+    chain_id: Option<u8>,
 ) -> Result<Transaction> {
     // TODO: replace ValCredentials with OperatorConfiguration
     let registrations: Vec<ValCredentials> = reg_files
@@ -55,6 +56,7 @@ pub fn register_vals(
         db_path,
         registrations,
         upgrade_mrb,
+        chain_id,
     )?;
     Ok(Transaction::GenesisTransaction(WriteSetPayload::Direct(cs)))
 }
