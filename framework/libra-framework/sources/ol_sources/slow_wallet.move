@@ -129,8 +129,13 @@ module ol_framework::slow_wallet {
 
     /// helper to get the unlocked and total balance. (unlocked, total)
     public(friend) fun unlocked_and_total(addr: address): (u64, u64) acquires SlowWallet{
+
       // this is a normal account, so return the normal balance
       let total = libra_coin::balance(addr);
+      if (!reauthorization::is_v8_authorized(addr)) {
+        return (0, total)
+      };
+
       if (exists<SlowWallet>(addr)) {
         let s = borrow_global<SlowWallet>(addr);
         return (s.unlocked, total)
@@ -263,9 +268,15 @@ module ol_framework::slow_wallet {
     public fun is_slow(addr: address): bool {
       exists<SlowWallet>(addr)
     }
+
     #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 acquires SlowWallet {
+      // if the account has never been activated, the unlocked amount is
+      // zero despite the state (which is stale, until there is a migration).
+      if (!reauthorization::is_v8_authorized(addr)) {
+        return 0
+      };
 
       // this is a normal account, so return the normal balance
       if (exists<SlowWallet>(addr)) {
