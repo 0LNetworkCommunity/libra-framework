@@ -217,15 +217,9 @@ pub fn upgrade_framework_from_mrb_file(
 pub fn change_chain_id(session: &mut SessionExt, chain_id: u8) -> anyhow::Result<()> {
     let signer = MoveValue::Signer(AccountAddress::ONE);
     let chain_id = MoveValue::U8(chain_id);
-    libra_execute_session_function(
-        session,
-        "0x1::chain_id::set_impl",
-        vec![&signer, &chain_id],
-    )?;
+    libra_execute_session_function(session, "0x1::chain_id::set_impl", vec![&signer, &chain_id])?;
     Ok(())
 }
-
-
 
 /// Unpacks a VM change set.
 pub fn unpack_to_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
@@ -271,9 +265,7 @@ pub fn register_and_replace_validators_changeset(
             session_register_validators(session, replacement_vals)
                 .expect("could not register validators");
 
-
-            change_chain_id(session, chain_id.unwrap_or(2))
-                .expect("could not change chain id");
+            change_chain_id(session, chain_id.unwrap_or(2)).expect("could not change chain id");
 
             writeset_voodoo_events(session).expect("should voodoo, who do?");
 
