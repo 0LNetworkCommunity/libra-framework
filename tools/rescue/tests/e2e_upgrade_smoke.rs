@@ -43,6 +43,7 @@ async fn smoke_can_upgrade_and_restart() -> anyhow::Result<()> {
             // NOTE: this is the test!
             upgrade_mrb: ReleaseTarget::Head.find_bundle_path().ok(),
             ////////////////////////////
+            chain_id: None,
         },
     };
 

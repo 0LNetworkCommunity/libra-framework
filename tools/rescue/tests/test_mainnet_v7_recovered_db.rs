@@ -171,6 +171,7 @@ fn e2e_twin_register_vals_plus_upgrade_on_v7() -> anyhow::Result<()> {
         command: Sub::RegisterVals {
             operator_yaml: vec![oper_file],
             upgrade_mrb: Some(upgrade_mrb),
+            chain_id: None,
         },
     };
 

@@ -41,6 +41,7 @@ async fn can_create_replace_blob_from_randos() -> anyhow::Result<()> {
         command: Sub::RegisterVals {
             operator_yaml: operator_yamls,
             upgrade_mrb: None,
+            chain_id: None,
         },
     };
 
@@ -89,6 +90,7 @@ async fn smoke_can_replace_randos_and_restart() -> anyhow::Result<()> {
         command: Sub::RegisterVals {
             operator_yaml: operator_yamls,
             upgrade_mrb: None,
+            chain_id: None,
         },
     };
 
@@ -148,6 +150,7 @@ async fn uses_written_db_from_rando_account() -> anyhow::Result<()> {
         command: Sub::RegisterVals {
             operator_yaml: operator_yamls.clone(),
             upgrade_mrb: None,
+            chain_id: None,
         },
     };
 
