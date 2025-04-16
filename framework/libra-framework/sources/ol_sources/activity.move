@@ -4,23 +4,52 @@ module ol_framework::activity {
   use std::signer;
   use diem_std::timestamp;
 
-  friend diem_framework::transaction_validation;
+  friend ol_framework::filo_migration;
   friend ol_framework::ol_account;
+  friend diem_framework::transaction_validation;
+
+  // #[test_only]
+  // friend ol_framework::donor_voice_reauth;
+  #[test_only]
+  friend ol_framework::mock;
+  // #[test_only]
+  // friend ol_framework::test_filo_migration;
+
+  //////// ERROR CODES ///////
+  /// account not initialized on v8 chain
+  const EACCOUNT_MALFORMED: u64 = 1;
 
   struct Activity has key {
     last_touch_usecs: u64,
     onboarding_usecs: u64,
   }
 
-  public(friend) fun increment(user_sig: &signer, timestamp: u64) acquires Activity {
-    // migrate old accounts
-    // catch the case of existing "founder" accounts from prior to V8
-    if (!exists<Activity>(signer::address_of(user_sig))) {
-      migrate(user_sig, timestamp);
-    } else {
-      let state = borrow_global_mut<Activity>(signer::address_of(user_sig));
-      state.last_touch_usecs = timestamp;
+  /// Initialize the activity timestamp of a user
+  public(friend) fun lazy_initialize(user: &signer, timestamp: u64) {
+    if (!exists<Activity>(signer::address_of(user))) {
+      move_to<Activity>(user, Activity {
+        last_touch_usecs: timestamp,
+        onboarding_usecs: timestamp
+      })
     }
+  }
+
+  /// Increment the activity timestamp of a user
+  public(friend) fun increment(user: &signer, timestamp: u64) acquires Activity {
+    lazy_initialize(user, timestamp);
+
+    let state = borrow_global_mut<Activity>(signer::address_of(user));
+    state.last_touch_usecs = timestamp;
+  }
+
+  #[view]
+  /// get the last activity timestamp of a user
+  public fun get_last_activity_usecs(user: address): u64 acquires Activity {
+    if (exists<Activity>(user)) {
+      let state = borrow_global<Activity>(user);
+      return state.last_touch_usecs
+    };
+    0
   }
 
   fun migrate(user_sig: &signer, timestamp: u64) {
@@ -43,20 +72,22 @@ module ol_framework::activity {
 
 
   #[view]
-  // if there user has been onboarded (since v8) but never transacted
-  // they should have a last touch timestamp of 0.
-  public fun has_ever_been_touched(user: address): bool acquires Activity {
-    if (exists<Activity>(user)){
-      let state = borrow_global<Activity>(user);
-      return state.last_touch_usecs > 0
-    };
+  // check if this is an account that has activity
+  public fun has_ever_been_touched(user: address): bool {
     // I was beat, incomplete
     // I've been had, I was sad and blue
     // But you made me feel
     // Yeah, you made me feel
     // Shiny and new
+    exists<Activity>(user)
 
-    false
+    // TODO: check timestamp
+    // if (exists<Activity>(user)){
+    //   let state = borrow_global<Activity>(user);
+    //   return state.last_touch_usecs > 0
+    // };
+
+    // false
   }
 
 

@@ -9,8 +9,7 @@ module ol_framework::founder {
   struct Founder has key {
     has_human_friends: bool
   }
-
-  public(friend) fun migrate(user_sig: &signer) {
+  public entry fun migrate(user_sig: &signer) {
     if (!exists<Founder>(signer::address_of(user_sig))) {
       move_to<Founder>(user_sig, Founder {
         has_human_friends: false // ooh is's lonely at the top
