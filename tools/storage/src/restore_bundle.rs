@@ -218,7 +218,6 @@ pub fn verify_valid_transaction_list(
     if tm.first_version > version {
         bail!("the transaction you are looking for is older than the last version in this bundle. Get an older transaction backup.");
     }
-    println!("OK: transaction bundle should have this transaction");
     Ok(())
 }
 

@@ -1,10 +1,11 @@
-use anyhow::{bail, Context};
-use diem_genesis::config::{HostAndPort, OperatorConfiguration, ValidatorConfiguration};
+use crate::cli_output::TestInfo;
+use anyhow::bail;
+use diem_genesis::config::{HostAndPort, ValidatorConfiguration};
 use libra_backwards_compatibility::legacy_recovery_v6::LegacyRecoveryV6;
 use libra_config::validator_config;
 use libra_genesis_tools::{genesis_builder, parse_json};
 use libra_types::{
-    core_types::fixtures::TestPersona,
+    core_types::{app_cfg::CONFIG_FILE_NAME, fixtures::TestPersona},
     exports::{AccountAddress, AuthenticationKey, NamedChain},
     move_resource::{
         cumulative_deposits::LegacyBalanceResourceV6,
@@ -12,54 +13,18 @@ use libra_types::{
     },
     ONCHAIN_DECIMAL_PRECISION,
 };
-use serde_yaml;
-use std::{fs, path::PathBuf}; // Explicitly import serde_yaml
-
-// Simple function to convert ValidatorConfiguration to OperatorConfiguration
-fn validator_to_operator_config(
-    config: &ValidatorConfiguration,
-) -> anyhow::Result<OperatorConfiguration> {
-    let consensus_public_key = config
-        .consensus_public_key
-        .clone()
-        .context("Consensus public key is required for operator configuration")?;
-
-    let consensus_proof_of_possession = config
-        .proof_of_possession
-        .clone()
-        .context("Proof of possession is required for operator configuration")?;
-
-    let validator_network_public_key = config
-        .validator_network_public_key
-        .context("Validator network public key is required for operator configuration")?;
-
-    let validator_host = config
-        .validator_host
-        .clone()
-        .context("Validator host is required for operator configuration")?;
-
-    Ok(OperatorConfiguration {
-        operator_account_address: config.operator_account_address,
-        operator_account_public_key: config.operator_account_public_key.clone(),
-        consensus_public_key,
-        consensus_proof_of_possession,
-        validator_network_public_key,
-        validator_host,
-        full_node_network_public_key: config.full_node_network_public_key,
-        full_node_host: config.full_node_host.clone(),
-    })
-}
+use libra_wallet::account_keys;
+use std::{fs, path::PathBuf};
 
 // Sets up the environment for the given test persona.
 // returns the home data path
 pub async fn setup(
-    me: &TestPersona,
     host_list: &[HostAndPort],
     chain: NamedChain,
-    data_path: PathBuf,
+    data_dir: PathBuf,
     legacy_data_path: Option<PathBuf>,
     framework_mrb_path: Option<PathBuf>,
-) -> anyhow::Result<PathBuf> {
+) -> anyhow::Result<Vec<TestInfo>> {
     // config the host address for this persona
     if host_list.len() < 3 {
         bail!("cannot start a testnet with less than 3 nodes, use --host-list for each of Alice, Bob, Carol and Dave but not more. Exiting.")
@@ -68,72 +33,52 @@ pub async fn setup(
         bail!("too many hosts provided, you just need 3 or 4 for a good testnet genesis. Exiting.")
     }
 
-    println!("Building genesis config files for a network with:");
-    for (i, h) in host_list.iter().enumerate() {
-        let character = TestPersona::from(i)?;
-
-        let display = format!("{}:{}", h.host, h.port);
-        println!("persona: {character} - host: {display}");
-        println!("mnemonic: {}\n", character.get_persona_mnem());
-    }
-
-    let index = me.idx();
-    let my_host = host_list.get(index).expect("could not get an IP and index");
-    println!(
-        "your persona '{me}' is expected to use network address: {}:{}\n",
-        my_host.host, my_host.port
-    );
-
-    // Initializes the validator configuration.
-    validator_config::initialize_validator(
-        Some(data_path.clone()),
-        Some(&me.to_string()),
-        my_host.clone(),
-        Some(me.get_persona_mnem()),
-        false,
-        Some(chain),
-    )
-    .await?;
+    let operator_files_path = data_dir.join("operator_files");
+    fs::create_dir_all(&operator_files_path)?;
 
     // create validator configurations from fixtures
     // without needing to use a github repo to register and read
-    let val_cfg: Vec<ValidatorConfiguration> = host_list
-        .iter()
-        .enumerate()
-        .filter_map(|(idx, h)| {
-            let p = TestPersona::from(idx).ok()?;
-            genesis_builder::testnet_validator_config(&p, h).ok()
-        })
-        .collect();
+    let mut val_cfg: Vec<ValidatorConfiguration> = vec![];
+    let mut test_info: Vec<TestInfo> = vec![];
 
-    // make a directory under data-path for `operator_files`
-    let operator_files_path = data_path.join("operator_files");
-    fs::create_dir_all(&operator_files_path)?;
+    for (idx, host) in host_list.iter().enumerate() {
+        let p = TestPersona::from(idx)?;
+        let mnem = p.get_persona_mnem();
 
-    // save the identity files operator.yaml, we'll need them in cases of twin tests
-    val_cfg.iter().for_each(|v| {
-      match validator_to_operator_config(v) {
-        Ok(o) => {
-          // use serde yaml to write the operator configuration to a file
-          // including the address
-          let operator_file = operator_files_path.join(format!("operator_{}.yaml", v.owner_account_address));
-          match serde_yaml::to_string(&o) {
-              Ok(yaml_str) => {
-                  if let Err(e) = fs::write(&operator_file, yaml_str) {
-                      eprintln!("Could not write operator file to {:?}: {}", operator_file, e);
-                  } else {
-                      println!("Wrote operator file to {:?}", operator_file);
-                  }
-              },
-              Err(e) => eprintln!("Failed to serialize operator config: {}", e),
-          }
-        }
-        Err(e) => {
-            eprintln!("Failed to convert ValidatorConfiguration to OperatorConfiguration for validator {:?}: {}",
-                v.owner_account_address, e);
-        }
-      }
-    });
+        let data_dir = operator_files_path.join(p.to_string());
+
+        let (_, mut app_cfg) = validator_config::initialize_validator_files(
+            Some(data_dir.clone()),
+            Some(&p.to_string()),
+            host.clone(),
+            Some(mnem.clone()),
+            false,
+            Some(chain),
+        )
+        .await?;
+
+        let w = account_keys::get_keys_from_mnem(mnem.clone())?;
+
+        // Sets private key to file
+        // DANGER: this is only for testnet
+        app_cfg
+            .get_profile_mut(None)
+            .unwrap()
+            .set_private_key(&w.child_0_owner.pri_key);
+
+        let v_reg = genesis_builder::generate_validator_registration_config(mnem, host)?;
+        val_cfg.push(v_reg);
+
+        // set info output for testnet operator to find paths easily
+        let o = TestInfo {
+            validator_address: app_cfg.get_profile(None).unwrap().account,
+            val_set_index: idx,
+            data_dir,
+            api_endpoint: host.to_owned(),
+            app_cfg_path: app_cfg.workspace.node_home.join(CONFIG_FILE_NAME),
+        };
+        test_info.push(o);
+    }
 
     // Determines the path for the recovery data.
     // NOTE: test fixtures located at ./tests/fixtures/sample_export_recovery.json
@@ -150,13 +95,14 @@ pub async fn setup(
         "none".to_string(), // we ignore ceremony coordination for testnet
         "none".to_string(),
         "none".to_string(),
-        data_path.clone(),
+        data_dir.clone(),
         framework_mrb_path,
         &mut recovery,
         chain,
         Some(val_cfg),
     )?;
-    Ok(data_path)
+
+    Ok(test_info)
 }
 
 fn generate_testnet_state_for_vals(vals: &[ValidatorConfiguration]) -> Vec<LegacyRecoveryV6> {

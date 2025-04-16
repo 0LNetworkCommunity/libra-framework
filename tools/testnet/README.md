@@ -1,6 +1,58 @@
-# Libra Framework Testnet Tools
+# Libra Testnet Tools
 
 This package provides tools for creating and managing test networks for the Libra Framework, allowing both clean-slate testing and production-identical testing environments.
+
+# Quick Start
+```bash
+# make sure you have `libra` compiled and exported
+export DIEM_FORGE_NODE_BIN_PATH=$HOME/.cargo/bin/libra
+
+# assuming you are using source you want to have the latest Move framework MRB ready
+# the code defaults to <source code path>/framework/releases/head.mbr
+cd <source root>/framework
+libra move framework release
+```
+
+## Smoke - starts a managed local testnet
+```bash
+# run locally a virgin testnet with alice, bob, carol default test accounts
+libra ops testnet smoke
+
+# start local twin of mainnet forking from an archive backup at epoch number
+libra ops testnet --twin-epoch-restore=344 smoke
+# next time you don't need to restore, you'll find the backup db in your /.libra dir
+libra ops testnet --twin-reference-db=$HOME/.libra/db_344 smoke
+
+# predefine a test dir to easily find configs for sending transactions etc.
+libra ops testnet --test-dir=./my_test/ smoke
+libra txs --config-path=./my_test/alice/libra-cli-configs.yaml \
+transfer \
+--to-account=0xCAFE \
+--amount=100
+
+# Or, export a json file so you know all the paths and urls needed to play
+libra ops testnet --json-file=./testnet.json smoke
+
+# Using prebuilt Move framework assuming you have downloaded a file like `release-7.0.3.mrb`
+curl -LO https://github.com/0LNetworkCommunity/libra-framework/releases/download/7.0.3/release-7.0.3.mrb
+
+libra ops testnet --framework-mrb-path=./release-7.0.3.mrb smoke
+```
+
+## Config only - configure the data so you can start nodes yourself on independent hosts or containers.
+```bash
+# configure a testnet with alice, bob, carol test accounts, and assign hosts to them in (ordered)
+libra ops testnet configure --host=0.0.0.1:6180 --host=0.0.0.2:6180 --host=0.0.0.3:6180
+
+# then on each host start the node as you would in production, with each host choosing one of the test personas by path
+libra node --config-path=/path/to/operator_files/alice/validator.yaml
+```
+
+## Use an existing DB for twin mode
+```bash
+# If you already have a database you want to use for twin mode
+libra ops testnet --twin-reference-db /path/to/db smoke
+```
 
 ## Core Features
 
@@ -51,26 +103,20 @@ While vendor code offers Forge::K8 (Kubernetes-based testing), OL has chosen not
 ### For Swarm
 Swarm starts one or more processes of the `libra` production bin.
 Requires that you have a `libra` binary built and
-the ennvar DIEM_FORGE_NODE_BIN_PATH pointed to it
+the envvar DIEM_FORGE_NODE_BIN_PATH pointed to it
 e.g. DIEM_FORGE_NODE_BIN_PATH=$HOME/.cargo/bin/libra
 
 ### Basic Usage
 
 ```bash
 # Configure a new virgin testnet
-cargo run --package testnet -- configure
+libra ops testnet configure
 
-# Start a container-based virgin testnet
-cargo run --package testnet -- start-container
-
-# Start a swarm-based virgin testnet
-cargo run --package testnet -- start-swarm
+# Start a Libra Smoke swarm-based virgin testnet
+libra ops testnet smoke
 
 # Create a twin of mainnet for testing
-cargo run --package testnet -- --twin start-container
-
-# Create a mainnet twin using swarm
-cargo run --package testnet -- --twin start-swarm
+libra ops testnet --twin-epoch-restore=344 smoke
 ```
 
 ## Configuration
