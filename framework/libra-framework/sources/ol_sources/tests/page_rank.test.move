@@ -1,8 +1,4 @@
 #[test_only]
-
-// Tests for page_rank_lazy module with a large network of accounts.
-// This simulates 100 accounts with various vouching relationships
-// and tests the page rank score calculation.
 module ol_framework::test_page_rank {
   use ol_framework::activity;
   use ol_framework::founder;
@@ -147,8 +143,24 @@ module ol_framework::test_page_rank {
 
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     assert!(page_rank_score == 0, 7357004);
+
+    ///// THE TEST
+    // should mark stale
+    vouch_txs::vouch_for(root_sig, new_user_addr);
+    ///////////////
+
+    // will be stale until next computation
+    let stale = page_rank_lazy::is_stale(new_user_addr);
+    assert!(stale, 7357005);
+
+    let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     print(&page_rank_score);
+
+    // should no longer be stale
+    let stale = page_rank_lazy::is_stale(new_user_addr);
+    assert!(!stale, 7357005);
   }
+
 
   // check that the page rank can be used to
   // reauthorize a founder
@@ -159,10 +171,7 @@ module ol_framework::test_page_rank {
     let one_root_sig = vector::borrow(&roots_sig, 0);
 
     let seven_user_sig = ol_account::test_emulate_v7_account(framework, @0xabcd1234);
-    // let seven_user_sig = mock::create_user_from_u64(framework, 100);
     let user_addr = signer::address_of(&seven_user_sig);
-    // page_rank_lazy::maybe_initialize_trust_record(&seven_user_sig);
-    // vouch::init(&seven_user_sig);
 
     // a v7 user touches the account to get structs created
     mock::simulate_transaction_validation(&seven_user_sig);
@@ -174,16 +183,18 @@ module ol_framework::test_page_rank {
     assert!(pre, 7357002);
     assert!(is_founder, 7357003);
 
-    // // Now check the page rank score (should be 100)
-    // let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
-    // print(&page_rank_score);
-    // assert!(page_rank_score == 0, 7357003);
+    // page rank score should be 0
+    let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
+    assert!(page_rank_score == 0, 7357003);
+    // check that sybil resistance did not yet pass
+    let has_friends = founder::has_friends(user_addr);
+    assert!(!has_friends, 7357004);
 
     vouch_txs::vouch_for(one_root_sig, user_addr);
     let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
-    assert!(page_rank_score == 50, 7357004);
+    assert!(page_rank_score == 50, 7357005);
 
     let has_friends = founder::has_friends(user_addr);
-    assert!(has_friends, 7357005);
+    assert!(has_friends, 7357006);
   }
 }

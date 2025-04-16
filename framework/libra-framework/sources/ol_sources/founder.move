@@ -46,13 +46,6 @@ module ol_framework::founder {
     }
   }
 
-  /// Check if user has a valid vouch score
-  /// Uses vouch::calculate_total_vouch_quality to get the score
-  /// and compares it against the threshold
-  public fun is_voucher_score_valid(user: address): bool {
-    vouch::calculate_total_vouch_quality(user) > THRESHOLD_SCORE
-  }
-
   // DANGER: open to any friend function
   public(friend) fun maybe_set_friendly_founder(user: address) acquires Founder {
     if (

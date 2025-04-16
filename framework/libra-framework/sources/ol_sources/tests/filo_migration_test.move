@@ -180,8 +180,8 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    founder::test_mock_friendly(framework, bob);
     mock::simulate_transaction_validation(bob);
+    founder::test_mock_friendly(framework, bob);
     //////// end migration tx ////////
 
     // uses transfer entry function

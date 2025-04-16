@@ -40,9 +40,9 @@ module ol_framework::root_of_trust_tests {
         let eve_signer = account::create_signer_for_test(EVE_DAVES_CHILD);
 
         // Set up ancestry relationships
-        ancestry::adopt_this_child(&alice_signer, &bob_signer);
-        ancestry::adopt_this_child(&bob_signer, &carol_signer);
-        ancestry::adopt_this_child(&dave_signer, &eve_signer);
+        ancestry::test_adopt(framework, &alice_signer, &bob_signer);
+        ancestry::test_adopt(framework, &bob_signer, &carol_signer);
+        ancestry::test_adopt(framework, &dave_signer, &eve_signer);
     }
 
     #[test(framework = @0x1)]

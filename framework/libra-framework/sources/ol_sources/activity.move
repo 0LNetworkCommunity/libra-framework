@@ -10,8 +10,8 @@ module ol_framework::activity {
   friend diem_framework::transaction_validation;
   friend diem_framework::ol_account;
 
-  #[test_only]
-  friend ol_framework::donor_voice_reauth;
+  // #[test_only]
+  // friend ol_framework::donor_voice_reauth;
   #[test_only]
   friend ol_framework::mock;
   #[test_only]
