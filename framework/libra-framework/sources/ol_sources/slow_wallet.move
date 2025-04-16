@@ -128,7 +128,7 @@ module ol_framework::slow_wallet {
     }
 
     /// helper to get the unlocked and total balance. (unlocked, total)
-    public(friend) fun unlocked_and_total(addr: address): (u64, u64) acquires SlowWallet{
+    public(friend) fun unlocked_and_total(addr: address): (u64, u64) acquires SlowWallet {
 
       // this is a normal account, so return the normal balance
       let total = libra_coin::balance(addr);

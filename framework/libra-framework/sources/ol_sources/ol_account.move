@@ -135,6 +135,8 @@ module ol_framework::ol_account {
     receipts::user_init(&resource_account_sig);
     maybe_init_burn_tracker(&resource_account_sig);
     ancestry::adopt_this_child(user, &resource_account_sig);
+    activity::maybe_onboard(&resource_account_sig);
+
 
     (resource_account_sig, cap)
   }
