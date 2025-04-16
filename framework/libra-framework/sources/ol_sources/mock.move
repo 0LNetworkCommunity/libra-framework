@@ -16,7 +16,9 @@ module ol_framework::mock {
   use diem_framework::transaction_fee;
   use diem_std::from_bcs;
   use std::bcs;
+  use ol_framework::activity;
   use ol_framework::ancestry;
+  use ol_framework::filo_migration;
   use ol_framework::grade;
   use ol_framework::vouch;
   use ol_framework::slow_wallet;
@@ -28,7 +30,6 @@ module ol_framework::mock {
   use ol_framework::epoch_helper;
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
-  use ol_framework::testnet;
   use ol_framework::vouch_limits;
   use ol_framework::root_of_trust;
   use ol_framework::page_rank_lazy;
@@ -424,13 +425,6 @@ module ol_framework::mock {
     assert!(reconfiguration::get_current_epoch() == epoch_helper::get_current_epoch(), 666);
   }
 
-  #[test_only]
-  public fun create_v7_account_for_test(root: &signer) {
-    testnet::assert_testnet(root);
-    let v7 = @0x10007;
-    ol_account::create_account(root, v7);
-  }
-
 
   #[test_only]
   /// Creates a vouching network where target_account has a vouch score of 100
@@ -601,6 +595,19 @@ module ol_framework::mock {
     let remaining = vouch_limits::get_remaining_vouches(alice);
     print(&remaining);
 
+  }
+
+  #[test_only]
+  /// two state initializations happen on first
+  /// transaction
+  public fun simulate_transaction_validation(sender: &signer) {
+    let time = timestamp::now_seconds();
+    // will initialize structs if first time
+    activity::increment(sender, time);
+
+    // run migrations
+    // Note, Activity and Founder struct should have been set above
+    filo_migration::maybe_migrate(sender);
   }
 
 

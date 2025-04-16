@@ -10,8 +10,7 @@ module ol_framework::filo_migration {
   #[test_only]
   friend ol_framework::test_filo_migration;
   #[test_only]
-  friend ol_framework::test_page_rank;
-
+  friend ol_framework::mock;
   // Welcome to Level 8
 
   // It's a quest, it's a quest

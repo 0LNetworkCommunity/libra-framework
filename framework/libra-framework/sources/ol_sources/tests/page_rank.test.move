@@ -4,9 +4,11 @@
 // This simulates 100 accounts with various vouching relationships
 // and tests the page rank score calculation.
 module ol_framework::test_page_rank {
-  use ol_framework::filo_migration;
+  use ol_framework::activity;
+  use ol_framework::founder;
   use ol_framework::root_of_trust;
   use ol_framework::mock;
+  use ol_framework::ol_account;
   use ol_framework::vouch;
   use ol_framework::vouch_txs;
   use ol_framework::page_rank_lazy;
@@ -28,7 +30,7 @@ module ol_framework::test_page_rank {
 
     vector::for_each_ref(&roots_sig, |sig| {
       // make each account a v8 address
-      filo_migration::maybe_migrate(sig);
+      mock::simulate_transaction_validation(sig);
     });
 
     // make these accounts root of trust
@@ -63,15 +65,15 @@ module ol_framework::test_page_rank {
     let roots_sig = test_base(framework);
     let new_user_sig = mock::create_user_from_u64(framework, 11);
     let new_user_addr = signer::address_of(&new_user_sig);
+
+    // the root sigs already have vouch initialized
     let root_sig = vector::borrow(&roots_sig, 0);
 
-    vouch::init(root_sig);
     vouch::init(&new_user_sig);
-    // // Initialize page rank for the new user
+    // Initialize page rank for the new user
     page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
 
-    // // Setup one vouch from the first root
-
+    // Setup one vouch from the first root
     vouch::vouch_for(root_sig, new_user_addr);
 
     // Now check the page rank score (should be 100)
@@ -146,5 +148,42 @@ module ol_framework::test_page_rank {
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     assert!(page_rank_score == 0, 7357004);
     print(&page_rank_score);
+  }
+
+  // check that the page rank can be used to
+  // reauthorize a founder
+  #[test(framework = @ol_framework)]
+  fun test_founder_reauth(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+    let one_root_sig = vector::borrow(&roots_sig, 0);
+
+    let seven_user_sig = ol_account::test_emulate_v7_account(framework, @0xabcd1234);
+    // let seven_user_sig = mock::create_user_from_u64(framework, 100);
+    let user_addr = signer::address_of(&seven_user_sig);
+    // page_rank_lazy::maybe_initialize_trust_record(&seven_user_sig);
+    // vouch::init(&seven_user_sig);
+
+    // a v7 user touches the account to get structs created
+    mock::simulate_transaction_validation(&seven_user_sig);
+    // check lazy migration worked
+    let is_init = activity::is_initialized(user_addr);
+    let pre = activity::is_prehistoric(user_addr);
+    let is_founder = founder::is_founder(user_addr);
+    assert!(is_init, 7357001);
+    assert!(pre, 7357002);
+    assert!(is_founder, 7357003);
+
+    // // Now check the page rank score (should be 100)
+    // let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
+    // print(&page_rank_score);
+    // assert!(page_rank_score == 0, 7357003);
+
+    vouch_txs::vouch_for(one_root_sig, user_addr);
+    let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
+    assert!(page_rank_score == 50, 7357004);
+
+    let has_friends = founder::has_friends(user_addr);
+    assert!(has_friends, 7357005);
   }
 }
