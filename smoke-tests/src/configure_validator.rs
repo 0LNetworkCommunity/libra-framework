@@ -47,13 +47,15 @@ pub fn init_val_config_files(
 
 /// helper to save libra-cli config files for each of the validators in
 /// their local temp folder (alongside validator.yaml)
-pub fn save_cli_config_all(swarm: &mut LocalSwarm) -> anyhow::Result<()> {
+pub fn save_cli_config_all(swarm: &mut LocalSwarm) -> anyhow::Result<Vec<PathBuf>> {
     let len = swarm.validators().count();
+    let mut paths = vec![];
     for i in 0..len {
         // a libra-cli-config file will be created at the temp swarm
         // directory of the node
         let (_, app_cfg) = init_val_config_files(swarm, i, None)?;
-        let _file = app_cfg.save_file()?;
+        let file = app_cfg.save_file()?;
+        paths.push(file);
     }
-    Ok(())
+    Ok(paths)
 }

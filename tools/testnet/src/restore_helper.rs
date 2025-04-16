@@ -43,7 +43,7 @@ pub async fn one_step_restore_db(
         data_path.display()
     );
 
-    let restore_path = download_bundle::download_restore_bundle(
+    let backup_files_dir = download_bundle::download_restore_bundle(
         &owner_str,
         &repo_str,
         &branch_str,
@@ -58,7 +58,7 @@ pub async fn one_step_restore_db(
         "Restoring and bootstrapping DB to {}",
         destination_db.display()
     );
-    restore::epoch_restore(restore_path, destination_db.clone()).await?;
+    restore::epoch_restore(backup_files_dir, destination_db.clone()).await?;
 
     println!("Restore process completed successfully");
     Ok(destination_db)

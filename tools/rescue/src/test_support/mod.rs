@@ -37,7 +37,7 @@ use tar::Archive;
 /// is dropped (unless persist() is called).
 ///
 /// Returns the PathBuf containing the extracted database.
-pub fn setup_test_db() -> anyhow::Result<PathBuf> {
+pub fn setup_v7_reference_twin_db() -> anyhow::Result<PathBuf> {
     let mut temp_dir = TempPath::new();
     temp_dir.create_as_dir()?;
     temp_dir.persist();

@@ -161,7 +161,7 @@ pub async fn creates_random_val_account(
     let my_host = HostAndPort::local(port)?;
 
     // Initializes the validator configuration.
-    validator_config::initialize_validator(
+    validator_config::initialize_validator_files(
         Some(data_path.to_path_buf()),
         Some(&mnemonic_string.clone()[..3]),
         my_host,
