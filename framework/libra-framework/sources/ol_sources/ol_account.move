@@ -130,13 +130,7 @@ module ol_framework::ol_account {
   /// A wrapper to create a NEW account and register it to receive GAS.
   public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
     let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-    coin::register<LibraCoin>(&resource_account_sig);
-
-    receipts::user_init(&resource_account_sig);
-    maybe_init_burn_tracker(&resource_account_sig);
-    ancestry::adopt_this_child(user, &resource_account_sig);
-    activity::maybe_onboard(&resource_account_sig);
-
+    init_from_sig_impl(user, &resource_account_sig);
 
     (resource_account_sig, cap)
   }
