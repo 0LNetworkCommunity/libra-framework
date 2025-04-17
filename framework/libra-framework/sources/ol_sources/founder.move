@@ -2,11 +2,8 @@
 /// Maintains the version number for the blockchain.
 module ol_framework::founder {
   use std::signer;
-  use ol_framework::root_of_trust;
   use ol_framework::vouch_score;
-
-  /// the threshold score for a user to be considered vouched
-  const THRESHOLD_SCORE: u64 = 2;
+  use ol_framework::root_of_trust;
 
   #[test_only]
   use ol_framework::testnet;
@@ -16,6 +13,8 @@ module ol_framework::founder {
 
   #[test_only]
   friend ol_framework::test_filo_migration;
+
+  const THRESHOLD_SCORE: u64 = 2;
 
   struct Founder has key {
     has_human_friends: bool

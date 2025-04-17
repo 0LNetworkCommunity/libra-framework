@@ -12,8 +12,6 @@ module ol_framework::test_filo_migration {
   use ol_framework::reauthorization;
   use ol_framework::vouch;
 
-  use diem_std::debug::print;
-
   /// two state initializations happen on first
   /// transaction
   fun simulate_transaction_validation(sender: &signer) {
@@ -126,8 +124,7 @@ module ol_framework::test_filo_migration {
     // now it should be a slow wallet
     assert!(slow_wallet::is_slow(b_addr), 735707);
     let (unlocked, total) = ol_account::balance(b_addr);
-    assert!(unlocked != total, 735708);
-    assert!(unlocked == mocked_unlock_amount, 735709);
+    assert!(unlocked == 0, 735708);
     let locked_supply_pre = slow_wallet::get_locked_supply();
 
     // the test:
@@ -135,7 +132,7 @@ module ol_framework::test_filo_migration {
     // there should be no drip
     slow_wallet::test_epoch_drip(framework, 10);
     let (unlocked_post_epoch, total_post_epoch) = ol_account::balance(b_addr);
-    assert!(unlocked_post_epoch == mocked_unlock_amount, 7357010);
+    assert!(unlocked_post_epoch == 0, 7357010);
     assert!(unlocked_post_epoch == unlocked, 7357011);
     assert!(total_post_epoch == total, 7357012);
 
@@ -164,12 +161,6 @@ module ol_framework::test_filo_migration {
     assert!(!activity::has_ever_been_touched(b_addr), 735707);
     // uses transfer entry function
     ol_account::transfer(bob, marlon, 33);
-
-    // //////// user sends migration tx ////////
-    // // The first time the user touches the account with a transaction
-    // // the migration should happen
-    // simulate_transaction_validation(bob);
-    // //////// end migration tx ////////
   }
 
   #[test(framework = @0x1, marlon = @0x1234, bob = @0x1000b)]
@@ -233,7 +224,6 @@ module ol_framework::test_filo_migration {
     slow_wallet::test_epoch_drip(framework, 100);
 
     let (unlocked_post, _total_post) = ol_account::balance(b_addr);
-    print(&unlocked_post);
     assert!(unlocked_post == 0, 735706);
 
     // uses transfer entry function

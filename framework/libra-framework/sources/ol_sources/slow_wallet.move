@@ -71,34 +71,22 @@ module ol_framework::slow_wallet {
     /// one time function for all founder accounts to migrate
     /// on close of Level 7 FILO upgrade
     public(friend) fun filo_migration_reset(sig: &signer) acquires SlowWallet, SlowWalletList {
-        assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
+        // I feel as naked as the hour that I was born
+        // Running wild with you right through
+        // This coming storm that's gonna form
+        // And tear our world apart
 
-        let addr = signer::address_of(sig);
-        let list = slow_wallets_to_unlock();
-        if (!vector::contains<address>(&list, &addr)) {
-            let s = borrow_global_mut<SlowWalletList>(@ol_framework);
-            vector::push_back(&mut s.list, addr);
-        };
+        set_slow(sig);
 
-        if (!exists<SlowWallet>(addr)) {
-          move_to<SlowWallet>(sig, SlowWallet {
-            // I feel as naked as the hour that I was born
-            // Running wild with you right through
-            // This coming storm that's gonna form
-            // And tear our world apart
+        // Love is a long game we can play
+        // You turn to me and say
+        // Let's break these rules
+        // No use in playing it cool
+        // No separation, you and I
 
-            // Love is a long game we can play
-            // You turn to me and say
-            // Let's break these rules
-            // No use in playing it cool
-            // No separation, you and I
-            unlocked: 0,
-            transferred: 0,
-          });
-        } else {
-          let state = borrow_global_mut<SlowWallet>(addr);
-          state.unlocked = 0;
-        }
+        // for already existing accounts
+        let state = borrow_global_mut<SlowWallet>(signer::address_of(sig));
+        state.unlocked = 0;
     }
 
     /// Users can change their account to slow, by calling the entry function
@@ -128,16 +116,11 @@ module ol_framework::slow_wallet {
     }
 
     /// helper to get the unlocked and total balance. (unlocked, total)
-    public(friend) fun unlocked_and_total(addr: address): (u64, u64) acquires SlowWallet{
+    public(friend) fun unlocked_and_total(addr: address): (u64, u64) acquires SlowWallet {
       // this is a normal account, so return the normal balance
       let total = libra_coin::balance(addr);
-      if (exists<SlowWallet>(addr)) {
-        let s = borrow_global<SlowWallet>(addr);
-        return (s.unlocked, total)
-      };
-
-      // if the account has no SlowWallet tracker, then everything is unlocked.
-      (total, total)
+      let unlocked = unlocked_amount(addr);
+      (unlocked, total)
     }
 
     /// VM causes the slow wallet to unlock by X amount
@@ -266,8 +249,14 @@ module ol_framework::slow_wallet {
     #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 acquires SlowWallet {
+      // if the account has never been activated, the unlocked amount is
+      // zero despite the state (which is stale, until there is a migration).
 
-      // this is a normal account, so return the normal balance
+      // TODO: when merged with reauthorization
+      // if (!reauthorization::is_v8_authorized(addr)) {
+      //   return 0
+      // };
+
       if (exists<SlowWallet>(addr)) {
         // if the account has never been activated, the unlocked amount is
         // zero despite the state (which is stale, until there is a migration).
@@ -277,6 +266,8 @@ module ol_framework::slow_wallet {
         let s = borrow_global<SlowWallet>(addr);
         return s.unlocked
       };
+
+      // this is a normal account, so return the normal balance
 
       libra_coin::balance(addr)
     }
