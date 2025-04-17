@@ -215,7 +215,6 @@ module ol_framework::ol_account {
 
     let sig_addr = signer::address_of(&new_signer);
     if (lookup_addr != sig_addr) {
-      // print(&lookup_addr);
       print(&sig_addr);
     };
 

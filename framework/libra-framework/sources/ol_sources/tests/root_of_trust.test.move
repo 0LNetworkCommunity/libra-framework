@@ -16,7 +16,6 @@ module ol_framework::root_of_trust_tests {
     const DAVE_AT_GENESIS: address = @0x321;
     const EVE_DAVES_CHILD: address = @0x654;
 
-    #[test_only]
     /// Sets up test environment with accounts and ancestry relationships:
     /// ALICE_AT_GENESIS -> BOB_ALICES_CHILD -> CAROL_BOBS_CHILD
     /// DAVE_AT_GENESIS -> EVE_DAVES_CHILD
@@ -44,8 +43,10 @@ module ol_framework::root_of_trust_tests {
         ancestry::adopt_this_child(&dave_signer, &eve_signer);
     }
 
+
+
     #[test(framework = @0x1)]
-    fun test_basic_ancestry_setup(framework: &signer) {
+    fun meta_test_basic_ancestry_setup(framework: &signer) {
         setup_test_ancestry(framework);
 
         // Verify direct relationships
@@ -55,6 +56,14 @@ module ol_framework::root_of_trust_tests {
 
         // Verify multi-generation relationship
         assert!(ancestry::is_in_tree(ALICE_AT_GENESIS, CAROL_BOBS_CHILD), 4);
+    }
+
+    #[test(framework = @0x1)]
+    fun test_genesis_roots(framework: &signer) {
+        mock::genesis_n_vals(framework, 5);
+
+        let roots = root_of_trust::get_current_roots_at_registry(@0x1);
+        assert!(vector::length(&roots) == 5, 1);
     }
 
     #[test(framework = @0x1)]
@@ -199,7 +208,6 @@ module ol_framework::root_of_trust_tests {
         // Test scoring for grandchild (two degrees of separation)
         let carol_score = root_of_trust::score_connection(@0x1, CAROL_BOBS_CHILD);
 
-        diem_std::debug::print(&carol_score);
         // Grandchild gets 50 points (100/2, two degrees away)
         assert!(carol_score == 50, 3);
 

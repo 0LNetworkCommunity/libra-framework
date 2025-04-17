@@ -1,14 +1,12 @@
-
 module ol_framework::vouch {
     use std::error;
     use std::signer;
     use std::vector;
-    use std::string;
     use ol_framework::ancestry;
     use ol_framework::epoch_helper;
     use diem_framework::system_addresses;
 
-    use diem_std::debug::print;
+    // use diem_std::debug::print;
 
     friend diem_framework::genesis;
     friend ol_framework::proof_of_fee;
@@ -326,8 +324,8 @@ module ol_framework::vouch {
         epoch_vouched: new_epoch_vouched,
       });
 
-      print(&string::utf8(b">>> Migrated GivenVouches for "));
-      print(&account);
+      // print(&string::utf8(b">>> Migrated GivenVouches for "));
+      // print(&account);
     }
 
     // TODO: remove/deprecate after migration is completed
@@ -357,8 +355,8 @@ module ol_framework::vouch {
       // remove deprecated MyVouches struct
       move_from<MyVouches>(account);
 
-      print(&string::utf8(b">>> Migrated ReceivedVouches for "));
-      print(&account);
+      // print(&string::utf8(b">>> Migrated ReceivedVouches for "));
+      // print(&account);
     }
 
     ///////// GETTERS //////////

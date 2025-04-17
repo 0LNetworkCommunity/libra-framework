@@ -19,8 +19,6 @@ module ol_framework::vouch_score {
         if (degree == 0) {
             0
         } else {
-            diem_std::debug::print(&degree);
-
             // Create fixed point representation of 100
             let score = fixed_point32::create_from_rational(100, degree);
             fixed_point32::floor(score)

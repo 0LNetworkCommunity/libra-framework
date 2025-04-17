@@ -38,6 +38,10 @@ module ol_framework::root_of_trust {
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
 
+    friend ol_framework::genesis;
+
+    #[test_only]
+    friend ol_framework::mock;
     #[test_only]
     friend ol_framework::root_of_trust_tests;
 
@@ -72,6 +76,15 @@ module ol_framework::root_of_trust {
                 rotate_window_days,
             });
         };
+    }
+
+    /// for testnet genesis initialize with the validator set
+    public(friend) fun genesis_initialize(framework: &signer, roots: vector<address>) {
+        // Verify this is called by the framework account
+        system_addresses::assert_diem_framework(framework);
+
+        // Initialize the root of trust at the framework address
+        maybe_initialize(framework, roots, vector::length(&roots), 365);
     }
 
     /// At the time of V8 upgrade, the framework
@@ -181,9 +194,32 @@ module ol_framework::root_of_trust {
         }
     }
 
-    #[test_only]
-    /// Function for testing initialization
-    fun test_init(_user_sig: &signer) {
-        // TODO: Add test initialization logic
+    #[view]
+    /// Get the genesis root of trust, useful for testing
+    /// refers to Nov 14 2021 Genesis Validator set
+    /// https://github.com/0LNetworkCommunity/genesis-registration
+    public fun genesis_root(): vector<address> {
+      let list = vector::empty<address>();
+      vector::push_back(&mut list, @0xe4e9fb27d7a8150162614ebdd282e195);
+      vector::push_back(&mut list, @0xd67f3ff22bd719eb5be2df6577c9b42d);
+      vector::push_back(&mut list, @0x304a03c0b4acdfdce54bfaf39d4e0448);
+      vector::push_back(&mut list, @0xd1c9ce9308b0bdc6dc2ba6a7b5da8c2b);
+      vector::push_back(&mut list, @0x44bffceb6ac69d098959e4f463fb7005);
+      vector::push_back(&mut list, @0x7ec16859c24200d8e074809d252ac740);
+      vector::push_back(&mut list, @0x252f0b551c80cd9e951d82c6f70792ae);
+      vector::push_back(&mut list, @0x46a7a744b5d33c47f6b20766f8088b10);
+      vector::push_back(&mut list, @0x5abedec612ea01b9f6f2eaad7187bfef);
+      vector::push_back(&mut list, @0xd0d62ae27a4e84b559da089a1b15a79f);
+      vector::push_back(&mut list, @0xb1471dc5764695abb4cadf16e26bd4c7);
+      vector::push_back(&mut list, @0xecaf65add1b785b0495e3099f4045ec0);
+      vector::push_back(&mut list, @0x34e5addec49ded4cc638dad8cd992858);
+      vector::push_back(&mut list, @0x64b21681ce1c34854498ed92d76432a2);
+      vector::push_back(&mut list, @0xbdb8ad37341cec0817fd8e2474e25031);
+      vector::push_back(&mut list, @0x8421cb22e56f687395f5973bbf0cbdfb);
+      vector::push_back(&mut list, @0xccb020e30b1c014f45664761f0b740c7);
+      vector::push_back(&mut list, @0xc0a1f4d49658cf2fe5402e10f496bb80);
+      vector::push_back(&mut list, @0x7e56b29cb23a49368be593e5cfc9712e);
+
+      list
     }
 }
