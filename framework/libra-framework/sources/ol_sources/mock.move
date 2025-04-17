@@ -472,50 +472,6 @@ module ol_framework::mock {
     vals
   }
 
-  #[test_only]
-  /// Creates a vouching network where target_account has a vouch score of 100
-  /// This will create validators if they don't exist, and set up vouches
-  /// @param framework - framework signer
-  /// @param target_account - the account that will have a vouch score of 100
-  /// @return validators - the list of validators created/used for vouching
-  public fun mock_vouch_score_50(framework: &signer, target_account: address): vector<address> {
-    system_addresses::assert_diem_framework(framework);
-
-    let parent_account = @0xdeadbeef;
-    ol_account::create_account(framework, parent_account);
-    ol_mint_to(framework, parent_account, 10000);
-
-    // Get the current validator set instead of creating a new genesis
-    // TODO: replace for root of trust implementation
-    let vals = stake::get_current_validators();
-
-    // Do the typical onboarding process: by transfer
-    let parent_sig = account::create_signer_for_test(parent_account);
-    let target_signer = account::create_signer_for_test(target_account);
-    ol_account::transfer(&parent_sig, target_account, 1000);
-    // vouch will be missing unless the initialized it through filo_migration
-    vouch::init(&target_signer);
-
-
-    // Each validator vouches
-    let i = 0;
-    while (i < vector::length(&vals)) {
-        let val_addr = *vector::borrow(&vals, i);
-        let val_signer = account::create_signer_for_test(val_addr);
-
-        // Initialize vouch module for validator if not already done
-        vouch::vouch_for(&val_signer, target_account);
-
-        i = i + 1;
-    };
-
-    // Verify the score is exactly 50
-    let score = vouch::calculate_total_vouch_quality(target_account);
-    assert!(score == 50, 735700);
-
-
-    vals
-  }
 
   //////// META TESTS ////////
   #[test(root=@ol_framework)]

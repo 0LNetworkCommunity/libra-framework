@@ -357,9 +357,6 @@ module ol_framework::vouch {
 
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
 
-      // Check revocation limits
-      assert_revoke_limit(grantor_acc);
-
       // remove friend from grantor given vouches
       let v = borrow_global_mut<GivenVouches>(grantor_acc);
       let (found, i) = vector::index_of(&v.outgoing_vouches, &friend_account);
@@ -573,15 +570,6 @@ module ol_framework::vouch {
       bulk_set(val, buddy_list, vector::empty<address>());
     }
 
-    #[view]
-    /// Calculate the total vouch quality score for a user
-    /// This is used by the founder module to evaluate if an account is verified
-    public fun calculate_total_vouch_quality(user: address): u64 {
-        // TODO: placeholder
-        // until merge root of trust
-        let root_of_trust = vector[@0x1];
-        vouch_metrics::calculate_total_social_score(user, &root_of_trust)
-    }
 
     #[test_only]
     public fun test_set_given_list(val: address, vouch_list: vector<address>) acquires ReceivedVouches, GivenVouches {

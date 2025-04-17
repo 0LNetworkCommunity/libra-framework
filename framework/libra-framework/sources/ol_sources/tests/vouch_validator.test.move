@@ -132,10 +132,6 @@ module ol_framework::test_validator_vouch {
     mock::create_validator_accounts(root, 2, false);
     vouch::set_vouch_price(root, 0);
 
-    print(&11000);
-    let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
-    print(&given_vouches);
-    print(&given_epochs);
     // alice vouches for bob
     vouch::vouch_for(alice, @0x1000b);
 
@@ -146,11 +142,9 @@ module ol_framework::test_validator_vouch {
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
     assert!(received_vouches == vector[@0x1000a], 73570007);
     assert!(received_epochs == vector[0], 73570008);
-    print(&11003);
 
     // fast forward to epoch 1
     mock::trigger_epoch(root);
-    print(&11004);
 
     // alice vouches for bob again
     vouch::vouch_for(alice, @0x1000b);
@@ -158,7 +152,6 @@ module ol_framework::test_validator_vouch {
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
     assert!(given_vouches == vector[@0x1000b], 73570005);
     assert!(given_epochs == vector[1], 73570006);
-    print(&11006);
 
     // check bob
     let (received_vouches, received_epochs) = vouch::get_received_vouches(@0x1000b);
