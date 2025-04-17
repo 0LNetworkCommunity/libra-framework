@@ -1,5 +1,15 @@
 /// Periodically, Donor Voice accounts, (a.k.a Community Wallets) must
 /// be re-authorized by their donors. See docs in donor_voice.move for more details.
+///
+/// Why this matters:
+/// Community wallets are intended to be active participants in the ecosystem, consistently
+/// executing their programs and supporting their causes. However, over time, some community
+/// wallets may become dormant due to various reasons: loss of interest, departure of key
+/// stakeholders, or simply being forgotten. This reauthorization mechanism creates a protocol
+/// to periodically validate that community wallets are still actively managed, requiring
+/// explicit reauthorization every 5 years, or after 1 year of complete inactivity. This
+/// ensures funds are not locked indefinitely in abandoned wallets and provides donors with
+/// confidence that their contributions remain under proper governance and stewardship.
 
 module ol_framework::donor_voice_reauth {
     use std::error;
