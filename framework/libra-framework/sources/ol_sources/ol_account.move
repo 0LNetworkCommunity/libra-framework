@@ -374,7 +374,7 @@ module ol_framework::ol_account {
 
         // if the account has never been activated, the unlocked amount is
         // zero despite the state (which is stale, until there is a migration).
-        reauthorization::assert_v8_reauthorized(payer);
+        reauthorization::assert_v8_authorized(payer);
 
         let limit = slow_wallet::unlocked_amount(payer);
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));

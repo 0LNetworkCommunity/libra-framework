@@ -51,6 +51,7 @@ module ol_framework::donor_voice_txs {
     use ol_framework::donor_voice_governance;
     use ol_framework::donor_voice_reauth;
     use ol_framework::cumulative_deposits;
+    use ol_framework::reauthorization;
     use ol_framework::transaction_fee;
     use ol_framework::match_index;
     use ol_framework::donor_voice;
@@ -78,9 +79,10 @@ module ol_framework::donor_voice_txs {
     const ENO_VETO_ID_FOUND: u64 = 6;
     /// No enum for this number
     const EPAYEE_NOT_SLOW: u64 = 7;
-
     /// Governance mode: chain has restricted Donor Voice transactions while upgrades are executed.
     const EGOVERNANCE_MODE: u64 = 8;
+    /// Can't initialize accounts with high balance
+    const ECANT_INIT_WITH_HIGH_BALANCE: u64 = 9;
 
     /// number of epochs to wait before a transaction is executed
     /// Veto can happen in this time
@@ -90,6 +92,9 @@ module ol_framework::donor_voice_txs {
     const DEFAULT_VETO_DURATION: u64 = 7;
     /// liquidation vote can take a whole year
     const LIQUIDATION_TALLY_DAYS: u64 = 365;
+    /// maximum starting balance for a donor voice account
+    // one million coins with scaling factor
+    const MAXIMUM_STARTING_BALANCE: u64 = 1_000_000 * 1_000_000;
 
 
     // Timed transfer schedule pipeline
@@ -145,6 +150,19 @@ module ol_framework::donor_voice_txs {
 
     public(friend) fun make_donor_voice(sponsor: &signer)  {
       assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
+
+      // check users are not bypassing the human verification
+      // for level 8
+      let addr = signer::address_of(sponsor);
+      reauthorization::assert_v8_authorized(addr);
+
+      // check if the account has a meaningful balance
+      // donor voice accounts build slowly through decentralized
+      // donations, and large initialization removes transaction
+      // metadata for donor governance
+      let (_, balance) = ol_account::balance(addr);
+      assert!(balance < MAXIMUM_STARTING_BALANCE, error::invalid_argument(ECANT_INIT_WITH_HIGH_BALANCE));
+
 
       // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
