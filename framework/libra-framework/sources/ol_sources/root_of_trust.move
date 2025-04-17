@@ -39,11 +39,13 @@ module ol_framework::root_of_trust {
     use diem_framework::timestamp;
 
     friend ol_framework::genesis;
+    friend ol_framework::migrations;
 
     #[test_only]
     friend ol_framework::mock;
     #[test_only]
     friend ol_framework::root_of_trust_tests;
+
 
     /// Struct to store the root of trust configuration
     struct RootOfTrust has key {
@@ -79,23 +81,32 @@ module ol_framework::root_of_trust {
     }
 
     /// for testnet genesis initialize with the validator set
-    public(friend) fun genesis_initialize(framework: &signer, roots: vector<address>) {
+    public(friend) fun genesis_initialize(framework: &signer, roots: vector<address>) acquires RootOfTrust {
         // Verify this is called by the framework account
         system_addresses::assert_diem_framework(framework);
 
+        let days = 365;
+        let len = vector::length(&roots);
+
         // Initialize the root of trust at the framework address
-        maybe_initialize(framework, roots, vector::length(&roots), 365);
+        maybe_initialize(framework, roots, len, days);
+        // belt and suspenders, override if it is already initialized
+        set_framework_root(framework, roots, len, days);
     }
 
     /// At the time of V8 upgrade, the framework
     /// will migrate the prior root of trust implementation
     /// to the new explicit one.
-    public(friend) fun framework_migration(framework: &signer, roots: vector<address>, minimum_cohort: u64, rotation_days: u64) {
+    fun set_framework_root(framework: &signer, roots: vector<address>, minimum_cohort: u64, rotation_days: u64) acquires RootOfTrust {
         // Verify this is called by the framework account
         system_addresses::assert_diem_framework(framework);
 
-        // Initialize the root of trust at the framework address
-        maybe_initialize(framework, roots, minimum_cohort, rotation_days);
+        if (exists<RootOfTrust>(@diem_framework)) {
+            let root_of_trust = borrow_global_mut<RootOfTrust>(@diem_framework);
+            root_of_trust.roots = roots;
+            root_of_trust.minimum_cohort = minimum_cohort;
+            root_of_trust.rotate_window_days = rotation_days;
+        };
     }
 
     #[view]
@@ -221,5 +232,13 @@ module ol_framework::root_of_trust {
       vector::push_back(&mut list, @0x7e56b29cb23a49368be593e5cfc9712e);
 
       list
+    }
+
+    #[test_only]
+    /// override the root of trust for testing
+    public fun test_set_root_of_trust(framework: &signer, roots: vector<address>, cohort: u64, days: u64) acquires RootOfTrust {
+        system_addresses::assert_diem_framework(framework);
+        maybe_initialize(framework, roots, cohort, days);
+        set_framework_root(framework, roots, cohort, days);
     }
 }

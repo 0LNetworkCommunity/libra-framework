@@ -6,6 +6,7 @@ module ol_framework::root_of_trust_tests {
     use diem_framework::timestamp;
     use ol_framework::ancestry;
     use ol_framework::ol_account;
+    use ol_framework::migrations;
     use ol_framework::mock;
     use ol_framework::root_of_trust;
 
@@ -66,6 +67,31 @@ module ol_framework::root_of_trust_tests {
         assert!(vector::length(&roots) == 5, 1);
     }
 
+    // test epoch boundary failover migration
+    // to ensure migration works
+    // when epoch is not 0
+    #[test(framework = @0x1)]
+    fun test_genesis_roots_epoch_boundary(framework: &signer) {
+        // Setup test environment
+        mock::genesis_n_vals(framework, 4);
+
+        let roots = root_of_trust::get_current_roots_at_registry(@0x1);
+        assert!(vector::length(&roots) == 4, 1);
+
+        // now lets empty it to test epoch boundary self-healing
+        root_of_trust::test_set_root_of_trust(framework, vector::empty(), 0, 0);
+        let roots = root_of_trust::get_current_roots_at_registry(@0x1);
+        assert!(vector::length(&roots) == 0, 1);
+
+        // It is show time!!! RUN MIGRATION
+        mock::trigger_epoch(framework);
+
+        // check last migration number
+        assert!(migrations::has_migration_executed(2), 73570011);
+        let roots = root_of_trust::get_current_roots_at_registry(@0x1);
+        assert!(vector::length(&roots) == 19, 1);
+    }
+
     #[test(framework = @0x1)]
     fun test_framework_root_init(framework: &signer) {
         // Setup test environment and accounts
@@ -77,7 +103,7 @@ module ol_framework::root_of_trust_tests {
         vector::push_back(&mut roots, DAVE_AT_GENESIS);
 
         // Initialize root of trust on framework account
-        root_of_trust::framework_migration(
+        root_of_trust::test_set_root_of_trust(
             framework,
             roots,
             2,  // minimum_cohort size
@@ -103,7 +129,7 @@ module ol_framework::root_of_trust_tests {
         vector::push_back(&mut initial_roots, ALICE_AT_GENESIS);
         vector::push_back(&mut initial_roots, DAVE_AT_GENESIS);
 
-        root_of_trust::framework_migration(
+        root_of_trust::test_set_root_of_trust(
             framework,
             initial_roots,
             2,  // minimum_cohort size
@@ -146,7 +172,7 @@ module ol_framework::root_of_trust_tests {
         vector::push_back(&mut initial_roots, ALICE_AT_GENESIS);
         vector::push_back(&mut initial_roots, DAVE_AT_GENESIS);
 
-        root_of_trust::framework_migration(
+        root_of_trust::test_set_root_of_trust(
             framework,
             initial_roots,
             2,  // minimum_cohort size
@@ -179,7 +205,7 @@ module ol_framework::root_of_trust_tests {
         vector::push_back(&mut initial_roots, ALICE_AT_GENESIS);
         vector::push_back(&mut initial_roots, DAVE_AT_GENESIS);
 
-        root_of_trust::framework_migration(
+        root_of_trust::test_set_root_of_trust(
             framework,
             initial_roots,
             2,  // minimum_cohort size

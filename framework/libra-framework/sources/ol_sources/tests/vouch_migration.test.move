@@ -99,13 +99,7 @@ module ol_framework::test_vouch_migration {
     mock::trigger_epoch(root);
 
     // check last migration number
-    assert!(migrations::get_last_migration_number() == 1, 73570011);
-
-    // check last migration data
-    let (number, epoch, description) = migrations::get_last_migrations_history();
-    assert!(number == 1, 73570012);
-    assert!(epoch == 0, 73570013);
-    assert!(description == b"Vouch migration initializes GivenVouches, ReceivedVouches, and drop MyVouches", 73570014);
+    assert!(migrations::has_migration_executed(1), 73570011);
 
     // check structs initialized after migration
     assert!(vouch::is_init(@0x1000a), 73570010);
