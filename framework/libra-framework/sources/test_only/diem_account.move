@@ -192,6 +192,8 @@ module diem_framework::diem_account {
 
     #[test(alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account(alice: &signer, core: &signer) {
+        std::timestamp::set_time_has_started_for_testing(core);
+
         let (resource_account, _) = account::create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
         assert!(!coin::is_account_registered<DiemCoin>(resource_acc_addr), 0);

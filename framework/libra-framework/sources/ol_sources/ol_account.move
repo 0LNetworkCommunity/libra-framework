@@ -113,15 +113,12 @@ module ol_framework::ol_account {
   }
 
 
-  #[test_only]
-  /// A wrapper to create a NEW account and register it to receive GAS.
-  public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
-    let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-    coin::register<LibraCoin>(&resource_account_sig);
+    #[test_only]
+    /// A wrapper to create a NEW account and register it to receive GAS.
+    public fun test_ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
+      let (resource_account_sig, cap) = account::create_resource_account(user, seed);
 
-    receipts::user_init(&resource_account_sig);
-    maybe_init_burn_tracker(&resource_account_sig);
-    ancestry::adopt_this_child(user, &resource_account_sig);
+      init_from_sig_impl(user, &resource_account_sig);
 
     (resource_account_sig, cap)
   }
@@ -153,15 +150,16 @@ module ol_framework::ol_account {
   // a wrapper for  and multi_sig::migrate_with_owners
   // if your are testing this, see below a test_only option
 
-  /// A wrapper to create a NEW account and register it to receive
-  // GAS.
-  // fun _ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
-  //   let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-  //   coin::register<LibraCoin>(&resource_account_sig);
+  /// all account initialization happens here after a signer is created
+  fun init_from_sig_impl(sender: &signer, new_account_sig: &signer) {
+      coin::register<LibraCoin>(new_account_sig);
+      receipts::user_init(new_account_sig);
+      maybe_init_burn_tracker(new_account_sig);
+      activity::maybe_onboard(new_account_sig);
+      // sender include data in ancestry
+      ancestry::adopt_this_child(sender, new_account_sig);
+  }
 
-  //   init_from_sig_impl(user, &resource_account_sig);
-  //   (resource_account_sig, cap);
-  // }
 
   fun create_impl(sender: &signer, maybe_new_user: address) {
     // prevent reincarnation of accounts where there may be malformed state
@@ -170,16 +168,6 @@ module ol_framework::ol_account {
     let new_account_sig = account::create_account(maybe_new_user);
     init_from_sig_impl(sender, &new_account_sig);
   }
-
-  /// all account initialization happens here after a signer is created
-  fun init_from_sig_impl(sender: &signer, new_account_sig: &signer) {
-    coin::register<LibraCoin>(new_account_sig);
-    receipts::user_init(new_account_sig);
-    maybe_init_burn_tracker(new_account_sig);
-    activity::maybe_onboard(new_account_sig);
-    ancestry::adopt_this_child(sender, new_account_sig);
-  }
-
 
   /// Helper for smoke tests to create accounts.
   /// this is in production code because:

@@ -9,6 +9,8 @@ module ol_framework::activity {
   friend diem_framework::transaction_validation;
 
   #[test_only]
+  friend ol_framework::donor_voice_reauth;
+  #[test_only]
   friend ol_framework::test_filo_migration;
 
   // #[test_only]
