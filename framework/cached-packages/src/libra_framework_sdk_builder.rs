@@ -235,10 +235,12 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    /// A donor can propose the liquidation of a Donor Voice account
     DonorVoiceTxsProposeLiquidateTx {
         multisig_address: AccountAddress,
     },
 
+    /// A signer of the multisig can propose a payment
     DonorVoiceTxsProposePaymentTx {
         multisig_address: AccountAddress,
         payee: AccountAddress,
@@ -246,16 +248,23 @@ pub enum EntryFunctionCall {
         description: Vec<u8>,
     },
 
+    /// A donor of the program can propose a veto
     DonorVoiceTxsProposeVetoTx {
         multisig_address: AccountAddress,
         id: u64,
     },
 
+    /// After proposed, subsequent voters call this to vote liquidation
     DonorVoiceTxsVoteLiquidationTx {
         multisig_address: AccountAddress,
     },
 
-    /// Entry functiont to vote the veto.
+    /// After proposed, subsequent donors can vote to reauth an account
+    DonorVoiceTxsVoteReauthTx {
+        multisig_address: AccountAddress,
+    },
+
+    /// After proposed, subsequent veto voters call this to vote on a tx veto
     DonorVoiceTxsVoteVetoTx {
         multisig_address: AccountAddress,
         id: u64,
@@ -697,6 +706,9 @@ impl EntryFunctionCall {
             } => donor_voice_txs_propose_veto_tx(multisig_address, id),
             DonorVoiceTxsVoteLiquidationTx { multisig_address } => {
                 donor_voice_txs_vote_liquidation_tx(multisig_address)
+            }
+            DonorVoiceTxsVoteReauthTx { multisig_address } => {
+                donor_voice_txs_vote_reauth_tx(multisig_address)
             }
             DonorVoiceTxsVoteVetoTx {
                 multisig_address,
@@ -1418,6 +1430,7 @@ pub fn diem_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionP
     ))
 }
 
+/// A donor can propose the liquidation of a Donor Voice account
 pub fn donor_voice_txs_propose_liquidate_tx(
     multisig_address: AccountAddress,
 ) -> TransactionPayload {
@@ -1435,6 +1448,7 @@ pub fn donor_voice_txs_propose_liquidate_tx(
     ))
 }
 
+/// A signer of the multisig can propose a payment
 pub fn donor_voice_txs_propose_payment_tx(
     multisig_address: AccountAddress,
     payee: AccountAddress,
@@ -1460,6 +1474,7 @@ pub fn donor_voice_txs_propose_payment_tx(
     ))
 }
 
+/// A donor of the program can propose a veto
 pub fn donor_voice_txs_propose_veto_tx(
     multisig_address: AccountAddress,
     id: u64,
@@ -1481,6 +1496,7 @@ pub fn donor_voice_txs_propose_veto_tx(
     ))
 }
 
+/// After proposed, subsequent voters call this to vote liquidation
 pub fn donor_voice_txs_vote_liquidation_tx(multisig_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1496,7 +1512,23 @@ pub fn donor_voice_txs_vote_liquidation_tx(multisig_address: AccountAddress) -> 
     ))
 }
 
-/// Entry functiont to vote the veto.
+/// After proposed, subsequent donors can vote to reauth an account
+pub fn donor_voice_txs_vote_reauth_tx(multisig_address: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("vote_reauth_tx").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+/// After proposed, subsequent veto voters call this to vote on a tx veto
 pub fn donor_voice_txs_vote_veto_tx(
     multisig_address: AccountAddress,
     id: u64,
@@ -2747,6 +2779,18 @@ mod decoder {
         }
     }
 
+    pub fn donor_voice_txs_vote_reauth_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsVoteReauthTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn donor_voice_txs_vote_veto_tx(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsVoteVetoTx {
@@ -3388,6 +3432,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "donor_voice_txs_vote_liquidation_tx".to_string(),
             Box::new(decoder::donor_voice_txs_vote_liquidation_tx),
+        );
+        map.insert(
+            "donor_voice_txs_vote_reauth_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_vote_reauth_tx),
         );
         map.insert(
             "donor_voice_txs_vote_veto_tx".to_string(),

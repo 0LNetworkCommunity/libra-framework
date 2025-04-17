@@ -50,6 +50,9 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
+    // hack, adding sleep here since we get db lock issue in CI.
+    std::thread::sleep(std::time::Duration::from_secs(1));
+
     println!(
         "3. check we can apply the tx to existing db, and can get a waypoint, don't commit it"
     );
@@ -64,6 +67,9 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     };
 
     let wp = boot.run()?;
+
+    // hack, adding sleep here since we get db lock issue in CI.
+    std::thread::sleep(std::time::Duration::from_secs(1));
 
     println!("4. with the known waypoint confirm it, and apply the tx");
     let boot = BootstrapOpts {

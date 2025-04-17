@@ -225,6 +225,7 @@ module diem_framework::reconfiguration {
 
     #[test_only]
     public fun reconfigure_for_test() acquires Configuration {
+        // voodoo, otherwise nothing may happen
         timestamp::fast_forward_seconds(1);
         reconfigure();
     }
