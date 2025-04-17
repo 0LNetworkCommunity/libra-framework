@@ -16,17 +16,21 @@ module ol_framework::ol_account {
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::slow_wallet;
   use ol_framework::receipts;
+  use ol_framework::reauthorization;
   use ol_framework::cumulative_deposits;
   use ol_framework::community_wallet;
   use ol_framework::donor_voice;
+  use ol_framework::testnet;
 
   use diem_std::debug::print;
+
 
   #[test_only]
   use std::vector;
   #[test_only]
   use diem_framework::timestamp;
-
+  #[test_only]
+  use diem_framework::chain_id;
 
   friend ol_framework::donor_voice_txs;
   friend ol_framework::multi_action;
@@ -52,39 +56,35 @@ module ol_framework::ol_account {
   const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_TOKEN_TRANSFERS: u64 = 4;
   /// The lengths of the recipients and amounts lists don't match.
   const EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH: u64 = 5;
-
   /// not enough unlocked coins to transfer
   const EINSUFFICIENT_BALANCE: u64 = 6;
-
   /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
   const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
-
   /// trying to transfer zero coins
   const EZERO_TRANSFER: u64 = 8;
-
   /// why is VM trying to use this?
   const ENOT_FOR_VM: u64 = 9;
-
   /// you are trying to send a large coin transfer to an account that does not
   /// yet exist.  If you are trying to initialize this address send an amount
   /// below 1,000 coins
   const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
-
   /// community wallets cannot use transfer, they have a dedicated workflow
   const ENOT_FOR_CW: u64 = 11;
-
   /// donor voice cannot use transfer, they have a dedicated workflow
   const ENOT_FOR_DV: u64 = 12;
-
   /// This key cannot be used to create accounts. The address may have
   /// malformed state. And says, "My advice is to not let the boys in".
   const ETOMBSTONE: u64 = 13;
-
   /// This account is malformed, it does not have the necessary burn tracker struct
   const ENO_TRACKER_INITIALIZED: u64 = 14;
-
   /// Governance mode: chain has restricted p2p transactions while upgrades are executed.
   const EGOVERNANCE_MODE: u64 = 15;
+  /// user should not have an activity struct in testnet
+  const ESHOULD_HAVE_NO_ACTIVITY: u64 = 16;
+  /// only for testing, not mainnet
+  const EONLY_FOR_TESTING: u64 = 17;
+  /// inactive account, this account has not migrated from V7
+  const ENOT_MIGRATED: u64 = 18;
 
   ///////// CONSTS /////////
   /// what limit should be set for new account creation while using transfer()
@@ -126,6 +126,28 @@ module ol_framework::ol_account {
     (resource_account_sig, cap)
   }
 
+  #[test_only]
+  /// creates an account with only the structs a v7 user would have
+  /// this is for testing migrations
+  public fun test_emulate_v7_account(root: &signer, acc: address): signer {
+    testnet::assert_testnet(root);
+    let new_account_sig = account::create_account_for_test(acc);
+    // ancestry
+    ancestry::test_fork_migrate(root, &new_account_sig, vector::empty());
+    // receipts
+    receipts::user_init(&new_account_sig);
+    // burn tracker
+    maybe_init_burn_tracker(&new_account_sig);
+    // initialize coin
+    coin::register<LibraCoin>(&new_account_sig);
+
+    // assert that the Activity struct does not exist, which
+    // is part of the v8 migration
+    assert!(!activity::is_initialized(acc), error::invalid_state(ESHOULD_HAVE_NO_ACTIVITY));
+
+    new_account_sig
+  }
+
   // Deprecation Notice: creating resource accounts are disabled in Libra.
   // Similar methods exist in multi_action::finalize_and_cage) which is
   // a wrapper for  and multi_sig::migrate_with_owners
@@ -154,14 +176,17 @@ module ol_framework::ol_account {
     coin::register<LibraCoin>(new_account_sig);
     receipts::user_init(new_account_sig);
     maybe_init_burn_tracker(new_account_sig);
-    ancestry::adopt_this_child(sender, new_account_sig);
     activity::maybe_onboard(new_account_sig);
+    ancestry::adopt_this_child(sender, new_account_sig);
   }
 
 
   /// Helper for smoke tests to create accounts.
+  /// this is in production code because:
+  /// it is used for genesis transactions regarding mainnet
+  /// e.g. test_correct_supply_arithmetic_single
+  /// plus, a  #[test_only] pragma will not work for smoke tests
   /// Belt and suspenders
-  // TODO: should check chain ID is not mainnet.
   public entry fun create_account(root: &signer, auth_key: address) {
     system_addresses::assert_ol(root);
     create_impl(root, auth_key);
@@ -188,7 +213,6 @@ module ol_framework::ol_account {
 
     let sig_addr = signer::address_of(&new_signer);
     if (lookup_addr != sig_addr) {
-      // print(&lookup_addr);
       print(&sig_addr);
     };
 
@@ -321,6 +345,7 @@ module ol_framework::ol_account {
         assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
 
         let limit = slow_wallet::unlocked_amount(payer);
+
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         // community wallets cannot use ol_transfer, they have a dedicated workflow
@@ -340,6 +365,14 @@ module ol_framework::ol_account {
         // maybe track cumulative deposits if this is a donor directed wallet
         // or other wallet which tracks cumulative payments.
         cumulative_deposits::maybe_update_deposit(payer, recipient, amount);
+
+        // if the account has never been activated, the unlocked amount is
+        // zero despite the state (which is stale, until there is a migration).
+        reauthorization::assert_v8_reauthorized(payer);
+
+        // TODO: Should transactions fail if a recipient is not migrated?
+        // assert!(activity::has_ever_been_touched(recipient), error::invalid_state(ENOT_MIGRATED));
+
     }
 
 
@@ -673,6 +706,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
         account::maybe_initialize_duplicate_originating(root);
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
@@ -699,6 +734,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
         let (burn_cap, mint_cap) = ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
@@ -719,6 +756,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
 
         account::maybe_initialize_duplicate_originating(root);
@@ -746,6 +785,7 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, user = @0x123)]
     public fun test_set_allow_direct_coin_transfers(root: &signer, user:
     &signer) acquires DirectTransferConfig {
+        chain_id::initialize_for_test(root, 4);
         timestamp::set_time_has_started_for_testing(root);
         account::maybe_initialize_duplicate_originating(root);
         let addr = signer::address_of(user);

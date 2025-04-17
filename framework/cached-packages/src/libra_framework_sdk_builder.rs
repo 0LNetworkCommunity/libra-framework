@@ -544,20 +544,11 @@ pub enum EntryFunctionCall {
         major: u64,
     },
 
-    /// you may want to add people who are related to you
-    /// there are no known use cases for this at the moment.
-    VouchInsistVouchFor {
+    VouchTxsRevoke {
         friend_account: AccountAddress,
     },
 
-    VouchRevoke {
-        friend_account: AccountAddress,
-    },
-
-    /// will only successfully vouch if the two are not related by ancestry
-    /// prevents spending a vouch that would not be counted.
-    /// to add a vouch and ignore this check use insist_vouch
-    VouchVouchFor {
+    VouchTxsVouchFor {
         friend_account: AccountAddress,
     },
 }
@@ -877,9 +868,8 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             VersionSetVersion { major } => version_set_version(major),
-            VouchInsistVouchFor { friend_account } => vouch_insist_vouch_for(friend_account),
-            VouchRevoke { friend_account } => vouch_revoke(friend_account),
-            VouchVouchFor { friend_account } => vouch_vouch_for(friend_account),
+            VouchTxsRevoke { friend_account } => vouch_txs_revoke(friend_account),
+            VouchTxsVouchFor { friend_account } => vouch_txs_vouch_for(friend_account),
         }
     }
 
@@ -2415,31 +2405,14 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
     ))
 }
 
-/// you may want to add people who are related to you
-/// there are no known use cases for this at the moment.
-pub fn vouch_insist_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
+pub fn vouch_txs_revoke(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("vouch").to_owned(),
-        ),
-        ident_str!("insist_vouch_for").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&friend_account).unwrap()],
-    ))
-}
-
-pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vouch").to_owned(),
+            ident_str!("vouch_txs").to_owned(),
         ),
         ident_str!("revoke").to_owned(),
         vec![],
@@ -2447,17 +2420,14 @@ pub fn vouch_revoke(friend_account: AccountAddress) -> TransactionPayload {
     ))
 }
 
-/// will only successfully vouch if the two are not related by ancestry
-/// prevents spending a vouch that would not be counted.
-/// to add a vouch and ignore this check use insist_vouch
-pub fn vouch_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
+pub fn vouch_txs_vouch_for(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("vouch").to_owned(),
+            ident_str!("vouch_txs").to_owned(),
         ),
         ident_str!("vouch_for").to_owned(),
         vec![],
@@ -3330,9 +3300,9 @@ mod decoder {
         }
     }
 
-    pub fn vouch_insist_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn vouch_txs_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchInsistVouchFor {
+            Some(EntryFunctionCall::VouchTxsRevoke {
                 friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
@@ -3340,19 +3310,9 @@ mod decoder {
         }
     }
 
-    pub fn vouch_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn vouch_txs_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchRevoke {
-                friend_account: bcs::from_bytes(script.args().first()?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vouch_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VouchVouchFor {
+            Some(EntryFunctionCall::VouchTxsVouchFor {
                 friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
@@ -3658,13 +3618,12 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::version_set_version),
         );
         map.insert(
-            "vouch_insist_vouch_for".to_string(),
-            Box::new(decoder::vouch_insist_vouch_for),
+            "vouch_txs_revoke".to_string(),
+            Box::new(decoder::vouch_txs_revoke),
         );
-        map.insert("vouch_revoke".to_string(), Box::new(decoder::vouch_revoke));
         map.insert(
-            "vouch_vouch_for".to_string(),
-            Box::new(decoder::vouch_vouch_for),
+            "vouch_txs_vouch_for".to_string(),
+            Box::new(decoder::vouch_txs_vouch_for),
         );
         map
     });

@@ -8,6 +8,9 @@ module ol_framework::activity {
   friend ol_framework::ol_account;
   friend diem_framework::transaction_validation;
 
+  #[test_only]
+  friend ol_framework::test_filo_migration;
+
   // #[test_only]
   // friend ol_framework::donor_voice_reauth;
   #[test_only]
@@ -57,7 +60,6 @@ module ol_framework::activity {
         last_touch_usecs: timestamp,
         onboarding_usecs: 0, // also how we identify pre-V8 "founder account",
       });
-
   }
 
   public(friend) fun maybe_onboard(user_sig: &signer){
@@ -122,9 +124,12 @@ module ol_framework::activity {
   }
 
   #[test_only]
+  /// testnet help for framework account to mock activity
   public(friend) fun test_set_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
-    diem_framework::system_addresses::assert_diem_framework(framework);
+    ol_framework::testnet::assert_testnet(framework);
+
     let state = borrow_global_mut<Activity>(user);
     state.last_touch_usecs = timestamp;
   }
+
 }
