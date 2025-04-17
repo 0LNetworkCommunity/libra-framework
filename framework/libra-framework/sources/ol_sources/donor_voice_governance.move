@@ -107,9 +107,9 @@ module ol_framework::donor_voice_governance {
       assert!(check_is_donor(dv_account, user), error::permission_denied(ENOT_A_DONOR));
     }
 
+    #[view]
     /// For an individual donor, get the amount of votes that they can cast, based on their cumulative donations to the Donor Voice account.
-
-    fun get_user_donations(dv_account: address, user: address): u64 {
+    public fun get_user_donations(dv_account: address, user: address): u64 {
       let (_, _, cumulative_donations) = receipts::read_receipt(user, dv_account);
 
       cumulative_donations
