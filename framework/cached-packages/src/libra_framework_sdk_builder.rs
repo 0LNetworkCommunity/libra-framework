@@ -267,6 +267,10 @@ pub enum EntryFunctionCall {
 
     EpochBoundarySmokeTriggerEpoch {},
 
+    FiloMigrationMaybeMigrate {},
+
+    FounderMigrate {},
+
     /// Only a Voucher of the validator can flip the unjail bit.
     /// This is a way to make sure the validator is ready to rejoin.
     JailUnjailByVoucher {
@@ -449,7 +453,7 @@ pub enum EntryFunctionCall {
         to: AccountAddress,
     },
 
-    /// Helper for smoke tests to create acounts.
+    /// Helper for smoke tests to create accounts.
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -713,6 +717,8 @@ impl EntryFunctionCall {
             } => donor_voice_txs_vote_veto_tx(multisig_address, id),
             EpochBoundarySmokeEnableTrigger {} => epoch_boundary_smoke_enable_trigger(),
             EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
+            FiloMigrationMaybeMigrate {} => filo_migration_maybe_migrate(),
+            FounderMigrate {} => founder_migrate(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
@@ -1560,6 +1566,36 @@ pub fn epoch_boundary_smoke_trigger_epoch() -> TransactionPayload {
     ))
 }
 
+pub fn filo_migration_maybe_migrate() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("filo_migration").to_owned(),
+        ),
+        ident_str!("maybe_migrate").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn founder_migrate() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("founder").to_owned(),
+        ),
+        ident_str!("migrate").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// Only a Voucher of the validator can flip the unjail bit.
 /// This is a way to make sure the validator is ready to rejoin.
 pub fn jail_unjail_by_voucher(addr: AccountAddress) -> TransactionPayload {
@@ -2079,7 +2115,7 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
     ))
 }
 
-/// Helper for smoke tests to create acounts.
+/// Helper for smoke tests to create accounts.
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2808,6 +2844,22 @@ mod decoder {
         }
     }
 
+    pub fn filo_migration_maybe_migrate(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::FiloMigrationMaybeMigrate {})
+        } else {
+            None
+        }
+    }
+
+    pub fn founder_migrate(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::FounderMigrate {})
+        } else {
+            None
+        }
+    }
+
     pub fn jail_unjail_by_voucher(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::JailUnjailByVoucher {
@@ -3440,6 +3492,14 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "epoch_boundary_smoke_trigger_epoch".to_string(),
             Box::new(decoder::epoch_boundary_smoke_trigger_epoch),
+        );
+        map.insert(
+            "filo_migration_maybe_migrate".to_string(),
+            Box::new(decoder::filo_migration_maybe_migrate),
+        );
+        map.insert(
+            "founder_migrate".to_string(),
+            Box::new(decoder::founder_migrate),
         );
         map.insert(
             "jail_unjail_by_voucher".to_string(),

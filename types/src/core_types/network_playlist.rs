@@ -77,6 +77,7 @@ fn default_chain() -> NamedChain {
 }
 
 impl Default for NetworkPlaylist {
+    /// Default playlist with localhost node
     fn default() -> Self {
         NetworkPlaylist {
             chain_name: NamedChain::MAINNET,

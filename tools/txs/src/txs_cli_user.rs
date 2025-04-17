@@ -24,6 +24,7 @@ pub enum UserTxs {
     SetSlow(SetSlowTx),
     RotationCapability(RotationCapabilityTx),
     RotateKey(RotateKeyTx),
+    HumanFounder,
 }
 
 impl UserTxs {
@@ -51,6 +52,11 @@ impl UserTxs {
                         println!("ERROR: could not offer rotation capability, message: {}", e);
                     }
                 }
+            }
+            UserTxs::HumanFounder => {
+                println!("Migrating v7 account...");
+                let payload = libra_stdlib::filo_migration_maybe_migrate();
+                sender.sign_submit_wait(payload).await?;
             }
         }
 
