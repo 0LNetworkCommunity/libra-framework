@@ -13,14 +13,12 @@ module ol_framework::test_stake {
   // and reduce the set to 3 of those validators.
   #[test(root = @ol_framework)]
   fun bulk_update_validators(root: signer) {
-    let set = mock::genesis_n_vals(&root, 6);
-    let alice = vector::borrow(&set, 0);
+    let all_vals = mock::genesis_n_vals(&root, 6);
+    let alice = vector::borrow(&all_vals, 0);
     assert!(stake::is_valid(*alice), 1000);
 
     let vals = stake::get_current_validators();
     assert!(vector::length(&vals) == 6, 1001);
-
-    let all_vals = mock::personas();
 
     let new_list = vector::empty<address>();
     let i = 0;

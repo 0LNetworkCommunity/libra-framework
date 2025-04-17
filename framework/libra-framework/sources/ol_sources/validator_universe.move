@@ -5,6 +5,7 @@ module diem_framework::validator_universe {
   use std::signer;
   use std::vector;
   use ol_framework::jail;
+  use ol_framework::page_rank_lazy;
   use ol_framework::vouch;
   use diem_framework::stake;
   use diem_framework::system_addresses;
@@ -46,6 +47,7 @@ module diem_framework::validator_universe {
   ) acquires ValidatorUniverse {
       stake::initialize_validator(account, consensus_pubkey, proof_of_possession, network_addresses, fullnode_addresses);
       vouch::init(account);
+      page_rank_lazy::maybe_initialize_trust_record(account);
       // 0L specific,
       add(account);
       jail::init(account);

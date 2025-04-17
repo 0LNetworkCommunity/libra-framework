@@ -246,16 +246,16 @@ module ol_framework::slow_wallet {
     public fun is_slow(addr: address): bool {
       exists<SlowWallet>(addr)
     }
+
     #[view]
     /// Returns the amount of unlocked funds for a slow wallet.
     public fun unlocked_amount(addr: address): u64 acquires SlowWallet {
       // if the account has never been activated, the unlocked amount is
       // zero despite the state (which is stale, until there is a migration).
 
-      // TODO: when merged with reauthorization
-      // if (!reauthorization::is_v8_authorized(addr)) {
-      //   return 0
-      // };
+      if (!reauthorization::is_v8_authorized(addr)) {
+        return 0
+      };
 
       if (exists<SlowWallet>(addr)) {
         // if the account has never been activated, the unlocked amount is

@@ -1,6 +1,5 @@
 #[test_only]
 module ol_framework::root_of_trust_tests {
-    use std::option;
     use std::vector;
     use diem_framework::account;
     use diem_framework::timestamp;
@@ -17,6 +16,7 @@ module ol_framework::root_of_trust_tests {
     const DAVE_AT_GENESIS: address = @0x321;
     const EVE_DAVES_CHILD: address = @0x654;
 
+    #[test_only]
     /// Sets up test environment with accounts and ancestry relationships:
     /// ALICE_AT_GENESIS -> BOB_ALICES_CHILD -> CAROL_BOBS_CHILD
     /// DAVE_AT_GENESIS -> EVE_DAVES_CHILD
@@ -39,15 +39,13 @@ module ol_framework::root_of_trust_tests {
         let eve_signer = account::create_signer_for_test(EVE_DAVES_CHILD);
 
         // Set up ancestry relationships
-        ancestry::adopt_this_child(&alice_signer, &bob_signer);
-        ancestry::adopt_this_child(&bob_signer, &carol_signer);
-        ancestry::adopt_this_child(&dave_signer, &eve_signer);
+        ancestry::test_adopt(framework, &alice_signer, &bob_signer);
+        ancestry::test_adopt(framework, &bob_signer, &carol_signer);
+        ancestry::test_adopt(framework, &dave_signer, &eve_signer);
     }
 
-
-
     #[test(framework = @0x1)]
-    fun meta_test_basic_ancestry_setup(framework: &signer) {
+    fun test_basic_ancestry_setup(framework: &signer) {
         setup_test_ancestry(framework);
 
         // Verify direct relationships
@@ -191,55 +189,5 @@ module ol_framework::root_of_trust_tests {
 
         // This call should abort with EROTATION_WINDOW_NOT_ELAPSED
         root_of_trust::rotate_roots(framework, adds, removes);
-    }
-
-    #[test(framework = @0x1)]
-    fun test_connection_scoring(framework: &signer) {
-        // Setup test environment and accounts with our family tree:
-        // ALICE_AT_GENESIS -> BOB_ALICES_CHILD -> CAROL_BOBS_CHILD
-        // DAVE_AT_GENESIS -> EVE_DAVES_CHILD
-        setup_test_ancestry(framework);
-
-        // Initialize framework root of trust with Alice and Dave as roots
-        let initial_roots = vector::empty();
-        vector::push_back(&mut initial_roots, ALICE_AT_GENESIS);
-        vector::push_back(&mut initial_roots, DAVE_AT_GENESIS);
-
-        root_of_trust::test_set_root_of_trust(
-            framework,
-            initial_roots,
-            2,  // minimum_cohort size
-            5,  // days until next rotation
-        );
-
-        // Test scoring for direct children of roots
-        let bob_score = root_of_trust::score_connection(@0x1, BOB_ALICES_CHILD);
-
-        let maybe_degree = ancestry::get_degree(ALICE_AT_GENESIS, BOB_ALICES_CHILD);
-        let bob_d = *option::borrow(&maybe_degree);
-        assert!(bob_d == 1, 7357001);
-        // Direct descendants of roots get 50 points (100/2 - one hop away)
-        assert!(bob_score == 100, 7357002);
-
-        let maybe_degree = ancestry::get_degree(DAVE_AT_GENESIS, EVE_DAVES_CHILD);
-        let eve_d = *option::borrow(&maybe_degree);
-        assert!(eve_d == 1, 7357001);
-
-        let eve_score = root_of_trust::score_connection(@0x1, EVE_DAVES_CHILD);
-        assert!(eve_score == 100, 7357003);
-
-        let maybe_degree = ancestry::get_degree(ALICE_AT_GENESIS, CAROL_BOBS_CHILD);
-        let carol_d = *option::borrow(&maybe_degree);
-        assert!(carol_d == 2, 3);
-        // Test scoring for grandchild (two degrees of separation)
-        let carol_score = root_of_trust::score_connection(@0x1, CAROL_BOBS_CHILD);
-
-        // Grandchild gets 50 points (100/2, two degrees away)
-        assert!(carol_score == 50, 3);
-
-        // Test scoring for root members themselves
-        let alice_score = root_of_trust::score_connection(@0x1, ALICE_AT_GENESIS);
-        // Root members get 100 points (direct connection)
-        assert!(alice_score == 100, 4);
     }
 }

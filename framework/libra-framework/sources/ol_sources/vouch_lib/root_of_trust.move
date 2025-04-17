@@ -34,18 +34,20 @@ module ol_framework::root_of_trust {
     use std::vector;
     use std::signer;
     use std::error;  // Add error module
-    use ol_framework::vouch_score;
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
 
-    friend ol_framework::genesis;
+    friend ol_framework::page_rank_lazy;
     friend ol_framework::migrations;
+    friend diem_framework::genesis;
 
-    #[test_only]
-    friend ol_framework::mock;
+
     #[test_only]
     friend ol_framework::root_of_trust_tests;
-
+    #[test_only]
+    friend ol_framework::test_page_rank;
+    #[test_only]
+    friend ol_framework::mock;
 
     /// Struct to store the root of trust configuration
     struct RootOfTrust has key {
@@ -80,6 +82,23 @@ module ol_framework::root_of_trust {
         };
     }
 
+    /// At the time of V8 upgrade, the framework
+    /// will migrate the prior root of trust implementation
+    /// to the new explicit one.
+    public(friend) fun framework_migration(framework: &signer, roots: vector<address>, minimum_cohort: u64, rotation_days: u64) acquires RootOfTrust {
+        // Verify this is called by the framework account
+        system_addresses::assert_diem_framework(framework);
+
+        // Initialize the root of trust at the framework address
+        if (is_initialized(@ol_framework)) {
+            let root_of_trust = borrow_global_mut<RootOfTrust>(@ol_framework);
+            root_of_trust.roots = roots;
+
+        } else {
+          maybe_initialize(framework, roots, minimum_cohort, rotation_days);
+        }
+    }
+
     /// for testnet genesis initialize with the validator set
     public(friend) fun genesis_initialize(framework: &signer, roots: vector<address>) acquires RootOfTrust {
         // Verify this is called by the framework account
@@ -107,28 +126,6 @@ module ol_framework::root_of_trust {
             root_of_trust.minimum_cohort = minimum_cohort;
             root_of_trust.rotate_window_days = rotation_days;
         };
-    }
-
-    #[view]
-    /// Score a participant's connection to the root of trust
-    public fun score_connection(registry: address, user: address): u64 acquires RootOfTrust {
-        // gets the root of trust list.
-        // users vouch_score
-        let list = get_current_roots_at_registry(registry);
-        vouch_score::evaluate_score_for_registry(list, user)
-    }
-
-    #[view]
-    /// Check if rotation is possible for a given registry
-    public fun can_rotate(registry: address): bool acquires RootOfTrust {
-        if (!exists<RootOfTrust>(registry)) {
-            false
-        } else {
-            let root_of_trust = borrow_global<RootOfTrust>(registry);
-            let elapsed_secs = timestamp::now_seconds() - root_of_trust.last_updated_secs;
-            let required_secs = root_of_trust.rotate_window_days * SECONDS_IN_DAY;
-            elapsed_secs >= required_secs
-        }
     }
 
     /// Rotate the root of trust set by adding and removing addresses
@@ -182,6 +179,12 @@ module ol_framework::root_of_trust {
     }
 
     #[view]
+    /// checks if registry is initialized
+    public fun is_initialized(registry: address): bool {
+        exists<RootOfTrust>(registry)
+    }
+
+    #[view]
     /// Get the current set of root addresses
     public fun get_current_roots_at_registry(registry: address): vector<address> acquires RootOfTrust {
        // return empty vector if the root of trust is not initialized
@@ -206,6 +209,19 @@ module ol_framework::root_of_trust {
     }
 
     #[view]
+    /// Check if rotation is possible for a given registry
+    public fun can_rotate(registry: address): bool acquires RootOfTrust {
+        if (!exists<RootOfTrust>(registry)) {
+            false
+        } else {
+            let root_of_trust = borrow_global<RootOfTrust>(registry);
+            let elapsed_secs = timestamp::now_seconds() - root_of_trust.last_updated_secs;
+            let required_secs = root_of_trust.rotate_window_days * SECONDS_IN_DAY;
+            elapsed_secs >= required_secs
+        }
+    }
+
+        #[view]
     /// Get the genesis root of trust, useful for testing
     /// refers to Nov 14 2021 Genesis Validator set
     /// https://github.com/0LNetworkCommunity/genesis-registration

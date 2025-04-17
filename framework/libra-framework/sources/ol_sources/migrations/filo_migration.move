@@ -1,6 +1,7 @@
 module ol_framework::filo_migration {
   use ol_framework::activity;
   use ol_framework::founder;
+  use ol_framework::page_rank_lazy;
   use ol_framework::slow_wallet;
   use ol_framework::vouch;
 
@@ -20,6 +21,7 @@ module ol_framework::filo_migration {
 
     // did this account exist before level 8?
     activity::lazy_initialize(user_sig, 0);
+
     // I am the eye of the tiger
     // I am the founder of my destiny
     // I laid the ground for the things to be
@@ -48,7 +50,6 @@ module ol_framework::filo_migration {
     // You know my name, ba ba ba ba ba ba ba ba ba
     vouch::init(user_sig);
 
-    // page_rank_lazy::maybe_initialize_trust_record(user_sig);
 
     // Don't you know that I'm still standing better than I ever did?
     // Looking like a true survivor, feeling like a little kid
@@ -57,6 +58,8 @@ module ol_framework::filo_migration {
 
     // I'm still standing. Yeah, yeah, yeah
     // I'm still standing. Yeah, yeah, yeah
+    page_rank_lazy::maybe_initialize_trust_record(user_sig);
+
   }
   // FILO FTW
 }
