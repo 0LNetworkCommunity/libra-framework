@@ -7,11 +7,16 @@ module ol_framework::vouch_txs {
   use diem_framework::transaction_fee;
   use ol_framework::founder;
   use ol_framework::ol_account;
+  use ol_framework::page_rank_lazy;
   use ol_framework::vouch;
-
+  use ol_framework::vouch_limits;
 
   public entry fun vouch_for(grantor: &signer, friend_account: address) {
+    let grantor_addr = signer::address_of(grantor);
+    vouch_limits::assert_under_limit(grantor_addr, friend_account);
     vouch::vouch_for(grantor, friend_account);
+    page_rank_lazy::mark_as_stale(grantor_addr);
+    page_rank_lazy::mark_as_stale(friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
     founder::maybe_set_friendly_founder(friend_account);
   }
@@ -26,7 +31,13 @@ module ol_framework::vouch_txs {
     // If you're so hurt, why then don't you show it?
     // You say you've lost your faith, but that's not where its at
     // You have no faith to lose, and ya know it
+    vouch_limits::assert_revoke_limit(signer::address_of(grantor));
     vouch::revoke(grantor, friend_account);
+    page_rank_lazy::mark_as_stale(friend_account);
+  }
+
+  public entry fun clean_expired(user_sig: &signer) {
+    vouch::garbage_collect_expired(signer::address_of(user_sig));
   }
 
   public entry fun clean_expired(user_sig: &signer) {

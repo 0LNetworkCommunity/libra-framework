@@ -85,7 +85,7 @@ module ol_framework::vouch {
 
     /// you may want to add people who are related to you
     /// there are no known use cases for this at the moment.
-    public entry fun insist_vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches {
+    public entry fun test_helper_vouch_for(grantor: &signer, wanna_be_my_friend: address) acquires MyVouches {
       vouch_impl(grantor, wanna_be_my_friend);
     }
 
@@ -242,7 +242,7 @@ module ol_framework::vouch {
     }
 
     #[test_only]
-    public fun test_set_buddies(val: address, buddy_list: vector<address>) acquires MyVouches {
+    public fun test_set_received_list(val: address, buddy_list: vector<address>) acquires MyVouches {
       bulk_set(val, buddy_list);
     }
   }

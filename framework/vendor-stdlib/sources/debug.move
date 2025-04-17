@@ -17,6 +17,12 @@ module diem_std::debug {
     native fun native_print(x: String);
     native fun native_stack_trace(): String;
 
+    //////// 0L ////////
+    /// assumes is a string
+    public fun print_str(x: &vector<u8>) {
+        print(&std::string::utf8(*x));
+    }
+
     #[test_only]
     use std::vector;
 
