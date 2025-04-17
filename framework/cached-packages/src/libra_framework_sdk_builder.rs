@@ -547,6 +547,8 @@ pub enum EntryFunctionCall {
         major: u64,
     },
 
+    VouchTxsCleanExpired {},
+
     VouchTxsRevoke {
         friend_account: AccountAddress,
     },
@@ -870,6 +872,7 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             VersionSetVersion { major } => version_set_version(major),
+            VouchTxsCleanExpired {} => vouch_txs_clean_expired(),
             VouchTxsRevoke { friend_account } => vouch_txs_revoke(friend_account),
             VouchTxsVouchFor { friend_account } => vouch_txs_vouch_for(friend_account),
         }
@@ -2397,6 +2400,21 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
     ))
 }
 
+pub fn vouch_txs_clean_expired() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("vouch_txs").to_owned(),
+        ),
+        ident_str!("clean_expired").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 pub fn vouch_txs_revoke(friend_account: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -3284,6 +3302,14 @@ mod decoder {
         }
     }
 
+    pub fn vouch_txs_clean_expired(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::VouchTxsCleanExpired {})
+        } else {
+            None
+        }
+    }
+
     pub fn vouch_txs_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchTxsRevoke {
@@ -3596,6 +3622,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "version_set_version".to_string(),
             Box::new(decoder::version_set_version),
+        );
+        map.insert(
+            "vouch_txs_clean_expired".to_string(),
+            Box::new(decoder::vouch_txs_clean_expired),
         );
         map.insert(
             "vouch_txs_revoke".to_string(),
