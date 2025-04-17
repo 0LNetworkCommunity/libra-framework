@@ -80,7 +80,6 @@ module ol_framework::donor_voice_reauth {
 
     #[view]
     /// Checks if there is a DonorAuthorized state, and if the timestamp
-
     public fun has_activity_in_last_year(dv_account: address): bool {
 
       let latest_tx = activity::get_last_activity_usecs(dv_account);

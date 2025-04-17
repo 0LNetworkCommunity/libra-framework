@@ -99,6 +99,16 @@ module ol_framework::donor_voice_governance {
     #[view]
     /// view function to check that a user account is a Donor for a Donor Voice account.
     public fun check_is_donor(dv_account: address, user: address): bool {
+      ///////////////////
+      // TODO: add reauthorization once merged
+      // reauthorization::assert_v8_authorized(user);
+      /////////////////////
+
+      // Only as high as I reach can I grow
+      // Only as far as I seek can I go
+      // Only as deep as I look can I see
+      // Only as much as I dream can I be
+
       get_user_donations(dv_account, user) > 0
     }
 
