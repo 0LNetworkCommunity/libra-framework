@@ -4,6 +4,7 @@ module ol_framework::migrations {
   use std::error;
   use diem_framework::system_addresses;
   use ol_framework::epoch_helper;
+  use ol_framework::root_of_trust;
 
   use diem_std::debug::print;
 
@@ -32,6 +33,10 @@ module ol_framework::migrations {
     // execute all migrations
     if (apply_migration(root, 1, b"Vouch migration initializes GivenVouches, ReceivedVouches, and drop MyVouches")) {
       vouch_migration::migrate_my_vouches();
+    };
+
+    if (apply_migration(root, 2, b"If root of trust is not initialize use 2021 genesis set")) {
+      root_of_trust::genesis_initialize(root, root_of_trust::genesis_root());
     };
 
   }
@@ -94,5 +99,23 @@ module ol_framework::migrations {
     let last_migration = vector::borrow(&state.history, vector::length(&state.history) -1);
     (last_migration.number, last_migration.epoch, last_migration.description)
   }
+
+  /// function to search through history to see  if a migration number has already been executed
+  public fun has_migration_executed(mig_number: u64): bool acquires Migrations {
+    assert!(exists<Migrations>(@ol_framework), error::invalid_state(EMIGRATIONS_NOT_INITIALIZED));
+
+    let state = borrow_global<Migrations>(@ol_framework);
+    let history_len = vector::length(&state.history);
+    let i = 0;
+    while (i < history_len) {
+      let migration = vector::borrow(&state.history, i);
+      if (migration.number == mig_number) {
+        return true
+      };
+      i = i + 1;
+    };
+    false
+  }
+
 
 }

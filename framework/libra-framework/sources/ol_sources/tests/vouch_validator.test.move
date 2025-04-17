@@ -1,14 +1,13 @@
 #[test_only]
-module ol_framework::test_vouch {
+module ol_framework::test_validator_vouch {
   use std::vector;
   use ol_framework::vouch;
+  use ol_framework::vouch_txs;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
 
-  // use diem_std::debug::print;
 
   // Happy Day scenarios
-
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
   fun vouch_for_unrelated(root: &signer, alice: &signer, carol: &signer) {
     // create vals without vouches
@@ -246,7 +245,7 @@ module ol_framework::test_vouch {
     vouch::set_vouch_price(root, 9_999);
 
     // alice vouches for bob without coins
-    vouch::vouch_for(alice, @0x1000b);
+    vouch_txs::vouch_for(alice, @0x1000b);
 
     // check alice
     let (given_vouches, given_epochs) = vouch::get_given_vouches(@0x1000a);
