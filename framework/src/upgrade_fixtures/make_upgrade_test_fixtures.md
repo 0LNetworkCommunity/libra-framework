@@ -3,7 +3,7 @@ All fixtures needed to test upgrades are generated on the first run of any test
 that requires it.
 
 A test will call:
-`upgrade_fixtures::testsuite_warmup_fixtures();`
+`upgrade_fixtures::testsuite_maybe_warmup_fixtures();`
 
 It will only build if there are no such fixtures in the expected path
 `framework/src/upgrade_fixtures/fixtures`.

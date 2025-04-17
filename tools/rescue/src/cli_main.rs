@@ -57,6 +57,9 @@ pub enum Sub {
         #[clap(short, long)]
         /// optional, provide a path to .mrb release, if this write should publish new framework
         upgrade_mrb: Option<PathBuf>,
+        #[clap(short, long)]
+        /// optional, chain_id to use, default is 2 (staging)
+        chain_id: Option<u8>,
     },
     /// Upgrades the framework in the reference DB
     UpgradeFramework {
@@ -85,8 +88,9 @@ impl RescueCli {
             Sub::RegisterVals {
                 operator_yaml,
                 upgrade_mrb,
+                chain_id,
             } => {
-                let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb)?;
+                let tx = register_vals(&self.db_path, operator_yaml, upgrade_mrb, *chain_id)?;
 
                 let out_file = self
                     .blob_path

@@ -1,115 +1,116 @@
 module ol_framework::ol_account {
-    use diem_framework::account::{Self, new_event_handle, WithdrawCapability};
-    use diem_framework::coin::{Self, Coin};
-    use diem_framework::event::{EventHandle, emit_event};
-    use diem_framework::system_addresses;
-    use diem_framework::chain_status;
-    use std::error;
-    use std::signer;
-    use std::option::{Self, Option};
-    use std::timestamp;
-    use diem_std::from_bcs;
-    use diem_std::fixed_point32;
-    use diem_std::math64;
+  use diem_framework::account::{Self, new_event_handle, WithdrawCapability};
+  use diem_framework::coin::{Self, Coin};
+  use diem_framework::event::{EventHandle, emit_event};
+  use diem_framework::system_addresses;
+  use diem_framework::chain_status;
+  use std::error;
+  use std::signer;
+  use std::option::{Self, Option};
+  use diem_std::from_bcs;
+  use diem_std::fixed_point32;
+  use diem_std::math64;
+  use ol_framework::activity;
+  use ol_framework::ancestry;
+  use ol_framework::ol_features_constants;
+  use ol_framework::libra_coin::{Self, LibraCoin};
+  use ol_framework::slow_wallet;
+  use ol_framework::receipts;
+  use ol_framework::reauthorization;
+  use ol_framework::cumulative_deposits;
+  use ol_framework::community_wallet;
+  use ol_framework::donor_voice;
+  use ol_framework::testnet;
 
-    use ol_framework::activity;
-    use ol_framework::ancestry;
-    use ol_framework::ol_features_constants;
-    use ol_framework::libra_coin::{Self, LibraCoin};
-    use ol_framework::slow_wallet;
-    use ol_framework::receipts;
-    use ol_framework::cumulative_deposits;
-    use ol_framework::community_wallet;
-    use ol_framework::donor_voice;
-
-    use diem_std::debug::print;
-
-    #[test_only]
-    use std::vector;
-
-    friend ol_framework::donor_voice_txs;
-    friend ol_framework::multi_action;
-    friend ol_framework::burn;
-    friend ol_framework::safe;
-    friend diem_framework::genesis;
-    friend diem_framework::transaction_fee;
-    friend ol_framework::genesis_migration;
-    friend ol_framework::rewards;
-
-    #[test_only]
-    friend ol_framework::test_multi_action;
-    #[test_only]
-    friend ol_framework::test_slow_wallet;
-
-    /// Account does not exist.
-    const EACCOUNT_NOT_FOUND: u64 = 1;
-    /// Account is not registered to receive GAS.
-    const EACCOUNT_NOT_REGISTERED_FOR_GAS: u64 = 2;
-    /// Account opted out of receiving coins that they did not register to receive.
-    const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS: u64 = 3;
-    /// Account opted out of directly receiving NFT tokens.
-    const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_TOKEN_TRANSFERS: u64 = 4;
-    /// The lengths of the recipients and amounts lists don't match.
-    const EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH: u64 = 5;
-
-    /// not enough unlocked coins to transfer
-    const EINSUFFICIENT_BALANCE: u64 = 6;
-
-    /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
-    const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
-
-    /// trying to transfer zero coins
-    const EZERO_TRANSFER: u64 = 8;
-
-    /// why is VM trying to use this?
-    const ENOT_FOR_VM: u64 = 9;
-
-    /// you are trying to send a large coin transfer to an account that does not
-    /// yet exist.  If you are trying to initialize this address send an amount
-    /// below 1,000 coins
-    const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
-
-    /// community wallets cannot use transfer, they have a dedicated workflow
-    const ENOT_FOR_CW: u64 = 11;
-
-    /// donor voice cannot use transfer, they have a dedicated workflow
-    const ENOT_FOR_DV: u64 = 12;
-
-    /// This key cannot be used to create accounts. The address may have
-    /// malformed state. And says, "My advice is to not let the boys in".
-    const ETOMBSTONE: u64 = 13;
-
-    /// This account is malformed, it does not have the necessary burn tracker struct
-    const ENO_TRACKER_INITIALIZED: u64 = 14;
-
-    /// Governance mode: chain has restricted p2p transactions while upgrades are executed.
-    const EGOVERNANCE_MODE: u64 = 15;
-
-    ///////// CONSTS /////////
-    /// what limit should be set for new account creation while using transfer()
-    const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
-
-    /// tracks the burns relative to each account
-    struct BurnTracker has key {
-      prev_supply: u64,
-      prev_balance: u64,
-      burn_at_last_calc: u64,
-      cumu_burn: u64,
-    }
+  use diem_std::debug::print;
 
 
-    /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
-    ///
-    /// By default, this is enabled. Users can opt-out by disabling at any time.
-    struct DirectTransferConfig has key {
-        allow_arbitrary_coin_transfers: bool,
-        update_coin_transfer_events: EventHandle<DirectCoinTransferConfigUpdatedEvent>,
-    }
+  #[test_only]
+  use std::vector;
+  #[test_only]
+  use diem_framework::timestamp;
+  #[test_only]
+  use diem_framework::chain_id;
 
-    /// Event emitted when an account's direct coins transfer config is updated.
-    struct DirectCoinTransferConfigUpdatedEvent has drop, store {
-        new_allow_direct_transfers: bool,
-    }
+  friend ol_framework::donor_voice_txs;
+  friend ol_framework::multi_action;
+  friend ol_framework::burn;
+  friend ol_framework::safe;
+  friend diem_framework::genesis;
+  friend diem_framework::transaction_fee;
+  friend ol_framework::genesis_migration;
+  friend ol_framework::rewards;
+
+  #[test_only]
+  friend ol_framework::test_multi_action;
+  #[test_only]
+  friend ol_framework::test_slow_wallet;
+
+  /// Account does not exist.
+  const EACCOUNT_NOT_FOUND: u64 = 1;
+  /// Account is not registered to receive GAS.
+  const EACCOUNT_NOT_REGISTERED_FOR_GAS: u64 = 2;
+  /// Account opted out of receiving coins that they did not register to receive.
+  const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS: u64 = 3;
+  /// Account opted out of directly receiving NFT tokens.
+  const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_TOKEN_TRANSFERS: u64 = 4;
+  /// The lengths of the recipients and amounts lists don't match.
+  const EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH: u64 = 5;
+  /// not enough unlocked coins to transfer
+  const EINSUFFICIENT_BALANCE: u64 = 6;
+  /// On legacy account migration we need to check if we rotated auth keys correctly and can find the user address.
+  const ECANT_MATCH_ADDRESS_IN_LOOKUP: u64 = 7;
+  /// trying to transfer zero coins
+  const EZERO_TRANSFER: u64 = 8;
+  /// why is VM trying to use this?
+  const ENOT_FOR_VM: u64 = 9;
+  /// you are trying to send a large coin transfer to an account that does not
+  /// yet exist.  If you are trying to initialize this address send an amount
+  /// below 1,000 coins
+  const ETRANSFER_TOO_HIGH_FOR_INIT: u64 = 10;
+  /// community wallets cannot use transfer, they have a dedicated workflow
+  const ENOT_FOR_CW: u64 = 11;
+  /// donor voice cannot use transfer, they have a dedicated workflow
+  const ENOT_FOR_DV: u64 = 12;
+  /// This key cannot be used to create accounts. The address may have
+  /// malformed state. And says, "My advice is to not let the boys in".
+  const ETOMBSTONE: u64 = 13;
+  /// This account is malformed, it does not have the necessary burn tracker struct
+  const ENO_TRACKER_INITIALIZED: u64 = 14;
+  /// Governance mode: chain has restricted p2p transactions while upgrades are executed.
+  const EGOVERNANCE_MODE: u64 = 15;
+  /// user should not have an activity struct in testnet
+  const ESHOULD_HAVE_NO_ACTIVITY: u64 = 16;
+  /// only for testing, not mainnet
+  const EONLY_FOR_TESTING: u64 = 17;
+  /// inactive account, this account has not migrated from V7
+  const ENOT_MIGRATED: u64 = 18;
+
+  ///////// CONSTS /////////
+  /// what limit should be set for new account creation while using transfer()
+  const MAX_COINS_FOR_INITIALIZE: u64 = 1000 * 1000000;
+
+  /// tracks the burns relative to each account
+  struct BurnTracker has key {
+    prev_supply: u64,
+    prev_balance: u64,
+    burn_at_last_calc: u64,
+    cumu_burn: u64,
+  }
+
+
+  /// Configuration for whether an account can receive direct transfers of coins that they have not registered.
+  ///
+  /// By default, this is enabled. Users can opt-out by disabling at any time.
+  struct DirectTransferConfig has key {
+    allow_arbitrary_coin_transfers: bool,
+    update_coin_transfer_events: EventHandle<DirectCoinTransferConfigUpdatedEvent>,
+  }
+
+  /// Event emitted when an account's direct coins transfer config is updated.
+  struct DirectCoinTransferConfigUpdatedEvent has drop, store {
+    new_allow_direct_transfers: bool,
+  }
 
 
     #[test_only]
@@ -119,155 +120,170 @@ module ol_framework::ol_account {
 
       init_from_sig_impl(user, &resource_account_sig);
 
-      (resource_account_sig, cap)
-    }
+    (resource_account_sig, cap)
+  }
 
-    // Deprecation Notice: creating resource accounts are disabled in Libra.
-    // Similar methods exist in multi_action::finalize_and_cage) which is
-    // a wrapper for  and multi_sig::migrate_with_owners
-    // if your are testing this, see below a test_only option
+  #[test_only]
+  /// creates an account with only the structs a v7 user would have
+  /// this is for testing migrations
+  public fun test_emulate_v7_account(root: &signer, acc: address): signer {
+    testnet::assert_testnet(root);
+    let new_account_sig = account::create_account_for_test(acc);
+    // ancestry
+    ancestry::test_fork_migrate(root, &new_account_sig, vector::empty());
+    // receipts
+    receipts::user_init(&new_account_sig);
+    // burn tracker
+    maybe_init_burn_tracker(&new_account_sig);
+    // initialize coin
+    coin::register<LibraCoin>(&new_account_sig);
 
-    /// A wrapper to create a NEW account and register it to receive
-    // GAS.
-    // fun _ol_create_resource_account(user: &signer, seed: vector<u8>): (signer, account::SignerCapability) {
-    //   let (resource_account_sig, cap) = account::create_resource_account(user, seed);
-    //   coin::register<LibraCoin>(&resource_account_sig);
+    // assert that the Activity struct does not exist, which
+    // is part of the v8 migration
+    assert!(!activity::is_initialized(acc), error::invalid_state(ESHOULD_HAVE_NO_ACTIVITY));
 
-    //   init_from_sig_impl(user, &resource_account_sig);
-    //   (resource_account_sig, cap);
-    // }
+    new_account_sig
+  }
 
-    fun create_impl(sender: &signer, maybe_new_user: address) {
-        // prevent reincarnation of accounts where there may be malformed state
-        // during pending deletion.
-        assert!(!account::is_tombstone(maybe_new_user), error::already_exists(ETOMBSTONE));
-        let new_account_sig = account::create_account(maybe_new_user);
-        init_from_sig_impl(sender, &new_account_sig);
-    }
+  // Deprecation Notice: creating resource accounts are disabled in Libra.
+  // Similar methods exist in multi_action::finalize_and_cage) which is
+  // a wrapper for  and multi_sig::migrate_with_owners
+  // if your are testing this, see below a test_only option
 
-    /// all account initialization happens here after a signer is created
-    fun init_from_sig_impl(sender: &signer, new_account_sig: &signer) {
-        coin::register<LibraCoin>(new_account_sig);
-        receipts::user_init(new_account_sig);
-        maybe_init_burn_tracker(new_account_sig);
-        activity::increment(new_account_sig, timestamp::now_seconds());
-        // sender include data in ancestry
-        ancestry::adopt_this_child(sender, new_account_sig);
-    }
-
-
-    /// Helper for smoke tests to create acounts.
-    /// Belt and suspenders
-    // TODO: should check chain ID is not mainnet.
-    public entry fun create_account(root: &signer, auth_key: address) {
-        system_addresses::assert_ol(root);
-        create_impl(root, auth_key);
-    }
-
-    /// For migrating accounts from a legacy system
-    /// NOTE: the legacy accounts (prefixed with 32 zeros) from 0L v5 will not be found by searching via authkey. Since the legacy authkey does not derive to the legcy account any longer, it is as if the account has rotated the authkey.
-    /// The remedy is to run the authkey rotation
-    /// even if it hasn't changed, such that the lookup table (OriginatingAddress) is created and populated with legacy accounts.
-    public(friend) fun vm_create_account_migration(
-        framework: &signer,
-        new_account: address,
-        auth_key: vector<u8>,
-    ): signer {
-        system_addresses::assert_diem_framework(framework);
-        // TODO: only run at genesis
-        // chain_status::assert_genesis();
-        let new_signer = account::vm_create_account(framework, new_account, auth_key);
-        // fake "rotate" legacy auth key  to itself so that the lookup is populated
-        account::vm_migrate_rotate_authentication_key_internal(framework, &new_signer, auth_key);
-        // check we can in fact look up the account
-        let auth_key_as_address = from_bcs::to_address(auth_key);
-        let lookup_addr = account::get_originating_address(auth_key_as_address);
-
-        let sig_addr = signer::address_of(&new_signer);
-        if (lookup_addr != sig_addr) {
-          print(&sig_addr);
-        };
-
-        // TODO: create migration path for duplicates
-        // assert!(
-        //   lookup_addr == signer::address_of(&new_signer),
-        //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
-        // );
-        coin::register<LibraCoin>(&new_signer);
-        maybe_init_burn_tracker(&new_signer);
-        new_signer
-    }
-    /// Migrate the tracker. Depends on the BurnTracker having been initialized
-    /// on  account migration
-    /// Private. So it's only called on genesis
-    fun fork_migrate_burn_tracker(framework: &signer, user:
-    &signer, prev_supply: u64, prev_balance: u64, burn_at_last_calc: u64,
-    cumu_burn: u64) acquires BurnTracker {
-      system_addresses::assert_diem_framework(framework);
-      let b = borrow_global_mut<BurnTracker>(signer::address_of(user));
-      b.prev_supply = prev_supply;
-      b.prev_balance = prev_balance;
-      b.burn_at_last_calc = burn_at_last_calc;
-      b.cumu_burn = cumu_burn;
-    }
+  /// all account initialization happens here after a signer is created
+  fun init_from_sig_impl(sender: &signer, new_account_sig: &signer) {
+      coin::register<LibraCoin>(new_account_sig);
+      receipts::user_init(new_account_sig);
+      maybe_init_burn_tracker(new_account_sig);
+      activity::maybe_onboard(new_account_sig);
+      // sender include data in ancestry
+      ancestry::adopt_this_child(sender, new_account_sig);
+  }
 
 
+  fun create_impl(sender: &signer, maybe_new_user: address) {
+    // prevent reincarnation of accounts where there may be malformed state
+    // during pending deletion.
+    assert!(!account::is_tombstone(maybe_new_user), error::already_exists(ETOMBSTONE));
+    let new_account_sig = account::create_account(maybe_new_user);
+    init_from_sig_impl(sender, &new_account_sig);
+  }
+
+  /// Helper for smoke tests to create accounts.
+  /// this is in production code because:
+  /// it is used for genesis transactions regarding mainnet
+  /// e.g. test_correct_supply_arithmetic_single
+  /// plus, a  #[test_only] pragma will not work for smoke tests
+  /// Belt and suspenders
+  public entry fun create_account(root: &signer, auth_key: address) {
+    system_addresses::assert_ol(root);
+    create_impl(root, auth_key);
+  }
+
+  /// For migrating accounts from a legacy system
+  /// NOTE: the legacy accounts (prefixed with 32 zeros) from 0L v5 will not be found by searching via authkey. Since the legacy authkey does not derive to the legacy account any longer, it is as if the account has rotated the authkey.
+  /// The remedy is to run the authkey rotation
+  /// even if it hasn't changed, such that the lookup table (OriginatingAddress) is created and populated with legacy accounts.
+  public(friend) fun vm_create_account_migration(
+    framework: &signer,
+    new_account: address,
+    auth_key: vector<u8>,
+  ): signer {
+    system_addresses::assert_diem_framework(framework);
+    // TODO: only run at genesis
+    // chain_status::assert_genesis();
+    let new_signer = account::vm_create_account(framework, new_account, auth_key);
+    // fake "rotate" legacy auth key  to itself so that the lookup is populated
+    account::vm_migrate_rotate_authentication_key_internal(framework, &new_signer, auth_key);
+    // check we can in fact look up the account
+    let auth_key_as_address = from_bcs::to_address(auth_key);
+    let lookup_addr = account::get_originating_address(auth_key_as_address);
+
+    let sig_addr = signer::address_of(&new_signer);
+    if (lookup_addr != sig_addr) {
+      print(&sig_addr);
+    };
+
+    // TODO: create migration path for duplicates
+    // assert!(
+    //   lookup_addr == signer::address_of(&new_signer),
+    //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
+    // );
+    coin::register<LibraCoin>(&new_signer);
+    maybe_init_burn_tracker(&new_signer);
+    new_signer
+  }
+  /// Migrate the tracker. Depends on the BurnTracker having been initialized
+  /// on  account migration
+  /// Private. So it's only called on genesis
+  fun fork_migrate_burn_tracker(framework: &signer, user:
+  &signer, prev_supply: u64, prev_balance: u64, burn_at_last_calc: u64,
+  cumu_burn: u64) acquires BurnTracker {
+    system_addresses::assert_diem_framework(framework);
+    let b = borrow_global_mut<BurnTracker>(signer::address_of(user));
+    b.prev_supply = prev_supply;
+    b.prev_balance = prev_balance;
+    b.burn_at_last_calc = burn_at_last_calc;
+    b.cumu_burn = cumu_burn;
+  }
 
 
-    #[test_only]
-    /// Batch version of GAS transfer.
-    public entry fun batch_transfer(source: &signer, recipients:
-    vector<address>, amounts: vector<u64>) acquires BurnTracker {
-        let recipients_len = vector::length(&recipients);
-        assert!(
-            recipients_len == vector::length(&amounts),
-            error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
-        );
-
-        let i = 0;
-        while (i < recipients_len) {
-            let to = *vector::borrow(&recipients, i);
-            let amount = *vector::borrow(&amounts, i);
-            transfer(source, to, amount);
-            i = i + 1;
-        };
-    }
-
-    /// Convenient function to transfer GAS to a recipient account that might not exist.
-    /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
-    public entry fun transfer(sender: &signer, to: address, amount: u64)
-    acquires BurnTracker {
-      let payer = signer::address_of(sender);
-      maybe_sender_creates_account(sender, to, amount);
-      transfer_checks(payer, to, amount);
-      // both update burn tracker
-      let c = withdraw(sender, amount);
-      deposit_coins(to, c);
-    }
 
 
-    // transfer with capability, and do appropriate checks on both sides, and
-    // track the slow wallet
-    // NOTE: this requires that the account exists, since the SENDER signature is not used
-    fun transfer_with_capability(cap: &WithdrawCapability, recipient:
-    address, amount: u64) acquires BurnTracker {
-      if(!account::exists_at(recipient)) return; // exit without abort,
-      // since this might be called by the 0x0 at an epoch boundary.
-      let payer = account::get_withdraw_cap_address(cap);
-      transfer_checks(payer, recipient, amount);
-      // NOTE: these shoud update BurnTracker
-      let c = withdraw_with_capability(cap, amount);
-      deposit_coins(recipient, c);
-    }
+  #[test_only]
+  /// Batch version of GAS transfer.
+  public entry fun batch_transfer(source: &signer, recipients:
+  vector<address>, amounts: vector<u64>) acquires BurnTracker {
+    let recipients_len = vector::length(&recipients);
+    assert!(
+      recipients_len == vector::length(&amounts),
+      error::invalid_argument(EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH),
+    );
 
-    /// Withdraw a coin while tracking the unlocked withdraw
-    public(friend) fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64):
-    Coin<LibraCoin> acquires BurnTracker {
-      let payer = account::get_withdraw_cap_address(cap);
-      let limit = slow_wallet::unlocked_amount(payer);
-      assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+    let i = 0;
+    while (i < recipients_len) {
+      let to = *vector::borrow(&recipients, i);
+      let amount = *vector::borrow(&amounts, i);
+      transfer(source, to, amount);
+      i = i + 1;
+    };
+  }
 
-      let coin = coin::withdraw_with_capability(cap, amount);
+  /// Convenient function to transfer GAS to a recipient account that might not exist.
+  /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
+  public entry fun transfer(sender: &signer, to: address, amount: u64)
+  acquires BurnTracker {
+    let payer = signer::address_of(sender);
+    maybe_sender_creates_account(sender, to, amount);
+    transfer_checks(payer, to, amount);
+    // both update burn tracker
+    let c = withdraw(sender, amount);
+    deposit_coins(to, c);
+  }
+
+
+  // transfer with capability, and do appropriate checks on both sides, and
+  // track the slow wallet
+  // NOTE: this requires that the account exists, since the SENDER signature is not used
+  fun transfer_with_capability(cap: &WithdrawCapability, recipient:
+  address, amount: u64) acquires BurnTracker {
+    if(!account::exists_at(recipient)) return; // exit without abort,
+    // since this might be called by the 0x0 at an epoch boundary.
+    let payer = account::get_withdraw_cap_address(cap);
+    transfer_checks(payer, recipient, amount);
+    // NOTE: these should update BurnTracker
+    let c = withdraw_with_capability(cap, amount);
+    deposit_coins(recipient, c);
+  }
+
+  /// Withdraw a coin while tracking the unlocked withdraw
+  public(friend) fun withdraw_with_capability(cap: &WithdrawCapability, amount: u64):
+  Coin<LibraCoin> acquires BurnTracker {
+    let payer = account::get_withdraw_cap_address(cap);
+    let limit = slow_wallet::unlocked_amount(payer);
+    assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
+
+    let coin = coin::withdraw_with_capability(cap, amount);
       slow_wallet::maybe_track_unlocked_withdraw(payer, amount);
 
       // the outgoing coins should trigger an update on this account
@@ -317,6 +333,7 @@ module ol_framework::ol_account {
         assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
 
         let limit = slow_wallet::unlocked_amount(payer);
+
         assert!(amount < limit, error::invalid_state(EINSUFFICIENT_BALANCE));
 
         // community wallets cannot use ol_transfer, they have a dedicated workflow
@@ -336,6 +353,14 @@ module ol_framework::ol_account {
         // maybe track cumulative deposits if this is a donor directed wallet
         // or other wallet which tracks cumulative payments.
         cumulative_deposits::maybe_update_deposit(payer, recipient, amount);
+
+        // if the account has never been activated, the unlocked amount is
+        // zero despite the state (which is stale, until there is a migration).
+        reauthorization::assert_v8_reauthorized(payer);
+
+        // TODO: Should transactions fail if a recipient is not migrated?
+        // assert!(activity::has_ever_been_touched(recipient), error::invalid_state(ENOT_MIGRATED));
+
     }
 
 
@@ -669,8 +694,9 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_ol(root: &signer, alice: &signer, core: &signer)
     acquires BurnTracker {
-        std::timestamp::set_time_has_started_for_testing(core);
+        chain_id::initialize_for_test(root, 4);
 
+        timestamp::set_time_has_started_for_testing(root);
         account::maybe_initialize_duplicate_originating(root);
         let bob = from_bcs::to_address(x"0000000000000000000000000000000000000000000000000000000000000b0b");
         let carol = from_bcs::to_address(x"00000000000000000000000000000000000000000000000000000000000ca501");
@@ -696,10 +722,10 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_to_resource_account_ol(root: &signer, alice: &signer,
     core: &signer) acquires BurnTracker{
-        std::timestamp::set_time_has_started_for_testing(root);
+        chain_id::initialize_for_test(root, 4);
 
-        let (burn_cap, mint_cap) =
-        ol_framework::libra_coin::initialize_for_test(core);
+        timestamp::set_time_has_started_for_testing(root);
+        let (burn_cap, mint_cap) = ol_framework::libra_coin::initialize_for_test(core);
         libra_coin::test_set_final_supply(root, 1000); // dummy to prevent fail
 
         let (resource_account, _) = test_ol_create_resource_account(alice, vector[]);
@@ -718,6 +744,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, from = @0x123, core = @0x1, recipient_1 = @0x124, recipient_2 = @0x125)]
     public fun test_batch_transfer(root: &signer, from: &signer, core: &signer,
     recipient_1: &signer, recipient_2: &signer) acquires BurnTracker{
+        chain_id::initialize_for_test(root, 4);
+
         timestamp::set_time_has_started_for_testing(root);
 
         account::maybe_initialize_duplicate_originating(root);
@@ -745,8 +773,8 @@ module ol_framework::ol_account {
     #[test(root = @ol_framework, user = @0x123)]
     public fun test_set_allow_direct_coin_transfers(root: &signer, user:
     &signer) acquires DirectTransferConfig {
-        std::timestamp::set_time_has_started_for_testing(root);
-
+        chain_id::initialize_for_test(root, 4);
+        timestamp::set_time_has_started_for_testing(root);
         account::maybe_initialize_duplicate_originating(root);
         let addr = signer::address_of(user);
         let (b, m) = libra_coin::initialize_for_test(root);

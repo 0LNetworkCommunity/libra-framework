@@ -237,6 +237,7 @@ module diem_framework::account {
 
     /// Explicitly separate the GUID space between Object and Account to prevent accidental overlap.
     const MAX_GUID_CREATION_NUM: u64 = 0x4000000000000;
+
     #[test_only]
     /// Create signer for testing, independently of an Diem-style `Account`.
     public fun create_signer_for_test(addr: address): signer { create_signer(addr) }

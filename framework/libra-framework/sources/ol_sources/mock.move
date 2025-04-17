@@ -25,6 +25,7 @@ module ol_framework::mock {
   use ol_framework::musical_chairs;
   use ol_framework::infra_escrow;
   use ol_framework::testnet;
+  use ol_framework::root_of_trust;
 
   // use diem_std::debug::print;
 
@@ -305,6 +306,8 @@ module ol_framework::mock {
 
       i = i + 1;
     };
+
+    root_of_trust::genesis_initialize(root, stake::get_current_validators());
   }
 
 
