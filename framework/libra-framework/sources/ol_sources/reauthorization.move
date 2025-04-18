@@ -15,7 +15,7 @@ module ol_framework::reauthorization {
     /// this community wallet has not been reauthorized by its donors
     const ECOMMUNITY_WALLET_HAS_NO_AUTH: u64 = 1;
 
-    public fun assert_v8_reauthorized(account: address) {
+    public fun assert_v8_authorized(account: address) {
 
       let migrated = activity::has_ever_been_touched(account);
       let founder = founder::is_founder(account);

@@ -106,6 +106,8 @@ impl ValidatorTxs {
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
                 addr: unjail_acct.to_owned(),
             },
+            // TODO: kept here for compatibility
+            // should be deprecated in favor of txs_cli_user
             ValidatorTxs::Vouch {
                 vouch_for: vouch_acct,
                 revoke,

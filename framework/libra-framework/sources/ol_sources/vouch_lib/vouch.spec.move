@@ -6,12 +6,12 @@ spec ol_framework::vouch {
     // Specification for identifying true friends of a given address
     spec true_friends(addr: address): vector<address> {
         pragma aborts_if_is_partial = true; // Allows partial aborts
-        
+
         // Basic vector property
         ensures vector::length(result) >= 0; // Ensures the result is a valid vector
-        
+
         // If there are no vouches, result should be empty
-        ensures !exists<ReceivedVouches>(addr) ==> 
+        ensures !exists<ReceivedVouches>(addr) ==>
             vector::length(result) == 0; // Ensures result is empty if no vouches exist
 
         // If we have vouches, they must be in a valid state
@@ -26,7 +26,7 @@ spec ol_framework::vouch {
     // Specification for revoking a vouch
     spec revoke {
         pragma aborts_if_is_partial = true; // Allows partial aborts
-        
+
         // Basic property - function should not abort
         aborts_if false; // Never aborts
 
@@ -36,14 +36,14 @@ spec ol_framework::vouch {
 
         // After revoke, the number of vouches should decrease or stay the same
         ensures forall addr: address where exists<ReceivedVouches>(addr):
-            vector::length(global<ReceivedVouches>(addr).incoming_vouches) <= 
+            vector::length(global<ReceivedVouches>(addr).incoming_vouches) <=
             old(vector::length(global<ReceivedVouches>(addr).incoming_vouches)); // Ensures vouches do not increase after revoke
     }
 
     // Specification for checking non-expired vouches
     spec all_not_expired(addr: address): vector<address> {
         pragma aborts_if_is_partial = true; // Allows partial aborts
-        
+
         // Basic vector property - result must be a valid vector
         ensures vector::length(result) >= 0; // Ensures the result is a valid vector
 
@@ -53,9 +53,9 @@ spec ol_framework::vouch {
     }
 
     // Specification for bulk setting vouch records
-    spec bulk_set(val: address, buddy_list: vector<address>) {
+    spec bulk_set(val: address, received_list: vector<address>, given_list: vector<address>) {
         pragma aborts_if_is_partial = true; // Allows partial aborts
-        
+
         // Function should not abort
         aborts_if false; // Never aborts
 
@@ -66,7 +66,7 @@ spec ol_framework::vouch {
         ensures exists<ReceivedVouches>(val) ==> {
             let post = global<ReceivedVouches>(val);
             // Length of incoming_vouches must be less than or equal to buddy_list
-            vector::length(post.incoming_vouches) <= vector::length(buddy_list) // Ensures vouches do not exceed buddy list
+            vector::length(post.incoming_vouches) <= vector::length(received_list) // Ensures vouches do not exceed buddy list
         };
 
         // Ensures the state is modified

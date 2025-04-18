@@ -4,8 +4,6 @@ module diem_framework::block {
     use std::error;
     use std::option;
     use std::vector;
-    // TODO: restore this
-    // use std::features;
     use std::string;
     use diem_framework::account;
     use diem_framework::event::{Self, EventHandle};
@@ -144,15 +142,6 @@ module diem_framework::block {
         };
         emit_new_block_event(&vm, &mut block_metadata_ref.new_block_events, new_block_event);
 
-        // if (features::collect_and_distribute_gas_fees()) {
-        //     // Assign the fees collected from the previous block to the previous block proposer.
-        //     // If for any reason the fees cannot be assigned, this function burns the collected coins.
-        //     transaction_fee::process_collected_fees();
-        //     // Set the proposer of this block as the receiver of the fees, so that the fees for this
-        //     // block are assigned to the right account.
-        //     transaction_fee::register_proposer_for_fee_collection(proposer);
-        // };
-
         // Performance scores have to be updated before the epoch transition as the transaction that triggers the
         // transition is the last block in the previous epoch.
         stake::update_performance_statistics(proposer_index, failed_proposer_indices);
@@ -162,7 +151,7 @@ module diem_framework::block {
         let seed = bcs::to_bytes(&hash);
         randomness::on_new_block(&vm, epoch, round, option::some(seed));
 
-        // seperate logic for epoch advancment to allow for testing
+        // separate logic for epoch advancement to allow for testing
         maybe_advance_epoch(&vm, timestamp, block_metadata_ref, round);
 
     }

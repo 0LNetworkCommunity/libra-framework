@@ -23,7 +23,6 @@ module ol_framework::proof_of_fee {
   use ol_framework::slow_wallet;
   use ol_framework::epoch_helper;
   use ol_framework::address_utils;
-  use diem_std::debug::print;
 
   friend diem_framework::genesis;
   friend ol_framework::epoch_boundary;
@@ -210,7 +209,6 @@ module ol_framework::proof_of_fee {
     qualified_bidders: u64,
     max_recommended_size: u64 // musical chairs set size suggestion
   ): u64 {
-    print(&max_recommended_size);
     // Belt and suspenders
     // if the musical chairs suggestion is below 4, the practical minimum for BFT, then return 4.
     if (max_recommended_size < VAL_BOOT_UP_THRESHOLD) {
@@ -224,13 +222,9 @@ module ol_framework::proof_of_fee {
     // then it's not a competitive set, and we should DECREASE the set size
     // (according to the max recommendation from musical_chairs)
     let competitive_threshold = max_recommended_size * (1 + (PCT_COMPETITIVENESS/100));
-    print(&competitive_threshold);
 
     if (qualified_bidders <= competitive_threshold) {
-      print(&@0x12);
-      print(&qualified_bidders);
       let seats_to_remove = (qualified_bidders * PCT_COMPETITIVENESS) / 100;
-      print(&seats_to_remove);
       let max_qualified = qualified_bidders - seats_to_remove;
       // check that we DO NOT increase beyond musical chairs recommendation OR competitive set size
       return math64::min(max_qualified, max_recommended_size)
@@ -1179,7 +1173,6 @@ module ol_framework::proof_of_fee {
     let qualified_bidders = 100;
     let max_recommended_size = 100;
     let result = competitive_set_size(qualified_bidders, max_recommended_size);
-    diem_std::debug::print(&result);
     assert!(result == 90, 7357025);
 
 

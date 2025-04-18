@@ -11,14 +11,10 @@ module ol_framework::activity {
   #[test_only]
   friend ol_framework::donor_voice_reauth;
   #[test_only]
+  friend ol_framework::mock;
+  #[test_only]
   friend ol_framework::test_filo_migration;
 
-  // #[test_only]
-  // friend ol_framework::donor_voice_reauth;
-  #[test_only]
-  friend ol_framework::mock;
-  // #[test_only]
-  // friend ol_framework::test_filo_migration;
 
   //////// ERROR CODES ///////
   /// account not initialized on v8 chain

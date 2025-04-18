@@ -18,6 +18,7 @@ module ol_framework::donor_voice_governance {
     use ol_framework::turnout_tally::{Self, TurnoutTally};
     use ol_framework::ballot::{Self, BallotTracker};
     use ol_framework::cumulative_deposits;
+    use ol_framework::reauthorization;
     use diem_framework::account;
     use ol_framework::epoch_helper;
     use ol_framework::donor_voice_reauth;
@@ -99,10 +100,8 @@ module ol_framework::donor_voice_governance {
     #[view]
     /// view function to check that a user account is a Donor for a Donor Voice account.
     public fun check_is_donor(dv_account: address, user: address): bool {
-      ///////////////////
-      // TODO: add reauthorization once merged
-      // reauthorization::assert_v8_authorized(user);
-      /////////////////////
+
+      reauthorization::assert_v8_authorized(user);
 
       // Only as high as I reach can I grow
       // Only as far as I seek can I go

@@ -278,8 +278,6 @@ pub enum EntryFunctionCall {
 
     FiloMigrationMaybeMigrate {},
 
-    FounderMigrate {},
-
     /// Only a Voucher of the validator can flip the unjail bit.
     /// This is a way to make sure the validator is ready to rejoin.
     JailUnjailByVoucher {
@@ -463,6 +461,10 @@ pub enum EntryFunctionCall {
     },
 
     /// Helper for smoke tests to create accounts.
+    /// this is in production code because:
+    /// it is used for genesis transactions regarding mainnet
+    /// e.g. test_correct_supply_arithmetic_single
+    /// plus, a  #[test_only] pragma will not work for smoke tests
     /// Belt and suspenders
     OlAccountCreateAccount {
         auth_key: AccountAddress,
@@ -552,6 +554,8 @@ pub enum EntryFunctionCall {
     VersionSetVersion {
         major: u64,
     },
+
+    VouchTxsCleanExpired {},
 
     VouchTxsRevoke {
         friend_account: AccountAddress,
@@ -721,7 +725,6 @@ impl EntryFunctionCall {
             EpochBoundarySmokeEnableTrigger {} => epoch_boundary_smoke_enable_trigger(),
             EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
             FiloMigrationMaybeMigrate {} => filo_migration_maybe_migrate(),
-            FounderMigrate {} => founder_migrate(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
             LibraCoinClaimMintCapability {} => libra_coin_claim_mint_capability(),
             LibraCoinDelegateMintCapability { to } => libra_coin_delegate_mint_capability(to),
@@ -880,6 +883,7 @@ impl EntryFunctionCall {
                 fullnode_addresses,
             ),
             VersionSetVersion { major } => version_set_version(major),
+            VouchTxsCleanExpired {} => vouch_txs_clean_expired(),
             VouchTxsRevoke { friend_account } => vouch_txs_revoke(friend_account),
             VouchTxsVouchFor { friend_account } => vouch_txs_vouch_for(friend_account),
         }
@@ -1603,21 +1607,6 @@ pub fn filo_migration_maybe_migrate() -> TransactionPayload {
     ))
 }
 
-pub fn founder_migrate() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("founder").to_owned(),
-        ),
-        ident_str!("migrate").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
 /// Only a Voucher of the validator can flip the unjail bit.
 /// This is a way to make sure the validator is ready to rejoin.
 pub fn jail_unjail_by_voucher(addr: AccountAddress) -> TransactionPayload {
@@ -2138,6 +2127,10 @@ pub fn object_transfer_call(object: AccountAddress, to: AccountAddress) -> Trans
 }
 
 /// Helper for smoke tests to create accounts.
+/// this is in production code because:
+/// it is used for genesis transactions regarding mainnet
+/// e.g. test_correct_supply_arithmetic_single
+/// plus, a  #[test_only] pragma will not work for smoke tests
 /// Belt and suspenders
 pub fn ol_account_create_account(auth_key: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -2434,6 +2427,21 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
         ident_str!("set_version").to_owned(),
         vec![],
         vec![bcs::to_bytes(&major).unwrap()],
+    ))
+}
+
+pub fn vouch_txs_clean_expired() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("vouch_txs").to_owned(),
+        ),
+        ident_str!("clean_expired").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -2861,14 +2869,6 @@ mod decoder {
     pub fn filo_migration_maybe_migrate(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::FiloMigrationMaybeMigrate {})
-        } else {
-            None
-        }
-    }
-
-    pub fn founder_migrate(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::FounderMigrate {})
         } else {
             None
         }
@@ -3344,6 +3344,14 @@ mod decoder {
         }
     }
 
+    pub fn vouch_txs_clean_expired(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::VouchTxsCleanExpired {})
+        } else {
+            None
+        }
+    }
+
     pub fn vouch_txs_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchTxsRevoke {
@@ -3506,10 +3514,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::filo_migration_maybe_migrate),
         );
         map.insert(
-            "founder_migrate".to_string(),
-            Box::new(decoder::founder_migrate),
-        );
-        map.insert(
             "jail_unjail_by_voucher".to_string(),
             Box::new(decoder::jail_unjail_by_voucher),
         );
@@ -3664,6 +3668,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "version_set_version".to_string(),
             Box::new(decoder::version_set_version),
+        );
+        map.insert(
+            "vouch_txs_clean_expired".to_string(),
+            Box::new(decoder::vouch_txs_clean_expired),
         );
         map.insert(
             "vouch_txs_revoke".to_string(),
