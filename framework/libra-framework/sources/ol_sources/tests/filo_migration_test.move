@@ -38,7 +38,7 @@ module ol_framework::test_filo_migration {
   /// error out
   fun v7_accept_tx_validation(framework: &signer, bob: &signer) {
     setup_one_v7_account(framework, bob);
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
 
   }
 
@@ -48,9 +48,9 @@ module ol_framework::test_filo_migration {
     setup_one_v7_account(framework, bob);
 
     //////// user sends migration tx ////////
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     // safety check: should not error if called again, lazy init
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     //////// end migration tx ////////
 
     let b_addr = signer::address_of(bob);
@@ -82,7 +82,7 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     //////// end migration tx ////////
 
     let (unlocked, total) = ol_account::balance(b_addr);
@@ -174,7 +174,7 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     founder::test_mock_friendly(framework, bob);
     //////// end migration tx ////////
 
@@ -202,7 +202,7 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     //////// end migration tx ////////
 
     assert!(vouch::is_init(b_addr), 735706);
@@ -240,7 +240,7 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     //////// end migration tx ////////
     slow_wallet::test_epoch_drip(framework, 100);
 
@@ -267,7 +267,7 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::mock_v8_migrate_activity(bob);
     //////// end migration tx ////////
 
     founder::test_mock_friendly(framework, bob);

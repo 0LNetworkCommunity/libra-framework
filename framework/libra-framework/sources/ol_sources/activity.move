@@ -1,6 +1,7 @@
 
 /// Maintains the version number for the blockchain.
 module ol_framework::activity {
+  use std::error;
   use std::signer;
   use diem_std::timestamp;
 
@@ -37,7 +38,8 @@ module ol_framework::activity {
 
   /// Increment the activity timestamp of a user
   public(friend) fun increment(user: &signer, timestamp: u64) acquires Activity {
-    lazy_initialize(user, timestamp);
+    // lazy_initialize(user, timestamp);
+    assert!(is_initialized(signer::address_of(user)), error::invalid_state(EACCOUNT_MALFORMED));
 
     let state = borrow_global_mut<Activity>(signer::address_of(user));
     state.last_touch_usecs = timestamp;
@@ -53,11 +55,15 @@ module ol_framework::activity {
     0
   }
 
-  fun migrate(user_sig: &signer, timestamp: u64) {
-      move_to<Activity>(user_sig, Activity {
-        last_touch_usecs: timestamp,
-        onboarding_usecs: 0, // also how we identify pre-V8 "founder account",
-      });
+  public(friend) fun migrate_founder(user_sig: &signer) {
+      if (!exists<Activity>(signer::address_of(user_sig))) {
+        let now = timestamp::now_seconds();
+        move_to<Activity>(user_sig, Activity {
+          last_touch_usecs: now,
+          onboarding_usecs: 0, // also how we identify pre-V8 "founder account",
+        });
+      };
+
   }
 
   public(friend) fun maybe_onboard(user_sig: &signer){

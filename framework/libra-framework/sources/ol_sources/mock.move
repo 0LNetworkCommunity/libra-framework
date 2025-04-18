@@ -602,14 +602,15 @@ module ol_framework::mock {
   #[test_only]
   /// two state initializations happen on first
   /// transaction
-  public fun simulate_transaction_validation(sender: &signer) {
-    let time = timestamp::now_seconds();
-    // will initialize structs if first time
-    activity::increment(sender, time);
+  public fun mock_v8_migrate_activity(sender: &signer) {
 
     // run migrations
     // Note, Activity and Founder struct should have been set above
     filo_migration::maybe_migrate(sender);
+
+    let time = timestamp::now_seconds();
+    // will initialize structs if first time
+    activity::increment(sender, time);
   }
 
 

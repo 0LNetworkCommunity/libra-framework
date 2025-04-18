@@ -24,7 +24,7 @@ module ol_framework::test_page_rank {
 
     vector::for_each_ref(&roots_sig, |sig| {
       // make each account a v8 address
-      mock::simulate_transaction_validation(sig);
+      mock::mock_v8_migrate_activity(sig);
     });
 
     // make these accounts root of trust
@@ -172,7 +172,7 @@ module ol_framework::test_page_rank {
     let user_addr = signer::address_of(&seven_user_sig);
 
     // a v7 user touches the account to get structs created
-    mock::simulate_transaction_validation(&seven_user_sig);
+    mock::mock_v8_migrate_activity(&seven_user_sig);
     // check lazy migration worked
     let is_init = activity::is_initialized(user_addr);
     let pre = activity::is_prehistoric(user_addr);
