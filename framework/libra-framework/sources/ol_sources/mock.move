@@ -594,8 +594,9 @@ module ol_framework::mock {
     assert!(score == vector::length(&received_vouches) * 50, 7357002);
 
     let remaining = vouch_limits::get_vouch_limit(alice);
-    // received 9 vouches, and has given 9, so there's one extra
-    assert!(remaining == 1, 7357003);
+    // received 9 vouches, and has given 9, and since is root
+    // has a max of 20.
+    assert!(remaining == 11, 7357003);
   }
 
   #[test_only]
