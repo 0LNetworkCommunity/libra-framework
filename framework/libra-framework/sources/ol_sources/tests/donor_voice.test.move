@@ -22,7 +22,6 @@ module ol_framework::test_donor_voice {
   use std::vector;
   use std::signer;
 
-
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun dd_init(root: &signer, alice: &signer, bob: &signer) {
       let vals = mock::genesis_n_vals(root, 2);
@@ -581,7 +580,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
+      let uid = donor_voice_txs::propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357009);
       assert!(idx == 0, 73570010); // it's index 0 of approved payments
@@ -595,7 +594,6 @@ module ol_framework::test_donor_voice {
       // the default timed payment is 3 epochs, we are in epoch 1
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 73570014);
-
       // one epoch goes by and then new payment to marlon
       mock::trigger_epoch(root); // into epoch 1
 
@@ -628,11 +626,11 @@ module ol_framework::test_donor_voice {
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 73570026);
 
+
       // process epoch 3 accounts
       mock::trigger_epoch(root); // into epoch 2
       mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
       mock::trigger_epoch(root); // epoch 4 should include the payment
-
       // MARLON'S FIRST PAYMENT GOES THROUGH
       let (_, marlon_rando_balance_post) = ol_account::balance(signer::address_of(marlon_rando));
 

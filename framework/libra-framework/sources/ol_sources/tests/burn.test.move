@@ -323,14 +323,15 @@ module ol_framework::test_burn {
   //   assert!(TransactionFee::get_fees_collected()==1, 735703);
   // }
 
-  #[test(root=@ol_framework, alice=@0x1000a)]
-  fun track_fees(root: &signer, alice: address) {
+  #[test(root=@ol_framework, alice=@0x1000a, marlon_rando_sig = @0x12345)]
+  fun track_fees(root: &signer, marlon_rando_sig: &signer, alice: address) {
     // use ol_framework::libra_coin;
     let _vals = mock::genesis_n_vals(root, 1); // need to include eve to init funds
     mock::ol_initialize_coin_and_fund_vals(root, 10000, true);
 
     let marlon_rando = @0x12345;
     ol_account::create_account(root, marlon_rando);
+    fee_maker::maybe_initialize_fee_maker(marlon_rando_sig);
 
     let rando_money = 5;
     let coin_option = ol_account::test_vm_withdraw(root, alice, rando_money);

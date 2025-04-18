@@ -12,6 +12,9 @@ module ol_framework::fee_maker {
     friend diem_framework::genesis;
     friend ol_framework::epoch_boundary;
 
+    #[test_only]
+    friend ol_framework::test_burn;
+
     /// FeeMaker struct lives on an individual's account
     /// We check how many fees the user has paid.
     /// This will interact with Burn preferences when there is a remainder of fees in the TransactionFee account
@@ -41,8 +44,8 @@ module ol_framework::fee_maker {
 
     /// FeeMaker is initialized when the account is created
     /// Lazy initialization since very few accounts will need this struct
-    fun maybe_initialize_fee_maker(sig: &signer, account: address) {
-
+    public(friend) fun maybe_initialize_fee_maker(sig: &signer) {
+      let account = signer::address_of(sig);
       if (system_addresses::is_reserved_address(account) || system_addresses::is_framework_reserved_address(account)) return;
 
       if (!exists<FeeMaker>(account)) {
@@ -92,7 +95,7 @@ module ol_framework::fee_maker {
       if (system_addresses::is_reserved_address(account) || system_addresses::is_framework_reserved_address(account)) return;
 
       if (amount == 0) return;
-      maybe_initialize_fee_maker(user_sig, signer::address_of(user_sig));
+      maybe_initialize_fee_maker(user_sig);
       track_user_fee_impl(signer::address_of(user_sig), amount);
     }
 

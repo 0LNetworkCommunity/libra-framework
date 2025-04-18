@@ -3,7 +3,6 @@
 module ol_framework::test_boundary {
   use std::vector;
   use diem_std::bls12381;
-  use diem_std::debug::print;
   use diem_framework::stake;
   use diem_framework::timestamp;
   use diem_framework::reconfiguration;
@@ -150,7 +149,6 @@ module ol_framework::test_boundary {
   //   // NOTE: now MARLON is INCLUDED in this, and we filled all the seats on offer.
   //   // all vals had winning bids, but it was less than the seats on offer
   //   let win = epoch_boundary::get_auction_winners();
-  //   // print(&vector::length(&win));
 
 
   //   assert!(vector::length(&win) == 10, 7357005);
@@ -280,7 +278,6 @@ module ol_framework::test_boundary {
     // HOWEVER there are not sufficient bidders with vouches
     // marlon has no vouches
     let (qualified, _) = proof_of_fee::get_bidders_and_bids(true);
-    print(&vector::length(&qualified));
     assert!(vector::length(&qualified) == 10, 7357000);
 
 
