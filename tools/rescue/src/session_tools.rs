@@ -218,6 +218,21 @@ pub fn change_chain_id(session: &mut SessionExt, chain_id: u8) -> anyhow::Result
     let signer = MoveValue::Signer(AccountAddress::ONE);
     let chain_id = MoveValue::U8(chain_id);
     libra_execute_session_function(session, "0x1::chain_id::set_impl", vec![&signer, &chain_id])?;
+
+    libra_execute_session_function(
+        session,
+        "0x1::block::update_epoch_interval_microsecs",
+        // 5 minutes
+        // TODO: get from globals
+        vec![&signer, &MoveValue::U64(5 * 60 * 1_000_000)],
+    )?;
+
+    // TODO: uncomment this after v8
+    // libra_execute_session_function(
+    //     session,
+    //     "0x1::block::set_interval_with_global",
+    //     vec![&signer],
+    // )?;
     Ok(())
 }
 
@@ -233,6 +248,13 @@ pub fn remove_gov_mode_flag(session: &mut SessionExt) -> anyhow::Result<()> {
         "0x1::features::change_feature_flags",
         vec![&signer, &add_features, &remove_features],
     )?;
+    Ok(())
+}
+
+/// epoch boundary
+pub fn migrate_data(session: &mut SessionExt) -> anyhow::Result<()> {
+    let signer = MoveValue::Signer(AccountAddress::ONE);
+    libra_execute_session_function(session, "0x1::epoch_boundary::migrate_data", vec![&signer])?;
     Ok(())
 }
 
@@ -283,6 +305,8 @@ pub fn register_and_replace_validators_changeset(
             change_chain_id(session, chain_id.unwrap_or(2)).expect("could not change chain id");
 
             remove_gov_mode_flag(session).expect("could not remove governance mode");
+
+            migrate_data(session).expect("could not migrate data");
 
             writeset_voodoo_events(session).expect("should voodoo, who do?");
 

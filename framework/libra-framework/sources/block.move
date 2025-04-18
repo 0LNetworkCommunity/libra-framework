@@ -14,9 +14,9 @@ module diem_framework::block {
     use diem_framework::system_addresses;
     use diem_framework::timestamp;
     use diem_std::debug::print;
-    use ol_framework::testnet;
 
-    //////// 0L ////////
+    use ol_framework::testnet;
+    use ol_framework::globals;
     use ol_framework::epoch_boundary;
 
     friend diem_framework::genesis;
@@ -76,13 +76,20 @@ module diem_framework::block {
         );
     }
 
+    /// useful for twin testnet
+    fun set_interval_with_global(diem_framework: &signer) acquires BlockResource {
+      system_addresses::assert_diem_framework(diem_framework);
+      update_epoch_interval_microsecs(diem_framework, globals::get_epoch_microsecs());
+    }
+
     /// Update the epoch interval.
     /// Can only be called as part of the Diem governance proposal process established by the DiemGovernance module.
     public(friend) fun update_epoch_interval_microsecs(
-        _diem_framework: &signer,
+        diem_framework: &signer,
         new_epoch_interval: u64,
     ) acquires BlockResource {
-        //system_addresses::assert_vm(diem_framework); //TODO: remove after testing fork
+        system_addresses::assert_vm(diem_framework);
+
         assert!(new_epoch_interval > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
         let block_resource = borrow_global_mut<BlockResource>(@diem_framework);
