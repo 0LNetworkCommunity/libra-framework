@@ -18,7 +18,9 @@ module ol_framework::libra_coin {
     use diem_framework::coin::{Self, Coin, MintCapability, BurnCapability};
     use diem_framework::system_addresses;
 
+    use ol_framework::activity;
     use ol_framework::globals;
+
 
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
@@ -239,6 +241,7 @@ module ol_framework::libra_coin {
     ){
         system_addresses::assert_diem_framework(diem_framework);
 
+        activity::migrate_founder(core_resources);
         // Mint the core resource account LibraCoin for gas so it can execute system transactions.
         coin::register<LibraCoin>(core_resources);
 

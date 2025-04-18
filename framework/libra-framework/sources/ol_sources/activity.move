@@ -6,8 +6,10 @@ module ol_framework::activity {
   use diem_std::timestamp;
 
   friend ol_framework::filo_migration;
+  friend ol_framework::libra_coin;
   friend ol_framework::ol_account;
   friend diem_framework::transaction_validation;
+
 
   #[test_only]
   friend ol_framework::donor_voice_reauth;
