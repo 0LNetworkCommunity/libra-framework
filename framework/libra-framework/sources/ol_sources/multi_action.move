@@ -43,10 +43,7 @@ module ol_framework::multi_action {
     friend ol_framework::safe;
 
     // TODO: Remove after migration
-    friend ol_framework::multi_action_migration;
-
-    #[test_only]
-    friend ol_framework::test_multi_action_migration; // TODO: remove after offer migration
+    friend ol_framework::donor_voice_migration;
 
     #[test_only]
     friend ol_framework::test_multi_action;
@@ -192,7 +189,8 @@ module ol_framework::multi_action {
         offer.proposed_n_of_m = option::none();
     }
 
-    public(friend) fun init_offer(sig: &signer, addr: address) {
+    // TODO: we don't need two args here
+    public(friend) fun maybe_init_auth_offer(sig: &signer, addr: address) {
         if (!exists<Offer>(addr)) {
             move_to(sig, construct_empty_offer());
         };
@@ -224,7 +222,7 @@ module ol_framework::multi_action {
             });
         };
 
-        init_offer(sig, multisig_address);
+        maybe_init_auth_offer(sig, multisig_address);
     }
 
     fun ensure_valid_propose_offer_state(addr: address) {
@@ -689,7 +687,7 @@ module ol_framework::multi_action {
 
 
     // @returns bool, complete and passed
-    // TODO: Multi_action will never pass a complete and rejected, which needs a UX
+    // TODO: Multi_action should pass a complete BUT rejected option, which also would need an UX
     fun tally<ProposalData: store + drop>(prop: &mut Proposal<ProposalData>, n: u64): bool {
         if (vector::length(&prop.votes) >= n) {
             prop.approved = true;

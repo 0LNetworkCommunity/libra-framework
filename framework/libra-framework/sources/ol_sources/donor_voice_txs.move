@@ -201,7 +201,7 @@ module ol_framework::donor_voice_txs {
         });
 
       // Commit note: this should now failover gracefully
-      donor_voice_governance::init_donor_governance(sig);
+      donor_voice_governance::maybe_init_dv_governance(sig);
     }
 
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.

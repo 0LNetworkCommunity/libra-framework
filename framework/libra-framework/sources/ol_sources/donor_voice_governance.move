@@ -27,6 +27,7 @@ module ol_framework::donor_voice_governance {
 
     friend ol_framework::donor_voice;
     friend ol_framework::donor_voice_txs;
+    friend ol_framework::donor_voice_migration;
 
     //// ERROR CODES
     /// Is not a donor to this account
@@ -59,7 +60,7 @@ module ol_framework::donor_voice_governance {
     struct Reauth has drop, store {}
 
 
-    public(friend) fun init_donor_governance(dv_signer: &signer) {
+    public(friend) fun maybe_init_dv_governance(dv_signer: &signer) {
       let addr = signer::address_of(dv_signer);
 
       if (!exists<Governance<TurnoutTally<Veto>>>(addr)) {
