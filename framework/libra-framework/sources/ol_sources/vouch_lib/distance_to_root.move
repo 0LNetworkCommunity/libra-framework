@@ -264,12 +264,6 @@ module ol_framework::distance_to_root {
             && user_record.shortest_path_to_root != 0xFFFFFFFFFFFFFFFF
     }
 
-    // Registry existence check helper
-    public fun registry_exists(registry_addr: address): bool {
-        // Just pass through to root_of_trust to check if registry exists
-        !vector::is_empty(&root_of_trust::get_current_roots_at_registry(registry_addr))
-    }
-
     // Helper to check if an address is a root node
     public fun is_root_node(addr: address): bool {
         root_of_trust::is_root_at_registry(@diem_framework, addr)
@@ -304,44 +298,11 @@ module ol_framework::distance_to_root {
         let user2_addr = signer::address_of(&user2);
         let user3_addr = signer::address_of(&user3);
 
-        // Let's print the addresses being tested for debugging
-        std::debug::print(&b"Root address:");
-        std::debug::print(&root_addr);
-        std::debug::print(&b"User1 address:");
-        std::debug::print(&user_addr);
-        std::debug::print(&b"User2 address:");
-        std::debug::print(&user2_addr);
-        std::debug::print(&b"User3 address:");
-        std::debug::print(&user3_addr);
-
-        // Check if root_of_trust recognizes the root address
-        std::debug::print(&b"Is root node:");
-        std::debug::print(&is_root_node(root_addr));
-
-        // Let's check the vouch relationships to verify our setup
-        let vouches_for_user1 = find_vouchers(user_addr);
-        let vouches_for_user2 = find_vouchers(user2_addr);
-        let vouches_for_user3 = find_vouchers(user3_addr);
-
-        std::debug::print(&b"Vouchers for User1:");
-        std::debug::print(&vouches_for_user1);
-        std::debug::print(&b"Vouchers for User2:");
-        std::debug::print(&vouches_for_user2);
-        std::debug::print(&b"Vouchers for User3:");
-        std::debug::print(&vouches_for_user3);
-
         // Calculate shortest paths
         let root_path = get_shortest_path_to_root(root_addr, current_timestamp);
         let user1_path = get_shortest_path_to_root(user_addr, current_timestamp);
         let user2_path = get_shortest_path_to_root(user2_addr, current_timestamp);
         let user3_path = get_shortest_path_to_root(user3_addr, current_timestamp);
-
-        // Print the actual path lengths for debugging
-        std::debug::print(&b"Path lengths:");
-        std::debug::print(&root_path);
-        std::debug::print(&user1_path);
-        std::debug::print(&user2_path);
-        std::debug::print(&user3_path);
 
         // Root is a root node, so distance is 0
         assert!(root_path == 0, 73570030);
@@ -381,28 +342,11 @@ module ol_framework::distance_to_root {
         let user2_addr = signer::address_of(&user2);
         let user3_addr = signer::address_of(&user3);
 
-        // Let's print the vouching relationships for debugging
-        std::debug::print(&b"Vouchers for User1:");
-        std::debug::print(&find_vouchers(user_addr));
-        std::debug::print(&b"Vouchers for User2:");
-        std::debug::print(&find_vouchers(user2_addr));
-        std::debug::print(&b"Vouchers for User3:");
-        std::debug::print(&find_vouchers(user3_addr));
-
         // Calculate scores
         let root_score = calculate_inward_path_score(root_addr, current_timestamp);
         let user1_score = calculate_inward_path_score(user_addr, current_timestamp);
         let user2_score = calculate_inward_path_score(user2_addr, current_timestamp);
         let user3_score = calculate_inward_path_score(user3_addr, current_timestamp);
-
-        // Debug the calculated scores for troubleshooting
-        std::debug::print(&b"Path scores:");
-        std::debug::print(&root_score);
-        std::debug::print(&user1_score);
-        std::debug::print(&user2_score);
-        std::debug::print(&user3_score);
-
-        // Make more flexible assertions:
 
         // Root should have max score (100)
         assert!(root_score == 100, 73570040);

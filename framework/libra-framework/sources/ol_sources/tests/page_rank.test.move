@@ -11,8 +11,6 @@ module ol_framework::test_page_rank {
   use std::signer;
   use std::vector;
 
-  use diem_std::debug::print;
-
   // sets up a network with 10 root of trust accounts (which are
   // not the validators). Returns a list of signers from the 10 roots.
   fun test_base(framework: &signer): vector<signer> {
@@ -154,7 +152,7 @@ module ol_framework::test_page_rank {
     assert!(stale, 7357005);
 
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-    print(&page_rank_score);
+    assert!(page_rank_score == 50, 7357006);
 
     // should no longer be stale
     let stale = page_rank_lazy::is_stale(new_user_addr);

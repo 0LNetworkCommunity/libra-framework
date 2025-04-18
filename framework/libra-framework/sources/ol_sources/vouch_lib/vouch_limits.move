@@ -63,8 +63,11 @@ module ol_framework::vouch_limits {
         // are we hitting the limit of max vouches
         assert_all_checks(grantor_acc);
       } else if (is_root) {
+        // exempt from scoring, and epoch limits
+        // but others apply
         assert_safety_ceiling_vouches(grantor_acc);
         assert_received_limit_vouches(grantor_acc);
+        assert_revoke_cooldown_period(grantor_acc);
       }
     }
 
@@ -144,9 +147,9 @@ module ol_framework::vouch_limits {
             max_allowed = 3;
         } else if (trust_score >= 10 && trust_score < 100) {
             max_allowed = 5;
-        } else if (trust_score >= 250) {
+        } else if (trust_score >= 100 && trust_score < 250) {
             max_allowed = 10;
-        } else if (trust_score >= 350 ) {
+        } else if (trust_score >= 250 && trust_score < 500) {
             max_allowed = 15;
         };
         max_allowed
@@ -203,31 +206,28 @@ module ol_framework::vouch_limits {
     /// 3. Received vouches + 1 limit
     /// 4. Per-epoch limit
     /// The returned value is the minimum of all these limits minus current given vouches.
-    public fun get_remaining_vouches(addr: address): u64 {
+    public fun get_vouch_limit(addr: address): u64 {
 
       // Check if account is initialized
       if (!vouch::is_init(addr)) {
         return 0
       };
-      // Check cooldown period
-      if (!cooldown_period_passed(addr)) {
-        return 0
-      };
 
-      let given_this_epoch = vouch::get_given_this_epoch(addr);
-      if (given_this_epoch >= MAX_VOUCHES_PER_EPOCH) {
-        return 0
-      };
+      let given_count = vector::length(&vouch::get_given_vouches_not_expired(addr));
 
-      // check what the core would allow.
-
+      // check what the score would allow.
       let score_limit = calculate_score_limit(addr);
+      // root users exempt from the score limit
+      if (root_of_trust::is_root_at_registry(@diem_framework, addr)) {
+        score_limit = BASE_MAX_VOUCHES;
+      };
 
       // check based on how many received
       // Received limit: non-expired received vouches + 1
       let true_friends = vouch::true_friends(addr);
-
       let received_limit = vector::length(&true_friends) + 1;
+
+
       // find the lowest number, most restrictive limit
       let vouches_allowed = if (score_limit < received_limit) {
         score_limit
@@ -241,9 +241,6 @@ module ol_framework::vouch_limits {
         BASE_MAX_VOUCHES
       };
 
-
-      // Get current non-expired vouches
-      let given_count = vector::length(&vouch::get_given_vouches_not_expired(addr));
 
       // Calculate remaining vouches
       if (given_count >= vouches_allowed) {

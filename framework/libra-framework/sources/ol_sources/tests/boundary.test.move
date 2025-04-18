@@ -253,16 +253,10 @@ module ol_framework::test_boundary {
 
     assert!(vector::length(&epoch_boundary::get_auction_winners()) == 10, 7357005);
 
-    // in this case the clearing price was not the last (11th bid), but the 10th
-    let auction_fee = 2_000;
-
-    print(&auction_fee);
     let (_unlocked, bob_bal_now) = ol_account::balance(@0x1000b);
-    print(&bob_bal_now);
     assert!(bob_bal_now == bob_bal + 1_000_000 - 2_000, 737001);
 
     let (_unlocked, marlon_bal_now) = ol_account::balance(@0x12345);
-    print(&marlon_bal_now);
     // MARLON just got seated (he outbid others), but he did not receive a reward from previous epoch
     assert!(marlon_bal_now == marlon_bal - 2_000, 737001);
 

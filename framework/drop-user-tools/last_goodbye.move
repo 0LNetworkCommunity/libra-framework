@@ -50,7 +50,6 @@ module ol_framework::last_goodbye {
   use std::option;
   use std::vector;
   use std::error;
-  use std::debug::print;
   use diem_framework::coin;
   use diem_framework::system_addresses;
   use ol_framework::burn;
@@ -105,10 +104,6 @@ module ol_framework::last_goodbye {
     vouch::hard_fork_sanitize(vm, user);
 
     let locked = slow_wallet::hard_fork_sanitize(vm, user);
-    if (locked > 0) {
-      print(&user_addr);
-      print(&locked);
-    };
 
     // remove a pledge account if there is one, so that coins there are
     // not dangling

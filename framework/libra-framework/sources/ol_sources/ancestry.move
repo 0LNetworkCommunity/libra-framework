@@ -231,13 +231,6 @@ module ol_framework::ancestry {
           if (comparison_acc != target_acc) {
             // check ancestry algo
             let (is_fam, _parent) = is_family(*comparison_acc, *target_acc);
-            // print_str(&b"comparison_acc");
-            // print(comparison_acc);
-            // print_str(&b"target_acc");
-            // print(target_acc);
-            // print_str(&b"is_fam");
-            // print(&is_fam);
-
             if (!is_fam) {
               if (!vector::contains(&unrelated_buddies, target_acc)) {
                 vector::push_back<address>(&mut unrelated_buddies, *target_acc)

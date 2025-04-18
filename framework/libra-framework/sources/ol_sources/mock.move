@@ -34,8 +34,6 @@ module ol_framework::mock {
   use ol_framework::root_of_trust;
   use ol_framework::page_rank_lazy;
 
-  use diem_std::debug::print;
-
   const ENO_GENESIS_END_MARKER: u64 = 1;
   const EDID_NOT_ADVANCE_EPOCH: u64 = 2;
   /// coin supply does not match expected
@@ -575,7 +573,7 @@ module ol_framework::mock {
       let val = vector::borrow(&vals, i);
       // check we have ancestry initialized
       let ancestry = ancestry::get_tree(*val);
-      // all validators have ancestr
+      // all validators have ancestry
       let parent = vector::borrow(&ancestry, 0);
       assert!(parent == &@diem_framework, 7357000);
       i = i + 1;
@@ -595,9 +593,9 @@ module ol_framework::mock {
     // set which are also roots of trust
     assert!(score == vector::length(&received_vouches) * 50, 7357002);
 
-    let remaining = vouch_limits::get_remaining_vouches(alice);
-    print(&remaining);
-
+    let remaining = vouch_limits::get_vouch_limit(alice);
+    // received 9 vouches, and has given 9, so there's one extra
+    assert!(remaining == 1, 7357003);
   }
 
   #[test_only]
