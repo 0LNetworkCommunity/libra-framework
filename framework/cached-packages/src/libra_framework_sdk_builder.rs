@@ -307,10 +307,6 @@ pub enum EntryFunctionCall {
 
     MultiActionInitGovDeprecated {},
 
-    MultiActionMigrationMigrateOffer {
-        multisig_address: AccountAddress,
-    },
-
     /// Similar to add_owners, but only allow adding one owner.
     MultisigAccountAddOwner {
         new_owner: AccountAddress,
@@ -733,9 +729,6 @@ impl EntryFunctionCall {
                 multi_action_claim_offer(multisig_address)
             }
             MultiActionInitGovDeprecated {} => multi_action_init_gov_deprecated(),
-            MultiActionMigrationMigrateOffer { multisig_address } => {
-                multi_action_migration_migrate_offer(multisig_address)
-            }
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -1705,23 +1698,6 @@ pub fn multi_action_init_gov_deprecated() -> TransactionPayload {
         ident_str!("init_gov_deprecated").to_owned(),
         vec![],
         vec![],
-    ))
-}
-
-pub fn multi_action_migration_migrate_offer(
-    multisig_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("multi_action_migration").to_owned(),
-        ),
-        ident_str!("migrate_offer").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&multisig_address).unwrap()],
     ))
 }
 
@@ -2937,18 +2913,6 @@ mod decoder {
         }
     }
 
-    pub fn multi_action_migration_migrate_offer(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::MultiActionMigrationMigrateOffer {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn multisig_account_add_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwner {
@@ -3536,10 +3500,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "multi_action_init_gov_deprecated".to_string(),
             Box::new(decoder::multi_action_init_gov_deprecated),
-        );
-        map.insert(
-            "multi_action_migration_migrate_offer".to_string(),
-            Box::new(decoder::multi_action_migration_migrate_offer),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),
