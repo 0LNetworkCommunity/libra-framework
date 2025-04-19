@@ -399,6 +399,23 @@
 
     // with the current participation get the threshold to pass
     public(friend) fun get_current_threshold_required<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+      // Get current participation percentage
+      let current_participation_pct = get_current_ballot_participation(ballot);
+
+      // 1. Get the minimum participation threshold
+      let min_participation = ballot.cfg_min_turnout;
+
+      // 2 & 3. If we haven't reached minimum participation, calculate threshold at minimum
+      if (current_participation_pct < min_participation) {
+        // Calculate what the threshold would be at the minimum participation
+        let min_votes_required = fixed_point32::multiply_u64(
+          ballot.max_votes,
+          fixed_point32::create_from_rational(min_participation, PCT_SCALE)
+        );
+        return get_threshold_from_turnout(min_votes_required, ballot.max_votes)
+      };
+
+      // 4. If above minimum, calculate threshold based on current turnout
       get_threshold_from_turnout(ballot.votes_approve + ballot.votes_reject, ballot.max_votes)
     }
 
@@ -407,6 +424,11 @@
       let total = ballot.votes_approve + ballot.votes_reject;
       return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve ,total))
     }
+
+    public(friend) fun get_minimum_turnout<Data: store>(ballot: &TurnoutTally<Data>): u64 {
+      ballot.cfg_min_turnout
+    }
+
 
     /// Get the current expiration epoch for a ballot
     public(friend) fun get_expiration_epoch<Data: store>(ballot: &TurnoutTally<Data>): u64 {
