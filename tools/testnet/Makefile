@@ -44,6 +44,10 @@ send-epoch: parse-jq
 balance: parse-jq
 	libra query -c ${APP_CFG} balance ${ADDR}
 
+supply: parse-jq
+	libra query -c ${APP_CFG} view -f 0x1::supply::get_stats
+	libra query -c ${APP_CFG} view -f 0x1::slow_wallet::get_slow_supply
+
 # New target that uses the API endpoint from twin.json
 resources: set-api-endpoint
 	curl http://${LIBRA_API_HOST}:${LIBRA_API_PORT}/v1/accounts/${ADDR}/resources > ${ADDR}-resources.json
