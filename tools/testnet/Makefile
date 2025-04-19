@@ -71,7 +71,7 @@ query-roots:  parse-jq
 
 ##### upgrades
 upgrade-payload:
-	libra move framework upgrade -o $$HOME/libra-upgrade  --framework-local-dir ${FRAMEWORK} --core-modules libra-framework
+	libra move framework upgrade -o $$HOME/libra-upgrade  --framework-local-dir ${FRAMEWORK} --core-modules libra-framework --danger-force-upgrade
 
 upgrade-propose: parse-jq
 	libra txs -c ${APP_CFG} governance propose --proposal-script-dir $$HOME/libra-upgrade/1-libra-framework --metadata-url http://allyourbase.com
