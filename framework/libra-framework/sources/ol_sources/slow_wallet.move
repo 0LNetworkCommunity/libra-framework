@@ -93,6 +93,7 @@ module ol_framework::slow_wallet {
         // for already existing accounts
         let state = borrow_global_mut<SlowWallet>(signer::address_of(sig));
         state.unlocked = 0;
+        state.transferred = 0;
     }
 
     /// Users can change their account to slow, by calling the entry function
