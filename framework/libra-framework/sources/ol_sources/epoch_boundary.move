@@ -459,7 +459,6 @@ module diem_framework::epoch_boundary {
 
   fun process_incoming_validators(root: &signer, status: &mut BoundaryStatus, compliant_vals: vector<address>, n_seats: u64) {
     system_addresses::assert_ol(root);
-
     // check amount of fees expected
     let (auction_winners, all_bidders, only_qualified_bidders, entry_fee) = proof_of_fee::end_epoch(root, &compliant_vals, n_seats);
     status.incoming_filled_seats = vector::length(&auction_winners);
@@ -481,6 +480,7 @@ module diem_framework::epoch_boundary {
     status.incoming_fees_success = fee_success;
     // make sure musical chairs doesn't keep incrementing if we are persistently
     // offering more seats than can be filled
+
     let final_set_size = vector::length(&actual_set);
     musical_chairs::set_current_seats(root, final_set_size);
     status.incoming_final_set_size = final_set_size;

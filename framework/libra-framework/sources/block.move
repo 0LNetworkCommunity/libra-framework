@@ -271,8 +271,7 @@ module diem_framework::block {
     }
 
     #[test(diem_framework = @diem_framework, account = @0x123)]
-    //#[expected_failure(abort_code = 0x50003, location = diem_framework::system_addresses)] //TODO: remove after testing fork
-    #[ignore] //TODO: remove after testing fork
+    #[expected_failure(abort_code = 327680, location = diem_framework::system_addresses)]
     public entry fun test_update_epoch_interval_unauthorized_should_fail(
         diem_framework: signer,
         account: signer,
