@@ -230,14 +230,6 @@ module ol_framework::donor_voice_governance {
     ): guid::ID acquires Governance {
       let data = Reauth {};
 
-      // check if this creates a duplicate proposal
-      let dv_account = account::get_guid_capability_address(cap);
-      let state = borrow_global_mut<Governance<TurnoutTally<Reauth>>>(dv_account);
-      let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
-      // there should only be one pending reauth at a given time
-      assert!(vector::length(pending_list) == 1, error::invalid_argument(EDUPLICATE_PROPOSAL));
-
-
       propose_gov<Reauth>(cap, data, DEFAULT_CW_REAUTH_DAYS)
     }
 
