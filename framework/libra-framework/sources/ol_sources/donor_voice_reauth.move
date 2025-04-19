@@ -20,13 +20,20 @@ module ol_framework::donor_voice_reauth {
 
     friend ol_framework::donor_voice_txs;
     friend ol_framework::donor_voice_governance;
+    friend ol_framework::reauthorization;
+
     #[test_only]
     friend ol_framework::test_community_wallet;
     #[test_only]
     friend ol_framework::test_donor_voice;
     /// ERROR CODES
-    /// Donor Voice account has not been reauthorized and the donor authorization expired.
-    const EDONOR_VOICE_AUTHORITY_EXPIRED: u64 = 0;
+
+    /// Donor Voice authority not initialized
+    const ENOT_INITIALIZED: u64 = 0;
+    /// Authority expired after the 5 year window
+    const EDONOR_VOICE_AUTHORITY_EXPIRED: u64 = 1;
+    /// No activity in past year, reauthorization pending
+    const ENO_YEARLY_ACTIVITY: u64 = 2;
 
     /// CONSTANTS
     /// Seconds in one year
@@ -65,7 +72,10 @@ module ol_framework::donor_voice_reauth {
 
     /// force the abort if not authorized
     public(friend) fun assert_authorized(dv_account: address) acquires DonorAuthorized {
-      assert!(is_authorized(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
+
+       assert!(exists<DonorAuthorized>(dv_account), error::invalid_state(ENOT_INITIALIZED));
+       assert!(!authorization_expired(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
+       assert!(has_activity_in_last_year(dv_account), error::invalid_state(ENO_YEARLY_ACTIVITY));
     }
 
     #[view]
@@ -122,7 +132,7 @@ module ol_framework::donor_voice_reauth {
         one_year_ago = now - SECONDS_IN_YEAR
       };
 
-      if (latest_tx > one_year_ago) {
+      if (latest_tx >= one_year_ago) {
         return true
       };
       false
