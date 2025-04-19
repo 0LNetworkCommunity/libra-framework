@@ -125,7 +125,9 @@ module ol_framework::page_rank_lazy {
         max_depth: u64,
         current_power: u64
     ): u64 {
-        assert!(vouch::is_init(current), error::invalid_state(ENOT_INITIALIZED));
+        if(!vouch::is_init(current)) {
+            return 0
+        };
 
         // Great, we found the target!
         // then we get to return the power
