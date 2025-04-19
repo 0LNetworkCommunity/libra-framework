@@ -17,8 +17,6 @@ module ol_framework::slow_wallet {
   use ol_framework::sacred_cows;
   use ol_framework::testnet;
 
-
-
   friend diem_framework::genesis;
   friend ol_framework::ol_account;
   friend ol_framework::transaction_fee;
@@ -395,10 +393,9 @@ module ol_framework::slow_wallet {
     /// - total: the total balance of all slow wallet accounts
     /// - transferred: the total amount that has been transferred from all slow wallets
     public fun get_slow_supply(): (u64, u64, u64) acquires SlowWallet, SlowWalletList {
-      let _system_supply = libra_coin::supply();
-
       let list = get_slow_list();
       let len = vector::length<address>(&list);
+
       let total = 0;
       let unlocked = 0;
       let transferred = 0;
