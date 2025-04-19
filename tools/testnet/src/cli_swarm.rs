@@ -69,7 +69,6 @@ impl SwarmCliOpts {
             println!("Writing test info to JSON file: {:?}", file_path);
             fs::write(&file_path, serde_json::to_string_pretty(&out)?)
                 .map_err(|e| anyhow::anyhow!("Failed to write to JSON file: {}", e))?;
-            println!("Successfully wrote test info to {:?}", file_path);
         } else {
             // If not writing to file, print the regular output
             println!("{}", serde_json::to_string_pretty(&out)?);

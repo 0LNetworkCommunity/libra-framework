@@ -10,9 +10,6 @@ module ol_framework::migrations {
 
   use diem_std::debug::print;
 
-  // migrations
-  // use ol_framework::vouch_migration;
-
   //////// CONST ////////
   const EMIGRATIONS_NOT_INITIALIZED: u64 = 1;
 
@@ -90,6 +87,8 @@ module ol_framework::migrations {
     };
   }
 
+  #[view]
+  /// see which migration ran most recently
   public fun get_last_migration_number(): u64 acquires Migrations {
     if (!exists<Migrations>(@ol_framework)) {
       return 0
@@ -99,6 +98,8 @@ module ol_framework::migrations {
     state.last_migration
   }
 
+  #[view]
+  /// get the state of the migrations
   public fun get_last_migrations_history(): (u64, u64, vector<u8>) acquires Migrations {
     assert!(exists<Migrations>(@ol_framework), error::invalid_state(EMIGRATIONS_NOT_INITIALIZED));
 

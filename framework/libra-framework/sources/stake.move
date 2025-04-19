@@ -17,8 +17,6 @@ module diem_framework::stake {
     use ol_framework::testnet;
     use ol_framework::address_utils;
 
-    // use diem_std::debug::print;
-
     friend diem_framework::block;
     friend diem_framework::genesis;
     friend diem_framework::reconfiguration;
@@ -814,8 +812,10 @@ module diem_framework::stake {
 
         if (seats_offered < minimum_seats) { seats_offered = minimum_seats };
         // let min_f = 3;
+
         let current_vals = get_current_validators();
         // check if this is not test. Failover only when there are no validators proposed
+
         if (testnet::is_testnet()) {
           // ignore if no vals are returning.
           if (vector::length(&proposed) == 0) {
@@ -829,23 +829,27 @@ module diem_framework::stake {
         let enough_qualified = count_proposed > healthy_threshold;
 
         // expand the least amount, otherwise we could halt again
-        // with unprepared validtors.
+        // with unprepared validators.
         let new_target = if (seats_offered > healthy_threshold)
         healthy_threshold else seats_offered;
         // do we have 10 or more performant validators (whether or not they
         // qualified for next epoch)?
 
+
         // Scenario A) Happy Case
         // not near failure
         if (enough_qualified) {
+
           return proposed
         } else if (new_target >= 4) {
+
           // we won't dig out of the hole if we target less than 4
           // Scenario B) Sick Patient
           // always fill seats with proposed/qualified if possible.
           // if not, go to hail mary
           if (count_proposed >= new_target) { // should not be higher, most
           // likely equal
+
             return proposed
           } else {
             // Scenario C) Defibrillator
@@ -856,16 +860,26 @@ module diem_framework::stake {
 
             // fill remaining seats with
             // take the most performant validators from previous epoch.
+
+
             let remainder = new_target - count_proposed;
+
             let ranked = get_sorted_vals_by_net_props();
+
+
+
             let i = 0;
-            while (i < remainder) {
+
+            while
+              ((i < remainder) &&
+              (i < vector::length(&ranked))) {
               let best_val = vector::borrow(&ranked, i);
               if (!vector::contains(&proposed, best_val)) {
                 vector::push_back(&mut proposed, *best_val)
               };
               i = i + 1;
-            }
+            };
+
           }
         };
 
@@ -875,7 +889,8 @@ module diem_framework::stake {
         if (vector::length(&proposed) > 3) {
           return proposed
         };
-        // this is unreachable but as a backstop for dev finge
+        // this is unreachable but as a backstop for dev finge (sic)
+
         current_vals
     }
 

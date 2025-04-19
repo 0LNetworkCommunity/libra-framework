@@ -251,12 +251,12 @@ pub fn remove_gov_mode_flag(session: &mut SessionExt) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// epoch boundary
-pub fn migrate_data(session: &mut SessionExt) -> anyhow::Result<()> {
-    let signer = MoveValue::Signer(AccountAddress::ONE);
-    libra_execute_session_function(session, "0x1::epoch_boundary::migrate_data", vec![&signer])?;
-    Ok(())
-}
+// TODO: this may be useful, but it won't run newly created migrations.
+// pub fn migrate_data(session: &mut SessionExt) -> anyhow::Result<()> {
+//     let signer = MoveValue::Signer(AccountAddress::ONE);
+//     libra_execute_session_function(session, "0x1::epoch_boundary::migrate_data", vec![&signer])?;
+//     Ok(())
+// }
 
 /// Unpacks a VM change set.
 pub fn unpack_to_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
@@ -305,8 +305,6 @@ pub fn register_and_replace_validators_changeset(
             change_chain_id(session, chain_id.unwrap_or(2)).expect("could not change chain id");
 
             remove_gov_mode_flag(session).expect("could not remove governance mode");
-
-            migrate_data(session).expect("could not migrate data");
 
             writeset_voodoo_events(session).expect("should voodoo, who do?");
 
