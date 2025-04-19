@@ -906,7 +906,7 @@ module ol_framework::donor_voice_txs {
       // if the reauthorization is already proposed, then we can vote on it.
       reauthorize_handler(donor, multisig_address);
     } else {
-      // go a head and propose it
+      // go ahead and propose it
       propose_reauthorization_impl(donor, multisig_address);
     }
   }
