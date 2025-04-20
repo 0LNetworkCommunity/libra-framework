@@ -1,11 +1,13 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 use diem_db_tool::DBTool;
 use diem_logger::{Level, Logger};
 use diem_push_metrics::MetricsPusher;
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
-use crate::{read_snapshot, restore, restore_bundle::RestoreBundle};
+// Import the correct functions from libra-config
+
+use crate::{bootstrap, download_bundle, read_snapshot, restore};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -13,7 +15,7 @@ use crate::{read_snapshot, restore, restore_bundle::RestoreBundle};
 /// DB tools e.g.: backup, restore, export to json
 pub struct StorageCli {
     #[clap(subcommand)]
-    command: Option<Sub>,
+    pub command: Option<Sub>,
 }
 
 #[derive(Subcommand)]
@@ -25,9 +27,33 @@ pub enum Sub {
     /// simple restore from a bundle for one epoch
     EpochRestore {
         #[clap(short, long)]
+        /// path of the restore bundle with epoch_ending, state_epoch, and transaction archives
         bundle_path: PathBuf,
         #[clap(short, long)]
+        /// destination db path to restore to
         destination_db: PathBuf,
+        #[clap(short, long)]
+        /// prevent bootstrap after restore, advanced
+        prevent_bootstrap: bool,
+    },
+    /// downloads the stat, epoch, and transaction
+    /// restore files from the `epoch-archive` repo
+    DownloadRestoreBundle {
+        #[clap(long, default_value = "0LNetworkCommunity")]
+        /// github organization or user, canonically: "0LNetworkCommunity"
+        owner: String,
+        #[clap(long, default_value = "epoch-archive-mainnet")]
+        /// repo of archive, canonically: "epoch-archive-mainnet"
+        repo: String,
+        #[clap(long, default_value = "v7.0.0")]
+        /// branch of the archive, canonically: "v7.0.0"
+        branch: String,
+        #[clap(short, long)]
+        /// required, the number of epoch to restore
+        epoch: u64,
+        #[clap(short, long)]
+        /// required, the directory to download the restore bundle to
+        destination: PathBuf,
     },
     /// Read a snapshot, parse and export to JSON
     ExportSnapshot {
@@ -36,10 +62,27 @@ pub enum Sub {
         #[clap(short, long)]
         out_path: Option<PathBuf>,
     },
+    /// Bootstrap a restored DB with genesis and waypoint
+    Bootstrap {
+        /// Path to the DB to bootstrap
+        #[clap(long)]
+        db_path: PathBuf,
+
+        /// optional, home path for genesis files (defaults to global config dir)
+        #[clap(long)]
+        home_path: Option<PathBuf>,
+
+        /// Optional custom genesis path (defaults to downloading mainnet genesis)
+        #[clap(long)]
+        genesis_path: Option<PathBuf>,
+
+        /// Optional waypoint (defaults to downloading mainnet genesis waypoint)
+        #[clap(long)]
+        waypoint: Option<String>,
+    },
 }
 
 impl StorageCli {
-    // Note: using owned self since DBTool::run uses an owned self.
     pub async fn run(self) -> Result<()> {
         Logger::new().level(Level::Info).init();
         let _mp = MetricsPusher::start(vec![]);
@@ -58,30 +101,39 @@ impl StorageCli {
             Some(Sub::EpochRestore {
                 bundle_path,
                 destination_db,
+                prevent_bootstrap,
             }) => {
-                if !bundle_path.exists() {
-                    bail!("bundle directory not found: {}", &bundle_path.display());
-                };
-                if destination_db.exists() {
-                    bail!("you are trying to restore to a directory that already exists, and may have conflicting state: {}", &destination_db.display());
-                };
-                assert!(!destination_db.exists());
-                fs::create_dir_all(&destination_db)?;
-
-                // underlying tools get lost with relative paths
-                let bundle_path = fs::canonicalize(bundle_path)?;
-                let destination_db = fs::canonicalize(destination_db)?;
-
-                let mut bundle = RestoreBundle::new(bundle_path);
-
-                bundle.load()?;
-
-                restore::full_restore(&destination_db, &bundle).await?;
-
-                println!(
-                    "SUCCESS: restored to epoch: {}, version: {}",
-                    bundle.epoch, bundle.version
-                );
+                restore::epoch_restore(bundle_path, destination_db.clone()).await?;
+                // by default we want to bootstrap a restored db
+                // if you have an advanced case you can run with --prevent_bootstrap=true
+                // and later run the bootstrap command standalone
+                if !prevent_bootstrap {
+                    bootstrap::bootstrap_db(destination_db, None, None, None).await?;
+                }
+            }
+            Some(Sub::DownloadRestoreBundle {
+                owner,
+                repo,
+                branch,
+                epoch,
+                destination,
+            }) => {
+                download_bundle::download_restore_bundle(
+                    &owner,
+                    &repo,
+                    &branch,
+                    &epoch,
+                    &destination,
+                )
+                .await?;
+            }
+            Some(Sub::Bootstrap {
+                db_path,
+                home_path,
+                genesis_path,
+                waypoint,
+            }) => {
+                bootstrap::bootstrap_db(db_path, home_path, genesis_path, waypoint).await?;
             }
             _ => {} // prints help
         }

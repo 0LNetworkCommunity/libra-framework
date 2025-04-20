@@ -193,7 +193,7 @@ module ol_framework::test_donor_voice {
       // NOTE: there is a tx function that can propose and vote in single step
       donor_voice_txs::vote_veto_tx(eve, donor_voice_address, id_num);
 
-      let (approve_pct, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let (approve_pct, _turnout, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
@@ -359,7 +359,9 @@ module ol_framework::test_donor_voice {
       multi_action::finalize_and_cage(&resource_sig, 2);
       slow_wallet::user_set_slow(marlon_rando);
 
-      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon", false);
+      donor_voice_reauth::test_set_authorized(root, donor_voice_address);
+
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -520,24 +522,9 @@ module ol_framework::test_donor_voice {
       assert!(status_enum == ballot::get_approved_enum(), 73570035);
       assert!(completed, 73570036); // now vote is completed
 
-
-
-
       assert!(marlon_rando_balance_post == (marlon_rando_balance_pre +
       marlon_pay_one + marlon_pay_two),
       73570027);
-
-      // // MARLON'S SECOND PAYMENT SHOULD SUCCEED
-
-      // mock::trigger_epoch(root); // epoch 5 should include the next payment
-      // let (_, marlon_rando_balance_post) =
-      // ol_account::balance(signer::address_of(marlon_rando));
-
-      // print(&marlon_rando_balance_pre);
-      // print(&marlon_rando_balance_post);
-
-      // assert!(marlon_rando_balance_post == (marlon_rando_balance_pre +
-      // marlon_pay_one + marlon_pay_two), 73570028);
     }
 
 
@@ -567,7 +554,6 @@ module ol_framework::test_donor_voice {
       ol_account::transfer(alice, donor_voice_address, 10000);
       let (_, resource_balance) = ol_account::balance(donor_voice_address);
       assert!(resource_balance == 10000, 7357002);
-
 
       // the account needs basic donor directed structs
       donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
@@ -607,7 +593,6 @@ module ol_framework::test_donor_voice {
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &uid), 73570014);
 
-
       // one epoch goes by and then new payment to marlon
       mock::trigger_epoch(root); // into epoch 1
 
@@ -618,7 +603,6 @@ module ol_framework::test_donor_voice {
       // index of pending list.
       assert!(status_enum == ballot::get_pending_enum(), 73570017);
       assert!(!completed, 73570018);
-
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &second_uid_bob), 73570019);
 
@@ -675,12 +659,14 @@ module ol_framework::test_donor_voice {
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause
       // issues
       mock::trigger_epoch(root);
-      // a burn happend in the epoch above, so let's compare it to end of epoch
+      // a burn happened in the epoch above, so let's compare it to end of epoch
       let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
-      let donor_voice_address = signer::address_of(donor_voice);
+      let (donor_voice, _cap) = ol_account::test_ol_create_resource_account(donor_voice_sponsor, b"0x1");
+      let donor_voice_address = signer::address_of(&donor_voice);
+
       // the account needs basic donor directed structs
-      donor_voice_txs::test_helper_make_donor_voice(root, donor_voice, vals);
+      donor_voice_txs::test_helper_make_donor_voice(root, &donor_voice, vals);
 
       // EVE Establishes some governance over the wallet, when donating.
       let eve_donation = 42;
@@ -697,10 +683,11 @@ module ol_framework::test_donor_voice {
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
+
       // Dave proposes to liquidate the account.
       donor_voice_txs::test_propose_liquidation(dave, donor_voice_address);
 
-      assert!(donor_voice_governance::is_liquidation_propsed(donor_voice_address), 7357004);
+      assert!(donor_voice_governance::is_liquidation_proposed(donor_voice_address), 7357004);
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
@@ -756,7 +743,7 @@ module ol_framework::test_donor_voice {
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
       mock::trigger_epoch(root);
-      // a burn happend in the epoch above, so let's compare it to end of epoch
+      // a burn happened in the epoch above, so let's compare it to end of epoch
       let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
@@ -783,7 +770,7 @@ module ol_framework::test_donor_voice {
       // Dave proposes to liquidate the account.
       donor_voice_txs::test_propose_liquidation(dave, donor_voice_address);
 
-      assert!(donor_voice_governance::is_liquidation_propsed(donor_voice_address), 7357004);
+      assert!(donor_voice_governance::is_liquidation_proposed(donor_voice_address), 7357004);
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);

@@ -88,7 +88,7 @@ pub fn prompt_for_account() -> anyhow::Result<AccountKeys> {
     let mut account_keys = libra_wallet::account_keys::get_keys_from_prompt()?.child_0_owner;
 
     if dialoguer::Confirm::new()
-        .with_prompt("Is this an OG founder account (pre-v7)?")
+        .with_prompt("Is this a legacy pre-v7 address (16 characters)?")
         .interact()?
     {
         account_keys.account = get_ol_legacy_address(account_keys.account)?;

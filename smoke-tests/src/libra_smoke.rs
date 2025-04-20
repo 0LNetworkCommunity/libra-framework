@@ -1,34 +1,39 @@
 //! The smoke tests should be located in each module (not in the test harness folder), e.g. (tools/txs). This provides wrapper for other modules to import as a dev_dependency. It produces a default swarm with libra configurations and returns the needed types to run tests.
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use diem_crypto::traits::ValidCryptoMaterialStringExt;
+use diem_forge::SwarmExt;
 use diem_forge::{LocalSwarm, Node, Swarm};
+use diem_framework::ReleaseBundle;
+use diem_logger::info;
 use diem_sdk::types::LocalAccount;
 use diem_temppath::TempPath;
 use diem_types::chain_id::NamedChain;
 use libra_framework::release::ReleaseTarget;
 use libra_types::core_types::app_cfg::AppCfg;
 use libra_types::core_types::network_playlist::NetworkPlaylist;
-use libra_types::exports::AccountAddress;
 use libra_types::exports::Client;
+use libra_types::exports::{AccountAddress, AuthenticationKey};
 use smoke_test::smoke_test_environment;
+use smoke_test::test_utils::MAX_CATCH_UP_WAIT_SECS;
 use std::path::PathBuf;
+use std::str::FromStr;
 use url::Url;
 
-use crate::helpers;
+use crate::helpers::{self, update_node_config_restart, wait_for_node};
 
 /// We provide the minimal set of structs to conduct most tests: a swarm object, and a validator keys object (LocalAccount)
 pub struct LibraSmoke {
     /// the swarm object
     pub swarm: LocalSwarm,
     /// the first validator account
-    pub first_account: LocalAccount,
+    pub first_account: LocalAccount, // TODO: do we use this?
     /// we often need the encoded private key to test 0L cli tools, so we add it here as a convenience.
-    pub encoded_pri_key: String,
-    /// Api endpoint
+    pub encoded_pri_key: String, // TODO: do we use this?
+    /// An api endpoint, of the first validator
     pub api_endpoint: Url,
-
-    pub validator_private_keys: Vec<String>,
+    /// A list of the private keys of the validators
+    pub validator_private_keys: Vec<String>, // TODO: Dd we use it?
 }
 
 // like DropTemp, but tries to make all the nodes stop on drop.
@@ -45,16 +50,31 @@ impl Drop for LibraSmoke {
 impl LibraSmoke {
     /// start a swarm and return first val account.
     /// defaults to Head release.
-    pub async fn new(count_vals: Option<u8>, path: Option<PathBuf>) -> anyhow::Result<Self> {
-        Self::new_with_target(count_vals, path, ReleaseTarget::Head).await
+    pub async fn new(
+        count_vals: Option<u8>,
+        libra_bin_path: Option<PathBuf>,
+    ) -> anyhow::Result<Self> {
+        Self::new_with_target(count_vals, libra_bin_path, ReleaseTarget::Head).await
     }
-    /// start a swarm and specify the release bundle
+    /// start a swarm and specify the target name e.g. HEAD
+    // TODO: deprecate this message,
+    // prefer to always pass the file path.
     pub async fn new_with_target(
         count_vals: Option<u8>,
-        path: Option<PathBuf>,
+        libra_bin_path: Option<PathBuf>,
         target: ReleaseTarget,
     ) -> anyhow::Result<Self> {
-        if let Some(p) = path {
+        let release = target.load_bundle().unwrap();
+        Self::new_with_bundle(count_vals, libra_bin_path, release).await
+    }
+
+    /// start a swarm and specify the release bundle
+    pub async fn new_with_bundle(
+        count_vals: Option<u8>,
+        libra_bin_path: Option<PathBuf>,
+        bundle: ReleaseBundle,
+    ) -> anyhow::Result<Self> {
+        if let Some(p) = libra_bin_path {
             std::env::set_var("DIEM_FORGE_NODE_BIN_PATH", p);
         }
 
@@ -66,40 +86,26 @@ impl LibraSmoke {
         );
         println!("Using diem-node binary at {:?}", &diem_path);
 
-        let release = target.load_bundle().unwrap();
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
             count_vals.unwrap_or(1).into(),
-            release,
+            bundle,
         )
         .await;
-
+        let chain_name =
+            NamedChain::from_chain_id(&swarm.chain_info().chain_id).map_err(|e| anyhow!(e))?;
         // First, collect the validator addresses
-        let validator_addresses: Vec<_> = swarm.validators().map(|node| node.peer_id()).collect();
+        let mut validator_addresses: Vec<AccountAddress> = vec![];
 
         // Initialize an empty Vec to store the private keys
         let mut validator_private_keys = Vec::new();
 
         // Iterate over the validator addresses
-        for &validator_address in &validator_addresses {
+        for local_node in swarm.validators() {
+            let v_addr = local_node.peer_id();
+            validator_addresses.push(v_addr.to_owned());
             // Create a mutable borrow of `swarm` within the loop to limit its scope
-            let mut pub_info = swarm.diem_public_info();
-            println!("Minting coins to {:?}", validator_address);
 
-            // Mint and unlock coins
-            helpers::mint_libra(&mut pub_info, validator_address, 1000 * 1_000_000)
-                .await
-                .context("could not mint to account")?;
-            helpers::unlock_libra(&mut pub_info, validator_address, 1000 * 1_000_000)
-                .await
-                .context("could not unlock coins")?;
-
-            // commit note: unsure why we are dropping this
-            // Drop the mutable borrow of `swarm` by dropping `pub_info`
-            // drop(pub_info);
-
-            // Now it's safe to immutably borrow `swarm`
-            let node = swarm.validator(validator_address).unwrap(); // Adjust as needed
-            let pri_key = node
+            let pri_key = local_node
                 .account_private_key()
                 .as_ref()
                 .context("no private key for validator")?;
@@ -110,6 +116,40 @@ impl LibraSmoke {
 
             // Store the encoded private key
             validator_private_keys.push(encoded_pri_key);
+
+            // now create the appCfg
+            let mut app_cfg = AppCfg::init_app_configs(
+                AuthenticationKey::from_str(v_addr.to_string().as_str())?, // TODO: these should be the same at the swarm start.
+                v_addr.to_owned(),
+                Some(local_node.config_path().parent().unwrap().to_path_buf()),
+                Some(chain_name),
+                Some(NetworkPlaylist::new(
+                    Some(local_node.rest_api_endpoint()),
+                    Some(chain_name),
+                )),
+            )?;
+
+            // Sets private key to file
+            // DANGER: this is only for testnet
+            app_cfg
+                .get_profile_mut(None)
+                .unwrap()
+                .set_private_key(&pri_key.private_key());
+            app_cfg.save_file()?;
+        }
+
+        // mint to each
+        let mut pub_info = swarm.diem_public_info();
+
+        for v_addr in validator_addresses {
+            // Mint and unlock coins
+            info!("Minting coins to {:?}", &v_addr);
+            helpers::mint_libra(&mut pub_info, v_addr, 1000 * 1_000_000)
+                .await
+                .context("could not mint to account")?;
+            helpers::unlock_libra(&mut pub_info, v_addr, 1000 * 1_000_000)
+                .await
+                .context("could not unlock coins")?;
         }
 
         let node = swarm
@@ -130,7 +170,10 @@ impl LibraSmoke {
         let first_account = LocalAccount::new(node.peer_id(), pri_key.private_key(), 0);
         let api_endpoint = node.rest_api_endpoint();
 
-        println!("SUCCESS: swarm started!");
+        println!(
+            "SUCCESS: swarm started! Use API at: {}",
+            api_endpoint.as_str()
+        );
 
         // TODO: order here is awkward because of borrow issues. Clean this up.
         // mint one coin to the main validator.
@@ -205,4 +248,61 @@ impl LibraSmoke {
 
         Ok((signers, signer_addresses))
     }
+    pub async fn test_setup_start_then_pause(num_nodes: u8) -> anyhow::Result<Self> {
+        let mut s = LibraSmoke::new(Some(num_nodes), None)
+            .await
+            .expect("could not start libra smoke");
+
+        let env = &mut s.swarm;
+
+        env.wait_for_all_nodes_to_catchup_to_version(
+            10,
+            std::time::Duration::from_secs(MAX_CATCH_UP_WAIT_SECS),
+        )
+        .await
+        .unwrap();
+
+        println!("1. Set sync_only = true for all nodes and restart");
+        for node in env.validators_mut() {
+            let mut node_config = node.config().clone();
+            node_config.consensus.sync_only = true;
+            update_node_config_restart(node, &mut node_config)?;
+            wait_for_node(node, (num_nodes - 1) as usize).await?;
+        }
+
+        println!("2. verify all nodes are at the same round and no progress being made");
+        env.wait_for_all_nodes_to_catchup(std::time::Duration::from_secs(MAX_CATCH_UP_WAIT_SECS))
+            .await
+            .unwrap();
+
+        println!("3. stop nodes");
+
+        for node in env.validators_mut() {
+            node.stop();
+        }
+        Ok(s)
+    }
+}
+
+#[tokio::test]
+async fn meta_can_add_random_vals() -> anyhow::Result<()> {
+    let s = LibraSmoke::test_setup_start_then_pause(2).await?;
+
+    crate::helpers::make_test_randos(&s).await?;
+
+    Ok(())
+}
+
+#[tokio::test]
+/// This meta test checks that our tools can control a network
+/// so the nodes stop producing blocks, shut down, and start again.
+async fn test_swarm_can_halt_and_restart() -> anyhow::Result<()> {
+    use diem_forge::NodeExt;
+    let mut s = LibraSmoke::test_setup_start_then_pause(3).await?;
+
+    for node in s.swarm.validators_mut().take(3) {
+        assert!(node.liveness_check(1).await.is_err());
+    }
+
+    Ok(())
 }

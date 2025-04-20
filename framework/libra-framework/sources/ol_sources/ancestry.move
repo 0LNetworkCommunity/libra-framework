@@ -1,4 +1,3 @@
-
 module ol_framework::ancestry {
     use std::signer;
     use std::vector;
@@ -10,10 +9,15 @@ module ol_framework::ancestry {
     friend ol_framework::ol_account;
     friend ol_framework::community_wallet_init;
 
+    #[test_only]
+    friend ol_framework::root_of_trust_tests;
+
     /// two accounts are related by ancestry and should not be.
     const EACCOUNTS_ARE_FAMILY: u64 = 1;
     /// no ancestry tree state on chain, this is probably a migration bug.
     const ENO_ANCESTRY_TREE: u64 = 2;
+    /// ancestor account not in user tree.
+    const ENOT_ANCESTOR: u64 = 3;
 
     struct Ancestry has key {
       // the full tree back to genesis set
@@ -46,7 +50,6 @@ module ol_framework::ancestry {
 
       // add the parent to the tree
       vector::push_back(&mut new_tree, parent);
-
       if (!exists<Ancestry>(child)) {
         move_to<Ancestry>(new_account_sig, Ancestry {
           tree: new_tree,
@@ -64,9 +67,48 @@ module ol_framework::ancestry {
     // Commit NOTE: any transitive function that the VM calls needs to check
     // this struct exists.
     public fun get_tree(addr: address): vector<address> acquires Ancestry {
-      assert!(exists<Ancestry>(addr), ENO_ANCESTRY_TREE);
+      if(!exists<Ancestry>(addr)) {
+        return vector::empty<address>()
+      };
 
       *&borrow_global<Ancestry>(addr).tree
+    }
+
+
+
+    #[view]
+    /// Getter to see if a account exists in a tree (direct ancestor)
+    public fun is_in_tree(ancestor: address, user: address): bool acquires Ancestry {
+      let (found, _idx) = vector::index_of(&get_tree(user), &ancestor);
+      found
+    }
+
+    /// get the degree (hops) between two accounts
+    /// if they are related. Assumes ancestor is in the tree of User.
+    /// get the degree (hops) between two accounts
+    /// if they are related. Assumes ancestor is in the tree of User.
+    public(friend) fun get_degree(ancestor: address, user: address): Option<u64> acquires Ancestry {
+        // Handle self-reference case
+        if (ancestor == user) {
+            return option::some(1)
+        };
+
+        // Will still abort if no Ancestry struct - this is expected
+        let user_tree = get_tree(user);
+        let len = vector::length(&user_tree);
+        let (found, idx) = vector::index_of(&user_tree, &ancestor);
+
+        if (!found) {
+            option::none()
+        } else {
+            // Calculate actual distance:
+            // Length of path from user -> ancestor = len - idx
+            // Example:
+            // Tree: [great_grandparent, grandparent, parent]
+            // To find distance to grandparent (idx 1):
+            // len = 3, idx = 1, distance = 3 - 1 = 2 hops
+            option::some(len - idx)
+        }
     }
 
     /// helper function to check on transactions (e.g. vouch) if accounts are related
@@ -81,13 +123,21 @@ module ol_framework::ancestry {
     // will return true, and the common ancestor at the intersection.
     public fun is_family(left: address, right: address): (bool, address) acquires Ancestry {
       let is_family = false;
-      let common_ancestor = @0x0;
+      let common_ancestor = @diem_framework; // genesis accounts will have 0x1 as the parent address
+
+      // don't bother checking if we are at the root of the tree
+      if (system_addresses::is_reserved_address(left) || system_addresses::is_reserved_address(right)) {
+        return (false, common_ancestor)
+      };
 
       // if there is no ancestry info this is a bug, assume related
       // NOTE: we don't want to error here, since the VM calls this
       // on epoch boundary
-      if (!exists<Ancestry>(left)) return (true, @0x666);
-      if (!exists<Ancestry>(right)) return (true, @0x666);
+      // TODO: make it abort, now that epoch boundary is not a problem.
+      assert!(exists<Ancestry>(left), ENO_ANCESTRY_TREE);
+      assert!(exists<Ancestry>(right), ENO_ANCESTRY_TREE);
+      // if (!exists<Ancestry>(left)) return (true, @0x666);
+      // if (!exists<Ancestry>(right)) return (true, @0x666);
 
       let left_tree = get_tree(left);
       let right_tree = get_tree(right);
@@ -180,12 +230,12 @@ module ol_framework::ancestry {
           // skip if you're the same person
           if (comparison_acc != target_acc) {
             // check ancestry algo
-            let (is_fam, _) = is_family(*comparison_acc, *target_acc);
+            let (is_fam, _parent) = is_family(*comparison_acc, *target_acc);
             if (!is_fam) {
               if (!vector::contains(&unrelated_buddies, target_acc)) {
                 vector::push_back<address>(&mut unrelated_buddies, *target_acc)
               }
-            }
+            };
           };
           k = k + 1;
         };
@@ -227,6 +277,19 @@ module ol_framework::ancestry {
         vm,
         child_sig,
         migrate_tree
+      );
+    }
+
+    #[test_only]
+    public fun test_adopt(
+      framework: &signer,
+      parent_sig: &signer,
+      child_sig: &signer
+    ) acquires Ancestry {
+      system_addresses::assert_diem_framework(framework);
+      adopt_this_child(
+        parent_sig,
+        child_sig
       );
     }
 }

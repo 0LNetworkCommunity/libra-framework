@@ -1,12 +1,16 @@
 use crate::{
     config_wizard,
-    make_yaml_public_fullnode::{download_genesis, get_genesis_waypoint, init_fullnode_yaml},
+    get_genesis_artifacts::{download_genesis, get_genesis_waypoint},
+    make_yaml_public_fullnode::init_fullnode_yaml,
     validator_config::{validator_dialogue, vfn_dialogue},
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::Parser;
 use libra_types::{
-    core_types::app_cfg::{self, AppCfg},
+    core_types::{
+        app_cfg::{self, AppCfg},
+        network_playlist::NetworkPlaylist,
+    },
     exports::{AccountAddress, AuthenticationKey, Client, NamedChain},
     global_config_dir, ol_progress,
     type_extensions::client_ext::ClientExt,
@@ -45,10 +49,15 @@ enum ConfigSub {
         /// use a private key to initialize. Warning: intended for testing only.
         #[clap(long)]
         test_private_key: Option<String>,
-        /// optional. A URL for a network playlist to load default nodes from
+
         #[clap(long)]
+        /// override the default fullnodes URLs
+        fullnode_url: Option<Url>,
+        /// a URL for a network playlist to load default nodes from
+        #[clap(long, conflicts_with("fullnode_url"))]
         playlist_url: Option<Url>,
     },
+    /// replace API URL, reset an address, remove a profile.
     Fix {
         /// optional, reset the address from mnemonic. Will also lookup on the chain for the actual address if you forgot it, or rotated your authkey.
         #[clap(short('a'), long)]
@@ -59,7 +68,7 @@ enum ConfigSub {
 
         /// optional, force overwrite of all urls in current network profile to this url
         #[clap(short('u'), long)]
-        force_url: Option<Url>,
+        fullnode_url: Option<Url>,
     },
     /// Show the addresses and configs on this device
     View {},
@@ -87,8 +96,29 @@ impl ConfigCli {
             Some(ConfigSub::Fix {
                 reset_address,
                 remove_profile,
-                force_url,
+                fullnode_url: force_url,
             }) => {
+                // Validate exactly one argument is provided
+                let args_count = [
+                    *reset_address,
+                    remove_profile.is_some(),
+                    force_url.is_some(),
+                ]
+                .iter()
+                .filter(|&&x| x)
+                .count();
+
+                if args_count == 0 {
+                    return Err(anyhow!(
+                        "At least one argument must be provided to 'fix' command"
+                    ));
+                }
+                if args_count > 1 {
+                    return Err(anyhow!(
+                        "Only one argument can be provided to 'fix' command"
+                    ));
+                }
+
                 // Load configuration file
                 let mut cfg = AppCfg::load(self.path.clone())
                     .map_err(|e| anyhow!("no config file found for libra tools, {}", e))?;
@@ -176,8 +206,21 @@ impl ConfigCli {
                 force_address,
                 force_authkey,
                 test_private_key,
+                fullnode_url: url,
                 playlist_url,
             }) => {
+                let mut playlist = None;
+
+                if url.is_some() {
+                    if playlist_url.is_some() {
+                        bail!("cannot use both --force-url and --playlist-url");
+                    }
+                    if self.chain_name.is_none() {
+                        bail!("--force-url requires --chain-name");
+                    }
+                    playlist = Some(NetworkPlaylist::new(url.clone(), self.chain_name));
+                }
+
                 config_wizard::wizard(
                     force_authkey.to_owned(),
                     force_address.to_owned(),
@@ -185,7 +228,7 @@ impl ConfigCli {
                     self.chain_name.to_owned(),
                     test_private_key.to_owned(),
                     playlist_url.to_owned(),
-                    None,
+                    playlist,
                 )
                 .await?;
 

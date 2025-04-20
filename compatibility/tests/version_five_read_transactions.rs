@@ -30,8 +30,8 @@ async fn parse_tx_chunk() {
     assert!(manifest.exists());
 
     let res = v5_read_from_transaction_manifest(&manifest).unwrap();
-    let tx_chunk = read_transaction_chunk(&res.chunks[0].transactions, &archive)
+    let _tx_chunk = read_transaction_chunk(&res.chunks[0].transactions, &archive)
         .await
         .unwrap();
-    dbg!(&tx_chunk.len());
+    // TODO: add assert here
 }

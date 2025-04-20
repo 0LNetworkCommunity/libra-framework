@@ -1,1 +1,16 @@
-{"version":38180075,"epoch":116,"root_hash":"b4c9918ddb62469cc3e7e7b2a01b43aeac803470913b3a89afdcc44078df8d8a","chunks":[{"first_idx":0,"last_idx":130241,"first_key":"0000acadcb83f9bdcffcbb63d132be250f8018a731137db7e3aab5af2e3bc8bd","last_key":"fffff7e8a7aff9e730227f0decbef95c00ccdd60744654b8c4799a80bec23e5a","blobs":"state_epoch_116_ver_38180075.05af/0-.chunk","proof":"state_epoch_116_ver_38180075.05af/0-130241.proof"}],"proof":"state_epoch_116_ver_38180075.05af/state.proof"}
+{
+  "version": 38180075,
+  "epoch": 116,
+  "root_hash": "b4c9918ddb62469cc3e7e7b2a01b43aeac803470913b3a89afdcc44078df8d8a",
+  "chunks": [
+    {
+      "first_idx": 0,
+      "last_idx": 130241,
+      "first_key": "0000acadcb83f9bdcffcbb63d132be250f8018a731137db7e3aab5af2e3bc8bd",
+      "last_key": "fffff7e8a7aff9e730227f0decbef95c00ccdd60744654b8c4799a80bec23e5a",
+      "blobs": "state_epoch_116_ver_38180075.05af/0-.chunk",
+      "proof": "state_epoch_116_ver_38180075.05af/0-130241.proof"
+    }
+  ],
+  "proof": "state_epoch_116_ver_38180075.05af/state.proof"
+}

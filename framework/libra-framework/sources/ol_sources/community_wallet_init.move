@@ -74,6 +74,7 @@ module ol_framework::community_wallet_init {
       check_proposed_auths(initial_authorities, check_threshold);
 
       donor_voice_txs::make_donor_voice(sig);
+
       if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
         donor_voice_txs::set_liquidate_to_match_index(sig, true);
       };

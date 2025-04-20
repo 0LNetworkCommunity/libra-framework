@@ -1,6 +1,8 @@
-mod support;
-
-use libra_rescue::{diem_db_bootstrapper::BootstrapOpts, rescue_tx::RescueTxOpts};
+use libra_rescue::{
+    cli_bootstrapper::BootstrapOpts,
+    cli_main::{RescueCli, Sub, RUN_SCRIPT_BLOB},
+    test_support,
+};
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 
 #[tokio::test]
@@ -31,22 +33,25 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(first_validator_address);
+    let script_path = test_support::make_script(first_validator_address);
 
     println!("2. compile the script");
 
-    let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::RunScript {
+            script_path: Some(script_path),
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
+
+    // hack, adding sleep here since we get db lock issue in CI.
+    std::thread::sleep(std::time::Duration::from_secs(1));
 
     println!(
         "3. check we can apply the tx to existing db, and can get a waypoint, don't commit it"
@@ -57,10 +62,14 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         genesis_txn_file: file.clone(),
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
         info: false,
     };
 
     let wp = boot.run()?;
+
+    // hack, adding sleep here since we get db lock issue in CI.
+    std::thread::sleep(std::time::Duration::from_secs(1));
 
     println!("4. with the known waypoint confirm it, and apply the tx");
     let boot = BootstrapOpts {
@@ -68,6 +77,7 @@ async fn test_valid_genesis() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: wp,
         commit: true,
+        update_node_config: None,
         info: false,
     };
 
@@ -106,21 +116,21 @@ async fn test_can_build_gov_rescue_script() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(first_validator_address);
+    let script_path = test_support::make_script(first_validator_address);
 
     println!("2. compile the script");
 
-    let r = RescueTxOpts {
-        data_path: val_db_path,
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::RunScript {
+            script_path: Some(script_path),
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     Ok(())
@@ -154,21 +164,21 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
     let blob_path = diem_temppath::TempPath::new();
     blob_path.create_as_dir()?;
 
-    let script_path = support::make_script(remove_first);
+    let script_path = test_support::make_script(remove_first);
 
     println!("2. compile the script");
 
-    let r = RescueTxOpts {
-        data_path: val_db_path.clone(),
+    let r = RescueCli {
+        db_path: val_db_path.clone(),
         blob_path: Some(blob_path.path().to_owned()),
-        script_path: Some(script_path),
-        framework_upgrade: false,
-        debug_vals: None,
-        testnet_vals: None,
+        command: Sub::RunScript {
+            script_path: Some(script_path),
+        },
     };
+
     r.run()?;
 
-    let file = blob_path.path().join("rescue.blob");
+    let file = blob_path.path().join(RUN_SCRIPT_BLOB);
     assert!(file.exists());
 
     println!(
@@ -180,6 +190,7 @@ async fn test_valid_waypoint() -> anyhow::Result<()> {
         genesis_txn_file: file,
         waypoint_to_verify: None,
         commit: false,
+        update_node_config: None,
         info: false,
     };
 

@@ -19,8 +19,9 @@ diem-temppath = { workspace = true }
 diem-types = { workspace = true }
 libra-framework = { workspace = true }
 libra-query = { workspace = true }
+libra-rescue = { workspace = true }
 libra-smoke-tests = { workspace = true }
-libra-twin-tests = { workspace = true }
+libra-testnet = { workspace = true }
 libra-types = { workspace = true }
 libra-txs = { workspace = true }
 smoke-test = { workspace = true }

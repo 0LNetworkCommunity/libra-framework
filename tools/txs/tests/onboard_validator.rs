@@ -45,7 +45,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         }),
         mnemonic: None,
         test_private_key: Some(s.encoded_pri_key.clone()),
-        chain_id: None,
+        chain_name: None,
         config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,
@@ -73,7 +73,7 @@ async fn smoke_onboard_validator() -> anyhow::Result<()> {
         test_private_key: Some(
             "0x74f18da2b80b1820b58116197b1c41f8a36e1b37a15c7fb434bb42dd7bdaa66b".to_owned(),
         ),
-        chain_id: None,
+        chain_name: None,
         config_path: Some(d.path().to_owned().join("libra-cli-config.yaml")),
         url: Some(s.api_endpoint.clone()),
         tx_profile: None,

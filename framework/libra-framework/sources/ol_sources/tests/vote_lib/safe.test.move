@@ -10,13 +10,10 @@ module ol_framework::test_safe {
   use std::vector;
   use diem_framework::resource_account;
 
-
-
   // NOTE: Most of the save.move features are tested in multi_action (e.g. governance). Here we are testing for specific APIs.
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, dave = @0x1000d )]
   fun propose_payment_happy(root: &signer, alice: &signer, bob: &signer, dave: &signer, ) {
-    use ol_framework::ol_account;
 
     let vals = mock::genesis_n_vals(root, 2);
     mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
@@ -47,6 +44,8 @@ module ol_framework::test_safe {
     // vote should pass after bob also votes
     let passed = safe::vote_payment(bob, new_resource_address, &prop_id);
     assert!(passed, 1);
+
+
     let (_, total_dave) = ol_account::balance(@0x1000d);
     assert!(total_dave == 42, 2);
   }

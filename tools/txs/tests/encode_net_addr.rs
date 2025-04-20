@@ -16,7 +16,6 @@ fn encode_net_addr() -> anyhow::Result<()> {
         .as_network_address(oc.validator_network_public_key)?;
     let enc = bcs::to_bytes(&val_net_protocol)?;
 
-    // dbg!(&hex::encode(&enc));
     let dec: NetworkAddress = bcs::from_bytes(&enc)?;
     assert_eq!(dec, val_net_protocol);
 

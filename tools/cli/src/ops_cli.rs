@@ -1,15 +1,16 @@
 use clap::Subcommand;
 use libra_genesis_tools::cli::GenesisCli;
-use libra_rescue::rescue_cli::RescueCli;
+use libra_rescue::cli_main::RescueCli;
 use libra_storage::storage_cli::StorageCli;
+use libra_testnet::cli_main::TestnetCli;
 
 #[derive(Subcommand)]
 /// Node and DB operations tools
 pub enum OpsTool {
     Genesis(GenesisCli),
-    // #[clap(subcommand)]
     Storage(StorageCli),
     Rescue(RescueCli),
+    Testnet(TestnetCli),
 }
 
 impl OpsTool {
@@ -17,8 +18,7 @@ impl OpsTool {
     // this is because downstream StorageCli::Db::DbTool, cannot be copied.
     pub async fn run(self) -> anyhow::Result<()> {
         match self {
-            // Execute Genesis CLI subcommand
-            Self::Genesis(genesis_cli) => {
+            OpsTool::Genesis(genesis_cli) => {
                 if let Err(e) = genesis_cli.run().await {
                     eprintln!("Failed to execute genesis tool, message: {}", &e);
                 }
@@ -31,6 +31,11 @@ impl OpsTool {
             OpsTool::Rescue(rescue_cli) => {
                 if let Err(e) = rescue_cli.run() {
                     eprintln!("Failed to execute genesis tool, message: {}", &e);
+                }
+            }
+            OpsTool::Testnet(tesnet_cli) => {
+                if let Err(e) = tesnet_cli.run().await {
+                    eprintln!("Failed to execute testnet tool, message: {}", &e);
                 }
             }
         };

@@ -14,6 +14,7 @@ use crate::{
     },
 };
 
+use libra_types::exports::{AccountAddress, AuthenticationKey};
 use serde::Serialize;
 
 use anyhow::anyhow;
@@ -49,14 +50,14 @@ pub fn validator_keygen(
     // this is the only moment the validators will see the mnemonic
     let legacy_keys = legacy_keygen(true)?;
 
-    let (validator_blob, vfn_blob, private_identity, public_identity) =
+    let (mut validator_blob, mut vfn_blob, mut private_identity, public_identity) =
         generate_key_objects_from_legacy(&legacy_keys)?;
 
     save_val_files(
         output_opt,
-        &validator_blob,
-        &vfn_blob,
-        &private_identity,
+        &mut validator_blob,
+        &mut vfn_blob,
+        &mut private_identity,
         &public_identity,
     )?;
 
@@ -68,30 +69,22 @@ pub fn refresh_validator_files(
     mnem: Option<String>,
     output_opt: Option<PathBuf>,
     keep_legacy_addr: bool,
-) -> anyhow::Result<(
-    IdentityBlob,
-    IdentityBlob,
-    PrivateIdentity,
-    PublicIdentity,
-    KeyChain,
-)> {
-    let (validator_blob, vfn_blob, private_identity, public_identity, legacy_keys) =
+) -> anyhow::Result<(AccountAddress, AuthenticationKey, PublicIdentity)> {
+    let (mut validator_blob, mut vfn_blob, mut private_identity, public_identity, legacy_keys) =
         make_validator_keys(mnem, keep_legacy_addr)?;
 
     save_val_files(
         output_opt,
-        &validator_blob,
-        &vfn_blob,
-        &private_identity,
+        &mut validator_blob,
+        &mut vfn_blob,
+        &mut private_identity,
         &public_identity,
     )?;
 
     Ok((
-        validator_blob,
-        vfn_blob,
-        private_identity,
+        public_identity.account_address,
+        legacy_keys.child_0_owner.auth_key,
         public_identity,
-        legacy_keys,
     ))
 }
 
@@ -140,15 +133,38 @@ fn write_key_file<T: Serialize>(output_dir: &Path, filename: &str, data: T) -> a
     Ok(())
 }
 
+// Create an all-zero private key
+fn create_non_signing_key() -> Ed25519PrivateKey {
+    // Create a 32-byte array filled with zeros
+    let zero_bytes = [0u8; 32];
+
+    // Convert to an Ed25519PrivateKey
+    // This will parse as a structurally valid key but won't sign correctly
+    Ed25519PrivateKey::try_from(zero_bytes.as_ref()).unwrap()
+}
+
 fn save_val_files(
     output_opt: Option<PathBuf>,
-    validator_blob: &IdentityBlob,
-    vfn_blob: &IdentityBlob,
-    private_identity: &PrivateIdentity,
+    validator_blob: &mut IdentityBlob,
+    vfn_blob: &mut IdentityBlob,
+    private_identity: &mut PrivateIdentity,
     public_identity: &PublicIdentity,
 ) -> anyhow::Result<()> {
     let output_dir = dir_default_to_current(&output_opt)?;
     create_dir_if_not_exist(output_dir.as_path())?;
+
+    println!(
+        "removing the tx private key from validator {} files",
+        PRIVATE_KEYS_FILE
+    );
+
+    // changing the struct to make it optional would
+    // cause a bunch of breaking changes. Opting to place a decoy.
+    // TODO: refactor identity blob to not have the private key.
+
+    private_identity.account_private_key = create_non_signing_key();
+    validator_blob.account_private_key = None;
+    vfn_blob.account_private_key = None;
 
     write_key_file(&output_dir, PRIVATE_KEYS_FILE, private_identity)?;
     write_key_file(&output_dir, PUBLIC_KEYS_FILE, public_identity)?;

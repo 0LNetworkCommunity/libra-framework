@@ -52,7 +52,7 @@ pub struct TxsCli {
 
     /// optional, Id of chain as name. Will default to MAINNET
     #[clap(long)]
-    pub chain_id: Option<NamedChain>,
+    pub chain_name: Option<NamedChain>,
 
     /// optional, URL of the upstream node to send tx to, including port
     /// Otherwise will default to what is in the config file
@@ -164,7 +164,9 @@ impl TxsCli {
         };
 
         // Determine chain ID and URL for client
-        let chain_name = self.chain_id.unwrap_or(app_cfg.workspace.default_chain_id);
+        let chain_name = self
+            .chain_name
+            .unwrap_or(app_cfg.workspace.default_chain_id);
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {

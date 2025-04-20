@@ -1,4 +1,3 @@
-
   #[test_only]
   module ol_framework::test_community_wallet{
     use ol_framework::ballot;
@@ -10,10 +9,10 @@
     use ol_framework::mock;
     use ol_framework::ol_account;
     use ol_framework::ancestry;
-
     use diem_framework::account;
     use diem_framework::multisig_account;
 
+    use ol_framework::donor_voice_reauth;
     use std::signer;
     use std::vector;
 
@@ -101,7 +100,51 @@
 
     // Test payment proposal and processing
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
-    fun cw_payment_proposal(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer ) {
+    #[expected_failure(abort_code = 196608, location = 0x1::donor_voice_reauth)]
+    fun proposal_fails_if_cw_invalid(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {
+        mock::genesis_n_vals(root, 5);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+        let alice_comm_wallet_addr = signer::address_of(alice);
+        let carols_addr = signer::address_of(carol);
+
+        // initialize accounts
+        let (_, carol_balance_pre) = ol_account::balance(@0x1000c);
+        assert!(carol_balance_pre == 1000, 7357001);
+        let bob_addr = signer::address_of(bob);
+        let dave_addr = signer::address_of(dave);
+        let eve_addr = signer::address_of(eve);
+        ancestry::test_fork_migrate(root, bob, vector::singleton(bob_addr));
+        ancestry::test_fork_migrate(root, dave, vector::singleton(dave_addr));
+        ancestry::test_fork_migrate(root, eve, vector::singleton(eve_addr));
+
+
+        // setup community wallet
+        // timestamp advances so that any reauthorization is expired
+        community_wallet_init::init_community(alice, vector[bob_addr,dave_addr,eve_addr], 2);
+
+        donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
+
+        multi_action::claim_offer(bob, signer::address_of(alice));
+        multi_action::claim_offer(dave, signer::address_of(alice));
+        multi_action::claim_offer(eve, signer::address_of(alice));
+        community_wallet_init::finalize_and_cage(alice, 2);
+
+        donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
+
+        ////////
+        // NO CALL TO REAUTHORIZE THE COMMUNITY WALLET
+        // will make test fail
+        ////////
+
+        // VERIFY PAYMENTS OPERATE AS EXPECTED
+        // bob propose payment
+        let _uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+
+    }
+
+    // Test payment proposal and processing
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
+    fun cw_payment_proposal(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {
         mock::genesis_n_vals(root, 5);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
 
@@ -116,7 +159,7 @@
         ancestry::test_fork_migrate(root, eve, vector::singleton(eve_addr));
 
         // setup community wallet
-        community_wallet_init::init_community(alice, vector[bob_addr,dave_addr,eve_addr], 2);
+        community_wallet_init::init_community(alice, vector[bob_addr, dave_addr, eve_addr], 2);
         multi_action::claim_offer(bob, signer::address_of(alice));
         multi_action::claim_offer(dave, signer::address_of(alice));
         multi_action::claim_offer(eve, signer::address_of(alice));
@@ -124,6 +167,9 @@
 
         let alice_comm_wallet_addr = signer::address_of(alice);
         let carols_addr = signer::address_of(carol);
+
+        // mock being authorized
+        donor_voice_reauth::test_set_authorized(root, alice_comm_wallet_addr);
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         // bob propose payment
