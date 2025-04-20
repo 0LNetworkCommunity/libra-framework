@@ -230,8 +230,8 @@ module ol_framework::ol_account {
     //   lookup_addr == signer::address_of(&new_signer),
     //   error::invalid_state(ECANT_MATCH_ADDRESS_IN_LOOKUP)
     // );
-    coin::register<LibraCoin>(&new_signer);
-    maybe_init_burn_tracker(&new_signer);
+    init_from_sig_impl(framework, &new_signer);
+
     new_signer
   }
   /// Migrate the tracker. Depends on the BurnTracker having been initialized
