@@ -62,6 +62,7 @@ module ol_framework::slow_wallet {
         total: u64,
         unlocked: u64,
         transferred: u64,
+        daily_unlocked: u64,
     }
 
     public(friend) fun initialize(framework: &signer){
@@ -133,8 +134,7 @@ module ol_framework::slow_wallet {
     /// @return tuple of 2
     /// 0: bool, was this successful
     /// 1: u64, how much was dripped
-    public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires
-    SlowWallet, SlowWalletList{
+    public(friend) fun slow_wallet_epoch_drip(vm: &signer, amount: u64): (bool, u64) acquires SlowSupply, SlowWallet, SlowWalletList {
       system_addresses::assert_ol(vm);
       assert!(exists<SlowWalletList>(@ol_framework), error::invalid_argument(EGENESIS_ERROR));
 
@@ -142,7 +142,9 @@ module ol_framework::slow_wallet {
 
       let len = vector::length<address>(&list);
       if (len == 0) return (false, 0);
-      let accounts_updated: u64 = 0;
+      let accounts_updated = 0;
+      let global_unlocked = 0;
+
       let i = 0;
       while (i < len) {
         let addr = vector::borrow<address>(&list, i);
@@ -155,13 +157,19 @@ module ol_framework::slow_wallet {
         if ((state.unlocked as u128) + (amount as u128) >= MAX_U64) continue;
 
         let next_unlock = state.unlocked + amount;
-        state.unlocked = if (next_unlock > user_balance) {
+
+        let amount_to_unlock = if (next_unlock > user_balance) {
           // the user might have reached the end of the unlock period, and all
           // is unlocked
           user_balance
         } else {
           next_unlock
         };
+
+        global_unlocked = global_unlocked + amount_to_unlock;
+
+        // set the new unlocked amount
+        state.unlocked = amount_to_unlock;
 
         // it may be that some accounts were not updated, so we can't report
         // success unless that was the case.
@@ -173,6 +181,11 @@ module ol_framework::slow_wallet {
 
         i = i + 1;
       };
+
+      if (exists<SlowSupply>(@ol_framework)) {
+        let state = borrow_global_mut<SlowSupply>(@ol_framework);
+        state.daily_unlocked = global_unlocked;
+      }; // else we're not quite ready to track
 
       emit_drip_event(vm, amount, accounts_updated);
       (accounts_updated==len, amount)
@@ -193,7 +206,8 @@ module ol_framework::slow_wallet {
         move_to<SlowSupply>(framework, SlowSupply {
           total,
           unlocked,
-          transferred
+          transferred,
+          daily_unlocked: 0,
         });
       } else {
         let state = borrow_global_mut<SlowSupply>(@ol_framework);
@@ -470,7 +484,7 @@ module ol_framework::slow_wallet {
     public fun test_epoch_drip(
       vm: &signer,
       amount: u64,
-    ) acquires SlowWallet, SlowWalletList {
+    ) acquires SlowSupply, SlowWallet, SlowWalletList {
       testnet::assert_testnet(vm);
       slow_wallet_epoch_drip(vm, amount);
     }
