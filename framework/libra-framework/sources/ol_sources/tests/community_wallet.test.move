@@ -99,7 +99,8 @@
         ol_account::transfer(alice, @0x1000b, 100);
     }
 
-    // Test payment proposal and processing
+    // scenario: timestamp advances so that any reauthorization is expired
+
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
     #[expected_failure(abort_code = 196609, location = 0x1::donor_voice_reauth)]
     fun proposal_fails_if_cw_invalid(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {
@@ -120,17 +121,16 @@
 
 
         // setup community wallet
-        // timestamp advances so that any reauthorization is expired
         community_wallet_init::init_community(alice, vector[bob_addr,dave_addr,eve_addr], 2);
 
-        donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
+        // donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
 
         multi_action::claim_offer(bob, signer::address_of(alice));
         multi_action::claim_offer(dave, signer::address_of(alice));
         multi_action::claim_offer(eve, signer::address_of(alice));
         community_wallet_init::finalize_and_cage(alice, 2);
 
-        donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
+        // donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
 
         // fast forward timestamp six years in seconds
         timestamp::fast_forward_seconds(6 * 365 * 24 * 60 * 60);

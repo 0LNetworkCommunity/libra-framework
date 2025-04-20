@@ -56,12 +56,12 @@ module ol_framework::donor_voice_reauth {
       if (!exists<DonorAuthorized>(signer::address_of(dv_signer))) {
         move_to<DonorAuthorized>(dv_signer, DonorAuthorized {
           timestamp: 0,
-          reauth_required: true,
+          reauth_required: false,
         });
       } else {
         let state = borrow_global_mut<DonorAuthorized>(signer::address_of(dv_signer));
         state.timestamp = 0;
-        state.reauth_required = true;
+        state.reauth_required = false;
       }
     }
 
