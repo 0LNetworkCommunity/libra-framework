@@ -22,6 +22,8 @@ module ol_framework::donor_voice_reauth {
 
     friend ol_framework::donor_voice_txs;
     friend ol_framework::donor_voice_governance;
+    friend ol_framework::community_wallet_advance;
+
     #[test_only]
     friend ol_framework::test_community_wallet;
     #[test_only]
@@ -39,6 +41,7 @@ module ol_framework::donor_voice_reauth {
 
     struct DonorAuthorized has key {
       timestamp: u64,
+      reauth_required: bool,
     }
 
     /// Private implementation to reauthorize with timestamp, after governance concludes.
@@ -46,11 +49,13 @@ module ol_framework::donor_voice_reauth {
     public(friend) fun maybe_init(dv_signer: &signer) acquires DonorAuthorized {
       if (!exists<DonorAuthorized>(signer::address_of(dv_signer))) {
         move_to<DonorAuthorized>(dv_signer, DonorAuthorized {
-          timestamp: 0
+          timestamp: 0,
+          reauth_required: true,
         });
       } else {
         let state = borrow_global_mut<DonorAuthorized>(signer::address_of(dv_signer));
         state.timestamp = 0;
+        state.reauth_required = true;
       }
     }
 
@@ -63,6 +68,12 @@ module ol_framework::donor_voice_reauth {
 
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.timestamp = now;
+      state.reauth_required = false;
+    }
+
+    public(friend) fun set_requires_reauth(dv_account: address) acquires DonorAuthorized {
+      let state = borrow_global_mut<DonorAuthorized>(dv_account);
+      state.reauth_required = true;
     }
 
     /// force the abort if not authorized
@@ -107,19 +118,28 @@ module ol_framework::donor_voice_reauth {
     }
 
     #[view]
+    /// Checks if the account is flagged for reauthorization
+    public fun flagged_for_reauthorization(dv_account: address): bool acquires DonorAuthorized {
+      let state = borrow_global<DonorAuthorized>(dv_account);
+      state.reauth_required
+    }
+
+    #[view]
     /// Account authorized to be active
     public fun is_authorized(dv_account: address): bool acquires DonorAuthorized {
       if (!exists<DonorAuthorized>(dv_account)) {
         return false
       };
       is_within_authorize_window(dv_account) &&
-      has_activity_in_last_year(dv_account)
+      has_activity_in_last_year(dv_account) &&
+      !flagged_for_reauthorization(dv_account)
     }
 
     ///////// TEST HELPERS ////////
     #[test_only]
     public(friend) fun test_set_authorized(framework: &signer, dv_account: address) acquires DonorAuthorized{
       diem_framework::system_addresses::assert_diem_framework(framework);
+
 
       let now = timestamp::now_seconds() + 1;
       let state = borrow_global_mut<DonorAuthorized>(dv_account);

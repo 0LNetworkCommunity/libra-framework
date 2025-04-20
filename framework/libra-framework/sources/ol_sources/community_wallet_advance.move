@@ -25,6 +25,7 @@ module ol_framework::community_wallet_advance {
   use diem_framework::coin::{Coin};
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{Self, LibraCoin};
+  use ol_framework::donor_voice_reauth;
 
   friend ol_framework::donor_voice_txs;
 
@@ -65,7 +66,7 @@ module ol_framework::community_wallet_advance {
   /// This is just a tracker,
   /// coins themselves are kept in the default CoinStore struct
 
-  struct CreditScore has key {
+  struct Advances has key {
     // current balance outstanding
     balance_outstanding: u64,
     // last withdrawal amount
@@ -85,8 +86,8 @@ module ol_framework::community_wallet_advance {
 
   /// Initialize the loan feature for a community wallet
   public fun initialize(dv_account: &signer) {
-    if (!exists<CreditScore>(signer::address_of(dv_account))) {
-      move_to<CreditScore>(dv_account, CreditScore{
+    if (!exists<Advances>(signer::address_of(dv_account))) {
+      move_to<Advances>(dv_account, Advances{
         balance_outstanding: 0,
         last_withdrawal: 0,
         last_withdrawal_usecs: 0,
@@ -99,7 +100,7 @@ module ol_framework::community_wallet_advance {
   }
 
   /// check if amount withdrawn will be below credit limit
-  fun can_withdraw_amount(dv_account: address, amount: u64):bool acquires CreditScore {
+  fun can_withdraw_amount(dv_account: address, amount: u64):bool acquires Advances {
     assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
     assert!(!is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
     let available = total_credit_available(dv_account);
@@ -107,7 +108,7 @@ module ol_framework::community_wallet_advance {
   }
   /// Only can be called on epoch boundary as part of the donor_voice_txs.move authorization flow.
   /// Will withdraw funds and track the logger
-  public(friend) fun transfer_credit(framework_sig: &signer, guid_cap: &GUIDCapability, recipient: address, amount: u64): u64 acquires CreditScore {
+  public(friend) fun transfer_credit(framework_sig: &signer, guid_cap: &GUIDCapability, recipient: address, amount: u64): u64 acquires Advances {
     let dv_account = account::get_guid_capability_address(guid_cap);
     can_withdraw_amount(dv_account, amount);
     log_withdrawal(dv_account, amount);
@@ -120,8 +121,8 @@ module ol_framework::community_wallet_advance {
   /// If the balance outstanding is lower than the coin value,
   /// then only log the amount which is to be debited.
   /// This amount only affects logging, all the coins are sent anyways to the CoinStore
-  public fun service_loan_with_coin(dv_address: address, coins: Coin<LibraCoin>) acquires CreditScore {
-    let state = borrow_global_mut<CreditScore>(dv_address);
+  public fun service_loan_with_coin(dv_address: address, coins: Coin<LibraCoin>) acquires Advances {
+    let state = borrow_global_mut<Advances>(dv_address);
     let coin_value = libra_coin::value(&coins);
     let deposit_amount = coin_value;
     if (coin_value > state.balance_outstanding) {
@@ -132,8 +133,8 @@ module ol_framework::community_wallet_advance {
     ol_account::deposit_coins(dv_address, coins);
   }
 
-  fun log_withdrawal(dv_account: address, amount: u64) acquires CreditScore {
-    let cs_state = borrow_global_mut<CreditScore>(dv_account);
+  fun log_withdrawal(dv_account: address, amount: u64) acquires Advances {
+    let cs_state = borrow_global_mut<Advances>(dv_account);
     cs_state.last_withdrawal = amount;
     cs_state.last_withdrawal_usecs = timestamp::now_seconds();
     cs_state.balance_outstanding = cs_state.balance_outstanding + amount;
@@ -145,10 +146,10 @@ module ol_framework::community_wallet_advance {
     assert!(cs_state.lifetime_withdrawals >= cs_state.balance_outstanding, error::invalid_state(ELOG_MATH_ERR));
   }
 
-  fun log_deposit(dv_account: address, amount: u64) acquires CreditScore {
+  fun log_deposit(dv_account: address, amount: u64) acquires Advances {
     assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
 
-    let cs_state = borrow_global_mut<CreditScore>(dv_account);
+    let cs_state = borrow_global_mut<Advances>(dv_account);
     cs_state.last_deposit_usecs = timestamp::now_seconds();
     assert!(cs_state.balance_outstanding > amount, error::invalid_argument(EOVERPAYING));
     cs_state.balance_outstanding = cs_state.balance_outstanding - amount;
@@ -158,11 +159,19 @@ module ol_framework::community_wallet_advance {
     assert!(cs_state.lifetime_withdrawals >= cs_state.lifetime_deposits, error::invalid_state(ELOG_MATH_ERR));
   }
 
+  /// Disable the community wallet if the loan is overdue
+  // callable by anyone
+  public entry fun maybe_deauthorize(dv_account: address) acquires Advances {
+    if (is_delinquent(dv_account)){
+      donor_voice_reauth::set_requires_reauth(dv_account);
+    }
+  }
+
   #[view]
   /// Has the CW account made a payment in the last year
   // TODO: need to check amount of payment history in the last year, but we're not tracking individual payments.
-  public fun is_delinquent(dv_account: address): bool acquires CreditScore {
-    let cs_state = borrow_global<CreditScore>(dv_account);
+  public fun is_delinquent(dv_account: address): bool acquires Advances {
+    let cs_state = borrow_global<Advances>(dv_account);
     // never withdrawn
     if (cs_state.lifetime_withdrawals == 0 ||
       cs_state.last_withdrawal == 0
@@ -176,26 +185,17 @@ module ol_framework::community_wallet_advance {
   }
 
 
-  /// Disable the community wallet if the loan is overdue
-  // callable by anyone
-  public entry fun maybe_deauthorize(dv_account: address) acquires CreditScore {
-    if (is_delinquent(dv_account)){
-      // TODO: call donor_voice_reauthorize when it is merged
-    }
-  }
-
-
   #[view]
   /// Calculate the total outstanding loans compared to the balance in Credit struct
-  public fun total_outstanding_balance(account: address): u64 acquires CreditScore{
-    let cs_state = borrow_global<CreditScore>(account);
+  public fun total_outstanding_balance(account: address): u64 acquires Advances{
+    let cs_state = borrow_global<Advances>(account);
     cs_state.balance_outstanding
   }
 
   #[view]
   /// Checks if the current outstanding balance is below credit limit
-  public fun total_credit_available(dv_account: address): u64 acquires CreditScore {
-    let cs = borrow_global_mut<CreditScore>(dv_account);
+  public fun total_credit_available(dv_account: address): u64 acquires Advances {
+    let cs = borrow_global_mut<Advances>(dv_account);
     let usage = cs.balance_outstanding;
 
     let (_, total_balance) = ol_account::balance(dv_account);
