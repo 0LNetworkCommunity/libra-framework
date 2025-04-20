@@ -20,6 +20,7 @@ module ol_framework::donor_voice_reauth {
 
     friend ol_framework::donor_voice_txs;
     friend ol_framework::donor_voice_governance;
+    friend ol_framework::community_wallet_advance;
     friend ol_framework::reauthorization;
 
     #[test_only]
@@ -34,6 +35,8 @@ module ol_framework::donor_voice_reauth {
     const EDONOR_VOICE_AUTHORITY_EXPIRED: u64 = 1;
     /// No activity in past year, reauthorization pending
     const ENO_YEARLY_ACTIVITY: u64 = 2;
+    /// Account flagged for reauthorization
+    const EFLAGGED_FOR_REAUTH: u64 = 3;
 
     /// CONSTANTS
     /// Seconds in one year
@@ -44,6 +47,7 @@ module ol_framework::donor_voice_reauth {
 
     struct DonorAuthorized has key {
       timestamp: u64,
+      reauth_required: bool,
     }
 
     /// Private implementation to reauthorize with timestamp, after governance concludes.
@@ -51,11 +55,13 @@ module ol_framework::donor_voice_reauth {
     public(friend) fun maybe_init(dv_signer: &signer) acquires DonorAuthorized {
       if (!exists<DonorAuthorized>(signer::address_of(dv_signer))) {
         move_to<DonorAuthorized>(dv_signer, DonorAuthorized {
-          timestamp: 0
+          timestamp: 0,
+          reauth_required: true,
         });
       } else {
         let state = borrow_global_mut<DonorAuthorized>(signer::address_of(dv_signer));
         state.timestamp = 0;
+        state.reauth_required = true;
       }
     }
 
@@ -68,6 +74,17 @@ module ol_framework::donor_voice_reauth {
 
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.timestamp = now;
+      state.reauth_required = false;
+    }
+
+    // TODO: add more boundaries with a capability type
+    /// internal function to remove authorization because of an
+    /// automated policy (delinquency, or payment vetoes)
+    public(friend) fun set_requires_reauth(_user: &signer, dv_account: address) acquires DonorAuthorized {
+      // TODO: circular dependency with reauthorization
+      // reauthorization::assert_v8_authorized(signer::address_of(user));
+      let state = borrow_global_mut<DonorAuthorized>(dv_account);
+      state.reauth_required = true;
     }
 
     /// force the abort if not authorized
@@ -76,6 +93,7 @@ module ol_framework::donor_voice_reauth {
        assert!(exists<DonorAuthorized>(dv_account), error::invalid_state(ENOT_INITIALIZED));
        assert!(!authorization_expired(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
        assert!(has_activity_in_last_year(dv_account), error::invalid_state(ENO_YEARLY_ACTIVITY));
+      assert!(!flagged_for_reauthorization(dv_account), error::invalid_state(EFLAGGED_FOR_REAUTH));
     }
 
     #[view]
@@ -139,6 +157,13 @@ module ol_framework::donor_voice_reauth {
     }
 
     #[view]
+    /// Checks if the account is flagged for reauthorization
+    public fun flagged_for_reauthorization(dv_account: address): bool acquires DonorAuthorized {
+      let state = borrow_global<DonorAuthorized>(dv_account);
+      state.reauth_required
+    }
+
+    #[view]
     /// Account authorized to be active
     public fun is_authorized(dv_account: address): bool acquires DonorAuthorized {
       if (!exists<DonorAuthorized>(dv_account)) {
@@ -146,7 +171,8 @@ module ol_framework::donor_voice_reauth {
       };
 
       !authorization_expired(dv_account) &&
-      has_activity_in_last_year(dv_account)
+      has_activity_in_last_year(dv_account) &&
+      !flagged_for_reauthorization(dv_account)
     }
 
     ///////// TEST HELPERS ////////
@@ -154,9 +180,11 @@ module ol_framework::donor_voice_reauth {
     public(friend) fun test_set_authorized(framework: &signer, dv_account: address) acquires DonorAuthorized{
       diem_framework::system_addresses::assert_diem_framework(framework);
 
+
       let now = timestamp::now_seconds() + 1;
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.timestamp = now;
+      state.reauth_required = false;
 
       activity::test_set_activity(framework, dv_account, now);
 

@@ -13,7 +13,7 @@ module diem_framework::reconfiguration {
     use diem_framework::storage_gas;
     use ol_framework::epoch_helper;
 
-    // use diem_std::debug::print;
+
 
     friend diem_framework::diem_governance;
     friend diem_framework::epoch_boundary;

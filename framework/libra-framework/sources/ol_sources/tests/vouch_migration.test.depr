@@ -23,7 +23,7 @@ module ol_framework::test_vouch_migration {
   use ol_framework::mock;
   use ol_framework::migrations;
 
-  // use diem_std::debug::print;
+
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e, frank = @0x1000f)]
   fun migrate_given_and_received_vouches(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {

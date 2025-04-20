@@ -5,7 +5,7 @@ module ol_framework::test_jail {
     use ol_framework::mock;
     use ol_framework::jail;
     use ol_framework::randomness;
-    // use diem_std::debug::print;
+
 
     #[test(root = @ol_framework)]
     public entry fun jail_reputation(root: signer) {

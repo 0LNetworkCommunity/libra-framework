@@ -6,7 +6,7 @@ module ol_framework::musical_chairs {
   use diem_framework::stake;
   use ol_framework::grade;
   use ol_framework::testnet;
-  //use diem_std::debug::print;
+
 
   friend diem_framework::genesis;
   friend diem_framework::diem_governance;

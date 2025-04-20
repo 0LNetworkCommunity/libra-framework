@@ -19,7 +19,7 @@ module diem_framework::account {
     use diem_std::table::{Self, Table};
     use diem_std::type_info::{Self, TypeInfo};
 
-    // use diem_std::debug::print;
+
 
     friend diem_framework::coin;
     friend diem_framework::genesis;

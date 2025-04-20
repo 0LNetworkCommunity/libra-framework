@@ -39,7 +39,7 @@ module diem_framework::voting {
     use diem_framework::transaction_context;
     use diem_std::from_bcs;
 
-    // use diem_std::debug::print;
+
 
     friend diem_framework::diem_governance;
 

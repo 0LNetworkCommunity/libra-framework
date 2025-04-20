@@ -13,7 +13,7 @@ module ol_framework::test_pof {
   use diem_framework::chain_id;
   use std::vector;
 
-  //use diem_std::debug::print;
+
 
   const Alice: address = @0x1000a;
   const Bob: address = @0x1000b;

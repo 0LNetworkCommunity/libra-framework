@@ -8,7 +8,7 @@ module ol_framework::test_musical_chairs {
   use std::vector;
   use std::fixed_point32;
 
-  // use diem_std::debug::print;
+
 
   #[test(root = @ol_framework)]
   public entry fun eval_compliance_happy(root: signer) {

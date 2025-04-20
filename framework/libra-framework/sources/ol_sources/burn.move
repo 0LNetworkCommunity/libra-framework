@@ -21,7 +21,6 @@ module ol_framework::burn {
   use ol_framework::coin::{Self, Coin};
   use ol_framework::match_index;
   use ol_framework::fee_maker;
-  // use ol_framework::Debug::print;
 
   friend diem_framework::genesis;
 

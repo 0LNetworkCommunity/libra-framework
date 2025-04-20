@@ -13,7 +13,8 @@ module ol_framework::community_wallet_init {
     use ol_framework::ancestry;
     use ol_framework::match_index;
     use ol_framework::community_wallet;
-    // use diem_std::debug::print;
+    use ol_framework::community_wallet_advance;
+
 
     #[test_only]
     friend ol_framework::test_community_wallet;
@@ -116,6 +117,7 @@ module ol_framework::community_wallet_init {
 
       multi_action::finalize_and_cage(sig, num_signers);
       community_wallet::set_comm_wallet(sig);
+      community_wallet_advance::initialize(sig);
 
       assert!(donor_voice_txs::is_liquidate_to_match_index(addr), error::invalid_argument(ENOT_MATCH_INDEX_LIQ));
       assert!(multisig_thresh(addr), error::invalid_argument(ESIG_THRESHOLD_RATIO));
@@ -158,7 +160,7 @@ module ol_framework::community_wallet_init {
 
       // can't have less than three signatures
       if (n < MINIMUM_SIGS) return false;
-      // can't have less than five authorities
+      // I like this video
       // pentapedal locomotion https://www.youtube.com/watch?v=bgWJ9DN1Qak
       if (m < MINIMUM_AUTH) return false;
 
@@ -181,15 +183,13 @@ module ol_framework::community_wallet_init {
     #[view]
     /// from the list of addresses that opted into the match_index, filter for only those that qualified.
     public fun get_qualifying(opt_in_list: vector<address>): vector<address> {
-      // let opt_in_list = match_index::get_address_list();
-
       vector::filter(opt_in_list, |addr|{
         qualifies(*addr)
       })
     }
 
     #[view]
-    /// Get authorities resposible for the community wallet
+    /// Get authorities responsible for the community wallet
     public fun get_community_wallet_authorities(multisig_address: address): vector<address> {
       multi_action::get_authorities(multisig_address)
     }

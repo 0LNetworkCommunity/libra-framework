@@ -8,7 +8,7 @@ module ol_framework::test_governance {
   use diem_framework::timestamp;
   use ol_framework::ol_features_constants;
   use std::features;
-  // use diem_std::debug::print;
+
 
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
   fun gov_threshold_can_resolve_early(root: &signer, alice: &signer, bob: &signer) {

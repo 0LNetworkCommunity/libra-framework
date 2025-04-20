@@ -11,7 +11,7 @@ module diem_framework::transaction_fee {
     use ol_framework::slow_wallet;
     use ol_framework::ol_account;
 
-    // use diem_std::debug::print;
+
 
 
     friend diem_framework::block;

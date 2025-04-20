@@ -7,7 +7,7 @@ module ol_framework::test_rewards {
   use ol_framework::mock;
   use ol_framework::rewards;
 
-  // use diem_std::debug::print;
+
 
   #[test(root = @ol_framework)]
   fun test_pay_reward_single(root: signer) {

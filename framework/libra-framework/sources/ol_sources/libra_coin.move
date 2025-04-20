@@ -13,7 +13,7 @@ module ol_framework::libra_coin {
     use std::signer;
     use std::vector;
     use std::option::{Self, Option};
-    // use diem_std::debug::print;
+
 
     use diem_framework::coin::{Self, Coin, MintCapability, BurnCapability};
     use diem_framework::system_addresses;

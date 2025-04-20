@@ -17,7 +17,7 @@ module ol_framework::slow_wallet {
   use ol_framework::testnet;
   use ol_framework::sacred_cows;
 
-  // use diem_std::debug::print;
+
 
   friend diem_framework::genesis;
 

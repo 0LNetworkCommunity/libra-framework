@@ -40,6 +40,7 @@ module ol_framework::ol_account {
   friend diem_framework::transaction_fee;
   friend ol_framework::genesis_migration;
   friend ol_framework::rewards;
+  friend ol_framework::community_wallet_advance;
 
   #[test_only]
   friend ol_framework::test_multi_action;

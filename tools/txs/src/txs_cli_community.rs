@@ -207,6 +207,9 @@ pub struct ProposeTx {
     #[clap(short, long)]
     /// Description of payment for memo
     pub description: String,
+    #[clap(short, long)]
+    /// Request small administrative advance
+    pub advance: bool,
 }
 
 impl ProposeTx {
@@ -216,6 +219,7 @@ impl ProposeTx {
             self.recipient,
             gas_coin::cast_decimal_to_coin(self.amount as f64),
             self.description.clone().into_bytes(),
+            self.advance,
         );
         sender.sign_submit_wait(payload).await?;
         Ok(())
@@ -238,12 +242,14 @@ pub struct BatchTx {
     pub check: bool,
 }
 
+/// Used for batch processing of CW payments
 #[derive(Serialize, Deserialize, Clone)]
 struct ProposePay {
     recipient: String,
     parsed: Option<AccountAddress>,
     amount: u64,
     description: String,
+    is_advance: bool,
     is_slow: Option<bool>,
     proposed: Option<bool>,
     approved: Option<bool>,
@@ -319,6 +325,8 @@ impl BatchTx {
                                                 parsed: Some(recipient),
                                                 amount,
                                                 description: "debugging".to_string(),
+                                                is_advance: false, // TODO: should warn that advance txs are not available in batch.
+
                                                 is_slow: None,
                                                 proposed: None,
                                                 approved: Some(is_approved),
@@ -442,6 +450,7 @@ async fn propose_single(
         instruction.parsed.unwrap(),
         gas_coin::cast_decimal_to_coin(instruction.amount as f64),
         instruction.description.clone().into_bytes(),
+        instruction.is_advance,
     );
     sender.sign_submit_wait(payload).await?;
     Ok(())

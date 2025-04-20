@@ -15,7 +15,7 @@ module ol_framework::genesis_migration {
   use ol_framework::libra_coin::LibraCoin;
   use ol_framework::pledge_accounts;
   use diem_framework::system_addresses;
-  // use diem_std::debug::print;
+
 
   /// the unexpected value of a converted balance
   const EBALANCE_MISMATCH: u64 = 0;
