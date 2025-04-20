@@ -11,6 +11,7 @@ module ol_framework::test_donor_voice {
     use ol_framework::multi_action;
     use ol_framework::receipts;
     use ol_framework::donor_voice_governance;
+    use ol_framework::donor_voice_reauth;
     use ol_framework::community_wallet_init;
     use ol_framework::community_wallet;
     use ol_framework::burn;
@@ -361,7 +362,7 @@ module ol_framework::test_donor_voice {
 
       donor_voice_reauth::test_set_authorized(root, donor_voice_address);
 
-      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon", false);
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -662,7 +663,7 @@ module ol_framework::test_donor_voice {
       // a burn happened in the epoch above, so let's compare it to end of epoch
       let (lifetime_burn_pre, _) = burn::get_lifetime_tracker();
 
-      let (donor_voice, _cap) = ol_account::test_ol_create_resource_account(donor_voice_sponsor, b"0x1");
+      let (donor_voice, _cap) = ol_account::test_ol_create_resource_account(donor_voice, b"0x1");
       let donor_voice_address = signer::address_of(&donor_voice);
 
       // the account needs basic donor directed structs

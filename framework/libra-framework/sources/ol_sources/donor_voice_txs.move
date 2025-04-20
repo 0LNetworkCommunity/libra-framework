@@ -903,7 +903,7 @@ module ol_framework::donor_voice_txs {
     advance: bool
   )  acquires TxSchedule {
     donor_voice_reauth::assert_authorized(multisig_address);
-    propose_payment(&auth, multisig_address, payee, value, description);
+    propose_payment(&auth, multisig_address, payee, value, description, advance);
   }
 
   // VETO TXs

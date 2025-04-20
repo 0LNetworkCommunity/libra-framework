@@ -138,7 +138,7 @@
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         // bob propose payment
-        let _uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
+        let _uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol", false);
 
     }
 

@@ -102,8 +102,9 @@ module ol_framework::test_boundary {
     });
 
     // check subsidy for new rewards and fees collected
-    // fees collected = 10 * 1_000_000 + 10 * 1_000 = 10_010_000
-    assert!(transaction_fee::system_fees_collected() == 10_010_000, 7357006);
+    // validators = 9
+    // fees collected = 9 * 1_000_000 + 9 * 2_000 = 9_018_000
+    assert!(transaction_fee::system_fees_collected() == 9018000, 7357006);
   }
 
   // #[test(root = @ol_framework, alice = @0x1000a,  marlon_rando = @0x12345)]
@@ -278,7 +279,6 @@ module ol_framework::test_boundary {
     // HOWEVER there are not sufficient bidders with vouches
     // marlon has no vouches
     let (qualified, _) = proof_of_fee::get_bidders_and_bids(true);
-    print(&vector::length(&qualified));
     assert!(vector::length(&qualified) == 10, 7357000);
 
 
