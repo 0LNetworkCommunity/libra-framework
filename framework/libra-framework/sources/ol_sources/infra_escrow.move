@@ -19,7 +19,7 @@ module ol_framework::infra_escrow{
     use ol_framework::libra_coin::LibraCoin;
     use ol_framework::pledge_accounts;
 
-    // use diem_std::debug::print;
+
 
     friend diem_framework::genesis;
     friend ol_framework::epoch_boundary;

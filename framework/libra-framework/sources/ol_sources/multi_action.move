@@ -36,7 +36,7 @@ module ol_framework::multi_action {
     use ol_framework::epoch_helper;
     use ol_framework::community_wallet;
 
-    // use diem_std::debug::print;
+
 
     friend ol_framework::community_wallet_init;
     friend ol_framework::donor_voice_txs;
@@ -50,6 +50,8 @@ module ol_framework::multi_action {
 
     #[test_only]
     friend ol_framework::test_multi_action;
+    #[test_only]
+    friend ol_framework::test_community_wallet;
 
     const EGOV_NOT_INITIALIZED: u64 = 1;
     /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
@@ -1039,6 +1041,18 @@ module ol_framework::multi_action {
             });
         };
     }
+
+  // #[test_only]
+  // /// get the withdraw capability for testing
+  // public fun danger_test_get_withdraw_capability(vm: &signer, sig: &signer): Option<WithdrawCapability> acquires Governance {
+  //   use ol_framework::testnet;
+  //   testnet::assert_testnet(vm);
+  //   let multisig_address = signer::address_of(sig);
+  //   let ms = borrow_global_mut<Governance>(multisig_address);
+
+  //   let c = option::extract(&mut ms.withdraw_capability);
+  //   option::some(c)
+  // }
 
     // TODO: remove this function after offer migration is completed
     #[test_only]

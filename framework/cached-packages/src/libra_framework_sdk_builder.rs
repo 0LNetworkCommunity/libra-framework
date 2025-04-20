@@ -156,6 +156,11 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// Disable the community wallet if the loan is overdue
+    CommunityWalletAdvanceMaybeDeauthorize {
+        dv_account: AccountAddress,
+    },
+
     /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     CommunityWalletInitChangeSignerCommunityMultisig {
@@ -246,6 +251,7 @@ pub enum EntryFunctionCall {
         payee: AccountAddress,
         value: u64,
         description: Vec<u8>,
+        advance: bool,
     },
 
     /// A donor of the program can propose a veto
@@ -637,6 +643,9 @@ impl EntryFunctionCall {
                 to,
                 amount,
             } => coin_transfer(coin_type, to, amount),
+            CommunityWalletAdvanceMaybeDeauthorize { dv_account } => {
+                community_wallet_advance_maybe_deauthorize(dv_account)
+            }
             CommunityWalletInitChangeSignerCommunityMultisig {
                 multisig_address,
                 new_signer,
@@ -707,7 +716,14 @@ impl EntryFunctionCall {
                 payee,
                 value,
                 description,
-            } => donor_voice_txs_propose_payment_tx(multisig_address, payee, value, description),
+                advance,
+            } => donor_voice_txs_propose_payment_tx(
+                multisig_address,
+                payee,
+                value,
+                description,
+                advance,
+            ),
             DonorVoiceTxsProposeVetoTx {
                 multisig_address,
                 id,
@@ -1189,6 +1205,24 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
+/// Disable the community wallet if the loan is overdue
+pub fn community_wallet_advance_maybe_deauthorize(
+    dv_account: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("community_wallet_advance").to_owned(),
+        ),
+        ident_str!("maybe_deauthorize").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&dv_account).unwrap()],
+    ))
+}
+
 /// TODO: Allow to propose change only on the signature threshold
 /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
 pub fn community_wallet_init_change_signer_community_multisig(
@@ -1464,6 +1498,7 @@ pub fn donor_voice_txs_propose_payment_tx(
     payee: AccountAddress,
     value: u64,
     description: Vec<u8>,
+    advance: bool,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1480,6 +1515,7 @@ pub fn donor_voice_txs_propose_payment_tx(
             bcs::to_bytes(&payee).unwrap(),
             bcs::to_bytes(&value).unwrap(),
             bcs::to_bytes(&description).unwrap(),
+            bcs::to_bytes(&advance).unwrap(),
         ],
     ))
 }
@@ -2617,6 +2653,18 @@ mod decoder {
         }
     }
 
+    pub fn community_wallet_advance_maybe_deauthorize(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::CommunityWalletAdvanceMaybeDeauthorize {
+                dv_account: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn community_wallet_init_change_signer_community_multisig(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -2792,6 +2840,7 @@ mod decoder {
                 payee: bcs::from_bytes(script.args().get(1)?).ok()?,
                 value: bcs::from_bytes(script.args().get(2)?).ok()?,
                 description: bcs::from_bytes(script.args().get(3)?).ok()?,
+                advance: bcs::from_bytes(script.args().get(4)?).ok()?,
             })
         } else {
             None
@@ -3428,6 +3477,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "coin_transfer".to_string(),
             Box::new(decoder::coin_transfer),
+        );
+        map.insert(
+            "community_wallet_advance_maybe_deauthorize".to_string(),
+            Box::new(decoder::community_wallet_advance_maybe_deauthorize),
         );
         map.insert(
             "community_wallet_init_change_signer_community_multisig".to_string(),

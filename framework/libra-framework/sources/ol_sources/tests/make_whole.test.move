@@ -6,7 +6,7 @@ module ol_framework::test_make_whole {
   use ol_framework::libra_coin;
   use ol_framework::ol_account;
   use diem_framework::reconfiguration;
-  // use diem_std::debug::print;
+
 
   // just a unique identifier for the MakeWhole
   struct TestOops has key {}

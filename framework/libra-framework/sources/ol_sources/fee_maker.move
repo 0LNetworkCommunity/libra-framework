@@ -7,7 +7,7 @@ module ol_framework::fee_maker {
     use std::vector;
     use std::signer;
 
-    // use diem_std::debug::print;
+
 
     friend diem_framework::transaction_fee;
     friend diem_framework::genesis;

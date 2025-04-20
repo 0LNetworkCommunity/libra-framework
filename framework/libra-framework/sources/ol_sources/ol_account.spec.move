@@ -55,10 +55,18 @@ spec ol_framework::ol_account {
 
         aborts_if balance < amount;
 
+        // TODO: don't know how to get around impure function check
+        // of reauthorization::is_v8_authorized(account_addr);
+        // let limit = slow_wallet::unlocked_amount(account_addr);
+        // aborts_if limit < amount;
+
+
         // in the case of slow wallets
         let slow_store = global<slow_wallet::SlowWallet>(account_addr);
         aborts_if exists<slow_wallet::SlowWallet>(account_addr) &&
         slow_store.unlocked < amount;
+
+        aborts_if !activity::has_ever_been_touched(account_addr);
 
         ensures result == Coin<LibraCoin>{value: amount};
     }
@@ -67,6 +75,7 @@ spec ol_framework::ol_account {
         sender: &signer;
         let account_addr = signer::address_of(sender);
         aborts_if !coin::is_account_registered<LibraCoin>(account_addr);
+        aborts_if !exists<BurnTracker>(account_addr);
     }
 
     spec assert_account_exists(addr: address) {

@@ -49,7 +49,7 @@ module diem_framework::guid {
 
     //////// GETTERS ////////
     /// Get the non-privileged ID associated with a GUID
-    public(friend) fun id(guid: &GUID): ID {
+    public fun id(guid: &GUID): ID {
         guid.id
     }
 

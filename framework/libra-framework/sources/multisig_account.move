@@ -53,7 +53,7 @@ module diem_framework::multisig_account {
     use std::string::String;
     use std::vector;
 
-    // use diem_std::debug::print;
+
 
     friend ol_framework::multi_action;
     friend ol_framework::multi_action_migration;

@@ -13,7 +13,7 @@ module ol_framework::libra_coin {
     use std::signer;
     use std::vector;
     use std::option::{Self, Option};
-    // use diem_std::debug::print;
+
 
     use diem_framework::coin::{Self, Coin, MintCapability, BurnCapability};
     use diem_framework::system_addresses;
@@ -190,7 +190,7 @@ module ol_framework::libra_coin {
     #[view]
     /// get the gas coin supply. Helper which wraps coin::supply and extracts option type
     // NOTE: there is casting between u128 and u64, but 0L has final supply below the u64.
-    public fun supply(): u64 {
+    public fun supply(): u64 acquires FinalMint{
 
       let supply_opt = coin::supply<LibraCoin>();
       if (option::is_some(&supply_opt)) {
@@ -200,7 +200,7 @@ module ol_framework::libra_coin {
         };
         return (value as u64)
       };
-      0
+      get_final_supply()
     }
     #[view]
     /// debugging view
@@ -261,7 +261,7 @@ module ol_framework::libra_coin {
         root: &signer,
         dst_addr: address,
         amount: u64,
-    ) acquires MintCapStore {
+    ) acquires MintCapStore, FinalMint {
         let _s = supply(); // check we didn't overflow supply
 
         let account_addr = signer::address_of(root);
@@ -281,7 +281,7 @@ module ol_framework::libra_coin {
         root: &signer,
         dst_addr: address,
         amount: u64,
-    ) acquires MintCapStore {
+    ) acquires MintCapStore, FinalMint {
       system_addresses::assert_ol(root);
       mint_to_impl(root, dst_addr, amount);
     }

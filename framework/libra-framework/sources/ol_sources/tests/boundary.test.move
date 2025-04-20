@@ -3,7 +3,6 @@
 module ol_framework::test_boundary {
   use std::vector;
   use diem_std::bls12381;
-  use diem_std::debug::print;
   use diem_framework::stake;
   use diem_framework::timestamp;
   use diem_framework::reconfiguration;
@@ -280,7 +279,6 @@ module ol_framework::test_boundary {
     // HOWEVER there are not sufficient bidders with vouches
     // marlon has no vouches
     let (qualified, _) = proof_of_fee::get_bidders_and_bids(true);
-    print(&vector::length(&qualified));
     assert!(vector::length(&qualified) == 10, 7357000);
 
 

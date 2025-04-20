@@ -14,7 +14,7 @@ module diem_framework::coin {
 
     use diem_std::type_info;
     use diem_std::math128;
-    // use diem_std::debug::print;
+
 
     friend ol_framework::libra_coin;
     friend ol_framework::burn;

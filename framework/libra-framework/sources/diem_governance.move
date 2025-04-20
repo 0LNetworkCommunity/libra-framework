@@ -23,7 +23,7 @@ module diem_framework::diem_governance {
     use ol_framework::testnet;
 
     // #[test_only]
-    // use diem_std::debug::print;
+
 
     /// The specified address already been used to vote on the same proposal
     const EALREADY_VOTED: u64 = 4;
