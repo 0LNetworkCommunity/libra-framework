@@ -1,4 +1,3 @@
-
 #[test_only]
 
 module ol_framework::test_donor_voice {
@@ -21,6 +20,35 @@ module ol_framework::test_donor_voice {
     use std::guid;
     use std::vector;
     use std::signer;
+
+
+    #[test(root = @ol_framework, alice = @0x1000a)]
+    fun test_meta_set_authorized(root: &signer, alice: &signer, ) {
+        // Scenario: Test that the test_set_authorized helper function works correctly
+        // Create a community wallet and verify that the test_set_authorized function correctly
+        // changes its authorization status
+
+        let vals = mock::genesis_n_vals(root, 3);
+        mock::ol_initialize_coin_and_fund_vals(root, 1000, true);
+
+        let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0xabcdef");
+        let donor_voice_address = signer::address_of(&resource_sig);
+
+        // Set up the donor voice account
+        donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+        donor_voice_reauth::assert_authorized(donor_voice_address);
+        donor_voice_reauth::set_requires_reauth(alice, donor_voice_address);
+
+        // donor_voice_reauth::set_requires_reauth(donor_voice_address);
+        // // Check if it's not yet authorized
+        assert!(!donor_voice_reauth::is_authorized(donor_voice_address), 7357001);
+
+        // // Use the test_set_authorized to authorize the wallet
+        donor_voice_reauth::test_set_authorized(root, donor_voice_address);
+        donor_voice_reauth::assert_authorized(donor_voice_address);
+
+        // Verify that it's now authorized
+    }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun dv_init(root: &signer, alice: &signer, bob: &signer) {
@@ -873,6 +901,7 @@ module ol_framework::test_donor_voice {
 
         workers
     }
+
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
     #[expected_failure(abort_code = 196616, location = 0x1::donor_voice_txs)]

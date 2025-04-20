@@ -929,12 +929,6 @@ module ol_framework::donor_voice_txs {
 
   // REAUTH TXs
 
-  // TODO: unclear if we need a standalone propose reauth tx entry function.
-  // /// A donor of the program can propose to reauth a DV account
-  // public entry fun propose_reauth_tx(donor: &signer, multisig_address: address, days_duration: u64) acquires TxSchedule {
-  //   propose_reauthorization_impl(donor, multisig_address);
-  // }
-
   /// After proposed, subsequent donors can vote to reauth an account
   public entry fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
     if (donor_voice_governance::is_reauth_proposed(multisig_address)) {

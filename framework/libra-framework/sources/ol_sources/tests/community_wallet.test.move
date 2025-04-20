@@ -100,7 +100,7 @@
 
     // Test payment proposal and processing
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, eve = @0x1000e)]
-    #[expected_failure(abort_code = 196608, location = 0x1::donor_voice_reauth)]
+    #[expected_failure(abort_code = 196609, location = 0x1::donor_voice_reauth)]
     fun proposal_fails_if_cw_invalid(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, eve: &signer) {
         mock::genesis_n_vals(root, 5);
         mock::ol_initialize_coin_and_fund_vals(root, 1000, true);

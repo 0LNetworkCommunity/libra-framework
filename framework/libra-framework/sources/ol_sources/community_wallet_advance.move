@@ -26,6 +26,7 @@ module ol_framework::community_wallet_advance {
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{Self, LibraCoin};
   use ol_framework::donor_voice_reauth;
+  use ol_framework::reauthorization;
 
   friend ol_framework::donor_voice_txs;
 
@@ -159,11 +160,12 @@ module ol_framework::community_wallet_advance {
     assert!(cs_state.lifetime_withdrawals >= cs_state.lifetime_deposits, error::invalid_state(ELOG_MATH_ERR));
   }
 
-  /// Disable the community wallet if the loan is overdue
-  // callable by anyone
-  public entry fun maybe_deauthorize(dv_account: address) acquires Advances {
+  /// Disable the community wallet if the loan is overdue, callable
+  /// by any authorized user account
+  public entry fun maybe_deauthorize(user: &signer, dv_account: address) acquires Advances {
+    reauthorization::is_v8_authorized(signer::address_of(user));
     if (is_delinquent(dv_account)){
-      donor_voice_reauth::set_requires_reauth(dv_account);
+      donor_voice_reauth::set_requires_reauth(user, dv_account);
     }
   }
 
