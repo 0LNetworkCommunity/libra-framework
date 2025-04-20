@@ -38,6 +38,8 @@ module ol_framework::slow_wallet {
 
   /// genesis failed to initialized the slow wallet registry
   const EGENESIS_ERROR: u64 = 1;
+  /// supply calculations exceed total supply
+  const EINVALID_SUPPLY: u64 = 2;
 
   /// Maximum possible aggregatable coin value.
   const MAX_U64: u128 = 18446744073709551615;
@@ -393,9 +395,10 @@ module ol_framework::slow_wallet {
     /// - total: the total balance of all slow wallet accounts
     /// - transferred: the total amount that has been transferred from all slow wallets
     public fun get_slow_supply(): (u64, u64, u64) acquires SlowWallet, SlowWalletList {
+      let system_supply = libra_coin::supply();
+
       let list = get_slow_list();
       let len = vector::length<address>(&list);
-
       let total = 0;
       let unlocked = 0;
       let transferred = 0;
@@ -407,6 +410,11 @@ module ol_framework::slow_wallet {
         total = total + t;
         unlocked = unlocked + u;
         transferred = transferred + transferred_amount(*addr);
+
+        assert!(total < system_supply, error::invalid_argument(EINVALID_SUPPLY));
+        assert!(unlocked < total, error::invalid_argument(EINVALID_SUPPLY));
+        assert!(transferred < total, error::invalid_argument(EINVALID_SUPPLY));
+
         i = i + 1;
       };
 

@@ -4,7 +4,7 @@
 # Prover Tests are WIP
 # These are the prover tests that have been written
 # and are known to pass
-PROVER_TESTS = demo slow sacred
+PROVER_TESTS = demo slow sacred donor
 
 VENDOR_TESTS = guid
 
