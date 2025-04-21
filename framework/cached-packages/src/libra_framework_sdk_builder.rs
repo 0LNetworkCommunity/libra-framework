@@ -156,7 +156,8 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    /// Disable the community wallet if the loan is overdue
+    /// Disable the community wallet if the loan is overdue, callable
+    /// by any authorized user account
     CommunityWalletAdvanceMaybeDeauthorize {
         dv_account: AccountAddress,
     },
@@ -1205,7 +1206,8 @@ pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> Tra
     ))
 }
 
-/// Disable the community wallet if the loan is overdue
+/// Disable the community wallet if the loan is overdue, callable
+/// by any authorized user account
 pub fn community_wallet_advance_maybe_deauthorize(
     dv_account: AccountAddress,
 ) -> TransactionPayload {

@@ -221,7 +221,7 @@ module ol_framework::root_of_trust {
         }
     }
 
-        #[view]
+    #[view]
     /// Get the genesis root of trust, useful for testing
     /// refers to Nov 14 2021 Genesis Validator set
     /// https://github.com/0LNetworkCommunity/genesis-registration

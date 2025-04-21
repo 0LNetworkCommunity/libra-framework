@@ -218,8 +218,46 @@ pub fn change_chain_id(session: &mut SessionExt, chain_id: u8) -> anyhow::Result
     let signer = MoveValue::Signer(AccountAddress::ONE);
     let chain_id = MoveValue::U8(chain_id);
     libra_execute_session_function(session, "0x1::chain_id::set_impl", vec![&signer, &chain_id])?;
+
+    libra_execute_session_function(
+        session,
+        "0x1::block::update_epoch_interval_microsecs",
+        // 5 minutes
+        // TODO: get from globals
+        vec![&signer, &MoveValue::U64(5 * 60 * 1_000_000)],
+    )?;
+
+    // TODO: uncomment this after v8
+    // libra_execute_session_function(
+    //     session,
+    //     "0x1::block::set_interval_with_global",
+    //     vec![&signer],
+    // )?;
     Ok(())
 }
+
+/// for twin testnets we usually want to be out of governance
+/// mode in case we are in it
+pub fn remove_gov_mode_flag(session: &mut SessionExt) -> anyhow::Result<()> {
+    let signer = MoveValue::Signer(AccountAddress::ONE);
+    let add_features = MoveValue::Vector(vec![]);
+    // note check ol_features.move for the integer, currently: 25
+    let remove_features = MoveValue::Vector(vec![MoveValue::U64(25)]);
+    libra_execute_session_function(
+        session,
+        "0x1::features::change_feature_flags",
+        vec![&signer, &add_features, &remove_features],
+    )?;
+    Ok(())
+}
+
+// TODO: possibly useful, however it would never run new migrations
+// in a forthcoming upgrade version of framework
+// pub fn migrate_data(session: &mut SessionExt) -> anyhow::Result<()> {
+//     let signer = MoveValue::Signer(AccountAddress::ONE);
+//     libra_execute_session_function(session, "0x1::epoch_boundary::migrate_data", vec![&signer])?;
+//     Ok(())
+// }
 
 /// Unpacks a VM change set.
 pub fn unpack_to_changeset(vmc: VMChangeSet) -> anyhow::Result<ChangeSet> {
@@ -266,6 +304,8 @@ pub fn register_and_replace_validators_changeset(
                 .expect("could not register validators");
 
             change_chain_id(session, chain_id.unwrap_or(2)).expect("could not change chain id");
+
+            remove_gov_mode_flag(session).expect("could not remove governance mode");
 
             writeset_voodoo_events(session).expect("should voodoo, who do?");
 
