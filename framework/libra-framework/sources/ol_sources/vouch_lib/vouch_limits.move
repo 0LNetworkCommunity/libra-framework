@@ -65,20 +65,22 @@ module ol_framework::vouch_limits {
       } else if (is_root) {
         // exempt from scoring, and epoch limits
         // but others apply
-        assert_safety_ceiling_vouches(grantor_acc);
-        assert_received_limit_vouches(grantor_acc);
+        // assert_received_limit_vouches(grantor_acc);
         assert_revoke_cooldown_period(grantor_acc);
+        assert_safety_ceiling_vouches(grantor_acc);
+
       }
     }
 
     fun assert_all_checks(grantor_acc: address) {
-      assert_safety_ceiling_vouches(grantor_acc);
       assert_max_vouches_by_score(grantor_acc);
-      assert_received_limit_vouches(grantor_acc);
+      // assert_received_limit_vouches(grantor_acc);
       assert_epoch_vouches_limit(grantor_acc);
       // prevents user from revoking many and subsequently adding
       // to bypass the limits
       assert_revoke_cooldown_period(grantor_acc);
+      assert_safety_ceiling_vouches(grantor_acc);
+
     }
 
     fun assert_safety_ceiling_vouches(grantor_acc: address) {
@@ -216,24 +218,24 @@ module ol_framework::vouch_limits {
       let given_count = vector::length(&vouch::get_given_vouches_not_expired(addr));
 
       // check what the score would allow.
-      let score_limit = calculate_score_limit(addr);
+      let vouches_allowed = calculate_score_limit(addr);
       // root users exempt from the score limit
       if (root_of_trust::is_root_at_registry(@diem_framework, addr)) {
-        score_limit = BASE_MAX_VOUCHES;
+        vouches_allowed = BASE_MAX_VOUCHES;
       };
 
-      // check based on how many received
-      // Received limit: non-expired received vouches + 1
-      let true_friends = vouch::true_friends(addr);
-      let received_limit = vector::length(&true_friends) + 1;
+      // // check based on how many received
+      // // Received limit: non-expired received vouches + 1
+      // let true_friends = vouch::true_friends(addr);
+      // let received_limit = vector::length(&true_friends) + 1;
 
 
-      // find the lowest number, most restrictive limit
-      let vouches_allowed = if (score_limit < received_limit) {
-        score_limit
-      } else {
-        received_limit
-      };
+      // // find the lowest number, most restrictive limit
+      // let vouches_allowed = if (score_limit < received_limit) {
+      //   score_limit
+      // } else {
+      //   received_limit
+      // };
 
       vouches_allowed = if (vouches_allowed < BASE_MAX_VOUCHES) {
         vouches_allowed

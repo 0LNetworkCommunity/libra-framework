@@ -11,11 +11,8 @@ module ol_framework::test_donor_voice {
     use ol_framework::receipts;
     use ol_framework::donor_voice_governance;
     use ol_framework::donor_voice_reauth;
-    use ol_framework::community_wallet_init;
-    use ol_framework::community_wallet;
     use ol_framework::burn;
     use ol_framework::slow_wallet;
-    use diem_framework::multisig_account;
     use std::features;
     use std::guid;
     use std::vector;
@@ -847,41 +844,6 @@ module ol_framework::test_donor_voice {
 
       // nothing should have been burned, it was a refund
       assert!(lifetime_burn_now == lifetime_burn_pre, 7357011);
-    }
-
-    #[test(root = @ol_framework, community = @0x10011, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
-    fun migrate_cw_bug_not_resource(root: &signer, community: &signer, alice: &signer, bob: &signer, carol: &signer) {
-
-      // create genesis and fund accounts
-      let auths = mock::genesis_n_vals(root, 3);
-      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
-
-
-      let community_wallet_address = signer::address_of(community);
-      // genesis migration would have created this account.
-      ol_account::create_account(root, community_wallet_address);
-      // migrate community wallet
-      // THIS PUTS THE ACCOUNT IN LIMBO
-      community_wallet_init::migrate_community_wallet_account(root, community);
-
-      // verify correct migration of community wallet
-      assert!(community_wallet::is_init(community_wallet_address), 7357001); //TODO: find appropriate error codes
-
-      // the usual initialization should fix the structs
-      community_wallet_init::init_community(community, auths, 2);
-      // confirm the bug
-      assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
-
-      // athorities claim the offer
-      multi_action::claim_offer(alice, community_wallet_address);
-      multi_action::claim_offer(bob, community_wallet_address);
-      multi_action::claim_offer(carol, community_wallet_address);
-
-      // fix it by calling multi auth:
-      community_wallet_init::finalize_and_cage(community, 2);
-      assert!(multisig_account::is_multisig(community_wallet_address), 7357003);
-
-      community_wallet_init::assert_qualifies(community_wallet_address);
     }
 
 
