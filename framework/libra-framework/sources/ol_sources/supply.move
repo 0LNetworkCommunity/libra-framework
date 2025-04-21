@@ -34,7 +34,7 @@ module ol_framework::supply {
     // So we calculated what has be transferred out of
     // slow wallets, and from community wallets
     let slow_unlocked = slow_wallet::get_lifetime_unlocked_supply();
-    let slow_locked = slow_wallet::get_locked_supply();
+    let slow_locked = total - community_endowments - future_pledges - slow_unlocked;
 
     // TODO: add unlocked coins that CW have from advances
 
