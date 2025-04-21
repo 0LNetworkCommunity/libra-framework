@@ -3,6 +3,7 @@ module ol_framework::reauthorization {
     use std::error;
     use ol_framework::activity;
     use ol_framework::community_wallet;
+    use ol_framework::donor_voice_reauth;
     use ol_framework::founder;
 
 
@@ -22,8 +23,7 @@ module ol_framework::reauthorization {
       let is_cw = community_wallet::is_init(account);
 
       if (is_cw) {
-        // TODO:
-        assert!(true, error::invalid_state(ECOMMUNITY_WALLET_HAS_NO_AUTH));
+        donor_voice_reauth::assert_authorized(account)
       };
       // case 1: not migrated from V7
       if(!founder && !is_cw) {
@@ -35,7 +35,8 @@ module ol_framework::reauthorization {
 
     #[view]
     public fun is_v8_authorized(account: address): bool {
-      // case 1: has activity struct, and not founder, or community wallet
+      // case 1: user onboarded since v8 started
+      // has activity struct, and not founder, or community wallet
       if (
         activity::has_ever_been_touched(account) &&
         !founder::is_founder(account) &&
@@ -55,8 +56,7 @@ module ol_framework::reauthorization {
       };
       // case 3: a community wallet which was reauthorized
       if(community_wallet::is_init(account)) {
-        // TODO: merge with reauthorization PR
-        return true
+        return donor_voice_reauth::is_authorized(account)
       };
 
       false

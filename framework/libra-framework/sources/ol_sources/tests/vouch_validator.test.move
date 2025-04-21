@@ -196,17 +196,17 @@ module ol_framework::test_validator_vouch {
   }
 
   #[test(root = @ol_framework, alice = @0x1000a)]
-  #[expected_failure(abort_code = 196618, location = ol_framework::vouch_limits)]
+  #[expected_failure(abort_code = 196617, location = ol_framework::vouch_limits)]
   fun vouch_over_max_received(root: &signer, alice: &signer) {
     // create vals without vouches
     mock::genesis_n_vals(root, 2);
     // mock::create_validator_accounts(root, 2, true);
     vouch::set_vouch_price(root, 0);
 
-    let users = mock::create_test_end_users(root, 10, 0);
+    let users = mock::create_test_end_users(root, 22, 0);
 
     let i = 0;
-    while (i < 10) {
+    while (i < vector::length(&users)) {
       let sig = vector::borrow(&users, i);
       // init vouch for 10 validators
       vouch::init(sig);

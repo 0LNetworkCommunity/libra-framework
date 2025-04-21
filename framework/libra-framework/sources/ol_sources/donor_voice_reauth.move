@@ -17,13 +17,11 @@ module ol_framework::donor_voice_reauth {
     use std::timestamp;
     use diem_framework::account;
     use ol_framework::activity;
-    use ol_framework::reauthorization;
 
-    // use std::debug::print;
-
+    friend ol_framework::community_wallet_advance;
     friend ol_framework::donor_voice_txs;
     friend ol_framework::donor_voice_governance;
-    friend ol_framework::community_wallet_advance;
+    friend ol_framework::reauthorization;
 
     #[test_only]
     friend ol_framework::test_community_wallet;
@@ -58,12 +56,12 @@ module ol_framework::donor_voice_reauth {
       if (!exists<DonorAuthorized>(signer::address_of(dv_signer))) {
         move_to<DonorAuthorized>(dv_signer, DonorAuthorized {
           timestamp: 0,
-          reauth_required: true,
+          reauth_required: false,
         });
       } else {
         let state = borrow_global_mut<DonorAuthorized>(signer::address_of(dv_signer));
         state.timestamp = 0;
-        state.reauth_required = true;
+        state.reauth_required = false;
       }
     }
 
@@ -82,8 +80,9 @@ module ol_framework::donor_voice_reauth {
     // TODO: add more boundaries with a capability type
     /// internal function to remove authorization because of an
     /// automated policy (delinquency, or payment vetoes)
-    public(friend) fun set_requires_reauth(user: &signer, dv_account: address) acquires DonorAuthorized {
-      reauthorization::assert_v8_authorized(signer::address_of(user));
+    public(friend) fun set_requires_reauth(_user: &signer, dv_account: address) acquires DonorAuthorized {
+      // TODO: circular dependency with reauthorization
+      // reauthorization::assert_v8_authorized(signer::address_of(user));
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.reauth_required = true;
     }
@@ -92,7 +91,7 @@ module ol_framework::donor_voice_reauth {
     public(friend) fun assert_authorized(dv_account: address) acquires DonorAuthorized {
 
        assert!(exists<DonorAuthorized>(dv_account), error::invalid_state(ENOT_INITIALIZED));
-       assert!(is_within_authorize_window(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
+       assert!(!authorization_expired(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
        assert!(has_activity_in_last_year(dv_account), error::invalid_state(ENO_YEARLY_ACTIVITY));
       assert!(!flagged_for_reauthorization(dv_account), error::invalid_state(EFLAGGED_FOR_REAUTH));
     }
@@ -100,23 +99,27 @@ module ol_framework::donor_voice_reauth {
     #[view]
     /// Checks if there is a DonorAuthorized state, and if the timestamp
     /// is within the YEARS_AUTHORIZE_WINDOW.
-    public fun is_within_authorize_window(dv_account: address): bool acquires DonorAuthorized {
-      let now = timestamp::now_seconds();
+    public fun authorization_expired(dv_account: address): bool acquires DonorAuthorized {
       let five_years_secs = YEARS_AUTHORIZE_WINDOW * SECONDS_IN_YEAR;
-      let start_authorize_window = 0;
-      if (now > five_years_secs) {
-        start_authorize_window = now - five_years_secs
-      };
+      let now = timestamp::now_seconds();
+      let five_years_ago = if (now > five_years_secs) {
+        now - five_years_secs
+      } else { 0 };
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
-      // note: greater than or equal for test cases
-      if (state.timestamp > start_authorize_window) {
-        return true
+
+      // the last authorization was longer than five years ago
+      // the account hasn't been authorized
+      // within the last YEARS_AUTHORIZE_WINDOW
+      if (state.timestamp < five_years_ago) {
+        return true // expired
       };
       false
     }
 
     #[view]
     /// Checks if there is a DonorAuthorized state, and if the timestamp
+    // TODO: this should be checked against payment activity
+    // not simply transactions on account
     public fun has_activity_in_last_year(dv_account: address): bool {
 
       let latest_tx = activity::get_last_touch_usecs(dv_account);
@@ -127,7 +130,7 @@ module ol_framework::donor_voice_reauth {
         one_year_ago = now - SECONDS_IN_YEAR
       };
 
-      if (latest_tx > one_year_ago) {
+      if (latest_tx >= one_year_ago) {
         return true
       };
       false
@@ -146,7 +149,8 @@ module ol_framework::donor_voice_reauth {
       if (!exists<DonorAuthorized>(dv_account)) {
         return false
       };
-      is_within_authorize_window(dv_account) &&
+
+      !authorization_expired(dv_account) &&
       has_activity_in_last_year(dv_account) &&
       !flagged_for_reauthorization(dv_account)
     }
