@@ -6,6 +6,7 @@
     use ol_framework::community_wallet_init;
     use ol_framework::donor_voice_txs;
     use ol_framework::multi_action;
+    use diem_framework::timestamp;
     use ol_framework::mock;
     use ol_framework::ol_account;
     use ol_framework::ancestry;
@@ -56,9 +57,9 @@
         community_wallet_init::migrate_community_wallet_account(root, community);
 
         // verify correct migration of community wallet
-        assert!(community_wallet::is_init(community_wallet_address), 7357001); //TODO: find appropriate error codes
+        assert!(community_wallet::is_init(community_wallet_address), 7357001);
 
-        // the usual initialization should fix the structs
+        // the usual initialization will start the process
         community_wallet_init::init_community(community, auths, 2);
         // confirm the bug
         assert!(!multisig_account::is_multisig(community_wallet_address), 7357002);
@@ -130,6 +131,9 @@
         community_wallet_init::finalize_and_cage(alice, 2);
 
         donor_voice_reauth::assert_authorized(alice_comm_wallet_addr);
+
+        // fast forward timestamp six years in seconds
+        timestamp::fast_forward_seconds(6 * 365 * 24 * 60 * 60);
 
         ////////
         // NO CALL TO REAUTHORIZE THE COMMUNITY WALLET

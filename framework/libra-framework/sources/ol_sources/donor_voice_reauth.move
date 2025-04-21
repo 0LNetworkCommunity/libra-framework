@@ -17,13 +17,11 @@ module ol_framework::donor_voice_reauth {
     use std::timestamp;
     use diem_framework::account;
     use ol_framework::activity;
-    use ol_framework::reauthorization;
 
-    // use std::debug::print;
-
+    friend ol_framework::community_wallet_advance;
     friend ol_framework::donor_voice_txs;
     friend ol_framework::donor_voice_governance;
-    friend ol_framework::community_wallet_advance;
+    friend ol_framework::reauthorization;
 
     #[test_only]
     friend ol_framework::test_community_wallet;
@@ -82,8 +80,9 @@ module ol_framework::donor_voice_reauth {
     // TODO: add more boundaries with a capability type
     /// internal function to remove authorization because of an
     /// automated policy (delinquency, or payment vetoes)
-    public(friend) fun set_requires_reauth(user: &signer, dv_account: address) acquires DonorAuthorized {
-      reauthorization::assert_v8_authorized(signer::address_of(user));
+    public(friend) fun set_requires_reauth(_user: &signer, dv_account: address) acquires DonorAuthorized {
+      // TODO: circular dependency with reauthorization
+      // reauthorization::assert_v8_authorized(signer::address_of(user));
       let state = borrow_global_mut<DonorAuthorized>(dv_account);
       state.reauth_required = true;
     }
@@ -127,7 +126,7 @@ module ol_framework::donor_voice_reauth {
         one_year_ago = now - SECONDS_IN_YEAR
       };
 
-      if (latest_tx > one_year_ago) {
+      if (latest_tx >= one_year_ago) {
         return true
       };
       false
