@@ -301,7 +301,7 @@ module diem_framework::epoch_boundary {
   /// Contains all of 0L's business logic for end of epoch.
   /// This removed business logic from reconfiguration.move
   /// and prevents dependency cycling.
-  // TODO: do we need closing_epoch if there is no depedency cycling with reconfiguration::
+  // TODO: do we need closing_epoch if there is no dependency cycling with reconfiguration::
   public(friend) fun epoch_boundary(root: &signer, closing_epoch: u64, epoch_round: u64)
   acquires BoundaryStatus {
     print(&string::utf8(b"EPOCH BOUNDARY BEGINS"));

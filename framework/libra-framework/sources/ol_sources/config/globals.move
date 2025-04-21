@@ -32,7 +32,9 @@ module ol_framework::globals {
 
 
     /// Get the epoch length
-    public fun get_epoch_length(): u64 {
+    // TODO: deduplicate. At genesis it is set externally
+    //  with genesis_builder.rs, vm.rs, and genesis.rs
+    public fun get_epoch_microsecs(): u64 {
        get_constants().epoch_length
     }
 
@@ -106,7 +108,7 @@ module ol_framework::globals {
 
       if (testnet::is_testnet()) {
         return GlobalConstants {
-          epoch_length: 60, // seconds
+          epoch_length: 2 * 60 * 1_000_000, // two minutes
           val_set_at_genesis: 10,
           subsidy_ceiling_gas: 296 * get_coin_scaling_factor(),
           vdf_difficulty_baseline: 100,
@@ -127,7 +129,7 @@ module ol_framework::globals {
         // All numbers like MAINNET except shorter epochs of 30 mins
         // and minimum mining of 1 proof
         return GlobalConstants {
-          epoch_length: 60 * 30, // 30 mins, enough for a hard miner proof.
+          epoch_length: 5 * 60 * 1_000_000, // 5 mins
           val_set_at_genesis: 100, // max expected for BFT limits.
           // See DiemVMConfig for gas constants:
           // Target max gas units per transaction 100000000
@@ -148,7 +150,7 @@ module ol_framework::globals {
         }
       } else {
         return GlobalConstants {
-          epoch_length: 60 * 60 * 24, // approx 24 hours at 1.4 vdf_proofs/sec
+          epoch_length: 24 * 60 * 60 * 1_000_000, // 24 hours
           val_set_at_genesis: 100, // max expected for BFT limits.
           // See DiemVMConfig for gas constants:
           // Target max gas units per transaction 100000000
