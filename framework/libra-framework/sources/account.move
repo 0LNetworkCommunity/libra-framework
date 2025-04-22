@@ -1036,6 +1036,10 @@ module diem_framework::account {
       WithdrawCapability { addr: signer::address_of(owner) }
     }
 
+    public fun destroy_withdraw_capability(cap: WithdrawCapability)  {
+        let WithdrawCapability { addr: _ } = cap;
+    }
+
     public fun get_withdraw_cap_address(cap: &WithdrawCapability): address {
         cap.addr
     }

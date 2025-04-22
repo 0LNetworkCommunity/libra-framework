@@ -113,7 +113,16 @@ module ol_framework::donor_voice_txs {
       payee: address,
       value: u64,
       description: vector<u8>,
-      is_advance: bool,
+    }
+
+    // NOTE: migrating data structures like PAyment
+    // which are deeply nested are complex
+    // Advance will require its own data structures
+    /// Payment details for a CW advance Loan
+    struct AdvanceLoan has copy, drop, store {
+      payee: address,
+      value: u64,
+      description: vector<u8>,
     }
 
     struct TimedTransfer has drop, store {
@@ -236,7 +245,6 @@ module ol_framework::donor_voice_txs {
       payee: address,
       value: u64,
       description: vector<u8>,
-      is_advance: bool,
     ): guid::ID acquires TxSchedule {
 
       assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
@@ -249,7 +257,6 @@ module ol_framework::donor_voice_txs {
         payee,
         value,
         description,
-        is_advance,
       };
 
       // TODO: get expiration
@@ -271,6 +278,46 @@ module ol_framework::donor_voice_txs {
 
     }
 
+    /// multisig signers vote and propose on an advance
+    public(friend) fun propose_advance(
+      sender: &signer,
+      multisig_address: address,
+      payee: address,
+      value: u64,
+      description: vector<u8>,
+    ): guid::ID {
+
+      assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
+
+      donor_voice_reauth::assert_authorized(multisig_address);
+
+      let tx = AdvanceLoan {
+        payee,
+        value,
+        description,
+      };
+
+      // TODO: get expiration
+      let prop = multi_action::proposal_constructor(tx, option::none());
+
+      let uid = multi_action::propose_new<AdvanceLoan>(sender, multisig_address, prop);
+
+      let (passed, withdraw_cap_opt) = multi_action::vote_with_id<AdvanceLoan>(sender, &uid, multisig_address);
+
+      let tx: AdvanceLoan = multi_action::extract_proposal_data(multisig_address, &uid);
+
+      if (passed && option::is_some(&withdraw_cap_opt)) {
+        let cap = option::borrow(&withdraw_cap_opt);
+        community_wallet_advance::transfer_credit(cap, tx.payee, tx.value);
+      };
+
+      multi_action::maybe_restore_withdraw_cap(withdraw_cap_opt);
+
+      uid
+
+    }
+
+
     #[test_only]
     /// NOTE: this is needed because tests requires the the GUID of the transfer.
     public(friend) fun test_propose_payment(
@@ -279,7 +326,6 @@ module ol_framework::donor_voice_txs {
       payee: address,
       value: u64,
       description: vector<u8>,
-      advance: bool,
     ): guid::ID acquires TxSchedule {
 
       propose_payment(
@@ -287,8 +333,7 @@ module ol_framework::donor_voice_txs {
       multisig_address,
       payee,
       value,
-      description,
-      advance)
+      description)
     }
 
     /// Private function which handles the logic of adding a new timed transfer
@@ -428,9 +473,6 @@ module ol_framework::donor_voice_txs {
     /// @returns: u64
     /// -  the total amount able to transfer (including account limits)
     fun handle_slow_wallet_payment(vm: &signer, t: &TimedTransfer): u64 {
-        // should't be here, belt and suspenders without aborting epoch boundary
-        if (t.tx.is_advance) { return 0 };
-
         // make a slow payment
         let multisig_address = guid::id_creator_address(&t.uid);
         // if the account is a community wallet, then we assume
@@ -448,19 +490,17 @@ module ol_framework::donor_voice_txs {
         amount_transferred
     }
 
-    /// handles the payment in the case of unlocked advanced/loaned coins.
-    /// Intended for minor admin purposes, using the credit limit.
-    /// see more: donor_voice_advance.move
-    fun handle_advance_unlocked_payment(vm: &signer, t: &TimedTransfer): u64 acquires TxSchedule {
-      // should't be here, belt and suspenders without aborting epoch boundary
-      if (!t.tx.is_advance) { return 0 };
-      let multisig_address = guid::id_creator_address(&t.uid);
+    // /// handles the payment in the case of unlocked advanced/loaned coins.
+    // /// Intended for minor admin purposes, using the credit limit.
+    // /// see more: donor_voice_advance.move
+    // fun handle_advance_unlocked_payment(vm: &signer, t: &TimedTransfer): u64 acquires TxSchedule {
+    //   let multisig_address = guid::id_creator_address(&t.uid);
 
-      let state = borrow_global<TxSchedule>(multisig_address);
-      let amount_transferred = community_wallet_advance::transfer_credit(vm, &state.guid_capability, t.tx.payee, t.tx.value);
+    //   let state = borrow_global<TxSchedule>(multisig_address);
+    //   let amount_transferred = community_wallet_advance::transfer_credit(vm, &state.guid_capability, t.tx.payee, t.tx.value);
 
-      amount_transferred
-    }
+    //   amount_transferred
+    // }
 
 
     #[test_only]
@@ -900,11 +940,11 @@ module ol_framework::donor_voice_txs {
     payee: address,
     value: u64,
     description: vector<u8>,
-    advance: bool
   )  acquires TxSchedule {
     donor_voice_reauth::assert_authorized(multisig_address);
-    propose_payment(&auth, multisig_address, payee, value, description, advance);
+    propose_payment(&auth, multisig_address, payee, value, description);
   }
+
 
   // VETO TXs
   /// A donor of the program can propose a veto
@@ -925,6 +965,20 @@ module ol_framework::donor_voice_txs {
     assert!(found, error::invalid_argument(ENO_VETO_ID_FOUND));
     veto_handler(donor, &veto_uid, &tx_uid);
   }
+
+
+  /// A signer of the multisig can propose a payment
+  public entry fun propose_advance_tx(
+    auth: signer,
+    multisig_address: address,
+    payee: address,
+    value: u64,
+    description: vector<u8>,
+  ) {
+    donor_voice_reauth::assert_authorized(multisig_address);
+    propose_advance(&auth, multisig_address, payee, value, description);
+  }
+
 
 
   // REAUTH TXs

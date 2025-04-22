@@ -142,7 +142,7 @@
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         // bob propose payment
-        let _uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol", false);
+        let _uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
 
     }
 
@@ -177,7 +177,7 @@
 
         // VERIFY PAYMENTS OPERATE AS EXPECTED
         // bob propose payment
-        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol", false);
+        let uid = donor_voice_txs::test_propose_payment(bob, alice_comm_wallet_addr, carols_addr, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -188,7 +188,7 @@
         assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
 
         // dave votes the payment and it is approved.
-        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol", false);
+        let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
         let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(alice_comm_wallet_addr, &uid);
         assert!(found, 7357004);
         assert!(idx == 0, 7357005);
@@ -397,10 +397,12 @@
       let d = community_wallet_advance::is_delinquent(comm_addr);
       assert!(!d, 7357003);
 
-      let cap = account::create_guid_capability(community);
+      // let cap = account::create_guid_capability(community);
+
+      let w_cap = account::extract_withdraw_capability(community);
 
       // community wallet transfers an amount to alice
-      community_wallet_advance::transfer_credit(root, &cap, @0x1000a, 10000);
+      community_wallet_advance::transfer_credit(&w_cap, @0x1000a, 10000);
 
       let (_, comm_balance) = ol_account::balance(comm_addr);
       let (_, alice_balance) = ol_account::balance(@0x1000a);
@@ -421,8 +423,6 @@
       assert!(bal != 0, 7357008);
       assert!(bal > bal_before, 7357009);
 
-      // restore
-      // std::option::fill(&mut cap_opt, cap);
-      // multi_action::maybe_restore_withdraw_cap(cap_opt);
+      account::destroy_withdraw_capability(w_cap);
     }
 }
