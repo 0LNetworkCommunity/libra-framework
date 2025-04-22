@@ -6035,6 +6035,7 @@ dependencies = [
  "libra-rescue",
  "libra-smoke-tests",
  "libra-storage",
+ "libra-txs",
  "libra-types",
  "libra-wallet",
  "regex",
