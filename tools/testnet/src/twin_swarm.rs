@@ -157,7 +157,7 @@ pub async fn awake_frankenswarm(
 
     println!("Change the waypoint in the node configs and add the rescue blob to the config");
     TwinSwarm::update_node_files(&mut smoke.swarm, wp, rescue_blob_path).await?;
-    TwinSwarm::update_app_cfg(&mut smoke.swarm).await?;
+    TwinSwarm::update_app_cfg(&smoke.swarm).await?;
 
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;

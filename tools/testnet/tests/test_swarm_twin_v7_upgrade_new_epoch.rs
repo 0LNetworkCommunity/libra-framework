@@ -7,7 +7,6 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub},
     txs_cli_user::UserTxs::HumanFounder,
 };
-use libra_types::core_types::app_cfg::AppCfg;
 
 /// Checks that we can change epoch after a twin network is set
 #[tokio::test]
@@ -26,9 +25,6 @@ async fn test_swarm_twin_v7_upgrade_new_epoch() -> anyhow::Result<()> {
     // should use api to list the modules installed on 0x1
     // let client = smoke.client();
     let val_one = &test_info[0];
-
-    let cfg = AppCfg::load(Some(val_one.app_cfg_path.clone()))?;
-    dbg!(&cfg);
 
     // reactivate the validator account
     let mut txs_cli = TxsCli {
