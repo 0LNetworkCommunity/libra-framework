@@ -214,13 +214,21 @@ pub struct ProposeTx {
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
-            self.community_wallet,
-            self.recipient,
-            gas_coin::cast_decimal_to_coin(self.amount as f64),
-            self.description.clone().into_bytes(),
-            self.advance,
-        );
+        let payload = if self.advance {
+            libra_stdlib::donor_voice_txs_propose_advance_tx(
+                self.community_wallet,
+                self.recipient,
+                gas_coin::cast_decimal_to_coin(self.amount as f64),
+                self.description.clone().into_bytes(),
+            )
+        } else {
+            libra_stdlib::donor_voice_txs_propose_payment_tx(
+                self.community_wallet,
+                self.recipient,
+                gas_coin::cast_decimal_to_coin(self.amount as f64),
+                self.description.clone().into_bytes(),
+            )
+        };
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -450,7 +458,6 @@ async fn propose_single(
         instruction.parsed.unwrap(),
         gas_coin::cast_decimal_to_coin(instruction.amount as f64),
         instruction.description.clone().into_bytes(),
-        instruction.is_advance,
     );
     sender.sign_submit_wait(payload).await?;
     Ok(())
