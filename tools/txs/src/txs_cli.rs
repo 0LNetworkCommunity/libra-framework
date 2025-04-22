@@ -21,7 +21,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use url::Url;
 
-#[derive(Parser)]
+#[derive(Parser, Default)]
 #[clap(name = env!("CARGO_PKG_NAME"), author, version, about, long_about = None, arg_required_else_help = true)]
 /// Submit a transaction to the blockchain
 pub struct TxsCli {
@@ -167,6 +167,7 @@ impl TxsCli {
         let chain_name = self
             .chain_name
             .unwrap_or(app_cfg.workspace.default_chain_id);
+
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {

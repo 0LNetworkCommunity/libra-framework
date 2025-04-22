@@ -241,6 +241,14 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    /// A signer of the multisig can propose a payment
+    DonorVoiceTxsProposeAdvanceTx {
+        multisig_address: AccountAddress,
+        payee: AccountAddress,
+        value: u64,
+        description: Vec<u8>,
+    },
+
     /// A donor can propose the liquidation of a Donor Voice account
     DonorVoiceTxsProposeLiquidateTx {
         multisig_address: AccountAddress,
@@ -252,7 +260,6 @@ pub enum EntryFunctionCall {
         payee: AccountAddress,
         value: u64,
         description: Vec<u8>,
-        advance: bool,
     },
 
     /// A donor of the program can propose a veto
@@ -313,10 +320,6 @@ pub enum EntryFunctionCall {
     },
 
     MultiActionInitGovDeprecated {},
-
-    MultiActionMigrationMigrateOffer {
-        multisig_address: AccountAddress,
-    },
 
     /// Similar to add_owners, but only allow adding one owner.
     MultisigAccountAddOwner {
@@ -709,6 +712,12 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_vote(proposal_id, should_pass),
+            DonorVoiceTxsProposeAdvanceTx {
+                multisig_address,
+                payee,
+                value,
+                description,
+            } => donor_voice_txs_propose_advance_tx(multisig_address, payee, value, description),
             DonorVoiceTxsProposeLiquidateTx { multisig_address } => {
                 donor_voice_txs_propose_liquidate_tx(multisig_address)
             }
@@ -717,14 +726,7 @@ impl EntryFunctionCall {
                 payee,
                 value,
                 description,
-                advance,
-            } => donor_voice_txs_propose_payment_tx(
-                multisig_address,
-                payee,
-                value,
-                description,
-                advance,
-            ),
+            } => donor_voice_txs_propose_payment_tx(multisig_address, payee, value, description),
             DonorVoiceTxsProposeVetoTx {
                 multisig_address,
                 id,
@@ -750,9 +752,6 @@ impl EntryFunctionCall {
                 multi_action_claim_offer(multisig_address)
             }
             MultiActionInitGovDeprecated {} => multi_action_init_gov_deprecated(),
-            MultiActionMigrationMigrateOffer { multisig_address } => {
-                multi_action_migration_migrate_offer(multisig_address)
-            }
             MultisigAccountAddOwner { new_owner } => multisig_account_add_owner(new_owner),
             MultisigAccountAddOwners { new_owners } => multisig_account_add_owners(new_owners),
             MultisigAccountApproveTransaction {
@@ -1476,6 +1475,32 @@ pub fn diem_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionP
     ))
 }
 
+/// A signer of the multisig can propose a payment
+pub fn donor_voice_txs_propose_advance_tx(
+    multisig_address: AccountAddress,
+    payee: AccountAddress,
+    value: u64,
+    description: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("propose_advance_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&payee).unwrap(),
+            bcs::to_bytes(&value).unwrap(),
+            bcs::to_bytes(&description).unwrap(),
+        ],
+    ))
+}
+
 /// A donor can propose the liquidation of a Donor Voice account
 pub fn donor_voice_txs_propose_liquidate_tx(
     multisig_address: AccountAddress,
@@ -1500,7 +1525,6 @@ pub fn donor_voice_txs_propose_payment_tx(
     payee: AccountAddress,
     value: u64,
     description: Vec<u8>,
-    advance: bool,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1517,7 +1541,6 @@ pub fn donor_voice_txs_propose_payment_tx(
             bcs::to_bytes(&payee).unwrap(),
             bcs::to_bytes(&value).unwrap(),
             bcs::to_bytes(&description).unwrap(),
-            bcs::to_bytes(&advance).unwrap(),
         ],
     ))
 }
@@ -1743,23 +1766,6 @@ pub fn multi_action_init_gov_deprecated() -> TransactionPayload {
         ident_str!("init_gov_deprecated").to_owned(),
         vec![],
         vec![],
-    ))
-}
-
-pub fn multi_action_migration_migrate_offer(
-    multisig_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("multi_action_migration").to_owned(),
-        ),
-        ident_str!("migrate_offer").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&multisig_address).unwrap()],
     ))
 }
 
@@ -2821,6 +2827,21 @@ mod decoder {
         }
     }
 
+    pub fn donor_voice_txs_propose_advance_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsProposeAdvanceTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                payee: bcs::from_bytes(script.args().get(1)?).ok()?,
+                value: bcs::from_bytes(script.args().get(2)?).ok()?,
+                description: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn donor_voice_txs_propose_liquidate_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -2842,7 +2863,6 @@ mod decoder {
                 payee: bcs::from_bytes(script.args().get(1)?).ok()?,
                 value: bcs::from_bytes(script.args().get(2)?).ok()?,
                 description: bcs::from_bytes(script.args().get(3)?).ok()?,
-                advance: bcs::from_bytes(script.args().get(4)?).ok()?,
             })
         } else {
             None
@@ -2983,18 +3003,6 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::MultiActionInitGovDeprecated {})
-        } else {
-            None
-        }
-    }
-
-    pub fn multi_action_migration_migrate_offer(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::MultiActionMigrationMigrateOffer {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
-            })
         } else {
             None
         }
@@ -3533,6 +3541,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_vote),
         );
         map.insert(
+            "donor_voice_txs_propose_advance_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_advance_tx),
+        );
+        map.insert(
             "donor_voice_txs_propose_liquidate_tx".to_string(),
             Box::new(decoder::donor_voice_txs_propose_liquidate_tx),
         );
@@ -3591,10 +3603,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "multi_action_init_gov_deprecated".to_string(),
             Box::new(decoder::multi_action_init_gov_deprecated),
-        );
-        map.insert(
-            "multi_action_migration_migrate_offer".to_string(),
-            Box::new(decoder::multi_action_migration_migrate_offer),
         );
         map.insert(
             "multisig_account_add_owner".to_string(),

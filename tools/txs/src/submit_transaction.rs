@@ -52,6 +52,10 @@ impl Sender {
             Some(c) => c,
             None => Client::default().await?,
         };
+        info!(
+            "chain ledger info: {:?}",
+            &client.get_ledger_information().await?
+        );
 
         // Lookup the originating address and handle legacy address conversion if necessary
         let address = client
