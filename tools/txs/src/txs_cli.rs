@@ -167,6 +167,7 @@ impl TxsCli {
         let chain_name = self
             .chain_name
             .unwrap_or(app_cfg.workspace.default_chain_id);
+
         let url = if let Some(u) = self.url.as_ref() {
             u.to_owned()
         } else {

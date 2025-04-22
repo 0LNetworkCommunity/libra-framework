@@ -2,12 +2,14 @@ use crate::{cli_output::TestInfo, replace_validators_file::replace_validators_bl
 use anyhow::{Context, Result};
 use diem_forge::{LocalSwarm, SwarmExt};
 use diem_temppath::TempPath;
+use diem_types::chain_id::NamedChain;
 use diem_types::waypoint::Waypoint;
 use fs_extra::dir;
 use libra_config::validator_registration::ValCredentials;
 use libra_rescue::cli_bootstrapper::one_step_apply_rescue_on_db;
 use libra_smoke_tests::extract_credentials::extract_swarm_node_credentials;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
+use libra_types::core_types::app_cfg::AppCfg;
 use std::time::Instant;
 use std::{
     path::{Path, PathBuf},
@@ -59,6 +61,22 @@ impl TwinSwarm {
                 wp,
                 &rescue_blob,
             )?;
+        }
+        Ok(())
+    }
+
+    /// update the AppCfg in each validator data path,
+    /// to use the twin chain id i.e, TESTNET (2) (not! TESTING(4))
+    pub async fn update_app_cfg(swarm: &LocalSwarm) -> anyhow::Result<()> {
+        for n in swarm.validators() {
+            let cfg = n.config_path();
+            let data_path = cfg.parent().unwrap();
+            let mut app_cfg = AppCfg::load(Some(data_path.join("libra-cli-config.yaml")))?;
+            let np = app_cfg.get_network_profile_mut(None)?;
+            np.chain_name = NamedChain::TESTNET;
+            app_cfg.workspace.default_chain_id = NamedChain::TESTNET;
+
+            app_cfg.save_file()?;
         }
         Ok(())
     }
@@ -139,6 +157,7 @@ pub async fn awake_frankenswarm(
 
     println!("Change the waypoint in the node configs and add the rescue blob to the config");
     TwinSwarm::update_node_files(&mut smoke.swarm, wp, rescue_blob_path).await?;
+    TwinSwarm::update_app_cfg(&mut smoke.swarm).await?;
 
     // Restart validators and verify operation
     TwinSwarm::restart_and_verify(&mut smoke.swarm, start_version).await?;

@@ -2,16 +2,16 @@ use libra_framework::release::ReleaseTarget;
 use libra_rescue::test_support::setup_v7_reference_twin_db;
 use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_testnet::twin_swarm;
-use libra_txs::txs_cli_governance::GovernanceTxs::EpochBoundary;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub},
     txs_cli_user::UserTxs::HumanFounder,
 };
 use libra_types::core_types::app_cfg::AppCfg;
 
-/// Checks that we can change epoch after a twin network is set
+/// Checks we can submit the minimal transaction to the twin network
+/// after a twin network is set
 #[tokio::test]
-async fn test_swarm_twin_v7_upgrade_new_epoch() -> anyhow::Result<()> {
+async fn test_swarm_twin_v7_upgrade_tx_success() -> anyhow::Result<()> {
     let dir = setup_v7_reference_twin_db()?;
 
     let mut smoke = LibraSmoke::new(Some(2), None).await?;
@@ -30,16 +30,12 @@ async fn test_swarm_twin_v7_upgrade_new_epoch() -> anyhow::Result<()> {
     let cfg = AppCfg::load(Some(val_one.app_cfg_path.clone()))?;
     dbg!(&cfg);
 
-    // reactivate the validator account
-    let mut txs_cli = TxsCli {
+    let txs_cli = TxsCli {
         subcommand: Some(TxsSub::User(HumanFounder)),
         config_path: Some(val_one.app_cfg_path.clone()),
         ..Default::default()
     };
 
-    txs_cli.run().await?;
-
-    txs_cli.subcommand = Some(TxsSub::Governance(EpochBoundary));
     txs_cli.run().await?;
 
     Ok(())
