@@ -129,7 +129,6 @@ module ol_framework::page_rank_lazy {
             return 0
         };
 
-
         // Great, we found the target!
         // then we get to return the power
         // otherwise it will be zero
@@ -157,23 +156,36 @@ module ol_framework::page_rank_lazy {
         // Calculate power passed to neighbors (50% decay)
         let next_power = current_power / 2;
 
+        // if the both current and target are a root of trust
+        // catch the case
+        // and exit early
+        if(
+          root_of_trust::is_root_at_registry(@diem_framework, current) &&
+          root_of_trust::is_root_at_registry(@diem_framework, target)
+          ) {
+            return next_power
+        };
+
         // Check ALL neighbors for paths to target
         let i = 0;
         while (i < neighbor_count) {
             let neighbor = *vector::borrow(&neighbors, i);
 
-            // we don't re-enter the root of
-            // trust list, because we don't
-            // want to accumulate points from
-            // roots vouching for each other.
-            if(root_of_trust::is_root_at_registry(@diem_framework, neighbor)) {
-                return next_power
-            };
 
             // Only visit if not already in path (avoid cycles)
             if (!vector::contains(visited, &neighbor)) {
                 // Mark as visited
                 vector::push_back(visited, neighbor);
+
+                // we don't re-enter the root of
+                // trust list, because we don't
+                // want to accumulate points from
+                // roots vouching for each other.
+                if(
+                  root_of_trust::is_root_at_registry(@diem_framework, neighbor)
+                  ) {
+                    continue
+                };
 
                 // Continue search from this neighbor with reduced power
                 let path_score = walk_from_node(

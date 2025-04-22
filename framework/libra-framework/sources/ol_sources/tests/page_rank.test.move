@@ -53,7 +53,6 @@ module ol_framework::test_page_rank {
       assert!(vector::length(&received) == 0, 1002);
 
       let page_rank_score = page_rank_lazy::get_trust_score(addr);
-      diem_std::debug::print(&page_rank_score);
 
       assert!(page_rank_score == 0, 1003);
 
@@ -82,7 +81,7 @@ module ol_framework::test_page_rank {
 
     // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-    diem_std::debug::print(&page_rank_score);
+
     assert!(page_rank_score == 50, 7357001);
   }
 
@@ -91,7 +90,40 @@ module ol_framework::test_page_rank {
   fun test_one_user_ten_root(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
-    let _count_roots = vector::length(&roots_sig);
+    let count_roots = vector::length(&roots_sig);
+    let new_user_sig = mock::create_user_from_u64(framework, 11);
+    let new_user_addr = signer::address_of(&new_user_sig);
+    let root_sig = vector::borrow(&roots_sig, 0);
+
+    vouch::init(root_sig);
+    vouch::init(&new_user_sig);
+    // Initialize page rank for the new user
+    page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
+
+    let i = 0;
+    while (i < vector::length(&roots_sig)) {
+      let grantor = vector::borrow(&roots_sig, i);
+      vouch::init(grantor);
+      vouch::vouch_for(grantor, new_user_addr);
+
+      i = i + 1;
+    };
+        // // Verify we have all 10 vouches
+    let (received, _) = vouch::get_received_vouches(new_user_addr);
+    assert!(vector::length(&received) == count_roots, 7357002);
+
+    let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
+    // NOTE: this should be 10X the previous test
+    assert!(page_rank_score_later == 500, 7357003);
+  }
+
+  // creates a user that is one hop away from the user with 10 vouches from root of trust.
+  #[test(framework = @ol_framework)]
+  fun test_one_hop_to_one_user_ten_root(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+    let count_roots = vector::length(&roots_sig);
+
     let new_user_sig = mock::create_user_from_u64(framework, 11);
     let new_user_addr = signer::address_of(&new_user_sig);
     let root_sig = vector::borrow(&roots_sig, 0);
@@ -109,55 +141,29 @@ module ol_framework::test_page_rank {
 
       i = i + 1;
     };
+
+    // // Verify we have all 10 vouches
+    let (received, _) = vouch::get_received_vouches(new_user_addr);
+    assert!(vector::length(&received) == count_roots, 7357002);
+
+    let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
+    // NOTE: this should be 10X the previous test
+    assert!(page_rank_score_later == 500, 7357003);
+
+    //// THE TEST
+    // This user is friends with new_user above, which has 10 vouches from root
+    let another_user_sig = mock::create_user_from_u64(framework, 12);
+    let another_user_addr = signer::address_of(&another_user_sig);
+    vouch::init(&another_user_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&another_user_sig);
+    let score_pre = page_rank_lazy::get_trust_score(another_user_addr);
+    assert!(score_pre == 0, 7357004);
+
+    vouch_txs::vouch_for(&new_user_sig, another_user_addr);
+    let score_post = page_rank_lazy::get_trust_score(another_user_addr);
+    assert!(score_post == 250, 7357005);
+    assert!(score_post == page_rank_score_later/2, 7357006);
   }
-
-  // creates a user that is one hope away from the user with 10 vouches from root of trust.
-  // #[test(framework = @ol_framework)]
-  // fun test_one_hop_to_one_user_ten_root(framework: &signer) {
-  //   // Set up the test base
-  //   let roots_sig = test_base(framework);
-  //   let count_roots = vector::length(&roots_sig);
-
-  //   let new_user_sig = mock::create_user_from_u64(framework, 11);
-  //   let new_user_addr = signer::address_of(&new_user_sig);
-  //   let root_sig = vector::borrow(&roots_sig, 0);
-
-  //   vouch::init(root_sig);
-  //   vouch::init(&new_user_sig);
-  //   // // Initialize page rank for the new user
-  //   page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
-
-  //   let i = 0;
-  //   while (i < vector::length(&roots_sig)) {
-  //     let grantor = vector::borrow(&roots_sig, i);
-  //     vouch::init(grantor);
-  //     vouch::vouch_for(grantor, new_user_addr);
-
-  //     i = i + 1;
-  //   };
-
-  //   // // Verify we have all 10 vouches
-  //   let (received, _) = vouch::get_received_vouches(new_user_addr);
-  //   assert!(vector::length(&received) == count_roots, 7357002);
-
-  //   let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
-  //   // NOTE: this should be 10X the previous test
-  //   assert!(page_rank_score_later == 500, 7357003);
-
-  //   //// THE TEST
-  //   // This user is friends with new_user above, which has 10 vouches from root
-  //   let another_user_sig = mock::create_user_from_u64(framework, 11);
-  //   let another_user_addr = signer::address_of(&new_user_sig);
-  // }
-
-  //   // // Verify we have all 10 vouches
-  //   let (received, _) = vouch::get_received_vouches(new_user_addr);
-  //   assert!(vector::length(&received) == count_roots, 7357002);
-
-  //   let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
-  //   // NOTE: this should be 10X the previous test
-  //   assert!(page_rank_score_later == 500, 7357003);
-  // }
 
 
   #[test(framework = @ol_framework)]
@@ -353,12 +359,12 @@ module ol_framework::test_page_rank {
     vouch::vouch_for(root0, user1_addr);
 
     let root0_score = page_rank_lazy::get_trust_score(signer::address_of(root0));
-    diem_std::debug::print(&root0_score);
+    assert!(root0_score == 450, 7357100);
 
     // Check user1's score - should be 50 (100/2 from a direct root vouch)
     let user1_score = page_rank_lazy::get_trust_score(user1_addr);
-    diem_std::debug::print(&user1_score);
-    // assert!(user1_score == 50, 7357100);
+    assert!(user1_score == 50, 7357100);
+    assert!(user1_score < root0_score, 7357101);
 
     // // Now have multiple roots (who vouch for each other) vouch for user2
     // vouch::vouch_for(vector::borrow(&roots_sig, 0), user2_addr);
