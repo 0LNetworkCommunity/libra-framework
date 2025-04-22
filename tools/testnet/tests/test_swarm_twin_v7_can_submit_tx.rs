@@ -6,7 +6,6 @@ use libra_txs::{
     txs_cli::{TxsCli, TxsSub},
     txs_cli_user::UserTxs::HumanFounder,
 };
-use libra_types::core_types::app_cfg::AppCfg;
 
 /// Checks we can submit the minimal transaction to the twin network
 /// after a twin network is set
@@ -26,9 +25,6 @@ async fn test_swarm_twin_v7_upgrade_tx_success() -> anyhow::Result<()> {
     // should use api to list the modules installed on 0x1
     // let client = smoke.client();
     let val_one = &test_info[0];
-
-    let cfg = AppCfg::load(Some(val_one.app_cfg_path.clone()))?;
-    dbg!(&cfg);
 
     let txs_cli = TxsCli {
         subcommand: Some(TxsSub::User(HumanFounder)),
