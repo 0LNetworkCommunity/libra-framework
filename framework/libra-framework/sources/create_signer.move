@@ -19,6 +19,9 @@ module diem_framework::create_signer {
     //////// 0L ////////
     friend ol_framework::epoch_boundary;
     friend ol_framework::migration_capability;
+    // TODO: this should be removed, and fee_maker should only initialize on
+    // user flow or epoch boundary
+    friend ol_framework::fee_maker;
 
 
     public(friend) native fun create_signer(addr: address): signer;

@@ -332,12 +332,14 @@ module ol_framework::test_burn {
     let marlon_rando = @0x12345;
     ol_account::create_account(root, marlon_rando);
 
+
     let rando_money = 5;
     let coin_option = ol_account::test_vm_withdraw(root, alice, rando_money);
 
     if (option::is_some(&coin_option)) {
       let c = option::extract(&mut coin_option);
-      // shortcut: we have the VM use alices money to pay a fee for marlon.
+      ////// THE TEST
+      // marlon needs to have had fees tracking initialized.
       transaction_fee::vm_pay_fee(root, marlon_rando, c);
     };
     option::destroy_none(coin_option);
@@ -349,6 +351,7 @@ module ol_framework::test_burn {
     // marlon is the only fee maker (since genesis)
     let fee_makers = fee_maker::get_fee_makers();
     // includes 0x1 which makes a deposit on
+    diem_std::debug::print(&vector::length(&fee_makers));
     assert!(vector::length(&fee_makers)==1, 7357002);
 
     let marlon_fees_made = fee_maker::get_user_fees_made(marlon_rando);
