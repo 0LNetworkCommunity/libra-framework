@@ -56,7 +56,6 @@ module diem_framework::multisig_account {
 
 
     friend ol_framework::multi_action;
-    friend ol_framework::multi_action_migration;
 
     /// The salt used to create a resource account during multisig account creation.
     /// This is used to avoid conflicts with other modules that also create resource accounts with the same owner
@@ -999,9 +998,6 @@ module diem_framework::multisig_account {
         // Register the account to receive GAS as this is not done by default as part of the resource account creation
         // flow.
         libra_coin::maybe_register(&multisig_signer);
-        // if (!coin::is_account_registered<LibraCoin>(address_of(&multisig_signer))) {
-        //     coin::register<LibraCoin>(&multisig_signer);
-        // };
 
         (multisig_signer, multisig_signer_cap)
     }

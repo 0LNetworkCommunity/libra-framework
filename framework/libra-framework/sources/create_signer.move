@@ -17,10 +17,12 @@ module diem_framework::create_signer {
     friend diem_framework::object;
 
     //////// 0L ////////
-    friend ol_framework::fee_maker;
     friend ol_framework::epoch_boundary;
-    friend ol_framework::multi_action_migration; // TODO: remove after offer migration is completed
-    // friend ol_framework::vouch_migration; // TODO: remove after vouch migration is completed
+    friend ol_framework::migration_capability;
+    // TODO: this should be removed, and fee_maker should only initialize on
+    // user flow or epoch boundary
+    friend ol_framework::fee_maker;
+
 
     public(friend) native fun create_signer(addr: address): signer;
 }
