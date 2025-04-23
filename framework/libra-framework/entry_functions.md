@@ -228,10 +228,10 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 ### libra_coin.move
 
-- `claim_mint_capability()`
+- NEUTERED `claim_mint_capability()`
   - Claims the mint capability for Libra coin
 
-- `delegate_mint_capability(to: address)`
+- NEUTERED `delegate_mint_capability(to: address)`
   - Delegates mint capability to another address
 
 ### vouch.move
