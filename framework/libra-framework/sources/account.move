@@ -649,7 +649,7 @@ module diem_framework::account {
     /// `recipient_address` in the account owner's `SignerCapabilityOffer`, this will replace the
     /// previous `recipient_address` upon successful verification (the previous recipient will no longer have access
     /// to the account owner's signer capability).
-    public entry fun offer_signer_capability(
+    fun offer_signer_capability(
         account: &signer,
         signer_capability_sig_bytes: vector<u8>,
         account_scheme: u8,
@@ -690,7 +690,7 @@ module diem_framework::account {
 
     /// Revoke the account owner's signer capability offer for `to_be_revoked_address` (i.e., the address that
     /// has a signer capability offer from `account` but will be revoked in this function).
-    public entry fun revoke_signer_capability(account: &signer, to_be_revoked_address: address) acquires Account {
+    fun revoke_signer_capability(account: &signer, to_be_revoked_address: address) acquires Account {
         assert!(exists_at(to_be_revoked_address), error::not_found(EACCOUNT_DOES_NOT_EXIST));
         let addr = signer::address_of(account);
         let account_resource = borrow_global_mut<Account>(addr);
@@ -699,7 +699,7 @@ module diem_framework::account {
     }
 
     /// Revoke any signer capability offer in the specified account.
-    public entry fun revoke_any_signer_capability(account: &signer) acquires Account {
+    fun revoke_any_signer_capability(account: &signer) acquires Account {
         let account_resource = borrow_global_mut<Account>(signer::address_of(account));
         option::extract(&mut account_resource.signer_capability_offer.for);
     }
@@ -1226,7 +1226,7 @@ module diem_framework::account {
     }
 
     #[test_only]
-    public entry fun create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer {
+    fun create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer {
         let pk = ed25519::new_unvalidated_public_key_from_bytes(pk_bytes);
         let curr_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&pk);
         let alice_address = from_bcs::to_address(curr_auth_key);
