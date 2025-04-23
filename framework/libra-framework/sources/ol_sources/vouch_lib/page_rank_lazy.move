@@ -8,24 +8,16 @@ module ol_framework::page_rank_lazy {
 
     friend ol_framework::vouch_txs;
 
-    // Constants
-    const DEFAULT_WALK_DEPTH: u64 = 4;
-    const DEFAULT_NUM_WALKS: u64 = 10;
-    const SCORE_TTL_SECONDS: u64 = 1000; // Score validity period in seconds
-    const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
-
-    const DEFAULT_ROOT_REGISTRY: address = @diem_framework; // Default registry address for root of trust
-
-    // Full graph walk constants
-    const FULL_WALK_MAX_DEPTH: u64 = 6; // Maximum path length for full graph traversal
-
-    //////// Error codes ////////
-    /// node not found
-    const ENODE_NOT_FOUND: u64 = 1;
+    //////// ERROR CODES ////////
     /// trust record not initialized
     const ENOT_INITIALIZED: u64 = 2;
-    /// processing limit reached
-    const EPROCESSING_LIMIT_REACHED: u64 = 3;
+
+    //////// CONSTANTS ////////
+    // Max score on a single vouch
+    const MAX_VOUCH_SCORE: u64 = 100_000;
+
+    // Circuit breaker to prevent stack overflow
+    const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
 
     // Per-user trust record - each user stores their own trust data
     struct UserTrustRecord has key, drop {
@@ -52,7 +44,6 @@ module ol_framework::page_rank_lazy {
     }
 
     // Calculate or retrieve cached trust score
-    // TODO: remove this
     public fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
         let current_timestamp = timestamp::now_seconds();
 
@@ -70,10 +61,8 @@ module ol_framework::page_rank_lazy {
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
 
-        // if the users's score is not stale skip traversing
-
         // Compute score using selected algorithm
-        let score = traverse_graph(&roots, addr, FULL_WALK_MAX_DEPTH);
+        let score = traverse_graph(&roots, addr);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
@@ -88,7 +77,6 @@ module ol_framework::page_rank_lazy {
     fun traverse_graph(
         roots: &vector<address>,
         target: address,
-        max_depth: u64,
     ): u64 {
         let total_score = 0;
         let root_idx = 0;
@@ -102,11 +90,11 @@ module ol_framework::page_rank_lazy {
             vector::push_back(&mut visited, root);
 
             if (root != target) {
-              // NOTE: you don't don't give yourself points in the walk
+              // NOTE: root, you don't don't give yourself points in the walk
 
                 // Initial trust power is 100 (full trust from root)
                 total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 1, max_depth, 100
+                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE
                 );
             };
 
@@ -121,8 +109,6 @@ module ol_framework::page_rank_lazy {
         current: address,
         target: address,
         visited: &mut vector<address>,
-        current_depth: u64,
-        max_depth: u64,
         current_power: u64
     ): u64 {
         if(!vouch::is_init(current)) {
@@ -137,8 +123,8 @@ module ol_framework::page_rank_lazy {
             return current_power
         };
 
-        // Stop conditions
-        if (current_depth >= max_depth || current_power < 2) {
+        // Stop condition - only stop if power is too low
+        if (current_power < 2) {
             return 0
         };
 
@@ -156,32 +142,47 @@ module ol_framework::page_rank_lazy {
         // Calculate power passed to neighbors (50% decay)
         let next_power = current_power / 2;
 
+        // if the both current and target are a root of trust
+        // catch the case
+        // and exit early
+        if(
+          root_of_trust::is_root_at_registry(@diem_framework, current) &&
+          root_of_trust::is_root_at_registry(@diem_framework, target)
+          ) {
+            return next_power
+        };
+
         // Check ALL neighbors for paths to target
         let i = 0;
         while (i < neighbor_count) {
             let neighbor = *vector::borrow(&neighbors, i);
+
 
             // Only visit if not already in path (avoid cycles)
             if (!vector::contains(visited, &neighbor)) {
                 // Mark as visited
                 vector::push_back(visited, neighbor);
 
+                // we don't re-enter the root of
+                // trust list, because we don't
+                // want to accumulate points from
+                // roots vouching for each other.
+                if(
+                  root_of_trust::is_root_at_registry(@diem_framework, neighbor)
+                  ) {
+                    continue
+                };
+
                 // Continue search from this neighbor with reduced power
                 let path_score = walk_from_node(
                     neighbor,
                     target,
                     visited,
-                    current_depth + 1,
-                    max_depth,
                     next_power
                 );
 
                 // Add to total score
                 total_score = total_score + path_score;
-
-                // // Remove from visited for backtracking
-                // let last_idx = vector::length(visited) - 1;
-                // vector::remove(visited, last_idx);
             };
 
             i = i + 1;
@@ -266,6 +267,12 @@ module ol_framework::page_rank_lazy {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
         record.is_stale
+    }
+
+    #[view]
+    // get the const for highest vouch score
+    public fun get_max_single_score(): u64 {
+        MAX_VOUCH_SCORE
     }
 
     //////// TEST HELPERS ///////
