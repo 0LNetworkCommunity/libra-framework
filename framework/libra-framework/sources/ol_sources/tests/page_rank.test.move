@@ -53,9 +53,7 @@ module ol_framework::test_page_rank {
       assert!(vector::length(&received) == 0, 1002);
 
       let page_rank_score = page_rank_lazy::get_trust_score(addr);
-
       assert!(page_rank_score == 0, 1003);
-
 
       i = i + 1;
     }
@@ -81,7 +79,6 @@ module ol_framework::test_page_rank {
 
     // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-
     assert!(page_rank_score == 50, 7357001);
   }
 
@@ -105,10 +102,10 @@ module ol_framework::test_page_rank {
       let grantor = vector::borrow(&roots_sig, i);
       vouch::init(grantor);
       vouch::vouch_for(grantor, new_user_addr);
-
       i = i + 1;
     };
-        // // Verify we have all 10 vouches
+
+    // Verify we have all 10 vouches
     let (received, _) = vouch::get_received_vouches(new_user_addr);
     assert!(vector::length(&received) == count_roots, 7357002);
 
@@ -124,47 +121,47 @@ module ol_framework::test_page_rank {
     let roots_sig = test_base(framework);
     let count_roots = vector::length(&roots_sig);
 
-    let new_user_sig = mock::create_user_from_u64(framework, 11);
-    let new_user_addr = signer::address_of(&new_user_sig);
-    let root_sig = vector::borrow(&roots_sig, 0);
+    // First user who receives direct vouches from all roots
+    let direct_vouched_sig = mock::create_user_from_u64(framework, 11);
+    let direct_vouched_addr = signer::address_of(&direct_vouched_sig);
+    let first_root_sig = vector::borrow(&roots_sig, 0);
 
-    vouch::init(root_sig);
-    vouch::init(&new_user_sig);
-    // // Initialize page rank for the new user
-    page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
+    vouch::init(first_root_sig);
+    vouch::init(&direct_vouched_sig);
+    // Initialize page rank for the directly vouched user
+    page_rank_lazy::maybe_initialize_trust_record(&direct_vouched_sig);
 
+    // Have all roots vouch for the directly vouched user
     let i = 0;
     while (i < vector::length(&roots_sig)) {
-      let grantor = vector::borrow(&roots_sig, i);
-      vouch::init(grantor);
-      vouch::vouch_for(grantor, new_user_addr);
-
+      let root_grantor = vector::borrow(&roots_sig, i);
+      vouch::init(root_grantor);
+      vouch::vouch_for(root_grantor, direct_vouched_addr);
       i = i + 1;
     };
 
-    // // Verify we have all 10 vouches
-    let (received, _) = vouch::get_received_vouches(new_user_addr);
+    // Verify we have all 10 vouches from roots
+    let (received, _) = vouch::get_received_vouches(direct_vouched_addr);
     assert!(vector::length(&received) == count_roots, 7357002);
 
-    let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
+    let direct_vouched_score = page_rank_lazy::get_trust_score(direct_vouched_addr);
     // NOTE: this should be 10X the previous test
-    assert!(page_rank_score_later == 500, 7357003);
+    assert!(direct_vouched_score == 500, 7357003);
 
-    //// THE TEST
-    // This user is friends with new_user above, which has 10 vouches from root
-    let another_user_sig = mock::create_user_from_u64(framework, 12);
-    let another_user_addr = signer::address_of(&another_user_sig);
-    vouch::init(&another_user_sig);
-    page_rank_lazy::maybe_initialize_trust_record(&another_user_sig);
-    let score_pre = page_rank_lazy::get_trust_score(another_user_addr);
-    assert!(score_pre == 0, 7357004);
+    // Second user who is vouched for by the user with 10 root vouches
+    let indirect_vouched_sig = mock::create_user_from_u64(framework, 12);
+    let indirect_vouched_addr = signer::address_of(&indirect_vouched_sig);
+    vouch::init(&indirect_vouched_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&indirect_vouched_sig);
+    let indirect_score_before = page_rank_lazy::get_trust_score(indirect_vouched_addr);
+    assert!(indirect_score_before == 0, 7357004);
 
-    vouch_txs::vouch_for(&new_user_sig, another_user_addr);
-    let score_post = page_rank_lazy::get_trust_score(another_user_addr);
-    assert!(score_post == 250, 7357005);
-    assert!(score_post == page_rank_score_later/2, 7357006);
+    // Direct vouched user vouches for the indirect vouched user
+    vouch_txs::vouch_for(&direct_vouched_sig, indirect_vouched_addr);
+    let indirect_score_after = page_rank_lazy::get_trust_score(indirect_vouched_addr);
+    assert!(indirect_score_after == 250, 7357005);
+    assert!(indirect_score_after == direct_vouched_score/2, 7357006);
   }
-
 
   #[test(framework = @ol_framework)]
   /// tests the case that all the root users are reciprocally
@@ -193,12 +190,10 @@ module ol_framework::test_page_rank {
         if (i != j) { // Don't vouch for yourself
           let beneficiary = vector::borrow(&roots_sig, j);
           let beneficiary_addr = signer::address_of(beneficiary);
-
           vouch::vouch_for(grantor, beneficiary_addr);
         };
         j = j + 1;
       };
-
       i = i + 1;
     };
 
@@ -217,14 +212,11 @@ module ol_framework::test_page_rank {
       // Each root should have a high score since they're all vouched for by other roots
       let page_rank_score = page_rank_lazy::get_trust_score(root_addr);
       // With 9 other roots vouching, score should be 9 * 50 = 450
-
       assert!(page_rank_score == 450, 7357011);
 
       i = i + 1;
     };
   }
-
-
 
   #[test(framework = @ol_framework)]
   fun test_stale_trust(framework: &signer) {
@@ -240,7 +232,6 @@ module ol_framework::test_page_rank {
     page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
 
     // Setup one vouch from the first root
-
     vouch::vouch_for(root_sig, new_user_addr);
 
     // Now check the page rank score (should be 100)
@@ -249,10 +240,8 @@ module ol_framework::test_page_rank {
     let stale = page_rank_lazy::is_stale(new_user_addr);
     assert!(!stale, 7357002);
 
-    ///// THE TEST
     // should mark stale
     vouch_txs::revoke(root_sig, new_user_addr);
-    ///////////////
 
     let stale = page_rank_lazy::is_stale(new_user_addr);
     assert!(stale, 7357003);
@@ -260,10 +249,8 @@ module ol_framework::test_page_rank {
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     assert!(page_rank_score == 0, 7357004);
 
-    ///// THE TEST
     // should mark stale
     vouch_txs::vouch_for(root_sig, new_user_addr);
-    ///////////////
 
     // will be stale until next computation
     let stale = page_rank_lazy::is_stale(new_user_addr);
@@ -276,7 +263,6 @@ module ol_framework::test_page_rank {
     let stale = page_rank_lazy::is_stale(new_user_addr);
     assert!(!stale, 7357005);
   }
-
 
   // check that the page rank can be used to
   // reauthorize a founder
@@ -336,7 +322,6 @@ module ol_framework::test_page_rank {
     page_rank_lazy::maybe_initialize_trust_record(&user1_sig);
     page_rank_lazy::maybe_initialize_trust_record(&user2_sig);
 
-
     // Make each root vouch for all other roots (reciprocal vouching)
     let i = 0;
     while (i < count_roots) {
@@ -353,7 +338,6 @@ module ol_framework::test_page_rank {
       i = i + 1;
     };
 
-
     // First hop: the root vouches for user1 (at first hop)
     let root0 = vector::borrow(&roots_sig, 0);
     vouch::vouch_for(root0, user1_addr);
@@ -365,29 +349,9 @@ module ol_framework::test_page_rank {
     let user1_score = page_rank_lazy::get_trust_score(user1_addr);
     assert!(user1_score == 50, 7357100);
     assert!(user1_score < root0_score, 7357101);
-
-    // // Now have multiple roots (who vouch for each other) vouch for user2
-    // vouch::vouch_for(vector::borrow(&roots_sig, 0), user2_addr);
-    // vouch::vouch_for(vector::borrow(&roots_sig, 1), user2_addr);
-
-    // // Get user2's score - should only count direct vouches from roots (2 * 50 = 100)
-    // // If root-to-root vouches were counted, the score would be much higher
-    // let user2_score = page_rank_lazy::get_trust_score(user2_addr);
-    // assert!(user2_score == 100, 7357101);
-
-    // // Additional test: Have a non-root user who is vouched by a root vouch for user2
-    // // This should add additional score to user2 (indirect vouch from root)
-    // vouch::vouch_for(&user1_sig, user2_addr);
-
-    // // User2's score should now include the indirect vouch from user1
-    // // Direct: 2 roots * 50 = 100
-    // // Indirect: user1's contribution = 50/2 = 25
-    // // Total: 125
-    // let user2_score_after = page_rank_lazy::get_trust_score(user2_addr);
-    // assert!(user2_score_after == 125, 7357102);
   }
 
-    #[test(framework = @ol_framework)]
+  #[test(framework = @ol_framework)]
   /// Tests the diminishing power as the number of hops increases
   fun test_diminishing_power(framework: &signer) {
     // Set up the test base with 10 root accounts
@@ -402,7 +366,6 @@ module ol_framework::test_page_rank {
     let root0_score = page_rank_lazy::get_trust_score(signer::address_of(grantor_sig));
     // in a simple initialization root doesn't have any vouches themselves
     assert!(root0_score == 0, 7357100);
-
 
     let prev_score = 100;
     // loop through the users and have the previous
@@ -426,9 +389,7 @@ module ol_framework::test_page_rank {
       };
 
       prev_score = user1_score;
-
       grantor_sig = vector::borrow(&users_sig, i);
-
       i = i + 1;
     };
   }
