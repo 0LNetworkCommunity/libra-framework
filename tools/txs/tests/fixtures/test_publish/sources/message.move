@@ -13,7 +13,7 @@ module this_address::message {
       state.message
     }
 
-    public entry fun set_message(account: signer, num: u64)
+    fun set_message(account: signer, num: u64)
     acquires MessageHolder {
         let account_addr = signer::address_of(&account);
         if (!exists<MessageHolder>(account_addr)) {

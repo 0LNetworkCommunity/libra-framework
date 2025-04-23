@@ -487,7 +487,7 @@ module ol_framework::mock {
   }
 
   #[test(root = @ol_framework)]
-  public entry fun meta_val_perf(root: signer) {
+  fun meta_val_perf(root: signer) {
     let set = genesis_n_vals(&root, 4);
     assert!(vector::length(&set) == 4, 7357001);
 

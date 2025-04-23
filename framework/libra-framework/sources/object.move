@@ -391,7 +391,7 @@ module diem_framework::object {
     }
 
     /// Entry function that can be used to transfer, if allow_ungated_transfer is set true.
-    public entry fun transfer_call(
+    fun transfer_call(
         owner: &signer,
         object: address,
         to: address,
@@ -401,7 +401,7 @@ module diem_framework::object {
 
     /// Transfers ownership of the object (and all associated resources) at the specified address
     /// for Object<T> to the "to" address.
-    public entry fun transfer<T: key>(
+    fun transfer<T: key>(
         owner: &signer,
         object: Object<T>,
         to: address,
@@ -438,7 +438,7 @@ module diem_framework::object {
     }
 
     /// Transfer the given object to another object. See `transfer` for more information.
-    public entry fun transfer_to_object<O: key, T: key>(
+    fun transfer_to_object<O: key, T: key>(
         owner: &signer,
         object: Object<O>,
         to: Object<T>,

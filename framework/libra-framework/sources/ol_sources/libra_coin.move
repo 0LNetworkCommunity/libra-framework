@@ -257,7 +257,7 @@ module ol_framework::libra_coin {
     // TODO: guard some other way besides using the testing root account.
     /// Root account can mint to an address. Only used for genesis and tests.
     /// The "root" account in smoke tests has some privileges.
-    public entry fun mint_to_impl(
+    fun mint_to_impl(
         root: &signer,
         dst_addr: address,
         amount: u64,
@@ -277,7 +277,7 @@ module ol_framework::libra_coin {
     }
 
     #[test_only]
-    public entry fun test_mint_to(
+    fun test_mint_to(
         root: &signer,
         dst_addr: address,
         amount: u64,

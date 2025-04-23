@@ -8,7 +8,7 @@ module ol_framework::test_jail {
 
 
     #[test(root = @ol_framework)]
-    public entry fun jail_reputation(root: signer) {
+    fun jail_reputation(root: signer) {
 
       let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
@@ -55,7 +55,7 @@ module ol_framework::test_jail {
     }
 
     #[test(root = @ol_framework, bob = @0x1000b)]
-    public entry fun unjail_by_vouch(root: signer, bob: signer) {
+    fun unjail_by_vouch(root: signer, bob: signer) {
 
       let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);
@@ -76,7 +76,7 @@ module ol_framework::test_jail {
     // Bob should be the last on the list, and Alice the penultimate.
 
     #[test(root = @ol_framework)]
-    public entry fun sort_by_jail(root: signer) {
+    fun sort_by_jail(root: signer) {
       randomness::initialize_for_testing(&root);
       let vals = mock::genesis_n_vals(&root, 5);
       let alice = *vector::borrow(&vals, 0);

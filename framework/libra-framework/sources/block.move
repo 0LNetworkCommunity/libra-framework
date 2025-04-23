@@ -268,7 +268,7 @@ module diem_framework::block {
 
     #[test(diem_framework = @diem_framework)]
     #[ignore] //TODO: remove after testing fork
-    public entry fun test_update_epoch_interval(diem_framework: signer) acquires BlockResource {
+    fun test_update_epoch_interval(diem_framework: signer) acquires BlockResource {
         account::create_account_for_test(@diem_framework);
         initialize(&diem_framework, 1);
         assert!(borrow_global<BlockResource>(@diem_framework).epoch_interval == 1, 0);
@@ -278,7 +278,7 @@ module diem_framework::block {
 
     #[test(diem_framework = @diem_framework, account = @0x123)]
     #[expected_failure(abort_code = 327683, location = diem_framework::system_addresses)]
-    public entry fun test_update_epoch_interval_unauthorized_should_fail(
+    fun test_update_epoch_interval_unauthorized_should_fail(
         diem_framework: signer,
         account: signer,
     ) acquires BlockResource {

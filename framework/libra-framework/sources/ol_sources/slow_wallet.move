@@ -503,7 +503,7 @@ module ol_framework::slow_wallet {
 
     ////////// SMOKE TEST HELPERS //////////
     // cannot use the #[test_only] attribute in smoke tests
-    public entry fun smoke_test_vm_unlock(
+    fun smoke_test_vm_unlock(
       smoke_test_core_resource: &signer,
       user_addr: address,
       unlocked: u64,

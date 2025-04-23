@@ -842,7 +842,7 @@ module ol_framework::proof_of_fee {
   }
 
   /// update the bid using estimated net reward instead of the internal bid variables
-  public entry fun pof_update_bid_net_reward(sender: &signer, net_reward: u64,
+  fun pof_update_bid_net_reward(sender: &signer, net_reward: u64,
   epoch_expiry: u64) acquires ProofOfFeeAuction, ConsensusReward {
     let checked_epoch = check_epoch_expiry(epoch_expiry);
     // update the bid, initializes if not already.

@@ -934,7 +934,7 @@ module ol_framework::donor_voice_txs {
   //////// TX HELPER ////////
 
   /// A signer of the multisig can propose a payment
-  public entry fun propose_payment_tx(
+  fun propose_payment_tx(
     auth: signer,
     multisig_address: address,
     payee: address,
@@ -948,7 +948,7 @@ module ol_framework::donor_voice_txs {
 
   // VETO TXs
   /// A donor of the program can propose a veto
-  public entry fun propose_veto_tx(donor: &signer, multisig_address: address, id: u64) acquires TxSchedule, Freeze{
+  fun propose_veto_tx(donor: &signer, multisig_address: address, id: u64) acquires TxSchedule, Freeze{
     let tx_uid = guid::create_id(multisig_address, id);
     let opt_uid_of_gov_prop = propose_veto(donor, &tx_uid);
     if (option::is_some(&opt_uid_of_gov_prop)) { // check successful proposal
@@ -971,7 +971,7 @@ module ol_framework::donor_voice_txs {
 
 
   /// A signer of the multisig can propose a payment
-  public entry fun propose_advance_tx(
+  fun propose_advance_tx(
     auth: signer,
     multisig_address: address,
     payee: address,
@@ -987,7 +987,7 @@ module ol_framework::donor_voice_txs {
   // REAUTH TXs
 
   /// After proposed, subsequent donors can vote to reauth an account
-  public entry fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
+  fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
     if (donor_voice_governance::is_reauth_proposed(multisig_address)) {
       // if the reauthorization is already proposed, then we can vote on it.
       reauthorize_handler(donor, multisig_address);
@@ -1000,7 +1000,7 @@ module ol_framework::donor_voice_txs {
   // LIQUIDATE TXS
 
   /// A donor can propose the liquidation of a Donor Voice account
-  public entry fun propose_liquidate_tx(donor: &signer, multisig_address: address)  acquires TxSchedule {
+  fun propose_liquidate_tx(donor: &signer, multisig_address: address)  acquires TxSchedule {
     propose_liquidation(donor, multisig_address);
   }
   /// After proposed, subsequent voters call this to vote liquidation

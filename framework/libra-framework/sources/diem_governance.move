@@ -189,7 +189,7 @@ module diem_framework::diem_governance {
     /// Create a single-step or multi-step proposal
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
-    public entry fun create_proposal_v2(
+    fun create_proposal_v2(
         proposer: &signer,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
@@ -435,7 +435,7 @@ module diem_framework::diem_governance {
     //////// 0L ////////
     // hack for smoke testing:
     // is the proposal approved and ready for resolution?
-    public entry fun assert_can_resolve(proposal_id: u64) {
+    fun assert_can_resolve(proposal_id: u64) {
       assert!(get_can_resolve(proposal_id), error::invalid_state(EPROPOSAL_NOT_RESOLVABLE_YET));
     }
 
@@ -520,7 +520,7 @@ module diem_framework::diem_governance {
     /// decides the epoch can change. Any error will just cause the
     /// user's transaction to abort, but the chain will continue.
     /// Whatever fix is needed can be done online with on-chain governance.
-    public entry fun trigger_epoch(_sig: &signer) acquires
+    public fun trigger_epoch(_sig: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
       let _ = epoch_boundary::can_trigger(); // will abort if false
       let framework_signer = get_signer(@ol_framework);
@@ -529,7 +529,7 @@ module diem_framework::diem_governance {
 
     // helper to use on smoke tests only. Will fail on Mainnet. Needs testnet
     // Core Resources user.
-    public entry fun smoke_trigger_epoch(core_resources: &signer) acquires
+    fun smoke_trigger_epoch(core_resources: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
       assert!(testnet::is_not_mainnet(), error::invalid_state(ENOT_FOR_MAINNET));
       system_addresses::assert_ol(core_resources);
@@ -562,7 +562,7 @@ module diem_framework::diem_governance {
     }
 
     #[test_only]
-    public entry fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
+    fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
         let execution_hash = vector::empty<u8>();
         vector::push_back(&mut execution_hash, 1);
 
@@ -586,7 +586,7 @@ module diem_framework::diem_governance {
     }
 
     #[test_only]
-    public entry fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
+    fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
         if (multi_step) {
             let execution_hash = vector::empty<u8>();
             vector::push_back(&mut execution_hash, 1);

@@ -787,7 +787,7 @@ module diem_framework::voting {
     }
 
     #[test_only]
-    public entry fun test_voting_passed_generic(diem_framework: &signer, governance: &signer, use_create_multi_step: bool, use_resolve_multi_step: bool) acquires VotingForum {
+    fun test_voting_passed_generic(diem_framework: &signer, governance: &signer, use_create_multi_step: bool, use_resolve_multi_step: bool) acquires VotingForum {
         account::create_account_for_test(@diem_framework);
         timestamp::set_time_has_started_for_testing(diem_framework);
 
@@ -819,28 +819,28 @@ module diem_framework::voting {
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
-    public entry fun test_voting_passed(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_passed(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_passed_generic(diem_framework, governance, false, false);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
-    public entry fun test_voting_passed_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_passed_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_passed_generic(diem_framework, governance, true, true);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code=0x5000a, location = Self)]
-    public entry fun test_voting_passed_multi_step_cannot_use_single_step_resolve_function(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_passed_multi_step_cannot_use_single_step_resolve_function(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_passed_generic(diem_framework, governance, true, false);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
-    public entry fun test_voting_passed_single_step_can_use_generic_function(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_passed_single_step_can_use_generic_function(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_passed_generic(diem_framework, governance, false, true);
     }
 
     #[test_only]
-    public entry fun test_cannot_resolve_twice_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+    fun test_cannot_resolve_twice_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
         account::create_account_for_test(@diem_framework);
         timestamp::set_time_has_started_for_testing(diem_framework);
 
@@ -864,18 +864,18 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30003, location = Self)]
-    public entry fun test_cannot_resolve_twice(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_cannot_resolve_twice(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_cannot_resolve_twice_generic(diem_framework, governance, false);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30003, location = Self)]
-    public entry fun test_cannot_resolve_twice_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_cannot_resolve_twice_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_cannot_resolve_twice_generic(diem_framework, governance, true);
     }
 
     #[test_only]
-    public entry fun test_voting_passed_early_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+    fun test_voting_passed_early_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
         account::create_account_for_test(@diem_framework);
         timestamp::set_time_has_started_for_testing(diem_framework);
 
@@ -923,17 +923,17 @@ module diem_framework::voting {
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
-    public entry fun test_voting_passed_early(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_passed_early(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_passed_early_generic(diem_framework, governance, false);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
-    public entry fun test_voting_passed_early_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_passed_early_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_passed_early_generic(diem_framework, governance, true);
     }
 
     #[test_only]
-    public entry fun test_voting_passed_early_in_same_tx_should_fail_generic(
+    fun test_voting_passed_early_in_same_tx_should_fail_generic(
         diem_framework: &signer,
         governance: &signer,
         is_multi_step: bool
@@ -954,7 +954,7 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30008, location = Self)]
-    public entry fun test_voting_passed_early_in_same_tx_should_fail(
+    fun test_voting_passed_early_in_same_tx_should_fail(
         diem_framework: &signer,
         governance: &signer
     ) acquires VotingForum {
@@ -963,7 +963,7 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30008, location = Self)]
-    public entry fun test_voting_passed_early_in_same_tx_should_fail_multi_step(
+    fun test_voting_passed_early_in_same_tx_should_fail_multi_step(
         diem_framework: &signer,
         governance: &signer
     ) acquires VotingForum {
@@ -971,7 +971,7 @@ module diem_framework::voting {
     }
 
     #[test_only]
-    public entry fun test_voting_failed_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+    fun test_voting_failed_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
         account::create_account_for_test(@diem_framework);
         timestamp::set_time_has_started_for_testing(diem_framework);
 
@@ -994,19 +994,19 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_failed(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_failed_generic(diem_framework, governance, false);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_failed_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_failed_generic(diem_framework, governance, true);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30005, location = Self)]
-    public entry fun test_cannot_vote_after_voting_period_is_over(
+    fun test_cannot_vote_after_voting_period_is_over(
         diem_framework: signer,
         governance: signer
     ) acquires VotingForum {
@@ -1024,7 +1024,7 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code=0x30009, location = Self)]
-    public entry fun test_cannot_vote_after_multi_step_proposal_starts_executing(
+    fun test_cannot_vote_after_multi_step_proposal_starts_executing(
         diem_framework: signer,
         governance: signer
     ) acquires VotingForum {
@@ -1050,7 +1050,7 @@ module diem_framework::voting {
     }
 
     #[test_only]
-    public entry fun test_voting_failed_early_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
+    fun test_voting_failed_early_generic(diem_framework: &signer, governance: &signer, is_multi_step: bool) acquires VotingForum {
         account::create_account_for_test(@diem_framework);
         timestamp::set_time_has_started_for_testing(diem_framework);
 
@@ -1073,18 +1073,18 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed_early(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_failed_early(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_failed_early_generic(diem_framework, governance, true);
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
-    public entry fun test_voting_failed_early_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_voting_failed_early_multi_step(diem_framework: &signer, governance: &signer) acquires VotingForum {
         test_voting_failed_early_generic(diem_framework, governance, false);
     }
 
     #[test_only]
-    public entry fun test_cannot_set_min_threshold_higher_than_early_resolution_generic(
+    fun test_cannot_set_min_threshold_higher_than_early_resolution_generic(
         diem_framework: &signer,
         governance: &signer,
         is_multi_step: bool,
@@ -1098,7 +1098,7 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x10007, location = Self)]
-    public entry fun test_cannot_set_min_threshold_higher_than_early_resolution(
+    fun test_cannot_set_min_threshold_higher_than_early_resolution(
         diem_framework: &signer,
         governance: &signer,
     ) acquires VotingForum {
@@ -1107,7 +1107,7 @@ module diem_framework::voting {
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
     #[expected_failure(abort_code = 0x10007, location = Self)]
-    public entry fun test_cannot_set_min_threshold_higher_than_early_resolution_multi_step(
+    fun test_cannot_set_min_threshold_higher_than_early_resolution_multi_step(
         diem_framework: &signer,
         governance: &signer,
     ) acquires VotingForum {
@@ -1115,7 +1115,7 @@ module diem_framework::voting {
     }
 
     #[test(diem_framework = @diem_framework, governance = @0x123)]
-    public entry fun test_replace_execution_hash(diem_framework: &signer, governance: &signer) acquires VotingForum {
+    fun test_replace_execution_hash(diem_framework: &signer, governance: &signer) acquires VotingForum {
         account::create_account_for_test(@diem_framework);
         timestamp::set_time_has_started_for_testing(diem_framework);
 

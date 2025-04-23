@@ -37,16 +37,17 @@ module diem_framework::diem_account {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Basic account creation methods.
+    // Basic account creation methods.
     ///////////////////////////////////////////////////////////////////////////
 
-    public entry fun create_account(auth_key: address) {
+    #[test_only]
+    public fun create_account(auth_key: address) {
         let signer = account::create_account(auth_key);
         coin::register<DiemCoin>(&signer);
     }
 
     /// Batch version of GAS transfer.
-    public entry fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
+    fun batch_transfer(source: &signer, recipients: vector<address>, amounts: vector<u64>) {
         let recipients_len = vector::length(&recipients);
         assert!(
             recipients_len == vector::length(&amounts),
@@ -64,7 +65,7 @@ module diem_framework::diem_account {
 
     /// Convenient function to transfer GAS to a recipient account that might not exist.
     /// This would create the recipient account first, which also registers it to receive GAS, before transferring.
-    public entry fun transfer(source: &signer, to: address, amount: u64) {
+    fun transfer(source: &signer, to: address, amount: u64) {
         if (!account::exists_at(to)) {
             create_account(to)
         };
@@ -77,7 +78,7 @@ module diem_framework::diem_account {
     }
 
     /// Batch version of transfer_coins.
-    public entry fun batch_transfer_coins<CoinType>(
+    fun batch_transfer_coins<CoinType>(
         from: &signer, recipients: vector<address>, amounts: vector<u64>) acquires DirectTransferConfig {
         let recipients_len = vector::length(&recipients);
         assert!(
@@ -96,7 +97,7 @@ module diem_framework::diem_account {
 
     /// Convenient function to transfer a custom CoinType to a recipient account that might not exist.
     /// This would create the recipient account first and register it to receive the CoinType, before transferring.
-    public entry fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) acquires DirectTransferConfig {
+    fun transfer_coins<CoinType>(from: &signer, to: address, amount: u64) acquires DirectTransferConfig {
         deposit_coins(to, coin::withdraw<CoinType>(from, amount));
     }
 
@@ -126,7 +127,7 @@ module diem_framework::diem_account {
     }
 
     /// Set whether `account` can receive direct transfers of coins that they have not explicitly registered to receive.
-    public entry fun set_allow_direct_coin_transfers(account: &signer, allow: bool) acquires DirectTransferConfig {
+    fun set_allow_direct_coin_transfers(account: &signer, allow: bool) acquires DirectTransferConfig {
         let addr = signer::address_of(account);
         if (exists<DirectTransferConfig>(addr)) {
             let direct_transfer_config = borrow_global_mut<DirectTransferConfig>(addr);
