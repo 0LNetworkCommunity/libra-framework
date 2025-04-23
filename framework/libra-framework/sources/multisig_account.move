@@ -823,17 +823,17 @@ module diem_framework::multisig_account {
     /// Approve a multisig transaction.
     public entry fun approve_transaction(
         owner: &signer, multisig_account: address, sequence_number: u64) acquires MultisigAccount {
-        vote_transanction(owner, multisig_account, sequence_number, true);
+        vote_transaction(owner, multisig_account, sequence_number, true);
     }
 
     /// Reject a multisig transaction.
     public entry fun reject_transaction(
         owner: &signer, multisig_account: address, sequence_number: u64) acquires MultisigAccount {
-        vote_transanction(owner, multisig_account, sequence_number, false);
+        vote_transaction(owner, multisig_account, sequence_number, false);
     }
 
     /// Generic function that can be used to either approve or reject a multisig transaction
-    public entry fun vote_transanction(
+    public entry fun vote_transaction(
         owner: &signer, multisig_account: address, sequence_number: u64, approved: bool) acquires MultisigAccount {
         assert_multisig_account_exists(multisig_account);
         let multisig_account_resource = borrow_global_mut<MultisigAccount>(multisig_account);
