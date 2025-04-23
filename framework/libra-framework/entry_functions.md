@@ -137,8 +137,9 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Proposes a veto transaction
   - CLI: `txs community veto --community-wallet <ADDRESS> --proposal-id <ID>`
 
-- `vote_veto_tx(donor: &signer, multisig_address: address, id: u64)`
+- NEUTERED `vote_veto_tx(donor: &signer, multisig_address: address, id: u64)`
   - Votes on a veto transaction
+  - made into a test function
 
 - `propose_advance_tx(donor: &signer, multisig_address: address, ...)` 🖥️
   - Proposes an advance transaction
@@ -150,9 +151,11 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 - `propose_liquidate_tx(donor: &signer, multisig_address: address)`
   - Proposes a liquidation transaction
+  - TODO: cli tx
 
 - `vote_liquidation_tx(donor: &signer, multisig_address: address)`
   - Votes on a liquidation transaction
+  - TODO: cli tx, possibly duplicated with propose liquidation
 
 ### multi_action.move
 

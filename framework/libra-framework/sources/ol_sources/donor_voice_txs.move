@@ -958,8 +958,11 @@ module ol_framework::donor_voice_txs {
   }
 
 
+  #[test_only]
+  // TODO: flagged for deprecation. Propose_veto_tx handles both proposing and
+  // voting
   /// After proposed, subsequent veto voters call this to vote on a tx veto
-  public entry fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
+  public fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
     let tx_uid = guid::create_id(multisig_address, id);
     let (found, veto_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);
     assert!(found, error::invalid_argument(ENO_VETO_ID_FOUND));
