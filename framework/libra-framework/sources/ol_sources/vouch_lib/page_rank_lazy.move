@@ -8,15 +8,19 @@ module ol_framework::page_rank_lazy {
 
     friend ol_framework::vouch_txs;
 
-    // Constants
-    const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
-
-    // Full graph walk constants
-    const FULL_WALK_MAX_DEPTH: u64 = 6; // Maximum path length for full graph traversal
-
-    //////// Error codes ////////
+    //////// ERROR CODES ////////
     /// trust record not initialized
     const ENOT_INITIALIZED: u64 = 2;
+
+    //////// CONSTANTS ////////
+    // Max score on a single vouch
+    const MAX_VOUCH_SCORE: u64 = 100_000;
+
+    // Circuit breaker to prevent stack overflow
+    const MAX_PROCESSED_ADDRESSES: u64 = 1000;
+
+    // Maximum path length for full graph traversal
+    const FULL_WALK_MAX_DEPTH: u64 = 6;
 
     // Per-user trust record - each user stores their own trust data
     struct UserTrustRecord has key, drop {
@@ -43,7 +47,6 @@ module ol_framework::page_rank_lazy {
     }
 
     // Calculate or retrieve cached trust score
-    // TODO: remove this
     public fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
         let current_timestamp = timestamp::now_seconds();
 
@@ -60,8 +63,6 @@ module ol_framework::page_rank_lazy {
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
-
-        // if the users's score is not stale skip traversing
 
         // Compute score using selected algorithm
         let score = traverse_graph(&roots, addr, FULL_WALK_MAX_DEPTH);
@@ -93,11 +94,11 @@ module ol_framework::page_rank_lazy {
             vector::push_back(&mut visited, root);
 
             if (root != target) {
-              // NOTE: you don't don't give yourself points in the walk
+              // NOTE: root, you don't don't give yourself points in the walk
 
                 // Initial trust power is 100 (full trust from root)
                 total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 1, max_depth, 100
+                    root, target, &mut visited, 1, max_depth, 2 * MAX_VOUCH_SCORE
                 );
             };
 
@@ -274,6 +275,12 @@ module ol_framework::page_rank_lazy {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
         record.is_stale
+    }
+
+    #[view]
+    // get the const for highest vouch score
+    public fun get_max_single_score(): u64 {
+        MAX_VOUCH_SCORE
     }
 
     //////// TEST HELPERS ///////

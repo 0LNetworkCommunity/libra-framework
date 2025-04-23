@@ -63,9 +63,10 @@ module ol_framework::test_page_rank {
 
   #[test(framework = @ol_framework)]
   /// Tests the scenario where a single user receives one vouch from a root of trust account.
-  /// Verifies that the user's page rank score is properly calculated (50) from the
+  /// Verifies that the user's page rank score is properly calculated from the
   /// direct root vouch.
   fun test_one_user_one_root(framework: &signer) {
+    let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
     let new_user_sig = mock::create_user_from_u64(framework, 11);
@@ -83,12 +84,12 @@ module ol_framework::test_page_rank {
 
     // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-    assert!(page_rank_score == 50, 7357001);
+    assert!(page_rank_score == max_single_score, 7357001);
   }
 
   #[test(framework = @ol_framework)]
   /// Tests the scenario where a single user receives vouches from all 10 root of trust accounts.
-  /// Verifies that the user's page rank score is correctly calculated (500) when receiving
+  /// Verifies that the user's page rank score is correctly calculated (max_single_score * 10) when receiving
   /// multiple root vouches.
   fun test_one_user_ten_root(framework: &signer) {
     // Set up the test base
@@ -115,9 +116,10 @@ module ol_framework::test_page_rank {
     let (received, _) = vouch::get_received_vouches(new_user_addr);
     assert!(vector::length(&received) == count_roots, 7357002);
 
+    let max_single_score = page_rank_lazy::get_max_single_score();
     let page_rank_score_later = page_rank_lazy::get_trust_score(new_user_addr);
     // NOTE: this should be 10X the previous test
-    assert!(page_rank_score_later == 500, 7357003);
+    assert!(page_rank_score_later == max_single_score * 10, 7357003);
   }
 
   #[test(framework = @ol_framework)]
@@ -126,8 +128,10 @@ module ol_framework::test_page_rank {
   /// 1. A directly vouched user receives vouches from all 10 root accounts
   /// 2. That user then vouches for another user (indirect vouching)
   /// Verifies that the trust score of the indirectly vouched user is half that of
-  /// the directly vouched user (250, which is 500/2).
+  /// the directly vouched user (max_single_score * 10 /2).
   fun test_one_hop_to_one_user_ten_root(framework: &signer) {
+    let max_single_score = page_rank_lazy::get_max_single_score();
+
     // Set up the test base
     let roots_sig = test_base(framework);
     let count_roots = vector::length(&roots_sig);
@@ -156,8 +160,9 @@ module ol_framework::test_page_rank {
     assert!(vector::length(&received) == count_roots, 7357002);
 
     let direct_vouched_score = page_rank_lazy::get_trust_score(direct_vouched_addr);
+
     // NOTE: this should be 10X the previous test
-    assert!(direct_vouched_score == 500, 7357003);
+    assert!(direct_vouched_score == max_single_score * 10, 7357003);
 
     // Second user who is vouched for by the user with 10 root vouches
     let indirect_vouched_sig = mock::create_user_from_u64(framework, 12);
@@ -170,14 +175,13 @@ module ol_framework::test_page_rank {
     // Direct vouched user vouches for the indirect vouched user
     vouch_txs::vouch_for(&direct_vouched_sig, indirect_vouched_addr);
     let indirect_score_after = page_rank_lazy::get_trust_score(indirect_vouched_addr);
-    assert!(indirect_score_after == 250, 7357005);
     assert!(indirect_score_after == direct_vouched_score/2, 7357006);
   }
 
   #[test(framework = @ol_framework)]
   /// Tests the case where all root users are reciprocally vouching for one another.
   /// Verifies that each root receives vouches from all other roots (9 vouches total),
-  /// and that each root achieves a high page rank score (450) from these vouches.
+  /// and that each root achieves a high page rank score (9 * max_single_score) from these vouches.
   fun test_root_reciprocal_vouch(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
@@ -223,8 +227,10 @@ module ol_framework::test_page_rank {
       // Check page rank score is properly calculated
       // Each root should have a high score since they're all vouched for by other roots
       let page_rank_score = page_rank_lazy::get_trust_score(root_addr);
-      // With 9 other roots vouching, score should be 9 * 50 = 450
-      assert!(page_rank_score == 450, 7357011);
+
+      let max_single_score = page_rank_lazy::get_max_single_score();
+      // With 9 other roots vouching, score should be 9 * max_single_score
+      assert!(page_rank_score == 9 * max_single_score, 7357011);
 
       i = i + 1;
     };
@@ -238,6 +244,7 @@ module ol_framework::test_page_rank {
   /// 3. Trust remains stale until next computation after vouches are re-added
   /// 4. Page rank score is properly restored when vouches are re-added
   fun test_stale_trust(framework: &signer) {
+    let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
     let new_user_sig = mock::create_user_from_u64(framework, 11);
@@ -254,7 +261,7 @@ module ol_framework::test_page_rank {
 
     // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-    assert!(page_rank_score == 50, 7357001);
+    assert!(page_rank_score == max_single_score, 7357001);
     let stale = page_rank_lazy::is_stale(new_user_addr);
     assert!(!stale, 7357002);
 
@@ -274,8 +281,10 @@ module ol_framework::test_page_rank {
     let stale = page_rank_lazy::is_stale(new_user_addr);
     assert!(stale, 7357005);
 
+    let max_single_score = page_rank_lazy::get_max_single_score();
+
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
-    assert!(page_rank_score == 50, 7357006);
+    assert!(page_rank_score == max_single_score, 7357006);
 
     // should no longer be stale
     let stale = page_rank_lazy::is_stale(new_user_addr);
@@ -287,9 +296,10 @@ module ol_framework::test_page_rank {
   /// Verifies that:
   /// 1. A prehistoric (v7) account is initialized with founder status
   /// 2. The account initially has no friends (fails sybil resistance)
-  /// 3. Getting a vouch from a root increases page rank score to 50
+  /// 3. Getting a vouch from a root increases page rank score to max_single_score
   /// 4. With sufficient page rank score, the founder now passes the has_friends check
   fun test_founder_reauth(framework: &signer) {
+    let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
     let one_root_sig = vector::borrow(&roots_sig, 0);
@@ -316,7 +326,7 @@ module ol_framework::test_page_rank {
 
     vouch_txs::vouch_for(one_root_sig, user_addr);
     let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
-    assert!(page_rank_score == 50, 7357005);
+    assert!(page_rank_score == max_single_score, 7357005);
 
     let has_friends = founder::has_friends(user_addr);
     assert!(has_friends, 7357006);
@@ -329,6 +339,8 @@ module ol_framework::test_page_rank {
   /// score accumulation through root-to-root vouches, ensuring that the trust
   /// system isn't exploitable through root account manipulation.
   fun test_no_accumulation_from_root_vouches(framework: &signer) {
+    let max_single_score = page_rank_lazy::get_max_single_score();
+
     // Set up the test base with 10 root accounts
     let roots_sig = test_base(framework);
     let count_roots = vector::length(&roots_sig);
@@ -367,11 +379,12 @@ module ol_framework::test_page_rank {
     vouch::vouch_for(root0, user1_addr);
 
     let root0_score = page_rank_lazy::get_trust_score(signer::address_of(root0));
-    assert!(root0_score == 450, 7357100);
+    assert!(root0_score == 9 * max_single_score, 7357100);
 
-    // Check user1's score - should be 50 (100/2 from a direct root vouch)
+
+    // Check user1's score - should be max_single_score
     let user1_score = page_rank_lazy::get_trust_score(user1_addr);
-    assert!(user1_score == 50, 7357100);
+    assert!(user1_score == max_single_score, 7357100);
     assert!(user1_score < root0_score, 7357101);
   }
 
@@ -396,7 +409,10 @@ module ol_framework::test_page_rank {
     // in a simple initialization root doesn't have any vouches themselves
     assert!(root0_score == 0, 7357100);
 
-    let prev_score = 100;
+    let max_single_score = page_rank_lazy::get_max_single_score();
+
+    let prev_score = max_single_score * 2;
+
     // loop through the users and have the previous
     // user vouch for the next user
     let i = 0;

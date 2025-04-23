@@ -591,7 +591,8 @@ module ol_framework::mock {
     let score = page_rank_lazy::get_trust_score(alice);
     // excluding self, the voucher has 9 vouches of remaining validator
     // set which are also roots of trust
-    assert!(score == vector::length(&received_vouches) * 50, 7357002);
+    let max_score = page_rank_lazy::get_max_single_score();
+    assert!(score == vector::length(&received_vouches) * max_score, 7357002);
 
     let remaining = vouch_limits::get_vouch_limit(alice);
     // received 9 vouches, and has given 9, and since is root

@@ -1,7 +1,8 @@
-/// Maintains the version number for the blockchain.
+/// Module that maintains founder status for pre-v8 accounts and verifies their connections
+/// in the trust network to prevent sybil attacks.
 module ol_framework::founder {
-  use std::signer;
   use ol_framework::page_rank_lazy;
+  use std::signer;
 
   #[test_only]
   use ol_framework::testnet;
@@ -23,21 +24,23 @@ module ol_framework::founder {
     that an account has meaningful connections with other accounts in the network. This is done by:
 
     1. Calculating the trust score based on the account's position in the network graph
-    2. Checking if this score exceeds the threshold (currently 50)
+    2. Checking if this score exceeds the threshold defined by MULTIPLIER
     3. Only setting founder status as "has_human_friends" when this threshold is met
 
     This works in conjunction with the anti-sybil protections in vouch.move, which prevent
     rapid vouching and revoking to create fake identities.
   */
 
-  /// The threshold score for a user to be considered well-vouched
-  /// Users need a minimum score of 50 to qualify as having human friends
-  const THRESHOLD_SCORE: u64 = 50;
+  /// The multiplier against the page_rank_lazy max_single_score for a user to be considered well-vouched.
+  /// NOTE: A multiplier of 1, means the score equivalent of having one root
+  /// of trust user vouch for you to qualify as having human friends.
+  const MULTIPLIER: u64 = 1;
 
   struct Founder has key {
     has_human_friends: bool
   }
 
+  /// Migrates a user account by creating a Founder resource if it doesn't exist.
   public(friend) fun migrate(user_sig: &signer) {
     if (!exists<Founder>(signer::address_of(user_sig))) {
       move_to<Founder>(user_sig, Founder {
@@ -46,7 +49,8 @@ module ol_framework::founder {
     }
   }
 
-  // DANGER: open to any friend function
+  /// Sets the founder as having human friends if they meet the voucher score criteria.
+  /// DANGER: open to any friend function
   public(friend) fun maybe_set_friendly_founder(user: address) acquires Founder {
     if (
       is_founder(user) &&
@@ -58,29 +62,30 @@ module ol_framework::founder {
   }
 
   #[view]
+  /// Checks if the user's trust score meets the required threshold.
   public fun is_voucher_score_valid(user: address): bool {
-    page_rank_lazy::get_trust_score(user) >= THRESHOLD_SCORE
+    page_rank_lazy::get_trust_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
   }
 
   #[view]
-  // If the account is a founder/pre-v8 account has been migrated
-  // then it would have an onboarding timestamp of 0
+  /// Checks if the account is a founder (pre-v8 account that has been migrated).
   public fun is_founder(user: address): bool {
     exists<Founder>(user)
   }
 
   #[view]
-  /// Bot or not
+  /// Checks if the founder has established connections with other users.
+  /// Returns true if the founder has human friends (passed the trust threshold).
   public fun has_friends(user: address): bool acquires Founder {
     let f = borrow_global<Founder>(user);
     f.has_human_friends
   }
 
   #[test_only]
+  /// Mock a founder as having friends for testing purposes.
   public(friend) fun test_mock_friendly(framework: &signer, user: &signer) acquires Founder {
     testnet::assert_testnet(framework);
     let state = borrow_global_mut<Founder>(signer::address_of(user));
     state.has_human_friends = true;
   }
-
 }
