@@ -163,7 +163,7 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Claims an offer for a multisig account
   - CLI: `txs community gov-claim --community-wallet <ADDRESS>`
 
-- `finalize_and_cage_deprecated(sig: &signer, initial_authorities: vector<address>, num_signers: u64)`
+- REMOVED `finalize_and_cage_deprecated(sig: &signer, initial_authorities: vector<address>, num_signers: u64)`
   - Finalizes and cages a multisig account (deprecated)
 
 ### proof_of_fee.move
