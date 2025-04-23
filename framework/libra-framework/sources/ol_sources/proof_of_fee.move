@@ -831,7 +831,7 @@ module ol_framework::proof_of_fee {
 
   ////////// TRANSACTION APIS //////////
   //. manually init the struct, fallback in case of migration fail
-  public entry fun init_bidding(sender: &signer) {
+  public fun init_bidding(sender: &signer) {
     init(sender);
   }
 
@@ -924,9 +924,8 @@ module ol_framework::proof_of_fee {
   }
 
   #[test(vm = @ol_framework)]
-  public entry fun thermostat_unit_happy(vm: signer)  acquires ConsensusReward {
+  fun thermostat_unit_happy(vm: signer)  acquires ConsensusReward {
     use diem_framework::chain_id;
-    // use ol_framework::mock;
 
     init_genesis_baseline_reward(&vm);
 

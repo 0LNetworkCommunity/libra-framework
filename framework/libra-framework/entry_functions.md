@@ -183,8 +183,9 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Retracts a Proof of Fee bid
   - CLI: `txs validator pof --retract --epoch-expiry <N>`
 
-- `thermostat_unit_happy(vm: signer)`
+- NEUTERED `thermostat_unit_happy(vm: signer)`
   - Thermostat unit test function
+  - Test function
 
 ### community_wallet_advance.move
 
@@ -195,9 +196,11 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 - `create_account(root: &signer, auth_key: address)`
   - Creates a new account
+  - NOTE: NEEDED FOR SMOKE TESTS
 
 - `batch_transfer(source: &signer, recipients: ...)`
   - Transfers funds to multiple recipients in a batch
+  - TODO: not implemented in CLI
 
 - `transfer(sender: &signer, to: address, amount: u64)` 🖥️
   - Transfers funds from sender to recipient
@@ -205,6 +208,7 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 - `set_allow_direct_coin_transfers(account: &signer, allow: bool)`
   - Sets whether direct coin transfers are allowed for an account
+  - TODO: not implemented in CLI
 
 ### slow_wallet.move
 
@@ -214,6 +218,7 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 - `smoke_test_vm_unlock(sig: &signer, ...)`
   - Test function for VM unlocking
+  - NOTE: for smoke test only. Gated with assert_testnet
 
 ### jail.move
 
