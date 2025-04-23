@@ -31,21 +31,21 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `revoke_any_rotation_capability(account: &signer)`
   - Revokes any rotation capability
 
-- `offer_signer_capability(account: &signer, signer_capability_sig_bytes: vector<u8>, account_scheme: u8, account_public_key_bytes: vector<u8>, recipient_address: address)`
+- NEUTERED `offer_signer_capability(account: &signer, signer_capability_sig_bytes: vector<u8>, account_scheme: u8, account_public_key_bytes: vector<u8>, recipient_address: address)`
   - Offers signer capability to another account
 
-- `revoke_signer_capability(account: &signer, to_be_revoked_address: address)`
+- NEUTERED `revoke_signer_capability(account: &signer, to_be_revoked_address: address)`
   - Revokes signer capability from a specific address
 
-- `revoke_any_signer_capability(account: &signer)`
+- NEUTERED `revoke_any_signer_capability(account: &signer)`
   - Revokes any signer capability
 
-- `create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer`
+- NEUTERED `create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer`
   - Creates an account from ED25519 public key
 
 ### fungible_asset.move
 
-- `transfer<T: key>(from: &signer, to: address, amount: u64)` 🖥️
+- NEUTERED `transfer<T: key>(from: &signer, to: address, amount: u64)` 🖥️
   - Transfers fungible assets between accounts
   - CLI: `txs transfer --to-account <ADDRESS> --amount <AMOUNT>`
 
