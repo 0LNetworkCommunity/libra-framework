@@ -51,8 +51,6 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 ### diem_governance.move
 
-- `create_proposal_v2(proposer: &signer, execution_hash: vector<u8>, metadata_location: vector<u8>, metadata_hash: vector<u8>, is_multi_step_proposal: bool)`
-  - Creates a new governance proposal
 
 - `ol_create_proposal_v2(proposer: &signer, execution_hash: vector<u8>, metadata_location: vector<u8>, metadata_hash: vector<u8>, is_multi_step_proposal: bool)` 🖥️
   - 0L specific variant for creating proposals
@@ -62,14 +60,15 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - 0L specific variant for voting on proposals
   - CLI: `txs governance vote --proposal-id <ID> [--should-fail]`
 
-- `vote(voter: &signer, proposal_id: u64, should_pass: bool)`
+- NEUTERED `vote(voter: &signer, proposal_id: u64, should_pass: bool)`
   - Votes on a governance proposal
 
-- `add_approved_script_hash_script(proposal_id: u64)`
+- NEUTERED `add_approved_script_hash_script(proposal_id: u64)`
   - Adds an approved script hash
 
 - `assert_can_resolve(proposal_id: u64)`
   - Verifies if a proposal can be resolved
+  - NEEDED FOR SMOKE TESTS
 
 - `trigger_epoch(_sig: &signer)` 🖥️
   - Triggers a new epoch
@@ -101,8 +100,9 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `reject_transaction(owner: &signer, multisig_address: address, sequence_number: u64)`
   - Rejects a pending multisig transaction
 
-- `vote_transanction(owner: &signer, multisig_address: address, sequence_number: u64, approve: bool)`
+- RENAMED `vote_transaction(owner: &signer, multisig_address: address, sequence_number: u64, approve: bool)`
   - Votes on a multisig transaction
+  - Renamed from vote_transanction
 
 - `execute_rejected_transaction(owner: &signer, multisig_address: address, sequence_number: u64)`
   - Executes a rejected transaction

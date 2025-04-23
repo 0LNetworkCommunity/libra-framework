@@ -334,7 +334,7 @@ module diem_framework::diem_governance {
 
 
     /// Vote on proposal with `proposal_id`
-    public entry fun vote(
+    fun vote(
         voter: &signer,
         proposal_id: u64,
         should_pass: bool,
@@ -378,7 +378,8 @@ module diem_framework::diem_governance {
         }
     }
 
-    public entry fun add_approved_script_hash_script(proposal_id: u64) acquires ApprovedExecutionHashes {
+    // TODO: possibly deprecated
+    fun add_approved_script_hash_script(proposal_id: u64) acquires ApprovedExecutionHashes {
         add_approved_script_hash(proposal_id)
     }
 
