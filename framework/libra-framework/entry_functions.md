@@ -176,8 +176,16 @@ This document lists all entry functions in the Libra Framework codebase. Entry f
 - `set_allow_direct_coin_transfers(account: &signer, allow: bool)`
   - Sets whether direct coin transfers are allowed for an account
 
+### slow_wallet.move
+
+- `user_set_slow(sig: &signer)`
+  - Allows users to change their account to a slow wallet
+
+- `smoke_test_vm_unlock(sig: &signer, ...)`
+  - Test function for VM unlocking
+
 ## Note
 
-This document lists entry functions that are publicly callable by end users in the Libra Framework's production code. Test-only functions have been excluded.
+This document lists entry functions that are publicly callable by end users in the Libra Framework's production code. Test-only functions have been excluded unless they provide important functionality.
 
 The entry functions are organized by their module location and include a brief description of their purpose. For detailed parameter lists and implementation details, please refer to the source code of each module.
