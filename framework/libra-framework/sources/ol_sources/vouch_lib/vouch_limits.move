@@ -134,28 +134,8 @@ module ol_framework::vouch_limits {
       );
     }
 
-    /// Calculate the maximum number of vouches a user should be able to give based on their trust score
-    public fun calculate_score_limit(grantor_acc: address): u64 {
-        // Calculate the quality using the social distance method
-        // This avoids dependency on page_rank_lazy
-        let trust_score = page_rank_lazy::get_trust_score(grantor_acc);
 
-        // For accounts with low quality vouchers,
-        // we restrict further how many they can vouch for
-        let max_allowed = 1;
 
-        // TODO: collect analytics data to review this
-        if (trust_score >= 2 && trust_score < 10) {
-            max_allowed = 3;
-        } else if (trust_score >= 10 && trust_score < 100) {
-            max_allowed = 5;
-        } else if (trust_score >= 100 && trust_score < 250) {
-            max_allowed = 10;
-        } else if (trust_score >= 250 && trust_score < 500) {
-            max_allowed = 15;
-        };
-        max_allowed
-    }
 
     /// REVOCATION CHECKS
     /// within a period a user might try to add and revoke
@@ -201,6 +181,34 @@ module ol_framework::vouch_limits {
 
 
     #[view]
+    /// Calculate the maximum number of vouches a user should be able to give based on their trust score
+    public fun calculate_score_limit(grantor_acc: address): u64 {
+        // Calculate the quality using the social distance method
+        // This avoids dependency on page_rank_lazy
+        let trust_score = page_rank_lazy::get_trust_score(grantor_acc);
+        let max_score = page_rank_lazy::get_max_single_score();
+
+        // For accounts with low quality vouchers,
+        // we restrict further how many they can vouch for
+        let max_allowed = 1;
+
+        // TODO: collect analytics data to review this
+        if ((trust_score >= (max_score/2)) && (trust_score < max_score)) {
+            max_allowed = 3;
+        } else if (trust_score >= max_score && trust_score < (max_score * 2)) {
+            max_allowed = 5;
+        } else if (trust_score >= (max_score * 2) && trust_score < (max_score * 4)) {
+            max_allowed = 10;
+        } else if (trust_score >= (max_score * 4) && trust_score < (max_score * 8)) {
+            max_allowed = 15;
+        } else if (trust_score >= (max_score * 8)) {
+            max_allowed = BASE_MAX_VOUCHES;
+        };
+
+        max_allowed
+    }
+
+    #[view]
     /// Returns the number of vouches a user can still give based on system limits.
     /// This takes into account all constraints:
     /// 1. Base maximum limit (10 vouches)
@@ -219,23 +227,12 @@ module ol_framework::vouch_limits {
 
       // check what the score would allow.
       let vouches_allowed = calculate_score_limit(addr);
+
       // root users exempt from the score limit
+      // they need to propagate trust faster
       if (root_of_trust::is_root_at_registry(@diem_framework, addr)) {
         vouches_allowed = BASE_MAX_VOUCHES;
       };
-
-      // // check based on how many received
-      // // Received limit: non-expired received vouches + 1
-      // let true_friends = vouch::true_friends(addr);
-      // let received_limit = vector::length(&true_friends) + 1;
-
-
-      // // find the lowest number, most restrictive limit
-      // let vouches_allowed = if (score_limit < received_limit) {
-      //   score_limit
-      // } else {
-      //   received_limit
-      // };
 
       vouches_allowed = if (vouches_allowed < BASE_MAX_VOUCHES) {
         vouches_allowed
