@@ -31,26 +31,13 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `revoke_any_rotation_capability(account: &signer)`
   - Revokes any rotation capability
 
-- NEUTERED `offer_signer_capability(account: &signer, signer_capability_sig_bytes: vector<u8>, account_scheme: u8, account_public_key_bytes: vector<u8>, recipient_address: address)`
-  - Offers signer capability to another account
+### code.move
 
-- NEUTERED `revoke_signer_capability(account: &signer, to_be_revoked_address: address)`
-  - Revokes signer capability from a specific address
-
-- NEUTERED `revoke_any_signer_capability(account: &signer)`
-  - Revokes any signer capability
-
-- NEUTERED `create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer`
-  - Creates an account from ED25519 public key
-
-### fungible_asset.move
-
-- NEUTERED `transfer<T: key>(from: &signer, to: address, amount: u64)` 🖥️
-  - Transfers fungible assets between accounts
-  - CLI: `txs transfer --to-account <ADDRESS> --amount <AMOUNT>`
+- `publish_package_txn(owner: &signer, metadata_serialized: vector<u8>, code: vector<vector<u8>>)` 🖥️
+  - Publishes a Move package to the blockchain
+  - CLI: `txs publish --package-dir <PATH>`
 
 ### diem_governance.move
-
 
 - `ol_create_proposal_v2(proposer: &signer, execution_hash: vector<u8>, metadata_location: vector<u8>, metadata_hash: vector<u8>, is_multi_step_proposal: bool)` 🖥️
   - 0L specific variant for creating proposals
@@ -60,21 +47,16 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - 0L specific variant for voting on proposals
   - CLI: `txs governance vote --proposal-id <ID> [--should-fail]`
 
-- NEUTERED `vote(voter: &signer, proposal_id: u64, should_pass: bool)`
-  - Votes on a governance proposal
-
-- NEUTERED `add_approved_script_hash_script(proposal_id: u64)`
-  - Adds an approved script hash
-
 - `assert_can_resolve(proposal_id: u64)`
   - Verifies if a proposal can be resolved
-  - NEEDED FOR SMOKE TESTS
+  - Used for testing
 
 - `trigger_epoch(_sig: &signer)` 🖥️
   - Triggers a new epoch
   - CLI: `txs governance epoch-boundary`
 
 ### multisig_account.move
+####  NOTE: not implemented in OL client tools
 
 - `create_with_existing_account(creator: &signer, owners: vector<address>, num_signatures_required: u64)`
   - Creates a multisig account with an existing account
@@ -85,33 +67,50 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `create_with_owners(creator: &signer, owners: vector<address>, num_signatures_required: u64): address`
   - Creates a multisig account with specified owners
 
-- `migrate_with_owners(creator: &signer, multisig_address: address, new_owners: vector<address>, num_signatures_required: u64)`
+- `migrate_with_owners(creator: &signer, additional_owners: vector<address>, num_signatures_required: u64, metadata_keys: vector<vector<u8>>, metadata_values: vector<vector<u8>>)`
   - Migrates a multisig account to new owners
 
-- `create_transaction(owner: &signer, multisig_address: address, target_function: String, args: vector<vector<u8>>)`
+- `create_transaction(owner: &signer, multisig_account: address, payload: vector<u8>)`
   - Creates a new transaction for multisig approval
 
-- `create_transaction_with_hash(owner: &signer, multisig_address: address, metadata_hash: vector<u8>)`
+- `create_transaction_with_hash(owner: &signer, multisig_account: address, metadata_hash: vector<u8>)`
   - Creates a transaction with a specific hash
 
-- `approve_transaction(owner: &signer, multisig_address: address, sequence_number: u64)`
+- `approve_transaction(owner: &signer, multisig_account: address, sequence_number: u64)`
   - Approves a pending multisig transaction
 
-- `reject_transaction(owner: &signer, multisig_address: address, sequence_number: u64)`
+- `reject_transaction(owner: &signer, multisig_account: address, sequence_number: u64)`
   - Rejects a pending multisig transaction
 
-- RENAMED `vote_transaction(owner: &signer, multisig_address: address, sequence_number: u64, approve: bool)`
+- `vote_transaction(owner: &signer, multisig_account: address, sequence_number: u64, approved: bool)`
   - Votes on a multisig transaction
-  - Renamed from vote_transanction
 
-- `execute_rejected_transaction(owner: &signer, multisig_address: address, sequence_number: u64)`
+- `execute_rejected_transaction(owner: &signer, multisig_account: address)`
   - Executes a rejected transaction
+
+- `add_owner(owner: &signer, new_owner: address)`
+  - Adds a new owner to a multisig account
+
+- `add_owners(owner: &signer, new_owners: vector<address>)`
+  - Adds multiple new owners to a multisig account
+
+- `remove_owner(owner: &signer, owner_to_remove: address)`
+  - Removes an owner from a multisig account
+
+- `remove_owners(owner: &signer, owners_to_remove: vector<address>)`
+  - Removes multiple owners from a multisig account
+
+- `update_signatures_required(owner: &signer, new_num_signatures_required: u64)`
+  - Updates the number of signatures required for transaction approval
+
+- `update_metadata(owner: &signer, keys: vector<vector<u8>>, values: vector<vector<u8>>)`
+  - Updates metadata for a multisig account
 
 ## OL Sources Modules
 
 ### community_wallet_init.move
 
-- `init_community(sig: &signer, ...)` 🖥️
+- `init_community(sig: &signer, initial_authorities: vector<address>, check_threshold: u64)` 🖥️
   - Initializes a community wallet
   - CLI: `txs community gov-init --admins <ADDRESSES> --num-signers <N>`
 
@@ -123,13 +122,13 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Finalizes and cages a community wallet
   - CLI: `txs community gov-cage --num-signers <N>`
 
-- `change_signer_community_multisig(sig: &signer, ...)` 🖥️
+- `change_signer_community_multisig(sig: &signer, multisig_address: address, new_signer: address, is_add_operation: bool, n_of_m: u64, vote_duration_epochs: u64)` 🖥️
   - Changes signers in a community multisig wallet
   - CLI: `txs community gov-admin --community-wallet <ADDRESS> --admin <ADDRESS> --n <N>`
 
 ### donor_voice_txs.move
 
-- `propose_payment_tx(donor: &signer, multisig_address: address, ...)` 🖥️
+- `propose_payment_tx(donor: &signer, multisig_address: address, payee: address, value: u64, description: vector<u8>)` 🖥️
   - Proposes a payment transaction
   - CLI: `txs community propose --community-wallet <ADDRESS> --recipient <ADDRESS> --amount <N> --description <DESC>`
 
@@ -137,34 +136,18 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Proposes a veto transaction
   - CLI: `txs community veto --community-wallet <ADDRESS> --proposal-id <ID>`
 
-- NEUTERED `vote_veto_tx(donor: &signer, multisig_address: address, id: u64)`
-  - Votes on a veto transaction
-  - made into a test function
-
-- `propose_advance_tx(donor: &signer, multisig_address: address, ...)` 🖥️
-  - Proposes an advance transaction
-  - CLI: `txs community propose --community-wallet <ADDRESS> --recipient <ADDRESS> --amount <N> --description <DESC> --advance`
-
-- `vote_reauth_tx(donor: &signer, multisig_address: address)` 🖥️
-  - Votes on a reauthorization transaction
-  - CLI: `txs community reauthorize --community-wallet <ADDRESS>`
-
 - `propose_liquidate_tx(donor: &signer, multisig_address: address)`
   - Proposes a liquidation transaction
-  - TODO: cli tx
 
-- `vote_liquidation_tx(donor: &signer, multisig_address: address)`
+- `vote_liquidation_tx(donor: &signer, multisig_address: address)` 🖥️
   - Votes on a liquidation transaction
-  - TODO: cli tx, possibly duplicated with propose liquidation
+  - CLI: `txs community liquidate --community-wallet <ADDRESS>`
 
 ### multi_action.move
 
 - `claim_offer(sig: &signer, multisig_address: address)` 🖥️
   - Claims an offer for a multisig account
   - CLI: `txs community gov-claim --community-wallet <ADDRESS>`
-
-- REMOVED `finalize_and_cage_deprecated(sig: &signer, initial_authorities: vector<address>, num_signers: u64)`
-  - Finalizes and cages a multisig account (deprecated)
 
 ### proof_of_fee.move
 
@@ -175,32 +158,21 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Updates a Proof of Fee bid
   - CLI: `txs validator pof --bid-pct <PCT> --epoch-expiry <N>`
 
-- `pof_update_bid_net_reward(sender: &signer, net_reward: u64, ...)` 🖥️
-  - Updates a Proof of Fee bid with net reward
-  - CLI: `txs validator pof --net-reward <N> --epoch-expiry <N>`
-
 - `pof_retract_bid(sender: signer)` 🖥️
   - Retracts a Proof of Fee bid
   - CLI: `txs validator pof --retract --epoch-expiry <N>`
 
-- NEUTERED `thermostat_unit_happy(vm: signer)`
-  - Thermostat unit test function
-  - Test function
+### burn.move
 
-### community_wallet_advance.move
-
-- `maybe_deauthorize(user: &signer, dv_account: address)`
-  - Potentially deauthorizes a community wallet advance
+- `set_send_community(sender: &signer, community: bool)` 🖥️
+  - Sets whether burns should be sent to community
+  - CLI: `txs burn-preference --community <BOOL>`
 
 ### ol_account.move
 
 - `create_account(root: &signer, auth_key: address)`
   - Creates a new account
-  - NOTE: NEEDED FOR SMOKE TESTS
-
-- `batch_transfer(source: &signer, recipients: ...)`
-  - Transfers funds to multiple recipients in a batch
-  - TODO: not implemented in CLI
+  - Used for testing
 
 - `transfer(sender: &signer, to: address, amount: u64)` 🖥️
   - Transfers funds from sender to recipient
@@ -208,7 +180,6 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 
 - `set_allow_direct_coin_transfers(account: &signer, allow: bool)`
   - Sets whether direct coin transfers are allowed for an account
-  - TODO: not implemented in CLI
 
 ### slow_wallet.move
 
@@ -216,42 +187,37 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Allows users to change their account to a slow wallet
   - CLI: `txs user set-slow`
 
-- `smoke_test_vm_unlock(sig: &signer, ...)`
-  - Test function for VM unlocking
-  - NOTE: for smoke test only. Gated with assert_testnet
-
 ### jail.move
 
 - `unjail_by_voucher(sender: &signer, addr: address)` 🖥️
   - Unjails an account using a voucher
   - CLI: `txs validator jail --unjail-acct <ADDRESS>`
 
-### libra_coin.move
-
-- NEUTERED `claim_mint_capability()`
-  - Claims the mint capability for Libra coin
-
-- NEUTERED `delegate_mint_capability(to: address)`
-  - Delegates mint capability to another address
-
 ### vouch.move
 
-- `vouch_for(sig: &signer, candidate: address)` 🖥️
+- `vouch_for(grantor: &signer, friend_account: address)` 🖥️
   - Vouches for a validator candidate
   - CLI: `txs validator vouch --vouch-for <ADDRESS>`
 
-- `revoke(sig: &signer, candidate: address)` 🖥️
+- `revoke(grantor: &signer, friend_account: address)` 🖥️
   - Revokes a vouch for a validator candidate
   - CLI: `txs validator vouch --vouch-for <ADDRESS> --revoke`
 
+- `clean_expired(user_sig: &signer)`
+  - Cleans expired vouches for a user
+
 ### validator_universe.move
 
-- `register_validator(sig: &signer, ...)` 🖥️
+- `register_validator(sig: &signer, consensus_pubkey: vector<u8>, proof_of_possession: vector<u8>, network_addresses: vector<u8>, fullnode_addresses: vector<u8>)` 🖥️
   - Registers a validator in the validator universe
   - CLI: `txs validator register [--operator-file <FILE>]`
 
 ### stake.move
 
-- `update_network_and_fullnode_addresses(owner: &signer, validator: address, ...)` 🖥️
+- `initialize_validator(owner: &signer, consensus_pubkey: vector<u8>, proof_of_possession: vector<u8>, network_addresses: vector<u8>, fullnode_addresses: vector<u8>)` 🖥️
+  - Initializes a validator
+  - CLI: `txs validator initialize [--operator-file <FILE>]`
+
+- `update_network_and_fullnode_addresses(owner: &signer, validator: address, new_network_addresses: vector<u8>, new_fullnode_addresses: vector<u8>)` 🖥️
   - Updates a validator's network and fullnode addresses
   - CLI: `txs validator update [--operator-file <FILE>]`
