@@ -33,7 +33,9 @@ module ol_framework::test_page_rank {
     return roots_sig
   }
 
-  // create a test base and check we have 10 root of trust accounts.
+  /// Verifies that the test base setup correctly creates 10 root of trust accounts.
+  /// Checks that each account is properly registered as root of trust, has no received
+  /// vouches, and has a zero page rank score initially.
   #[test(framework = @ol_framework)]
   fun meta_check_base_setup(framework: &signer) {
     // Set up the test base
@@ -59,7 +61,9 @@ module ol_framework::test_page_rank {
     }
   }
 
-  // Test with one user with one root vouch - both for vouch quality and page rank score
+  /// Tests the scenario where a single user receives one vouch from a root of trust account.
+  /// Verifies that the user's page rank score is properly calculated (50) from the
+  /// direct root vouch.
   #[test(framework = @ol_framework)]
   fun test_one_user_one_root(framework: &signer) {
     // Set up the test base
@@ -82,7 +86,9 @@ module ol_framework::test_page_rank {
     assert!(page_rank_score == 50, 7357001);
   }
 
-  // Test with one user with ten root vouches - both for vouch quality and page rank score
+  /// Tests the scenario where a single user receives vouches from all 10 root of trust accounts.
+  /// Verifies that the user's page rank score is correctly calculated (500) when receiving
+  /// multiple root vouches.
   #[test(framework = @ol_framework)]
   fun test_one_user_ten_root(framework: &signer) {
     // Set up the test base
@@ -114,7 +120,11 @@ module ol_framework::test_page_rank {
     assert!(page_rank_score_later == 500, 7357003);
   }
 
-  // creates a user that is one hop away from the user with 10 vouches from root of trust.
+  /// Tests a two-hop trust chain scenario where:
+  /// 1. A directly vouched user receives vouches from all 10 root accounts
+  /// 2. That user then vouches for another user (indirect vouching)
+  /// Verifies that the trust score of the indirectly vouched user is half that of
+  /// the directly vouched user (250, which is 500/2).
   #[test(framework = @ol_framework)]
   fun test_one_hop_to_one_user_ten_root(framework: &signer) {
     // Set up the test base
@@ -163,9 +173,10 @@ module ol_framework::test_page_rank {
     assert!(indirect_score_after == direct_vouched_score/2, 7357006);
   }
 
+  /// Tests the case where all root users are reciprocally vouching for one another.
+  /// Verifies that each root receives vouches from all other roots (9 vouches total),
+  /// and that each root achieves a high page rank score (450) from these vouches.
   #[test(framework = @ol_framework)]
-  /// tests the case that all the root users are reciprocally
-  /// vouching for one another.
   fun test_root_reciprocal_vouch(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
@@ -218,6 +229,12 @@ module ol_framework::test_page_rank {
     };
   }
 
+  /// Tests the handling of stale trust records when vouches are revoked and re-added.
+  /// Verifies that:
+  /// 1. A user's trust is marked stale when a root revokes their vouch
+  /// 2. Page rank score is updated to 0 when vouches are revoked
+  /// 3. Trust remains stale until next computation after vouches are re-added
+  /// 4. Page rank score is properly restored when vouches are re-added
   #[test(framework = @ol_framework)]
   fun test_stale_trust(framework: &signer) {
     // Set up the test base
@@ -264,8 +281,12 @@ module ol_framework::test_page_rank {
     assert!(!stale, 7357005);
   }
 
-  // check that the page rank can be used to
-  // reauthorize a founder
+  /// Tests that page rank can be used to reauthorize a founder account.
+  /// Verifies that:
+  /// 1. A prehistoric (v7) account is initialized with founder status
+  /// 2. The account initially has no friends (fails sybil resistance)
+  /// 3. Getting a vouch from a root increases page rank score to 50
+  /// 4. With sufficient page rank score, the founder now passes the has_friends check
   #[test(framework = @ol_framework)]
   fun test_founder_reauth(framework: &signer) {
     // Set up the test base
@@ -300,10 +321,11 @@ module ol_framework::test_page_rank {
     assert!(has_friends, 7357006);
   }
 
+  /// Tests that users don't gain trust score from roots vouching for each other.
+  /// Demonstrates that the root check in page_rank_lazy::walk_from_node prevents
+  /// score accumulation through root-to-root vouches, ensuring that the trust
+  /// system isn't exploitable through root account manipulation.
   #[test(framework = @ol_framework)]
-  /// Test to verify that users don't gain trust score from roots vouching for each other
-  /// This test demonstrates that the root check in page_rank_lazy::walk_from_node prevents
-  /// score accumulation through root-to-root vouches
   fun test_no_accumulation_from_root_vouches(framework: &signer) {
     // Set up the test base with 10 root accounts
     let roots_sig = test_base(framework);
@@ -351,8 +373,13 @@ module ol_framework::test_page_rank {
     assert!(user1_score < root0_score, 7357101);
   }
 
+  /// Tests the diminishing power of trust as the number of hops increases.
+  /// Verifies that:
+  /// 1. Trust score decreases with each hop in the trust chain
+  /// 2. Each hop reduces the score by half compared to the previous hop
+  /// 3. After several hops, the trust score eventually diminishes to zero
+  /// This ensures that trust doesn't propagate indefinitely through the network.
   #[test(framework = @ol_framework)]
-  /// Tests the diminishing power as the number of hops increases
   fun test_diminishing_power(framework: &signer) {
     // Set up the test base with 10 root accounts
     let roots_sig = test_base(framework);
