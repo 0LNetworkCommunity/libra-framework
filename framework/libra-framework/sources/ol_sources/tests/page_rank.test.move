@@ -8,6 +8,7 @@ module ol_framework::test_page_rank {
   use ol_framework::vouch;
   use ol_framework::vouch_txs;
   use ol_framework::page_rank_lazy;
+  use ol_framework::vouch_limits;
   use std::signer;
   use std::vector;
 
@@ -164,6 +165,11 @@ module ol_framework::test_page_rank {
     // NOTE: this should be 10X the previous test
     assert!(direct_vouched_score == max_single_score * 10, 7357003);
 
+    let vouch_limit_direct = vouch_limits::calculate_score_limit(direct_vouched_addr);
+    // Check the vouch limit for the directly vouched user
+    // this users maxed out the vouches
+    assert!(vouch_limit_direct == 20, 7357004);
+
     // Second user who is vouched for by the user with 10 root vouches
     let indirect_vouched_sig = mock::create_user_from_u64(framework, 12);
     let indirect_vouched_addr = signer::address_of(&indirect_vouched_sig);
@@ -175,7 +181,14 @@ module ol_framework::test_page_rank {
     // Direct vouched user vouches for the indirect vouched user
     vouch_txs::vouch_for(&direct_vouched_sig, indirect_vouched_addr);
     let indirect_score_after = page_rank_lazy::get_trust_score(indirect_vouched_addr);
+
     assert!(indirect_score_after == direct_vouched_score/2, 7357006);
+
+    let vouch_limit_indirect = vouch_limits::calculate_score_limit(indirect_vouched_addr);
+
+    // Check the vouch limit for the directly vouched user
+    // this users maxed out the vouches
+    assert!(vouch_limit_indirect == 15, 7357004);
   }
 
   #[test(framework = @ol_framework)]
@@ -412,7 +425,7 @@ module ol_framework::test_page_rank {
     let max_single_score = page_rank_lazy::get_max_single_score();
 
     let prev_score = max_single_score * 2;
-
+    let prev_vouch = 20;
     // loop through the users and have the previous
     // user vouch for the next user
     let i = 0;
@@ -425,6 +438,7 @@ module ol_framework::test_page_rank {
       vouch::vouch_for(grantor_sig, *beneficiary_addr);
 
       let user1_score = page_rank_lazy::get_trust_score(*beneficiary_addr);
+
       // in a simple initialization root doesn't have any vouches themselves
       if (prev_score > 0) {
         assert!(user1_score < prev_score, 7357101);
@@ -433,7 +447,16 @@ module ol_framework::test_page_rank {
         };
       };
 
+      let vouch_limit = vouch_limits::calculate_score_limit(*beneficiary_addr);
+
+            // in a simple initialization root doesn't have any vouches themselves
+      if (prev_vouch > 1) {
+        assert!(vouch_limit < prev_vouch, 7357101);
+      };
+
+      // prep next loop
       prev_score = user1_score;
+      prev_vouch = vouch_limit;
       grantor_sig = vector::borrow(&users_sig, i);
       i = i + 1;
     };
