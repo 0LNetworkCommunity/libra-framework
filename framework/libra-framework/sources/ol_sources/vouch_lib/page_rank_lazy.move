@@ -9,23 +9,14 @@ module ol_framework::page_rank_lazy {
     friend ol_framework::vouch_txs;
 
     // Constants
-    const DEFAULT_WALK_DEPTH: u64 = 4;
-    const DEFAULT_NUM_WALKS: u64 = 10;
-    const SCORE_TTL_SECONDS: u64 = 1000; // Score validity period in seconds
     const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
-
-    const DEFAULT_ROOT_REGISTRY: address = @diem_framework; // Default registry address for root of trust
 
     // Full graph walk constants
     const FULL_WALK_MAX_DEPTH: u64 = 6; // Maximum path length for full graph traversal
 
     //////// Error codes ////////
-    /// node not found
-    const ENODE_NOT_FOUND: u64 = 1;
     /// trust record not initialized
     const ENOT_INITIALIZED: u64 = 2;
-    /// processing limit reached
-    const EPROCESSING_LIMIT_REACHED: u64 = 3;
 
     // Per-user trust record - each user stores their own trust data
     struct UserTrustRecord has key, drop {
