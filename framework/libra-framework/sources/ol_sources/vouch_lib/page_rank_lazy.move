@@ -17,10 +17,7 @@ module ol_framework::page_rank_lazy {
     const MAX_VOUCH_SCORE: u64 = 100_000;
 
     // Circuit breaker to prevent stack overflow
-    const MAX_PROCESSED_ADDRESSES: u64 = 1000;
-
-    // Maximum path length for full graph traversal
-    const FULL_WALK_MAX_DEPTH: u64 = 6;
+    const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
 
     // Per-user trust record - each user stores their own trust data
     struct UserTrustRecord has key, drop {
@@ -65,7 +62,7 @@ module ol_framework::page_rank_lazy {
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
 
         // Compute score using selected algorithm
-        let score = traverse_graph(&roots, addr, FULL_WALK_MAX_DEPTH);
+        let score = traverse_graph(&roots, addr);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
@@ -80,7 +77,6 @@ module ol_framework::page_rank_lazy {
     fun traverse_graph(
         roots: &vector<address>,
         target: address,
-        max_depth: u64,
     ): u64 {
         let total_score = 0;
         let root_idx = 0;
@@ -98,7 +94,7 @@ module ol_framework::page_rank_lazy {
 
                 // Initial trust power is 100 (full trust from root)
                 total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 1, max_depth, 2 * MAX_VOUCH_SCORE
+                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE
                 );
             };
 
@@ -113,8 +109,6 @@ module ol_framework::page_rank_lazy {
         current: address,
         target: address,
         visited: &mut vector<address>,
-        current_depth: u64,
-        max_depth: u64,
         current_power: u64
     ): u64 {
         if(!vouch::is_init(current)) {
@@ -129,8 +123,8 @@ module ol_framework::page_rank_lazy {
             return current_power
         };
 
-        // Stop conditions
-        if (current_depth >= max_depth || current_power < 2) {
+        // Stop condition - only stop if power is too low
+        if (current_power < 2) {
             return 0
         };
 
@@ -184,8 +178,6 @@ module ol_framework::page_rank_lazy {
                     neighbor,
                     target,
                     visited,
-                    current_depth + 1,
-                    max_depth,
                     next_power
                 );
 
