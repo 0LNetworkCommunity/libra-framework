@@ -37,10 +37,11 @@ module ol_framework::donor_voice_governance {
     /// A proposal already exists with this data
     const EDUPLICATE_PROPOSAL: u64 = 3;
 
-    /// CONSTANTS
-    /// Epoch days for early closing of reauthorization of community wallets
-    /// The poll can end early after these days if the threshold and quorum is met.
-    const REAUTH_EARLY_POLL_CLOSE: u64 = 5;
+    /////// CONSTANTS ////////
+    /// Tally expires after number of epochs.
+    /// Note the CW needs to restart the tally if it expires
+    /// It does not remain open
+    const REAUTH_TALLY_EXPIRES: u64 = 30;
 
 
     /// Data struct to store all the governance Ballots for vetoes
@@ -232,7 +233,7 @@ module ol_framework::donor_voice_governance {
     ): guid::ID acquires Governance {
       let data = Reauth {};
 
-      propose_gov<Reauth>(cap, data, REAUTH_EARLY_POLL_CLOSE)
+      propose_gov<Reauth>(cap, data, REAUTH_TALLY_EXPIRES)
     }
 
     /// a private function to propose a ballot for a veto. This is called by a verified donor.
@@ -335,14 +336,6 @@ module ol_framework::donor_voice_governance {
     }
 
     #[view]
-    public fun is_liquidation_proposed(dv_account: address): bool acquires Governance {
-      let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
-      let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
-
-      vector::length(list_pending) > 0
-    }
-
-    #[view]
     public fun is_reauth_proposed(dv_account: address): bool acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
       let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
@@ -383,21 +376,8 @@ module ol_framework::donor_voice_governance {
     }
 
     #[view]
-    // returns the deadline (in epochs) for a veto vote
-    public fun get_veto_deadline(dv_account: address, id: u64): u64 acquires Governance {
-      let (found, prop_id) = find_tx_veto_id(guid::create_id(dv_account, id));
-      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
-
-      let state = borrow_global<Governance<TurnoutTally<Veto>>>(dv_account);
-      let ballot = ballot::get_ballot_by_id(&state.tracker, &prop_id);
-      let tally = ballot::get_type_struct(ballot);
-
-      turnout_tally::get_expiration_epoch(tally)
-    }
-
-    #[view]
     // returns the deadline (in epochs) for a reauthorization vote
-    public fun get_reauth_deadline(dv_account: address): u64 acquires Governance {
+    public fun get_reauth_expiry(dv_account: address): u64 acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
       let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
 
@@ -410,8 +390,31 @@ module ol_framework::donor_voice_governance {
     }
 
     #[view]
+    // returns the deadline (in epochs) for a veto vote
+    public fun get_veto_deadline(dv_account: address, id: u64): u64 acquires Governance {
+      let (found, prop_id) = find_tx_veto_id(guid::create_id(dv_account, id));
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
+
+      let state = borrow_global<Governance<TurnoutTally<Veto>>>(dv_account);
+      let ballot = ballot::get_ballot_by_id(&state.tracker, &prop_id);
+      let tally = ballot::get_type_struct(ballot);
+
+      turnout_tally::get_expiration_epoch(tally)
+    }
+
+
+    #[view]
+    public fun is_liquidation_proposed(dv_account: address): bool acquires Governance {
+      let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
+      let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      vector::length(list_pending) > 0
+    }
+
+
+    #[view]
     // returns a tuple of the (percent approval, turnout percent, threshold needed to pass)
-    public fun get_liquidation_tally(dv_account: address): (u64, u64, u64) acquires Governance {
+    public fun get_liquidation_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
       let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
 
@@ -422,8 +425,12 @@ module ol_framework::donor_voice_governance {
       let approval_pct = turnout_tally::get_current_ballot_approval(tally);
       let turnout_pct = turnout_tally::get_current_ballot_participation(tally);
       let current_threshold = turnout_tally::get_current_threshold_required(tally);
+      let epoch_deadline = turnout_tally::get_expiration_epoch(tally);
+      let minimum_turnout = turnout_tally::get_minimum_turnout(tally);
 
-      (approval_pct, turnout_pct, current_threshold)
+      let (is_complete, approved) = turnout_tally::get_result(tally);
+
+      (approval_pct, turnout_pct, current_threshold, epoch_deadline, minimum_turnout, approved, is_complete)
     }
 
     #[view]

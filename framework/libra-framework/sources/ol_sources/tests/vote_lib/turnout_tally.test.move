@@ -102,7 +102,6 @@ module ol_framework::test_turnout_tally {
 
     fun tally_vote_expired(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);
-      // mock::ol_initialize_coin(root);
       // for this test let's start at epoch 1
       mock::trigger_epoch(root);
 
@@ -143,7 +142,7 @@ module ol_framework::test_turnout_tally {
       assert!(r == true, 0); // voted in favor
       assert!(w == 22, 1);
 
-      // 22 is enough to pass. HOEVER, the Vote does not close and pass immediately. It requires one more vote in favor AT LEAST ONE day later.
+      // 22 is enough to pass. HOWEVER, the Vote does not close and pass immediately. It requires one more vote in favor AT LEAST ONE day later.
 
       // 5 of 100 is not enough to get over any dynamic threshold.
 

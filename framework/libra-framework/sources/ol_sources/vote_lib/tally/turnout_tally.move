@@ -99,9 +99,9 @@
     /// for voting to happen with the VoteLib module, the guid creation capability must be passed in, and so the signer for the addres (the "sponsor" of the ballot) must move the capability to be accessible by the contract logic.
 
 
-    struct TurnoutTally<Data> has key, store, drop { // Note, this is a hot potato. Any methods chaning it must return the struct to caller.
+    struct TurnoutTally<Data> has key, store, drop { // Note, this is a hot potato. Any methods changing it must return the struct to caller.
       data: Data,
-      cfg_deadline: u64, // original deadline, which may be extended. Note dedaline is at the END of this epoch (cfg_deadline + 1 stops taking votes)
+      cfg_deadline: u64, // original deadline, which may be extended. Note deadline is at the END of this epoch (cfg_deadline + 1 stops taking votes)
       cfg_max_extensions: u64, // if 0 then no max. Election can run until threshold is met.
       cfg_min_turnout: u64,
       cfg_minority_extension: bool,
@@ -151,11 +151,11 @@
     }
 
     fun update_enrollment<Data: drop + store>(ballot: &mut TurnoutTally<Data>, enrollment: vector<address>) {
-      assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
+      assert!(!is_poll_closed(ballot), error::invalid_state(ECOMPLETED));
       ballot.enrollment = enrollment;
     }
 
-    // Only the contract, which is the keeper of the TurnoutTally, can allow a user to temporarily hold the TurnoutTally struct to update the vote. The user cannot arbiltrarily update the vote, with an arbitrary number of votes.
+    // Only the contract, which is the keeper of the TurnoutTally, can allow a user to temporarily hold the TurnoutTally struct to update the vote. The user cannot arbitrarily update the vote, with an arbitrary number of votes.
     // This is a hot potato, it cannot be dropped.
 
     // the vote flow will return if the ballot passed (on the vote that gets over the threshold). This can be used for triggering actions lazily.
@@ -168,7 +168,7 @@
       weight: u64
     ): Option<bool> {
       // voting should not be complete
-      // assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
+      assert!(!is_poll_closed(ballot), error::invalid_state(ECOMPLETED));
 
       // check if this person voted already.
       // If the vote is the same directionally (approve, reject), exit early.
@@ -200,32 +200,32 @@
 
 
       };
-        // always tally on each vote
-        // make sure all extensions happened in previous step.
-        maybe_tally(ballot);
+
+      // always tally on each vote
+      // make sure all extensions happened in previous step.
+      maybe_tally(ballot);
 
       if (ballot.completed) { return option::some(ballot.tally_pass) };
       option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
     }
 
-    fun maybe_complete<Data: drop + store>(ballot: &mut TurnoutTally<Data>): bool {
+    public fun is_poll_closed<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
       let epoch = epoch_helper::get_current_epoch();
       // if completed, exit early
       if (ballot.completed) { return true }; // this should be checked above anyways.
 
-      // this may be a vote that never expires, until a decision is reached
-      if (ballot.cfg_deadline == 0 ) { return false };
-
       // if original and extended deadline have passed, stop tally
       // while we are here, update to "completed".
-      if (
-        epoch > ballot.cfg_deadline &&
-        epoch > ballot.extended_deadline
-      ) {
-        ballot.completed = true;
-        return true
-      };
-      ballot.completed
+      epoch > ballot.cfg_deadline &&
+      epoch > ballot.extended_deadline &&
+      epoch > ballot.provisional_pass_epoch
+    }
+
+    public fun maybe_close_poll<Data: drop + store>(ballot: &mut TurnoutTally<Data>): bool {
+      let closed = is_poll_closed(ballot);
+      ballot.completed = closed;
+
+      closed
     }
 
     public(friend) fun retract<Data: drop + store>(
@@ -250,7 +250,7 @@
     }
 
     /// The handler for a third party contract may wish to extend the ballot deadline.
-    /// DANGER: the thirdparty ballot contract needs to know what it is doing. If this ballot object is exposed to end users it's game over.
+    /// DANGER: the third-party ballot contract needs to know what it is doing. If this ballot object is exposed to end users it's game over.
 
     public(friend) fun extend_deadline<Data: drop + store>(ballot: &mut TurnoutTally<Data>, new_epoch: u64) {
 
@@ -266,7 +266,7 @@
 
       let epoch = epoch_helper::get_current_epoch();
 
-      // TODO: The exension window below of 1 day is not sufficient to make
+      // TODO: The extension window below of 1 day is not sufficient to make
       // much difference in practice (the threshold is most likely reached at that point).
 
       // Are we on the last day of voting (extension window)? If not exit
@@ -315,8 +315,17 @@
       false
     }
 
+
+
     /// stop tallying if the expiration is passed or the threshold has been met.
     fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>) {
+      // if this is an old ballot we need to stop tallying.
+      // mark it as complete for good measure
+      if (is_poll_closed(ballot)) {
+        maybe_close_poll(ballot);
+        return
+      };
+
       let total_votes = ballot.votes_approve + ballot.votes_reject;
 
       assert!(ballot.max_votes >= total_votes, error::invalid_state(EVOTES_GREATER_THAN_ENROLLMENT));
@@ -338,7 +347,7 @@
         if (ballot.tally_turnout_pct > ballot.cfg_min_turnout) {
           let epoch = epoch_helper::get_current_epoch();
 
-          // cool off period, to next epoch.
+          // start the cool off period, to next epoch.
           if (ballot.provisional_pass_epoch == 0) {
             // setting the next epoch in which the tally will be final.
             // NOTE: requires a second vote to be cast to finalize the tally.
@@ -353,8 +362,6 @@
           };
         }
       };
-
-      maybe_complete(ballot);
     }
 
 
