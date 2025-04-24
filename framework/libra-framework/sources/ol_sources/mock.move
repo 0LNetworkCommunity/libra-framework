@@ -18,9 +18,13 @@ module ol_framework::mock {
   use std::bcs;
   use ol_framework::activity;
   use ol_framework::ancestry;
+  use ol_framework::donor_voice_governance;
+  use ol_framework::donor_voice_txs;
+  use ol_framework::receipts;
   use ol_framework::filo_migration;
   use ol_framework::grade;
   use ol_framework::vouch;
+  use ol_framework::multi_action;
   use ol_framework::slow_wallet;
   use ol_framework::proof_of_fee;
   use ol_framework::validator_universe;
@@ -426,6 +430,102 @@ module ol_framework::mock {
   }
 
 
+    /// Helper function to set up a mock community wallet with donor voice governance
+    /// Returns the resource account signer and address of the community wallet
+    fun setup_mock_community_wallet(
+        root: &signer,
+        creator: &signer,
+        signers: vector<signer>,
+        quorum: u64
+    ): signer {
+        let spec_admin_addresses = collect_addresses(&signers);
+
+        let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(creator, b"0x1");
+        let donor_voice_address = signer::address_of(&resource_sig);
+
+        // the account needs basic donor directed structs
+        donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, spec_admin_addresses);
+
+
+        // signers claim the offer
+        let i = 0;
+        let len = vector::length(&signers);
+        while (i < len) {
+            multi_action::claim_offer(vector::borrow(&signers, i), donor_voice_address);
+            i = i + 1;
+        };
+
+        //need to be caged to finalize donor directed workflow and release control of the account
+        multi_action::finalize_and_cage(&resource_sig, quorum);
+
+      //////// CHECKING ////////
+      let actual_addresses = multi_action::get_authorities(donor_voice_address);
+
+      // loop through addrs and confirm the list of admins is present
+      let i = 0;
+      let len = vector::length(&actual_addresses);
+      while (i < len) {
+          let spec_admin = vector::borrow(&spec_admin_addresses, i);
+          let is_authority = vector::contains(&actual_addresses, spec_admin);
+          assert!(is_authority, 7357003); // Assert that each admin is in the authorities list
+          i = i + 1;
+      };
+        resource_sig
+    }
+
+    /// Helper function to set up donors with specified donation amounts
+    /// Transfers funds from each donor to the community wallet and verifies their donor status
+    /// Returns a vector of (donor address, donation amount) pairs
+    fun setup_donors(
+        framework: &signer,
+        donors: vector<signer>,
+        donor_voice_address: address
+    ) {
+
+        let i = 0;
+
+        let donation_amount = 100;
+
+        while (i < vector::length(&donors)) {
+            let donor = vector::borrow(&donors, i);
+            let donor_address = signer::address_of(donor);
+
+            let amount = (donation_amount * (i+1));
+
+            ol_mint_to(framework, donor_address, (2*amount));
+
+            // Make the donation
+            ol_account::transfer(donor, donor_voice_address, amount);
+
+            // Verify the donation was received
+            let (_, _, total_funds_sent) = receipts::read_receipt(donor_address, donor_voice_address);
+            assert!(total_funds_sent == amount, 7357001);
+
+            // Verify donor status
+            let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, donor_address);
+            assert!(is_donor, 7357002);
+
+            i = i + 1;
+
+        };
+    }
+
+    #[test_only]
+    public fun mock_dv(framework: &signer, sponsor: &signer, donor_count: u64) {
+      // Scenario: Eve wants to veto a transaction on a donor directed account.
+      // Marlon the sponsor creates a donor directed account where Alice, Bob and Carol, are admins.
+      // Dave and Eve make a donation and so are able to have some voting on that account. The veto can only happen after Alice Bob and Carol are able to schedule a tx.
+
+      let admins = create_test_end_users(framework, 3, 100);
+      // let admin_addresses = mock::collect_addresses(&admins);
+      let dv_signer = setup_mock_community_wallet(framework, sponsor, admins, 2);
+      let donor_voice_address = signer::address_of(&dv_signer);
+
+      let donor_sigs = create_test_end_users(framework, donor_count, 200);
+      setup_donors(framework, donor_sigs, donor_voice_address);
+
+    }
+
   #[test_only]
   /// Creates a vouching network where target_account has a vouch score of 100
   /// This will create validators if they don't exist, and set up vouches
@@ -472,6 +572,19 @@ module ol_framework::mock {
     vals
   }
 
+
+  #[test_only]
+  /// two state initializations happen on first
+  /// transaction
+  public fun simulate_transaction_validation(sender: &signer) {
+    let time = timestamp::now_seconds();
+    // will initialize structs if first time
+    activity::increment(sender, time);
+
+    // run migrations
+    // Note, Activity and Founder struct should have been set above
+    filo_migration::maybe_migrate(sender);
+  }
 
   //////// META TESTS ////////
   #[test(root=@ol_framework)]
@@ -600,17 +713,13 @@ module ol_framework::mock {
     assert!(remaining == 11, 7357003);
   }
 
-  #[test_only]
-  /// two state initializations happen on first
-  /// transaction
-  public fun simulate_transaction_validation(sender: &signer) {
-    let time = timestamp::now_seconds();
-    // will initialize structs if first time
-    activity::increment(sender, time);
 
-    // run migrations
-    // Note, Activity and Founder struct should have been set above
-    filo_migration::maybe_migrate(sender);
+  #[test(framework = @ol_framework, marlon_sponsor = @0x1234)]
+  fun meta_mock_dv(framework: &signer, marlon_sponsor: &signer) {
+    let _vals = genesis_n_vals(framework, 3);
+    ol_initialize_coin_and_fund_vals(framework, 100000, true);
+
+    mock_dv(framework, marlon_sponsor, 2);
   }
 
 
