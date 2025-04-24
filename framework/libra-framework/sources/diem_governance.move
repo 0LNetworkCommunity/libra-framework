@@ -529,7 +529,7 @@ module diem_framework::diem_governance {
 
     // helper to use on smoke tests only. Will fail on Mainnet. Needs testnet
     // Core Resources user.
-    fun smoke_trigger_epoch(core_resources: &signer) acquires
+    public entry fun smoke_trigger_epoch(core_resources: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
       assert!(testnet::is_not_mainnet(), error::invalid_state(ENOT_FOR_MAINNET));
       system_addresses::assert_ol(core_resources);

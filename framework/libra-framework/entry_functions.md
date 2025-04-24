@@ -44,12 +44,15 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Only used for smoke tests
 
 ### code.move
-
 - `publish_package_txn(owner: &signer, metadata_serialized: vector<u8>, code: vector<vector<u8>>)` 🖥️
   - Publishes a Move package to the blockchain
   - CLI: `txs publish --package-dir <PATH>`
 
 ### diem_governance.move
+
+- `smoke_trigger_epoch(core_resources: &signer)`
+  - Triggers a new epoch in test environments
+  - Only used for smoke tests
 
 - `ol_create_proposal_v2(proposer: &signer, execution_hash: vector<u8>, metadata_location: vector<u8>, metadata_hash: vector<u8>, is_multi_step_proposal: bool)` 🖥️
   - 0L specific variant for creating proposals
@@ -66,6 +69,12 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `trigger_epoch(_sig: &signer)` 🖥️
   - Triggers a new epoch
   - CLI: `txs governance epoch-boundary`
+
+### code.move
+
+- `publish_package_txn(owner: &signer, metadata_serialized: vector<u8>, code: vector<vector<u8>>)` 🖥️
+  - Publishes a Move package to the blockchain
+  - CLI: `txs publish --package-dir <PATH>`
 
 ### multisig_account.move
 ####  NOTE: not implemented in OL client tools

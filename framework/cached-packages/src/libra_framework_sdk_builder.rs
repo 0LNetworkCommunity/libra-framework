@@ -98,6 +98,8 @@ pub enum EntryFunctionCall {
         should_pass: bool,
     },
 
+    DiemGovernanceSmokeTriggerEpoch {},
+
     /// After proposed, subsequent voters call this to vote liquidation
     DonorVoiceTxsVoteLiquidationTx {
         multisig_address: AccountAddress,
@@ -299,6 +301,7 @@ impl EntryFunctionCall {
                 proposal_id,
                 should_pass,
             } => diem_governance_ol_vote(proposal_id, should_pass),
+            DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
             DonorVoiceTxsVoteLiquidationTx { multisig_address } => {
                 donor_voice_txs_vote_liquidation_tx(multisig_address)
             }
@@ -570,6 +573,21 @@ pub fn diem_governance_ol_vote(proposal_id: u64, should_pass: bool) -> Transacti
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
         ],
+    ))
+}
+
+pub fn diem_governance_smoke_trigger_epoch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("diem_governance").to_owned(),
+        ),
+        ident_str!("smoke_trigger_epoch").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -1141,6 +1159,16 @@ mod decoder {
         }
     }
 
+    pub fn diem_governance_smoke_trigger_epoch(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::DiemGovernanceSmokeTriggerEpoch {})
+        } else {
+            None
+        }
+    }
+
     pub fn donor_voice_txs_vote_liquidation_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -1447,6 +1475,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "diem_governance_ol_vote".to_string(),
             Box::new(decoder::diem_governance_ol_vote),
+        );
+        map.insert(
+            "diem_governance_smoke_trigger_epoch".to_string(),
+            Box::new(decoder::diem_governance_smoke_trigger_epoch),
         );
         map.insert(
             "donor_voice_txs_vote_liquidation_tx".to_string(),
