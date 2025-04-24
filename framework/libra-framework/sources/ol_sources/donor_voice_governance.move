@@ -157,6 +157,23 @@ module ol_framework::donor_voice_governance {
       turnout_tally::vote(donor, tally_state, &ballot_guid, true, user_weight)
     }
 
+    /// standalone function which can close the poll
+    public(friend) fun maybe_tally_reauth(multisig_address: address): Option<bool> acquires Governance{
+      let state = borrow_global_mut<Governance<TurnoutTally<Reauth>>>(multisig_address);
+      // In a Reauth vote there is only ever one proposal at a time.
+      let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
+
+      if (vector::is_empty(pending_list)) {
+        return option::none<bool>()
+      };
+
+      let ballot = vector::borrow_mut(pending_list, 0);
+      let tally_state = ballot::get_type_struct_mut(ballot);
+
+      turnout_tally::maybe_tally(tally_state)
+
+    }
+
     /// Liquidation tally only. The handler for liquidation exists in Donor Voice, where a tx script will call it.
     public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
       assert_is_voter(donor, multisig_address);

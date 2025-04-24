@@ -139,11 +139,11 @@
           max_votes: max_vote_enrollment,
           votes_approve: 0,
           votes_reject: 0,
-          extended_deadline: deadline,
+          extended_deadline: deadline, // DEPRECATED
           last_epoch_voted: 0,
           last_epoch_approve: 0,
           last_epoch_reject: 0,
-          provisional_pass_epoch: 0,
+          provisional_pass_epoch: 0, // DEPRECATED
           tally_approve_pct: 0,
           tally_turnout_pct: 0,
           tally_pass: false,
@@ -203,10 +203,7 @@
 
       // always tally on each vote
       // make sure all extensions happened in previous step.
-      maybe_tally(ballot);
-
-      if (ballot.completed) { return option::some(ballot.tally_pass) };
-      option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
+      maybe_tally(ballot)
     }
 
     public fun is_poll_closed<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
@@ -214,11 +211,13 @@
       // if completed, exit early
       if (ballot.completed) { return true }; // this should be checked above anyways.
 
-      // if original and extended deadline have passed, stop tally
-      // while we are here, update to "completed".
-      epoch > ballot.cfg_deadline &&
-      epoch > ballot.extended_deadline &&
-      epoch > ballot.provisional_pass_epoch
+      if (ballot.cfg_deadline == 0) {
+        // if the deadline is 0, then it never expires.
+        return false
+      };
+
+      // the poll expires after this time.
+      epoch > ballot.cfg_deadline
     }
 
     public fun maybe_close_poll<Data: drop + store>(ballot: &mut TurnoutTally<Data>): bool {
@@ -257,74 +256,15 @@
       ballot.extended_deadline = new_epoch;
     }
 
-    /// A third party contract can optionally call this function to extend the deadline to extend ballots in competitive situations.
-    /// we may need to extend the ballot if on the last day (TBD a wider window) the vote had a big shift in favor of the minority vote.
-    /// All that needs to be done, is on the return of vote(), to then call this function.
-    /// It's a useful feature, but it will not be included by default in all votes.
 
-    fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
-
-      let epoch = epoch_helper::get_current_epoch();
-
-      // TODO: The extension window below of 1 day is not sufficient to make
-      // much difference in practice (the threshold is most likely reached at that point).
-
-      // Are we on the last day of voting (extension window)? If not exit
-      if (epoch == ballot.extended_deadline || epoch == ballot.cfg_deadline) { return ballot.extended_deadline };
-
-      if (is_competitive(ballot)) {
-        // we may have extended already, but we don't want to extend more than once per day.
-        if (ballot.extended_deadline > epoch) { return ballot.extended_deadline };
-
-        // extend the deadline by 1 day
-        ballot.extended_deadline = epoch + 1;
-      };
-
-
-      ballot.extended_deadline
-    }
-
-    fun is_competitive<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
-      let (prev_lead, prev_trail, prev_lead_updated, prev_trail_updated) = if (ballot.last_epoch_approve > ballot.last_epoch_reject) {
-        // if the "approve" vote WAS leading.
-        (ballot.last_epoch_approve, ballot.last_epoch_reject, ballot.votes_approve, ballot.votes_reject)
-
-      } else {
-        (ballot.last_epoch_reject, ballot.last_epoch_approve, ballot.votes_reject, ballot.votes_approve)
-      };
-
-
-      // no votes yet
-      if (prev_lead == 0 && prev_trail == 0) { return false };
-      if (prev_lead_updated == 0 && prev_trail_updated == 0) { return false};
-
-      let prior_margin = ((prev_lead - prev_trail) * PCT_SCALE) / (prev_lead + prev_trail);
-
-
-      // the current margin may have flipped, so we need to check the direction of the vote.
-      // if so then give an automatic extensions
-      if (prev_lead_updated < prev_trail_updated) {
-        return true
-      } else {
-        let current_margin = (prev_lead_updated - prev_trail_updated) * PCT_SCALE / (prev_lead_updated + prev_trail_updated);
-
-        if (current_margin - prior_margin > MINORITY_EXT_MARGIN) {
-          return true
-        }
-      };
-      false
-    }
-
-
-
-    /// stop tallying if the expiration is passed or the threshold has been met.
-    fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>) {
-      // if this is an old ballot we need to stop tallying.
-      // mark it as complete for good measure
-      if (is_poll_closed(ballot)) {
-        maybe_close_poll(ballot);
-        return
-      };
+    /// Evaluate the poll, and calculate the turnout and threshold.
+    /// The tally must be called after the threshold is met.
+    /// Each vote will try to tally, since the first vote above the threshold
+    /// will cause the poll to close early.
+    /// If the poll expires this function can also be called, outside of a vote
+    /// can close the poll.
+    /// (note: a duplicate vote will also call this function without affecting the result)
+    public fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>): Option<bool> {
 
       let total_votes = ballot.votes_approve + ballot.votes_reject;
 
@@ -340,29 +280,23 @@
       // check the threshold that needs to be met met turnout
       ballot.tally_approve_pct = fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total_votes));
 
-      // the first vote which crosses the threshold causes the poll to end.
-      if (ballot.tally_approve_pct > thresh) {
+      if (
+        // Threshold must be above dynamically calculated threshold
+        ballot.tally_approve_pct > thresh &&
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
-        if (ballot.tally_turnout_pct > ballot.cfg_min_turnout) {
-          let epoch = epoch_helper::get_current_epoch();
-
-          // start the cool off period, to next epoch.
-          if (ballot.provisional_pass_epoch == 0) {
-            // setting the next epoch in which the tally will be final.
-            // NOTE: requires a second vote to be cast to finalize the tally.
-            // automatically passing once the threshold is reached disadvantages inactive participants.
-            // We propose it takes one vote plus one day once reaching threshold.
-            ballot.provisional_pass_epoch = epoch;
-
-          } else if (epoch > ballot.provisional_pass_epoch) {
-            // multiple days may have passed since the provisional pass.
+        ballot.tally_turnout_pct > ballot.cfg_min_turnout
+        ) {
             ballot.completed = true;
             ballot.tally_pass = true;
-          };
-        }
-      };
+        } else {
+          maybe_close_poll(ballot);
+        };
+
+      if (ballot.completed) { return option::some(ballot.tally_pass) };
+      option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
     }
+
 
 
     //////// GETTERS ////////
@@ -434,9 +368,6 @@
       (ballot.completed, ballot.tally_pass)
     }
 
-
-
-
     #[view]
     // TODO: this should probably use Decimal.move
     // can't multiply fixed_point32 types directly.
@@ -468,4 +399,67 @@
 
       return y
     }
+
+
+    //////// TODO ///////
+    // TODO: evaluate if we want dynamic deadlines
+    // based on competitiveness
+
+    // /// A third party contract can optionally call this function to extend the deadline to extend ballots in competitive situations.
+    // /// we may need to extend the ballot if on the last day (TBD a wider window) the vote had a big shift in favor of the minority vote.
+    // /// All that needs to be done, is on the return of vote(), to then call this function.
+    // /// It's a useful feature, but it will not be included by default in all votes.
+    // fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
+
+    //   let epoch = epoch_helper::get_current_epoch();
+
+    //   // TODO: The extension window below of 1 day is not sufficient to make
+    //   // much difference in practice (the threshold is most likely reached at that point).
+
+    //   // Are we on the last day of voting (extension window)? If not exit
+    //   if (epoch == ballot.extended_deadline || epoch == ballot.cfg_deadline) { return ballot.extended_deadline };
+
+    //   if (is_competitive(ballot)) {
+    //     // we may have extended already, but we don't want to extend more than once per day.
+    //     if (ballot.extended_deadline > epoch) { return ballot.extended_deadline };
+
+    //     // extend the deadline by 1 day
+    //     ballot.extended_deadline = epoch + 1;
+    //   };
+
+
+    //   ballot.extended_deadline
+    // }
+
+    // fun is_competitive<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
+    //   let (prev_lead, prev_trail, prev_lead_updated, prev_trail_updated) = if (ballot.last_epoch_approve > ballot.last_epoch_reject) {
+    //     // if the "approve" vote WAS leading.
+    //     (ballot.last_epoch_approve, ballot.last_epoch_reject, ballot.votes_approve, ballot.votes_reject)
+
+    //   } else {
+    //     (ballot.last_epoch_reject, ballot.last_epoch_approve, ballot.votes_reject, ballot.votes_approve)
+    //   };
+
+
+    //   // no votes yet
+    //   if (prev_lead == 0 && prev_trail == 0) { return false };
+    //   if (prev_lead_updated == 0 && prev_trail_updated == 0) { return false};
+
+    //   let prior_margin = ((prev_lead - prev_trail) * PCT_SCALE) / (prev_lead + prev_trail);
+
+
+    //   // the current margin may have flipped, so we need to check the direction of the vote.
+    //   // if so then give an automatic extensions
+    //   if (prev_lead_updated < prev_trail_updated) {
+    //     return true
+    //   } else {
+    //     let current_margin = (prev_lead_updated - prev_trail_updated) * PCT_SCALE / (prev_lead_updated + prev_trail_updated);
+
+    //     if (current_margin - prior_margin > MINORITY_EXT_MARGIN) {
+    //       return true
+    //     }
+    //   };
+    //   false
+    // }
+
   }

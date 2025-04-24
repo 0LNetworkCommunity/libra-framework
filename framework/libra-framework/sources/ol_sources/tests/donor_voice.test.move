@@ -158,10 +158,13 @@ module ol_framework::test_donor_voice {
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
+      diem_std::debug::print(&10001);
+
       mock::trigger_epoch(root);
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
+      diem_std::debug::print(&1000101);
 
       // the account needs basic donor directed structs
       donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
@@ -184,16 +187,21 @@ module ol_framework::test_donor_voice {
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(eve));
       assert!(is_donor, 7357002);
 
+      diem_std::debug::print(&10002);
+
+
       // Dave will also be a donor
       ol_account::transfer(dave, donor_voice_address, 1);
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
       // Bob proposes a tx that will come from the donor directed account.
-      // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
+      // It is not yet scheduled because it doesn't have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
       let uid_of_transfer = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (_found, _idx, _status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
       assert!(!completed, 7357004);
+
+      diem_std::debug::print(&10003);
 
       // Eve wants to propose a Veto, but this should fail at this, because
       // the tx is not yet scheduled
@@ -206,6 +214,8 @@ module ol_framework::test_donor_voice {
       let uid_of_transfer = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357006); // is scheduled
 
+      diem_std::debug::print(&10004);
+
       // Eve tries again after it has been scheduled
       let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
       let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
@@ -214,6 +224,8 @@ module ol_framework::test_donor_voice {
       // now vote on the proposal
       // note need to destructure ID for the entry and view functions
       let id_num = guid::id_creation_num(&uid_of_transfer);
+
+      diem_std::debug::print(&10005);
 
       // proposing is not same as voting, now eve votes
       // NOTE: there is a tx function that can propose and vote in single step
@@ -224,13 +236,13 @@ module ol_framework::test_donor_voice {
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
 
-      // since Eve is the majority donor, and has almost all the votes, the voting will end early. On the next epoch the vote should end
-      mock::trigger_epoch(root);
-      donor_voice_txs::vote_veto_tx(dave, donor_voice_address, id_num);
+      diem_std::debug::print(&10006);
 
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
       &uid_of_transfer), 7357010);
+
+      diem_std::debug::print(&10007);
 
       // it's vetoed
       assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357011);
@@ -733,6 +745,9 @@ module ol_framework::test_donor_voice {
 
       let eve_donation_pro_rata = vector::borrow(&refunds, 0);
       let superman_3 = 1; // rounding from fixed_point32
+      diem_std::debug::print(eve_donation_pro_rata);
+      diem_std::debug::print(&superman_3);
+      diem_std::debug::print(&eve_donation);
       assert!((*eve_donation_pro_rata + superman_3) == eve_donation, 7357008);
 
       let dave_donation_pro_rata = vector::borrow(&refunds, 1);

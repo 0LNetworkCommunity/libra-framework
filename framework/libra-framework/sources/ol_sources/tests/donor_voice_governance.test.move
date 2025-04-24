@@ -2,7 +2,6 @@
 module ol_framework::test_donor_voice_governance {
     use std::signer;
     use std::vector;
-    use ol_framework::epoch_helper;
     use ol_framework::mock;
     use ol_framework::donor_voice_governance;
     use ol_framework::donor_voice_txs;
@@ -32,9 +31,6 @@ module ol_framework::test_donor_voice_governance {
         assert!(turnout_percent >= prev_turnout_percent, 7357000);
         prev_turnout_percent = turnout_percent;
 
-
-
-        // assert!(donor_voice_reauth::is_authorized(dv_address), 7357002);
         i = i + 1;
       };
 
@@ -43,7 +39,7 @@ module ol_framework::test_donor_voice_governance {
         assert!(percent_approval == 10000, 7357001);
         assert!(turnout_percent == 6666, 7357002);
         assert!(threshold_needed_to_pass == 6461, 7357003);
-        assert!(epoch_deadline == 5, 7357004);
+        assert!(epoch_deadline == 30, 7357004);
         assert!(minimum_turnout_required == 1250, 7357005);
     }
 
@@ -68,29 +64,18 @@ module ol_framework::test_donor_voice_governance {
       let (percent_approval, _turnout_percent, _threshold_needed_to_pass, epoch_deadline, _minimum_turnout_required, is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address);
 
       assert!(percent_approval == 10000, 7357001);
-      assert!(epoch_deadline == 5, 7357002);
-      assert!(is_complete == false, 7357003);
+      assert!(epoch_deadline == 30, 7357002);
+      assert!(is_complete == true, 7357003);
 
-      // advance the epoch 5 times
-      let i = 0;
-      while (i < 6) {
-        mock::trigger_epoch(framework);
-        i = i + 1;
-      };
-
-      let e = epoch_helper::get_current_epoch();
-      assert!(e > epoch_deadline, 7357003);
-
-      ///// THE TEST
-      // the tally should now conclude
-      // a duplicate vote, doesn't tally but closes the poll
-      let donor_sig = vector::borrow(&donor_sigs, 0);
-      donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
-
-      let (_percent_approval, _turnout_percent, _threshold_needed_to_pass, _epoch_deadline, _minimum_turnout_required, is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address);
+      // tally result also shows complete
+      let (_percent_approval, _turnout_percent, _threshold_needed_to_pass, _epoch_deadline, _minimum_turnout_required, is_complete, approved) =  donor_voice_governance::get_reauth_tally(dv_address);
 
       assert!(is_complete == true, 7357004);
+      assert!(approved == true, 7357005);
 
+
+      // great, the CW should now be operational
+      donor_voice_reauth::assert_authorized(dv_address);
     }
 
     #[test(framework = @ol_framework, marlon_sponsor = @0x1234)]
@@ -104,22 +89,12 @@ module ol_framework::test_donor_voice_governance {
       donor_voice_reauth::test_set_requires_reauth(framework, dv_address);
       assert!(donor_voice_reauth::flagged_for_reauthorization(dv_address), 7357001);
 
-      // reauthorize tx by each of the donors
-      let i = 0;
-      while (i < vector::length(&donor_sigs)) {
-        let donor_sig = vector::borrow(&donor_sigs, i);
-        donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
-        i = i + 1;
-      };
-
-      // Repeat
-
-      let i = 0;
-      while (i < vector::length(&donor_sigs)) {
-        let donor_sig = vector::borrow(&donor_sigs, i);
-        donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
-        i = i + 1;
-      };
+      // reauthorize tx by a donor
+      let donor_sig = vector::borrow(&donor_sigs, 0);
+      donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
+      // again
+      let donor_sig = vector::borrow(&donor_sigs, 0);
+      donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
 
       let (percent_approval, _turnout_percent, _threshold_needed_to_pass, _epoch_deadline,_minimum_turnout_required, _is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address);
 

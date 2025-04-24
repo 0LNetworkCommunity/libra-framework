@@ -123,11 +123,10 @@ module ol_framework::test_turnout_tally {
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
     fun tally_vote_closed_early(root: &signer, alice: &signer, bob: &signer, carol: &signer) {
       // Alice is going to start an election, and create the struct on her account.
-      // The election will run until for another 10 epochs
-      // The election will close before then once threshold is reached.
+      //  This poll has no expiration (deadline = 0), so any votes passing the
+      // threshold will be valid.
 
       let _vals = mock::genesis_n_vals(root, 1);
-      // mock::ol_initialize_coin(root);
       // for this test let's start at epoch 1
       mock::trigger_epoch(root);
 
@@ -137,25 +136,22 @@ module ol_framework::test_turnout_tally {
       let uid = turnout_tally_demo::propose_ballot_by_owner(alice, 100, 0);
 
       // lower vote
-      let result_opt = turnout_tally_demo::vote(bob, @0x1000a, &uid, 22, true);
+      let result_opt = turnout_tally_demo::vote(bob, @0x1000a, &uid, 10, true);
       let (r, w) = vote_receipt::get_receipt_data(@0x1000b, &uid);
       assert!(r == true, 0); // voted in favor
-      assert!(w == 22, 1);
+      assert!(w == 10, 735701);
 
-      // 22 is enough to pass. HOWEVER, the Vote does not close and pass immediately. It requires one more vote in favor AT LEAST ONE day later.
+      // 10 of 100 is not enough to get over any dynamic threshold.
 
-      // 5 of 100 is not enough to get over any dynamic threshold.
+      assert!(option::is_none(&result_opt), 735702);
 
-      assert!(option::is_none(&result_opt), 2);
 
-      mock::trigger_epoch(root);
-
-      // NOW carol votes
+      // NOW carol votes to get over the threshold
       let result_opt = turnout_tally_demo::vote(carol, @0x1000a, &uid, 15, true);
       let (r, w) = vote_receipt::get_receipt_data(@0x1000c, &uid);
-      assert!(r == true, 3); // voted in favor
-      assert!(w == 15, 4);
-      assert!(option::is_some(&result_opt), 5);
+      assert!(r == true, 735703); // voted in favor
+      assert!(w == 15, 735704);
+      assert!(option::is_some(&result_opt), 735705);
   }
 
 
