@@ -157,6 +157,10 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
   - Proposes a veto transaction
   - CLI: `txs community veto --community-wallet <ADDRESS> --proposal-id <ID>`
 
+- `propose_advance_tx(donor: &signer, multisig_address: address, id: u64)`
+  - Proposes to advance a transaction without required approvals
+  - Used to bypass voting periods in special cases
+
 - `propose_liquidate_tx(donor: &signer, multisig_address: address)`
   - Proposes a liquidation transaction
 
@@ -178,6 +182,10 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `pof_update_bid(sender: &signer, bid: u64, epoch_expiry: u64)` 🖥️
   - Updates a Proof of Fee bid
   - CLI: `txs validator pof --bid-pct <PCT> --epoch-expiry <N>`
+
+- `pof_update_bid_net_reward(sender: &signer, net_reward: u64, epoch_expiry: u64)`
+  - Updates a Proof of Fee bid with net reward
+  - Used for setting the net reward for validators
 
 - `pof_retract_bid(sender: signer)` 🖥️
   - Retracts a Proof of Fee bid
