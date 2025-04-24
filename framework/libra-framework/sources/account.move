@@ -493,7 +493,9 @@ module diem_framework::account {
     ///
     /// Because we ask for a valid `cap_update_table`, this kind of attack is not possible. Bob would not have the secret key of Alice's address
     /// to rotate his address to Alice's address in the first place.
-    fun rotate_authentication_key(
+    /// Public entry function require for TXS cli to provide the
+    /// rotation proof and capability.
+    public entry fun rotate_authentication_key(
         account: &signer,
         from_scheme: u8,
         from_public_key_bytes: vector<u8>,
@@ -536,7 +538,11 @@ module diem_framework::account {
         update_auth_key_and_originating_address_table(addr, account_resource, new_auth_key);
     }
 
-    fun rotate_authentication_key_with_rotation_capability(
+    /// Final step in rotating account keys
+    /// A user with the capability offer, can now set
+    /// a new key.
+    /// Entry function necessary for txs CLI rotation of keys
+    public entry fun rotate_authentication_key_with_rotation_capability(
         delegate_signer: &signer,
         rotation_cap_offerer_address: address,
         new_scheme: u8,
@@ -583,7 +589,7 @@ module diem_framework::account {
     /// @param account_public_key_bytes is the public key of the account owner.
     /// @param recipient_address is the address of the recipient of the rotation capability - note that if there's an existing rotation capability
     /// offer, calling this function will replace the previous `recipient_address` upon successful verification.
-    fun offer_rotation_capability(
+    public entry fun offer_rotation_capability(
         account: &signer,
         rotation_capability_sig_bytes: vector<u8>,
         account_scheme: u8,
@@ -626,7 +632,8 @@ module diem_framework::account {
     }
 
     /// Revoke the rotation capability offer given to `to_be_revoked_recipient_address` from `account`
-    fun revoke_rotation_capability(account: &signer, to_be_revoked_address: address) acquires Account {
+    /// Entry function necessary for account key rotation.
+    public entry fun revoke_rotation_capability(account: &signer, to_be_revoked_address: address) acquires Account {
         assert!(exists_at(to_be_revoked_address), error::not_found(EACCOUNT_DOES_NOT_EXIST));
         let addr = signer::address_of(account);
         let account_resource = borrow_global_mut<Account>(addr);

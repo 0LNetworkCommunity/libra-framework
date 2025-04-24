@@ -35,6 +35,86 @@ type Bytes = Vec<u8>;
 #[cfg_attr(feature = "fuzzing", derive(proptest_derive::Arbitrary))]
 #[cfg_attr(feature = "fuzzing", proptest(no_params))]
 pub enum EntryFunctionCall {
+    /// Offers rotation capability on behalf of `account` to the account at address `recipient_address`.
+    /// An account can delegate its rotation capability to only one other address at one time. If the account
+    /// has an existing rotation capability offer, calling this function will update the rotation capability offer with
+    /// the new `recipient_address`.
+    /// Here, `rotation_capability_sig_bytes` signature indicates that this key rotation is authorized by the account owner,
+    /// and prevents the classic "time-of-check time-of-use" attack.
+    /// For example, users usually rely on what the wallet displays to them as the transaction's outcome. Consider a contract that with 50% probability
+    /// (based on the current timestamp in Move), rotates somebody's key. The wallet might be unlucky and get an outcome where nothing is rotated,
+    /// incorrectly telling the user nothing bad will happen. But when the transaction actually gets executed, the attacker gets lucky and
+    /// the execution path triggers the account key rotation.
+    /// We prevent such attacks by asking for this extra signature authorizing the key rotation.
+    ///
+    /// @param rotation_capability_sig_bytes is the signature by the account owner's key on `RotationCapabilityOfferProofChallengeV2`.
+    /// @param account_scheme is the scheme of the account (ed25519 or multi_ed25519).
+    /// @param account_public_key_bytes is the public key of the account owner.
+    /// @param recipient_address is the address of the recipient of the rotation capability - note that if there's an existing rotation capability
+    /// offer, calling this function will replace the previous `recipient_address` upon successful verification.
+    AccountOfferRotationCapability {
+        rotation_capability_sig_bytes: Vec<u8>,
+        account_scheme: u8,
+        account_public_key_bytes: Vec<u8>,
+        recipient_address: AccountAddress,
+    },
+
+    /// Revoke the rotation capability offer given to `to_be_revoked_recipient_address` from `account`
+    /// Entry function necessary for account key rotation.
+    AccountRevokeRotationCapability {
+        to_be_revoked_address: AccountAddress,
+    },
+
+    /// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
+    /// To authorize the rotation, we need two signatures:
+    /// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
+    /// demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
+    /// - the second signature `cap_update_table` refers to the signature by the new key (that the account owner wants to rotate to) on a
+    /// valid `RotationProofChallenge`, demonstrating that the user owns the new private key, and has the authority to update the
+    /// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
+    /// To verify these two signatures, we need their corresponding public key and public key scheme: we use `from_scheme` and `from_public_key_bytes`
+    /// to verify `cap_rotate_key`, and `to_scheme` and `to_public_key_bytes` to verify `cap_update_table`.
+    /// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys.
+    /// `originating address` refers to an account's original/first address.
+    ///
+    /// Here is an example attack if we don't ask for the second signature `cap_update_table`:
+    /// Alice has rotated her account `addr_a` to `new_addr_a`. As a result, the following entry is created, to help Alice when recovering her wallet:
+    /// `OriginatingAddress[new_addr_a]` -> `addr_a`
+    /// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one.
+    /// (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
+    ///
+    /// But Bob likes to mess with Alice.
+    /// Bob creates an account `addr_b` and maliciously rotates it to Alice's new address `new_addr_a`. Since we are no longer checking a PoK,
+    /// Bob can easily do this.
+    ///
+    /// Now, the table will be updated to make Alice's new address point to Bob's address: `OriginatingAddress[new_addr_a]` -> `addr_b`.
+    /// When Alice recovers her account, her wallet will display the attacker's address (Bob's) `addr_b` as her address.
+    /// Now Alice will give `addr_b` to everyone to pay her, but the money will go to Bob.
+    ///
+    /// Because we ask for a valid `cap_update_table`, this kind of attack is not possible. Bob would not have the secret key of Alice's address
+    /// to rotate his address to Alice's address in the first place.
+    /// Public entry function require for TXS cli to provide the
+    /// rotation proof and capability.
+    AccountRotateAuthenticationKey {
+        from_scheme: u8,
+        from_public_key_bytes: Vec<u8>,
+        to_scheme: u8,
+        to_public_key_bytes: Vec<u8>,
+        cap_rotate_key: Vec<u8>,
+        cap_update_table: Vec<u8>,
+    },
+
+    /// Final step in rotating account keys
+    /// A user with the capability offer, can now set
+    /// a new key.
+    /// Entry function necessary for txs CLI rotation of keys
+    AccountRotateAuthenticationKeyWithRotationCapability {
+        rotation_cap_offerer_address: AccountAddress,
+        new_scheme: u8,
+        new_public_key_bytes: Vec<u8>,
+        cap_update_table: Vec<u8>,
+    },
+
     /// User opts into burns being sent to community (recycle burn).
     /// default is false (burn is final).
     BurnSetSendCommunity {
@@ -100,10 +180,63 @@ pub enum EntryFunctionCall {
 
     DiemGovernanceSmokeTriggerEpoch {},
 
+    /// Any end user can trigger epoch/boundary and reconfiguration
+    /// as long as the VM set the BoundaryBit to true.
+    /// We do this because we don't want the VM calling complex
+    /// logic itself. Any abort would cause a halt.
+    /// On the other hand, a user can call the function once the VM
+    /// decides the epoch can change. Any error will just cause the
+    /// user's transaction to abort, but the chain will continue.
+    /// Whatever fix is needed can be done online with on-chain governance.
+    /// Public function for production triggering of epoch boundary.
+    DiemGovernanceTriggerEpoch {},
+
+    /// A signer of the multisig can propose a payment
+    /// Public entry function required for txs cli
+    DonorVoiceTxsProposeAdvanceTx {
+        multisig_address: AccountAddress,
+        payee: AccountAddress,
+        value: u64,
+        description: Vec<u8>,
+    },
+
+    /// A donor can propose the liquidation of a Donor Voice account
+    /// Public entry function required for txs cli.
+    DonorVoiceTxsProposeLiquidateTx {
+        multisig_address: AccountAddress,
+    },
+
+    /// A signer of the multisig can propose a payment
+    /// Public entry function required for txs cli.
+    DonorVoiceTxsProposePaymentTx {
+        multisig_address: AccountAddress,
+        payee: AccountAddress,
+        value: u64,
+        description: Vec<u8>,
+    },
+
+    /// A donor of the program can propose a veto
+    /// Public entry function required for txs cli.
+    DonorVoiceTxsProposeVetoTx {
+        multisig_address: AccountAddress,
+        id: u64,
+    },
+
     /// After proposed, subsequent voters call this to vote liquidation
     DonorVoiceTxsVoteLiquidationTx {
         multisig_address: AccountAddress,
     },
+
+    /// After proposed, subsequent donors can vote to reauth an account
+    /// Public entry function required for txs cli.
+    DonorVoiceTxsVoteReauthTx {
+        multisig_address: AccountAddress,
+    },
+
+    /// testnet helper to allow testnet root account to set flip the boundary bit
+    /// used for testing cli tools for polling and triggering
+    /// Public entry function necessary for smoke tests.
+    EpochBoundarySmokeEnableTrigger {},
 
     EpochBoundarySmokeTriggerEpoch {},
 
@@ -207,6 +340,13 @@ pub enum EntryFunctionCall {
         epoch_expiry: u64,
     },
 
+    /// update the bid using estimated net reward instead of the internal bid variables
+    /// Public entry function needed for txs cli.
+    ProofOfFeePofUpdateBidNetReward {
+        net_reward: u64,
+        epoch_expiry: u64,
+    },
+
     SlowWalletSmokeTestVmUnlock {
         user_addr: AccountAddress,
         unlocked: u64,
@@ -224,6 +364,14 @@ pub enum EntryFunctionCall {
         proof_of_possession: Vec<u8>,
         network_addresses: Vec<u8>,
         fullnode_addresses: Vec<u8>,
+    },
+
+    /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
+    /// Entry function necessary for validator configuration
+    StakeUpdateNetworkAndFullnodeAddresses {
+        validator_address: AccountAddress,
+        new_network_addresses: Vec<u8>,
+        new_fullnode_addresses: Vec<u8>,
     },
 
     /// This is the entrypoint for a validator joining the network.
@@ -252,6 +400,46 @@ impl EntryFunctionCall {
     pub fn encode(self) -> TransactionPayload {
         use EntryFunctionCall::*;
         match self {
+            AccountOfferRotationCapability {
+                rotation_capability_sig_bytes,
+                account_scheme,
+                account_public_key_bytes,
+                recipient_address,
+            } => account_offer_rotation_capability(
+                rotation_capability_sig_bytes,
+                account_scheme,
+                account_public_key_bytes,
+                recipient_address,
+            ),
+            AccountRevokeRotationCapability {
+                to_be_revoked_address,
+            } => account_revoke_rotation_capability(to_be_revoked_address),
+            AccountRotateAuthenticationKey {
+                from_scheme,
+                from_public_key_bytes,
+                to_scheme,
+                to_public_key_bytes,
+                cap_rotate_key,
+                cap_update_table,
+            } => account_rotate_authentication_key(
+                from_scheme,
+                from_public_key_bytes,
+                to_scheme,
+                to_public_key_bytes,
+                cap_rotate_key,
+                cap_update_table,
+            ),
+            AccountRotateAuthenticationKeyWithRotationCapability {
+                rotation_cap_offerer_address,
+                new_scheme,
+                new_public_key_bytes,
+                cap_update_table,
+            } => account_rotate_authentication_key_with_rotation_capability(
+                rotation_cap_offerer_address,
+                new_scheme,
+                new_public_key_bytes,
+                cap_update_table,
+            ),
             BurnSetSendCommunity { community } => burn_set_send_community(community),
             CodePublishPackageTxn {
                 metadata_serialized,
@@ -302,9 +490,33 @@ impl EntryFunctionCall {
                 should_pass,
             } => diem_governance_ol_vote(proposal_id, should_pass),
             DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
+            DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
+            DonorVoiceTxsProposeAdvanceTx {
+                multisig_address,
+                payee,
+                value,
+                description,
+            } => donor_voice_txs_propose_advance_tx(multisig_address, payee, value, description),
+            DonorVoiceTxsProposeLiquidateTx { multisig_address } => {
+                donor_voice_txs_propose_liquidate_tx(multisig_address)
+            }
+            DonorVoiceTxsProposePaymentTx {
+                multisig_address,
+                payee,
+                value,
+                description,
+            } => donor_voice_txs_propose_payment_tx(multisig_address, payee, value, description),
+            DonorVoiceTxsProposeVetoTx {
+                multisig_address,
+                id,
+            } => donor_voice_txs_propose_veto_tx(multisig_address, id),
             DonorVoiceTxsVoteLiquidationTx { multisig_address } => {
                 donor_voice_txs_vote_liquidation_tx(multisig_address)
             }
+            DonorVoiceTxsVoteReauthTx { multisig_address } => {
+                donor_voice_txs_vote_reauth_tx(multisig_address)
+            }
+            EpochBoundarySmokeEnableTrigger {} => epoch_boundary_smoke_enable_trigger(),
             EpochBoundarySmokeTriggerEpoch {} => epoch_boundary_smoke_trigger_epoch(),
             FiloMigrationMaybeMigrate {} => filo_migration_maybe_migrate(),
             JailUnjailByVoucher { addr } => jail_unjail_by_voucher(addr),
@@ -333,6 +545,10 @@ impl EntryFunctionCall {
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
             }
+            ProofOfFeePofUpdateBidNetReward {
+                net_reward,
+                epoch_expiry,
+            } => proof_of_fee_pof_update_bid_net_reward(net_reward, epoch_expiry),
             SlowWalletSmokeTestVmUnlock {
                 user_addr,
                 unlocked,
@@ -349,6 +565,15 @@ impl EntryFunctionCall {
                 proof_of_possession,
                 network_addresses,
                 fullnode_addresses,
+            ),
+            StakeUpdateNetworkAndFullnodeAddresses {
+                validator_address,
+                new_network_addresses,
+                new_fullnode_addresses,
+            } => stake_update_network_and_fullnode_addresses(
+                validator_address,
+                new_network_addresses,
+                new_fullnode_addresses,
             ),
             ValidatorUniverseRegisterValidator {
                 consensus_pubkey,
@@ -382,6 +607,155 @@ impl EntryFunctionCall {
             None
         }
     }
+}
+
+/// Offers rotation capability on behalf of `account` to the account at address `recipient_address`.
+/// An account can delegate its rotation capability to only one other address at one time. If the account
+/// has an existing rotation capability offer, calling this function will update the rotation capability offer with
+/// the new `recipient_address`.
+/// Here, `rotation_capability_sig_bytes` signature indicates that this key rotation is authorized by the account owner,
+/// and prevents the classic "time-of-check time-of-use" attack.
+/// For example, users usually rely on what the wallet displays to them as the transaction's outcome. Consider a contract that with 50% probability
+/// (based on the current timestamp in Move), rotates somebody's key. The wallet might be unlucky and get an outcome where nothing is rotated,
+/// incorrectly telling the user nothing bad will happen. But when the transaction actually gets executed, the attacker gets lucky and
+/// the execution path triggers the account key rotation.
+/// We prevent such attacks by asking for this extra signature authorizing the key rotation.
+///
+/// @param rotation_capability_sig_bytes is the signature by the account owner's key on `RotationCapabilityOfferProofChallengeV2`.
+/// @param account_scheme is the scheme of the account (ed25519 or multi_ed25519).
+/// @param account_public_key_bytes is the public key of the account owner.
+/// @param recipient_address is the address of the recipient of the rotation capability - note that if there's an existing rotation capability
+/// offer, calling this function will replace the previous `recipient_address` upon successful verification.
+pub fn account_offer_rotation_capability(
+    rotation_capability_sig_bytes: Vec<u8>,
+    account_scheme: u8,
+    account_public_key_bytes: Vec<u8>,
+    recipient_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("account").to_owned(),
+        ),
+        ident_str!("offer_rotation_capability").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&rotation_capability_sig_bytes).unwrap(),
+            bcs::to_bytes(&account_scheme).unwrap(),
+            bcs::to_bytes(&account_public_key_bytes).unwrap(),
+            bcs::to_bytes(&recipient_address).unwrap(),
+        ],
+    ))
+}
+
+/// Revoke the rotation capability offer given to `to_be_revoked_recipient_address` from `account`
+/// Entry function necessary for account key rotation.
+pub fn account_revoke_rotation_capability(
+    to_be_revoked_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("account").to_owned(),
+        ),
+        ident_str!("revoke_rotation_capability").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&to_be_revoked_address).unwrap()],
+    ))
+}
+
+/// Generic authentication key rotation function that allows the user to rotate their authentication key from any scheme to any scheme.
+/// To authorize the rotation, we need two signatures:
+/// - the first signature `cap_rotate_key` refers to the signature by the account owner's current key on a valid `RotationProofChallenge`,
+/// demonstrating that the user intends to and has the capability to rotate the authentication key of this account;
+/// - the second signature `cap_update_table` refers to the signature by the new key (that the account owner wants to rotate to) on a
+/// valid `RotationProofChallenge`, demonstrating that the user owns the new private key, and has the authority to update the
+/// `OriginatingAddress` map with the new address mapping `<new_address, originating_address>`.
+/// To verify these two signatures, we need their corresponding public key and public key scheme: we use `from_scheme` and `from_public_key_bytes`
+/// to verify `cap_rotate_key`, and `to_scheme` and `to_public_key_bytes` to verify `cap_update_table`.
+/// A scheme of 0 refers to an Ed25519 key and a scheme of 1 refers to Multi-Ed25519 keys.
+/// `originating address` refers to an account's original/first address.
+///
+/// Here is an example attack if we don't ask for the second signature `cap_update_table`:
+/// Alice has rotated her account `addr_a` to `new_addr_a`. As a result, the following entry is created, to help Alice when recovering her wallet:
+/// `OriginatingAddress[new_addr_a]` -> `addr_a`
+/// Alice has had bad day: her laptop blew up and she needs to reset her account on a new one.
+/// (Fortunately, she still has her secret key `new_sk_a` associated with her new address `new_addr_a`, so she can do this.)
+///
+/// But Bob likes to mess with Alice.
+/// Bob creates an account `addr_b` and maliciously rotates it to Alice's new address `new_addr_a`. Since we are no longer checking a PoK,
+/// Bob can easily do this.
+///
+/// Now, the table will be updated to make Alice's new address point to Bob's address: `OriginatingAddress[new_addr_a]` -> `addr_b`.
+/// When Alice recovers her account, her wallet will display the attacker's address (Bob's) `addr_b` as her address.
+/// Now Alice will give `addr_b` to everyone to pay her, but the money will go to Bob.
+///
+/// Because we ask for a valid `cap_update_table`, this kind of attack is not possible. Bob would not have the secret key of Alice's address
+/// to rotate his address to Alice's address in the first place.
+/// Public entry function require for TXS cli to provide the
+/// rotation proof and capability.
+pub fn account_rotate_authentication_key(
+    from_scheme: u8,
+    from_public_key_bytes: Vec<u8>,
+    to_scheme: u8,
+    to_public_key_bytes: Vec<u8>,
+    cap_rotate_key: Vec<u8>,
+    cap_update_table: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("account").to_owned(),
+        ),
+        ident_str!("rotate_authentication_key").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&from_scheme).unwrap(),
+            bcs::to_bytes(&from_public_key_bytes).unwrap(),
+            bcs::to_bytes(&to_scheme).unwrap(),
+            bcs::to_bytes(&to_public_key_bytes).unwrap(),
+            bcs::to_bytes(&cap_rotate_key).unwrap(),
+            bcs::to_bytes(&cap_update_table).unwrap(),
+        ],
+    ))
+}
+
+/// Final step in rotating account keys
+/// A user with the capability offer, can now set
+/// a new key.
+/// Entry function necessary for txs CLI rotation of keys
+pub fn account_rotate_authentication_key_with_rotation_capability(
+    rotation_cap_offerer_address: AccountAddress,
+    new_scheme: u8,
+    new_public_key_bytes: Vec<u8>,
+    cap_update_table: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("account").to_owned(),
+        ),
+        ident_str!("rotate_authentication_key_with_rotation_capability").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&rotation_cap_offerer_address).unwrap(),
+            bcs::to_bytes(&new_scheme).unwrap(),
+            bcs::to_bytes(&new_public_key_bytes).unwrap(),
+            bcs::to_bytes(&cap_update_table).unwrap(),
+        ],
+    ))
 }
 
 /// User opts into burns being sent to community (recycle burn).
@@ -591,6 +965,126 @@ pub fn diem_governance_smoke_trigger_epoch() -> TransactionPayload {
     ))
 }
 
+/// Any end user can trigger epoch/boundary and reconfiguration
+/// as long as the VM set the BoundaryBit to true.
+/// We do this because we don't want the VM calling complex
+/// logic itself. Any abort would cause a halt.
+/// On the other hand, a user can call the function once the VM
+/// decides the epoch can change. Any error will just cause the
+/// user's transaction to abort, but the chain will continue.
+/// Whatever fix is needed can be done online with on-chain governance.
+/// Public function for production triggering of epoch boundary.
+pub fn diem_governance_trigger_epoch() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("diem_governance").to_owned(),
+        ),
+        ident_str!("trigger_epoch").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// A signer of the multisig can propose a payment
+/// Public entry function required for txs cli
+pub fn donor_voice_txs_propose_advance_tx(
+    multisig_address: AccountAddress,
+    payee: AccountAddress,
+    value: u64,
+    description: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("propose_advance_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&payee).unwrap(),
+            bcs::to_bytes(&value).unwrap(),
+            bcs::to_bytes(&description).unwrap(),
+        ],
+    ))
+}
+
+/// A donor can propose the liquidation of a Donor Voice account
+/// Public entry function required for txs cli.
+pub fn donor_voice_txs_propose_liquidate_tx(
+    multisig_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("propose_liquidate_tx").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+/// A signer of the multisig can propose a payment
+/// Public entry function required for txs cli.
+pub fn donor_voice_txs_propose_payment_tx(
+    multisig_address: AccountAddress,
+    payee: AccountAddress,
+    value: u64,
+    description: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("propose_payment_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&payee).unwrap(),
+            bcs::to_bytes(&value).unwrap(),
+            bcs::to_bytes(&description).unwrap(),
+        ],
+    ))
+}
+
+/// A donor of the program can propose a veto
+/// Public entry function required for txs cli.
+pub fn donor_voice_txs_propose_veto_tx(
+    multisig_address: AccountAddress,
+    id: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("propose_veto_tx").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&multisig_address).unwrap(),
+            bcs::to_bytes(&id).unwrap(),
+        ],
+    ))
+}
+
 /// After proposed, subsequent voters call this to vote liquidation
 pub fn donor_voice_txs_vote_liquidation_tx(multisig_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -604,6 +1098,41 @@ pub fn donor_voice_txs_vote_liquidation_tx(multisig_address: AccountAddress) -> 
         ident_str!("vote_liquidation_tx").to_owned(),
         vec![],
         vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+/// After proposed, subsequent donors can vote to reauth an account
+/// Public entry function required for txs cli.
+pub fn donor_voice_txs_vote_reauth_tx(multisig_address: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("vote_reauth_tx").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
+/// testnet helper to allow testnet root account to set flip the boundary bit
+/// used for testing cli tools for polling and triggering
+/// Public entry function necessary for smoke tests.
+pub fn epoch_boundary_smoke_enable_trigger() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("epoch_boundary").to_owned(),
+        ),
+        ident_str!("smoke_enable_trigger").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -903,6 +1432,29 @@ pub fn proof_of_fee_pof_update_bid(bid: u64, epoch_expiry: u64) -> TransactionPa
     ))
 }
 
+/// update the bid using estimated net reward instead of the internal bid variables
+/// Public entry function needed for txs cli.
+pub fn proof_of_fee_pof_update_bid_net_reward(
+    net_reward: u64,
+    epoch_expiry: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("proof_of_fee").to_owned(),
+        ),
+        ident_str!("pof_update_bid_net_reward").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&net_reward).unwrap(),
+            bcs::to_bytes(&epoch_expiry).unwrap(),
+        ],
+    ))
+}
+
 pub fn slow_wallet_smoke_test_vm_unlock(
     user_addr: AccountAddress,
     unlocked: u64,
@@ -966,6 +1518,31 @@ pub fn stake_initialize_validator(
             bcs::to_bytes(&proof_of_possession).unwrap(),
             bcs::to_bytes(&network_addresses).unwrap(),
             bcs::to_bytes(&fullnode_addresses).unwrap(),
+        ],
+    ))
+}
+
+/// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
+/// Entry function necessary for validator configuration
+pub fn stake_update_network_and_fullnode_addresses(
+    validator_address: AccountAddress,
+    new_network_addresses: Vec<u8>,
+    new_fullnode_addresses: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("stake").to_owned(),
+        ),
+        ident_str!("update_network_and_fullnode_addresses").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&validator_address).unwrap(),
+            bcs::to_bytes(&new_network_addresses).unwrap(),
+            bcs::to_bytes(&new_fullnode_addresses).unwrap(),
         ],
     ))
 }
@@ -1044,10 +1621,71 @@ pub fn vouch_txs_vouch_for(friend_account: AccountAddress) -> TransactionPayload
 }
 mod decoder {
     use super::*;
+    pub fn account_offer_rotation_capability(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AccountOfferRotationCapability {
+                rotation_capability_sig_bytes: bcs::from_bytes(script.args().first()?).ok()?,
+                account_scheme: bcs::from_bytes(script.args().get(1)?).ok()?,
+                account_public_key_bytes: bcs::from_bytes(script.args().get(2)?).ok()?,
+                recipient_address: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn account_revoke_rotation_capability(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AccountRevokeRotationCapability {
+                to_be_revoked_address: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn account_rotate_authentication_key(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::AccountRotateAuthenticationKey {
+                from_scheme: bcs::from_bytes(script.args().first()?).ok()?,
+                from_public_key_bytes: bcs::from_bytes(script.args().get(1)?).ok()?,
+                to_scheme: bcs::from_bytes(script.args().get(2)?).ok()?,
+                to_public_key_bytes: bcs::from_bytes(script.args().get(3)?).ok()?,
+                cap_rotate_key: bcs::from_bytes(script.args().get(4)?).ok()?,
+                cap_update_table: bcs::from_bytes(script.args().get(5)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn account_rotate_authentication_key_with_rotation_capability(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(
+                EntryFunctionCall::AccountRotateAuthenticationKeyWithRotationCapability {
+                    rotation_cap_offerer_address: bcs::from_bytes(script.args().first()?).ok()?,
+                    new_scheme: bcs::from_bytes(script.args().get(1)?).ok()?,
+                    new_public_key_bytes: bcs::from_bytes(script.args().get(2)?).ok()?,
+                    cap_update_table: bcs::from_bytes(script.args().get(3)?).ok()?,
+                },
+            )
+        } else {
+            None
+        }
+    }
+
     pub fn burn_set_send_community(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::BurnSetSendCommunity {
-                community: bcs::from_bytes(script.args().get(0)?).ok()?,
+                community: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1057,7 +1695,7 @@ mod decoder {
     pub fn code_publish_package_txn(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CodePublishPackageTxn {
-                metadata_serialized: bcs::from_bytes(script.args().get(0)?).ok()?,
+                metadata_serialized: bcs::from_bytes(script.args().first()?).ok()?,
                 code: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1068,8 +1706,8 @@ mod decoder {
     pub fn coin_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CoinTransfer {
-                coin_type: script.ty_args().get(0)?.clone(),
-                to: bcs::from_bytes(script.args().get(0)?).ok()?,
+                coin_type: script.ty_args().first()?.clone(),
+                to: bcs::from_bytes(script.args().first()?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1083,7 +1721,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(
                 EntryFunctionCall::CommunityWalletInitChangeSignerCommunityMultisig {
-                    multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                    multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
                     new_signer: bcs::from_bytes(script.args().get(1)?).ok()?,
                     is_add_operation: bcs::from_bytes(script.args().get(2)?).ok()?,
                     n_of_m: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -1100,7 +1738,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitFinalizeAndCage {
-                num_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
+                num_signers: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1112,7 +1750,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitInitCommunity {
-                initial_authorities: bcs::from_bytes(script.args().get(0)?).ok()?,
+                initial_authorities: bcs::from_bytes(script.args().first()?).ok()?,
                 check_threshold: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1125,7 +1763,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CommunityWalletInitProposeOffer {
-                new_signers: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_signers: bcs::from_bytes(script.args().first()?).ok()?,
                 num_signers: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1138,7 +1776,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceOlCreateProposalV2 {
-                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
+                execution_hash: bcs::from_bytes(script.args().first()?).ok()?,
                 metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
                 metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
                 is_multi_step_proposal: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -1151,7 +1789,7 @@ mod decoder {
     pub fn diem_governance_ol_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DiemGovernanceOlVote {
-                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().first()?).ok()?,
                 should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1169,13 +1807,100 @@ mod decoder {
         }
     }
 
+    pub fn diem_governance_trigger_epoch(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::DiemGovernanceTriggerEpoch {})
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_voice_txs_propose_advance_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsProposeAdvanceTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                payee: bcs::from_bytes(script.args().get(1)?).ok()?,
+                value: bcs::from_bytes(script.args().get(2)?).ok()?,
+                description: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_voice_txs_propose_liquidate_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsProposeLiquidateTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_voice_txs_propose_payment_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsProposePaymentTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                payee: bcs::from_bytes(script.args().get(1)?).ok()?,
+                value: bcs::from_bytes(script.args().get(2)?).ok()?,
+                description: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_voice_txs_propose_veto_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsProposeVetoTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+                id: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn donor_voice_txs_vote_liquidation_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsVoteLiquidationTx {
-                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
             })
+        } else {
+            None
+        }
+    }
+
+    pub fn donor_voice_txs_vote_reauth_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsVoteReauthTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn epoch_boundary_smoke_enable_trigger(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::EpochBoundarySmokeEnableTrigger {})
         } else {
             None
         }
@@ -1202,7 +1927,7 @@ mod decoder {
     pub fn jail_unjail_by_voucher(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::JailUnjailByVoucher {
-                addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+                addr: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1212,7 +1937,7 @@ mod decoder {
     pub fn libra_coin_mint_to_impl(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::LibraCoinMintToImpl {
-                dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+                dst_addr: bcs::from_bytes(script.args().first()?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1223,7 +1948,7 @@ mod decoder {
     pub fn multi_action_claim_offer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultiActionClaimOffer {
-                multisig_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1243,7 +1968,7 @@ mod decoder {
     pub fn multisig_account_add_owner(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwner {
-                new_owner: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_owner: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1253,7 +1978,7 @@ mod decoder {
     pub fn multisig_account_add_owners(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountAddOwners {
-                new_owners: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_owners: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1265,7 +1990,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountRemoveOwner {
-                owner_to_remove: bcs::from_bytes(script.args().get(0)?).ok()?,
+                owner_to_remove: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1277,7 +2002,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountRemoveOwners {
-                owners_to_remove: bcs::from_bytes(script.args().get(0)?).ok()?,
+                owners_to_remove: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1289,7 +2014,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountUpdateMetadata {
-                keys: bcs::from_bytes(script.args().get(0)?).ok()?,
+                keys: bcs::from_bytes(script.args().first()?).ok()?,
                 values: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1302,7 +2027,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::MultisigAccountUpdateSignaturesRequired {
-                new_num_signatures_required: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_num_signatures_required: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1312,7 +2037,7 @@ mod decoder {
     pub fn ol_account_create_account(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::OlAccountCreateAccount {
-                auth_key: bcs::from_bytes(script.args().get(0)?).ok()?,
+                auth_key: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1322,7 +2047,7 @@ mod decoder {
     pub fn ol_account_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::OlAccountTransfer {
-                to: bcs::from_bytes(script.args().get(0)?).ok()?,
+                to: bcs::from_bytes(script.args().first()?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1341,7 +2066,20 @@ mod decoder {
     pub fn proof_of_fee_pof_update_bid(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ProofOfFeePofUpdateBid {
-                bid: bcs::from_bytes(script.args().get(0)?).ok()?,
+                bid: bcs::from_bytes(script.args().first()?).ok()?,
+                epoch_expiry: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn proof_of_fee_pof_update_bid_net_reward(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::ProofOfFeePofUpdateBidNetReward {
+                net_reward: bcs::from_bytes(script.args().first()?).ok()?,
                 epoch_expiry: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -1354,7 +2092,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::SlowWalletSmokeTestVmUnlock {
-                user_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+                user_addr: bcs::from_bytes(script.args().first()?).ok()?,
                 unlocked: bcs::from_bytes(script.args().get(1)?).ok()?,
                 transferred: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
@@ -1374,10 +2112,24 @@ mod decoder {
     pub fn stake_initialize_validator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeInitializeValidator {
-                consensus_pubkey: bcs::from_bytes(script.args().get(0)?).ok()?,
+                consensus_pubkey: bcs::from_bytes(script.args().first()?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(1)?).ok()?,
                 network_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
                 fullnode_addresses: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn stake_update_network_and_fullnode_addresses(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::StakeUpdateNetworkAndFullnodeAddresses {
+                validator_address: bcs::from_bytes(script.args().first()?).ok()?,
+                new_network_addresses: bcs::from_bytes(script.args().get(1)?).ok()?,
+                new_fullnode_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
         } else {
             None
@@ -1389,7 +2141,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::ValidatorUniverseRegisterValidator {
-                consensus_pubkey: bcs::from_bytes(script.args().get(0)?).ok()?,
+                consensus_pubkey: bcs::from_bytes(script.args().first()?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(1)?).ok()?,
                 network_addresses: bcs::from_bytes(script.args().get(2)?).ok()?,
                 fullnode_addresses: bcs::from_bytes(script.args().get(3)?).ok()?,
@@ -1410,7 +2162,7 @@ mod decoder {
     pub fn vouch_txs_revoke(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchTxsRevoke {
-                friend_account: bcs::from_bytes(script.args().get(0)?).ok()?,
+                friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1420,7 +2172,7 @@ mod decoder {
     pub fn vouch_txs_vouch_for(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VouchTxsVouchFor {
-                friend_account: bcs::from_bytes(script.args().get(0)?).ok()?,
+                friend_account: bcs::from_bytes(script.args().first()?).ok()?,
             })
         } else {
             None
@@ -1440,6 +2192,22 @@ type EntryFunctionDecoderMap = std::collections::HashMap<
 static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMap> =
     once_cell::sync::Lazy::new(|| {
         let mut map: EntryFunctionDecoderMap = std::collections::HashMap::new();
+        map.insert(
+            "account_offer_rotation_capability".to_string(),
+            Box::new(decoder::account_offer_rotation_capability),
+        );
+        map.insert(
+            "account_revoke_rotation_capability".to_string(),
+            Box::new(decoder::account_revoke_rotation_capability),
+        );
+        map.insert(
+            "account_rotate_authentication_key".to_string(),
+            Box::new(decoder::account_rotate_authentication_key),
+        );
+        map.insert(
+            "account_rotate_authentication_key_with_rotation_capability".to_string(),
+            Box::new(decoder::account_rotate_authentication_key_with_rotation_capability),
+        );
         map.insert(
             "burn_set_send_community".to_string(),
             Box::new(decoder::burn_set_send_community),
@@ -1481,8 +2249,36 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_smoke_trigger_epoch),
         );
         map.insert(
+            "diem_governance_trigger_epoch".to_string(),
+            Box::new(decoder::diem_governance_trigger_epoch),
+        );
+        map.insert(
+            "donor_voice_txs_propose_advance_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_advance_tx),
+        );
+        map.insert(
+            "donor_voice_txs_propose_liquidate_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_liquidate_tx),
+        );
+        map.insert(
+            "donor_voice_txs_propose_payment_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_payment_tx),
+        );
+        map.insert(
+            "donor_voice_txs_propose_veto_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_propose_veto_tx),
+        );
+        map.insert(
             "donor_voice_txs_vote_liquidation_tx".to_string(),
             Box::new(decoder::donor_voice_txs_vote_liquidation_tx),
+        );
+        map.insert(
+            "donor_voice_txs_vote_reauth_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_vote_reauth_tx),
+        );
+        map.insert(
+            "epoch_boundary_smoke_enable_trigger".to_string(),
+            Box::new(decoder::epoch_boundary_smoke_enable_trigger),
         );
         map.insert(
             "epoch_boundary_smoke_trigger_epoch".to_string(),
@@ -1549,6 +2345,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::proof_of_fee_pof_update_bid),
         );
         map.insert(
+            "proof_of_fee_pof_update_bid_net_reward".to_string(),
+            Box::new(decoder::proof_of_fee_pof_update_bid_net_reward),
+        );
+        map.insert(
             "slow_wallet_smoke_test_vm_unlock".to_string(),
             Box::new(decoder::slow_wallet_smoke_test_vm_unlock),
         );
@@ -1559,6 +2359,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "stake_initialize_validator".to_string(),
             Box::new(decoder::stake_initialize_validator),
+        );
+        map.insert(
+            "stake_update_network_and_fullnode_addresses".to_string(),
+            Box::new(decoder::stake_update_network_and_fullnode_addresses),
         );
         map.insert(
             "validator_universe_register_validator".to_string(),

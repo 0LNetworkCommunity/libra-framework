@@ -255,7 +255,8 @@ module diem_framework::epoch_boundary {
 
   /// testnet helper to allow testnet root account to set flip the boundary bit
   /// used for testing cli tools for polling and triggering
-  fun smoke_enable_trigger(core_resource: &signer)
+  /// Public entry function necessary for smoke tests.
+  public entry fun smoke_enable_trigger(core_resource: &signer)
   acquires BoundaryBit {
     // cannot call this on mainnet
     // only for smoke testing

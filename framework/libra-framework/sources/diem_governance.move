@@ -512,7 +512,7 @@ module diem_framework::diem_governance {
         reconfiguration::danger_reconfigure_ignore_timestamp(diem_framework);
     }
 
-    /// Any end user can triger epoch/boundary and reconfiguration
+    /// Any end user can trigger epoch/boundary and reconfiguration
     /// as long as the VM set the BoundaryBit to true.
     /// We do this because we don't want the VM calling complex
     /// logic itself. Any abort would cause a halt.
@@ -520,7 +520,8 @@ module diem_framework::diem_governance {
     /// decides the epoch can change. Any error will just cause the
     /// user's transaction to abort, but the chain will continue.
     /// Whatever fix is needed can be done online with on-chain governance.
-    public fun trigger_epoch(_sig: &signer) acquires
+    /// Public function for production triggering of epoch boundary.
+    public entry fun trigger_epoch(_sig: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
       let _ = epoch_boundary::can_trigger(); // will abort if false
       let framework_signer = get_signer(@ol_framework);

@@ -400,7 +400,8 @@ module diem_framework::stake {
     }
 
     /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
-    fun update_network_and_fullnode_addresses(
+    /// Entry function necessary for validator configuration
+    public entry fun update_network_and_fullnode_addresses(
         operator: &signer,
         validator_address: address,
         new_network_addresses: vector<u8>,
