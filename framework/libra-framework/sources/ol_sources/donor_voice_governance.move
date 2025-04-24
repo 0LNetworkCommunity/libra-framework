@@ -38,8 +38,9 @@ module ol_framework::donor_voice_governance {
     const EDUPLICATE_PROPOSAL: u64 = 3;
 
     /// CONSTANTS
-    /// Global window for mandatory
-    const DEFAULT_CW_REAUTH_DAYS: u64 = 30;
+    /// Epoch days for early closing of reauthorization of community wallets
+    /// The poll can end early after these days if the threshold and quorum is met.
+    const REAUTH_EARLY_POLL_CLOSE: u64 = 5;
 
 
     /// Data struct to store all the governance Ballots for vetoes
@@ -231,7 +232,7 @@ module ol_framework::donor_voice_governance {
     ): guid::ID acquires Governance {
       let data = Reauth {};
 
-      propose_gov<Reauth>(cap, data, DEFAULT_CW_REAUTH_DAYS)
+      propose_gov<Reauth>(cap, data, REAUTH_EARLY_POLL_CLOSE)
     }
 
     /// a private function to propose a ballot for a veto. This is called by a verified donor.
@@ -245,9 +246,9 @@ module ol_framework::donor_voice_governance {
       // what's the maximum universe of valid votes.
       let max_votes_enrollment = get_enrollment(dv_account);
 
-      // enforce a minimum deadline. Liquidation deadlines are one year, Veto should be minimum 7.
-      if (epochs_duration < 7) {
-        epochs_duration = 7;
+      // enforce a minimum deadline. Liquidation deadlines are one year, Veto should be minimum 3.
+      if (epochs_duration < 3) {
+        epochs_duration = 3;
       };
 
       let deadline = epoch_helper::get_current_epoch() + epochs_duration;
@@ -289,7 +290,6 @@ module ol_framework::donor_voice_governance {
     // with a known transaction uid, scan all the pending vetoes to see if there is a veto for that transaction, and what the index is.
     // NOTE: what is being returned is a different ID, that of the proposal to veto
     public(friend) fun find_tx_veto_id(tx_id: guid::ID): (bool, guid::ID) acquires Governance {
-      // let proposal_guid = guid::create_id(dv_account, id);
       let dv_account = guid::id_creator_address(&tx_id);
       let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(dv_account);
 

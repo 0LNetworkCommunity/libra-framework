@@ -65,6 +65,8 @@ module ol_framework::donor_voice_txs {
     friend ol_framework::test_donor_voice;
     #[test_only]
     friend ol_framework::test_community_wallet;
+    #[test_only]
+    friend ol_framework::test_donor_voice_governance;
 
     /// Not initialized as a Donor Voice account.
     const ENOT_INIT_DONOR_VOICE: u64 = 1;
