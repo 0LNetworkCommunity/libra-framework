@@ -361,7 +361,9 @@ module ol_framework::donor_voice_governance {
     ///   - `threshold_needed_to_pass`: The minimum approval percentage required for the proposal to pass.
     ///   - `epoch_deadline`: The epoch by which voting must be completed.
     ///   - `minimum_turnout_required`: The minimum percentage of eligible voters that must participate for the vote to be valid.
-    public fun get_reauth_tally(dv_account: address): (u64, u64, u64, u64, u64) acquires Governance {
+    /// - `is_complete`: bool that the tally has been concluded
+    /// - `approved`: bool of the result of the tally
+    public fun get_reauth_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
       let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
 
@@ -375,7 +377,9 @@ module ol_framework::donor_voice_governance {
       let epoch_deadline = turnout_tally::get_expiration_epoch(tally);
       let minimum_turnout = turnout_tally::get_minimum_turnout(tally);
 
-      (approval_pct, turnout_pct, current_threshold, epoch_deadline, minimum_turnout)
+      let (is_complete, approved) = turnout_tally::get_result(tally);
+
+      (approval_pct, turnout_pct, current_threshold, epoch_deadline, minimum_turnout, approved, is_complete)
     }
 
     #[view]

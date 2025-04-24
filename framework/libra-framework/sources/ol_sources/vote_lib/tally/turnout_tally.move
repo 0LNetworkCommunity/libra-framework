@@ -24,7 +24,7 @@
     // The threshold (percent approval/rejection which needs to be met) is determined post-hoc. Referenda are expensive, for communities, leaders, and voters. Instead of scapping a vote which doesn't achieve a pre-established number of participants (quorum), the vote is allowed to be tallied and be seen as valid. However, the threshold must be higher (more than 51%) in cases where the turnout is low. In blockchain polkadot network has prior art for this: https://wiki.polkadot.network/docs/en/learn-governance#adaptive-quorum-biasing
     // In Polkadot implementation there are positive and negative biasing. Negative biasing (when turnout is low, a lower amount of votes is needed) seems to be an edge case.
 
-    // Regarding deadlines. The problem with adaptive thresholds is that it favors the engaged community. If you are unaware of the process, or if the process occurred silently, it's very challenging to swing the vote. So the minority vote may be disadvantaged due to lack of engagement, and there should be some accomodation. If they are coming late to the vote, AND in significant numbers, then they can get an extension. The initial design aims to allow an extension if on the day the poll closes, a sufficient amount of the vote was shifted in the minority direction, an extra day is added. This will happen for each new deadline.
+    // Regarding deadlines. The problem with adaptive thresholds is that it favors the engaged community. If you are unaware of the process, or if the process occurred silently, it's very challenging to swing the vote. So the minority vote may be disadvantaged due to lack of engagement, and there should be some accommodation. If they are coming late to the vote, AND in significant numbers, then they can get an extension. The initial design aims to allow an extension if on the day the poll closes, a sufficient amount of the vote was shifted in the minority direction, an extra day is added. This will happen for each new deadline.
 
     // THE BALLOT
     // Ballot is a single proposal that can be voted on.
@@ -168,7 +168,7 @@
       weight: u64
     ): Option<bool> {
       // voting should not be complete
-      assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
+      // assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
 
       // check if this person voted already.
       // If the vote is the same directionally (approve, reject), exit early.
@@ -194,15 +194,15 @@
         } else {
           ballot.votes_reject = ballot.votes_reject + weight;
         };
+
+        // this will handle the case of updating the receipt in case this is a second vote.
+        vote_receipt::make_receipt(user, uid, approve_reject, weight);
+
+
       };
-      // this will handle the case of updating the receipt in case this is a second vote.
-      vote_receipt::make_receipt(user, uid, approve_reject, weight);
-
-      // always tally on each vote
-      // make sure all extensions happened in previous step.
-      maybe_tally(ballot);
-
-
+        // always tally on each vote
+        // make sure all extensions happened in previous step.
+        maybe_tally(ballot);
 
       if (ballot.completed) { return option::some(ballot.tally_pass) };
       option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
@@ -353,39 +353,10 @@
           };
         }
       };
+
+      maybe_complete(ballot);
     }
 
-    #[view]
-    // TODO: this should probably use Decimal.move
-    // can't multiply fixed_point32 types directly.
-    public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
-      // let's just do a line
-
-      let turnout = fixed_point32::create_from_rational(voters, max_votes);
-      let turnout_scaled_x = fixed_point32::multiply_u64(PCT_SCALE, turnout); // scale to two decimal points.
-      // only implemeting the negative slope case. Unsure why the other is needed.
-
-      assert!(THRESH_AT_LOW_TURNOUT_Y1 > THRESH_AT_HIGH_TURNOUT_Y2, error::invalid_state(EVOTE_CALC_PARAMS));
-
-      // the minimum passing threshold is the low turnout threshold.
-      // same for the maximum turnout threshold.
-      if (turnout_scaled_x < LOW_TURNOUT_X1) {
-        return THRESH_AT_LOW_TURNOUT_Y1
-      } else if (turnout_scaled_x > HIGH_TURNOUT_X2) {
-        return THRESH_AT_HIGH_TURNOUT_Y2
-      };
-
-
-      let abs_m = fixed_point32::create_from_rational(
-        (THRESH_AT_LOW_TURNOUT_Y1 - THRESH_AT_HIGH_TURNOUT_Y2), (HIGH_TURNOUT_X2 - LOW_TURNOUT_X1)
-      );
-
-      let abs_mx = fixed_point32::multiply_u64(LOW_TURNOUT_X1, *&abs_m);
-      let b = THRESH_AT_LOW_TURNOUT_Y1 + abs_mx;
-      let y =  b - fixed_point32::multiply_u64(turnout_scaled_x, *&abs_m);
-
-      return y
-    }
 
     //////// GETTERS ////////
 
@@ -452,8 +423,42 @@
     }
 
     /// is it complete and what's the result
-    fun maybe_complete_result<Data: copy + store>(ballot: &TurnoutTally<Data>): (bool, bool) {
+    public(friend) fun get_result<Data: store>(ballot: &TurnoutTally<Data>): (bool, bool) {
       (ballot.completed, ballot.tally_pass)
     }
 
+
+
+
+    #[view]
+    // TODO: this should probably use Decimal.move
+    // can't multiply fixed_point32 types directly.
+    public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
+      // let's just do a line
+
+      let turnout = fixed_point32::create_from_rational(voters, max_votes);
+      let turnout_scaled_x = fixed_point32::multiply_u64(PCT_SCALE, turnout); // scale to two decimal points.
+      // only implemeting the negative slope case. Unsure why the other is needed.
+
+      assert!(THRESH_AT_LOW_TURNOUT_Y1 > THRESH_AT_HIGH_TURNOUT_Y2, error::invalid_state(EVOTE_CALC_PARAMS));
+
+      // the minimum passing threshold is the low turnout threshold.
+      // same for the maximum turnout threshold.
+      if (turnout_scaled_x < LOW_TURNOUT_X1) {
+        return THRESH_AT_LOW_TURNOUT_Y1
+      } else if (turnout_scaled_x > HIGH_TURNOUT_X2) {
+        return THRESH_AT_HIGH_TURNOUT_Y2
+      };
+
+
+      let abs_m = fixed_point32::create_from_rational(
+        (THRESH_AT_LOW_TURNOUT_Y1 - THRESH_AT_HIGH_TURNOUT_Y2), (HIGH_TURNOUT_X2 - LOW_TURNOUT_X1)
+      );
+
+      let abs_mx = fixed_point32::multiply_u64(LOW_TURNOUT_X1, *&abs_m);
+      let b = THRESH_AT_LOW_TURNOUT_Y1 + abs_mx;
+      let y =  b - fixed_point32::multiply_u64(turnout_scaled_x, *&abs_m);
+
+      return y
+    }
   }
