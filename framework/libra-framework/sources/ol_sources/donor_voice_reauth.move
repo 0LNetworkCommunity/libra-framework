@@ -170,4 +170,14 @@ module ol_framework::donor_voice_reauth {
 
       assert_authorized(dv_account);
     }
+
+    #[test_only]
+    /// sets authorization required
+    public fun test_set_requires_reauth(framework: &signer, dv_account: address) acquires DonorAuthorized{
+      ol_framework::testnet::assert_testnet(framework);
+
+      set_requires_reauth(framework, dv_account);
+
+      assert!(flagged_for_reauthorization(dv_account), error::invalid_state(EFLAGGED_FOR_REAUTH));
+    }
 }

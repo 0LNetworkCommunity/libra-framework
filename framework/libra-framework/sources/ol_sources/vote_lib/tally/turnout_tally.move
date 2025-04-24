@@ -176,29 +176,33 @@
       let user_addr = signer::address_of(user);
       let (_, is_found) = vote_receipt::find_prior_vote_idx(user_addr, uid);
 
-      assert!(!is_found, error::invalid_state(EALREADY_VOTED));
+      // TODO: handle a user changing the vote
+      // Commit note: do not abort so that a duplicate voter can tally
+      // and close the poll
+      if(!is_found) {
+        // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
+        let epoch_now = epoch_helper::get_current_epoch();
+        if (epoch_now > ballot.last_epoch_voted) {
+          ballot.last_epoch_approve = ballot.votes_approve;
+          ballot.last_epoch_reject = ballot.votes_reject;
+        };
 
-      // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
-      let epoch_now = epoch_helper::get_current_epoch();
-      if (epoch_now > ballot.last_epoch_voted) {
-        ballot.last_epoch_approve = ballot.votes_approve;
-        ballot.last_epoch_reject = ballot.votes_reject;
+        // in every case, add the new vote
+        ballot.last_epoch_voted = epoch_now;
+        if (approve_reject) {
+          ballot.votes_approve = ballot.votes_approve + weight;
+        } else {
+          ballot.votes_reject = ballot.votes_reject + weight;
+        };
       };
-
-      // in every case, add the new vote
-      ballot.last_epoch_voted = epoch_now;
-      if (approve_reject) {
-        ballot.votes_approve = ballot.votes_approve + weight;
-      } else {
-        ballot.votes_reject = ballot.votes_reject + weight;
-      };
+      // this will handle the case of updating the receipt in case this is a second vote.
+      vote_receipt::make_receipt(user, uid, approve_reject, weight);
 
       // always tally on each vote
       // make sure all extensions happened in previous step.
       maybe_tally(ballot);
 
-      // this will handle the case of updating the receipt in case this is a second vote.
-      vote_receipt::make_receipt(user, uid, approve_reject, weight);
+
 
       if (ballot.completed) { return option::some(ballot.tally_pass) };
       option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
@@ -422,7 +426,10 @@
     /// get current tally percentage scaled
     public(friend) fun get_current_ballot_approval<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       let total = ballot.votes_approve + ballot.votes_reject;
-      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve ,total))
+      if (total == 0) {
+        return 0
+      };
+      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total))
     }
 
     public(friend) fun get_minimum_turnout<Data: store>(ballot: &TurnoutTally<Data>): u64 {
