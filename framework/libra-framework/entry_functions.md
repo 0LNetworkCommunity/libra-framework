@@ -31,6 +31,18 @@ Functions marked with 🖥️ are integrated with the command-line interface (CL
 - `revoke_any_rotation_capability(account: &signer)`
   - Revokes any rotation capability
 
+### libra_coin.move
+
+- `mint_to_impl(root: &signer, dst_addr: address, amount: u64)`
+  - Root account can mint coins to an address
+  - Only used for genesis and smoke tests
+
+### slow_wallet.move
+
+- `smoke_test_vm_unlock(smoke_test_core_resource: &signer, user_addr: address, unlocked: u64, transferred: u64)`
+  - Sets the unlocked and transferred amounts for a slow wallet
+  - Only used for smoke tests
+
 ### code.move
 
 - `publish_package_txn(owner: &signer, metadata_serialized: vector<u8>, code: vector<vector<u8>>)` 🖥️
