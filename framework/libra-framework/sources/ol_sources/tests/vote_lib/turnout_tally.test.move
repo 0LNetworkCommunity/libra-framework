@@ -99,7 +99,6 @@ module ol_framework::test_turnout_tally {
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     #[expected_failure(abort_code = 196609, location = 0x1::turnout_tally)]
-
     fun tally_vote_expired(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);
       // for this test let's start at epoch 1
@@ -109,15 +108,10 @@ module ol_framework::test_turnout_tally {
       let uid = turnout_tally_demo::propose_ballot_by_owner(alice, 100, 1);
 
       mock::trigger_epoch(root);
+
       // we are now in epoch 2 and the vote should have expired in 1
       let _result_opt = turnout_tally_demo::vote(bob, @0x1000a, &uid, 5, true);
-      // let (r, w) = vote_receipt::get_receipt_data(@0x1000b, &uid);
-      // assert!(r == true, 0); // voted in favor
-      // assert!(w == 5, 1);
 
-      // // 5 of 100 is not enough to get over any dynamic threshold.
-
-      // assert!(option::is_none(&result_opt), 2);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
@@ -158,7 +152,6 @@ module ol_framework::test_turnout_tally {
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b)]
     fun tally_never_expires(root: &signer, alice: &signer, bob: &signer) {
       let _vals = mock::genesis_n_vals(root, 1);
-      // mock::ol_initialize_coin(root);
 
       turnout_tally_demo::init(alice);
 

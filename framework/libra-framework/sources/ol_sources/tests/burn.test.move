@@ -351,7 +351,6 @@ module ol_framework::test_burn {
     // marlon is the only fee maker (since genesis)
     let fee_makers = fee_maker::get_fee_makers();
     // includes 0x1 which makes a deposit on
-    diem_std::debug::print(&vector::length(&fee_makers));
     assert!(vector::length(&fee_makers)==1, 7357002);
 
     let marlon_fees_made = fee_maker::get_user_fees_made(marlon_rando);
