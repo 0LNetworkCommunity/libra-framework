@@ -588,7 +588,7 @@ public fun simulate_transaction_validation(sender: &signer) {
 //////// META TESTS ////////
 #[test(root = @ol_framework)]
 /// test we can trigger an epoch reconfiguration.
-public fun meta_epoch(root: signer) {
+fun meta_epoch(root: signer) {
     ol_test_genesis(&root);
     musical_chairs::initialize(&root, 10);
     // ol_initialize_coin(&root);
@@ -598,8 +598,8 @@ public fun meta_epoch(root: signer) {
     assert!(new_epoch > epoch, 7357001);
 }
 
-#[test(root = @ol_framework)]
-public entry fun meta_val_perf(root: signer) {
+  #[test(root = @ol_framework)]
+  fun meta_val_perf(root: signer) {
     let set = genesis_n_vals(&root, 4);
     assert!(vector::length(&set) == 4, 7357001);
 

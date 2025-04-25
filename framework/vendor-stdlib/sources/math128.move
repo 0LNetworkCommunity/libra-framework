@@ -149,7 +149,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_ceil_div() {
+    fun test_ceil_div() {
         assert!(ceil_div(9, 3) == 3, 0);
         assert!(ceil_div(10, 3) == 4, 0);
         assert!(ceil_div(11, 3) == 4, 0);
@@ -160,7 +160,7 @@ module diem_std::math128 {
         assert!(ceil_div((((1u256<<128) - 9) as u128), 11) == 30934760629176223951215873402888019223, 0);
     }
     #[test]
-    public entry fun test_max() {
+    fun test_max() {
         let result = max(3u128, 6u128);
         assert!(result == 6, 0);
 
@@ -169,7 +169,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_min() {
+    fun test_min() {
         let result = min(3u128, 6u128);
         assert!(result == 3, 0);
 
@@ -178,7 +178,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_average() {
+    fun test_average() {
         let result = average(3u128, 6u128);
         assert!(result == 4, 0);
 
@@ -187,7 +187,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_pow() {
+    fun test_pow() {
         let result = pow(10u128, 18u128);
         assert!(result == 1000000000000000000, 0);
 
@@ -199,7 +199,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_mul_div() {
+    fun test_mul_div() {
         let tmp: u128 = 1<<127;
         assert!(mul_div(tmp,tmp,tmp) == tmp, 0);
 
@@ -209,7 +209,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_floor_log2() {
+    fun test_floor_log2() {
         let idx: u8 = 0;
         while (idx < 128) {
             assert!(floor_log2(1<<idx) == idx, 0);
@@ -223,7 +223,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_log2() {
+    fun test_log2() {
         let idx: u8 = 0;
         while (idx < 128) {
             let res = log2(1<<idx);
@@ -247,7 +247,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_log2_64() {
+    fun test_log2_64() {
         let idx: u8 = 0;
         while (idx < 128) {
             let res = log2_64(1<<idx);
@@ -272,7 +272,7 @@ module diem_std::math128 {
     }
 
     #[test]
-    public entry fun test_sqrt() {
+    fun test_sqrt() {
         let result = sqrt(0);
         assert!(result == 0, 0);
 

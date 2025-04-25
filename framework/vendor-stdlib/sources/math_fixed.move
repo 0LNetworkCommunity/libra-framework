@@ -92,7 +92,7 @@ module diem_std::math_fixed {
     }
 
     #[test]
-    public entry fun test_sqrt() {
+    fun test_sqrt() {
         // Sqrt is based on math128::sqrt and thus most of the testing is done there.
         let fixed_base = 1 << 32;
         let result = sqrt(fixed_point32::create_from_u64(1));
@@ -103,7 +103,7 @@ module diem_std::math_fixed {
     }
 
     #[test]
-    public entry fun test_exp() {
+    fun test_exp() {
         let fixed_base = 1 << 32;
         let result = exp_raw(0);
         assert!(result == fixed_base, 0);
@@ -118,7 +118,7 @@ module diem_std::math_fixed {
     }
 
     #[test]
-    public entry fun test_pow() {
+    fun test_pow() {
         // We use the case of exp
         let result = pow_raw(4295562865, 4999);
         assert_approx_the_same(result,  1 << 33, 6);

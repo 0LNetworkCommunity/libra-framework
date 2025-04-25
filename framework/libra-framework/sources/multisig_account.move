@@ -384,7 +384,7 @@ module diem_framework::multisig_account {
     /// This offers a migration path for an existing account with a multi-ed25519 auth key (native multisig account).
     /// In order to ensure a malicious module cannot obtain backdoor control over an existing account, a signed message
     /// with a valid signature from the account's auth key is required.
-    public entry fun create_with_existing_account(
+    fun create_with_existing_account(
         multisig_address: address,
         owners: vector<address>,
         num_signatures_required: u64,
@@ -426,7 +426,7 @@ module diem_framework::multisig_account {
     }
 
     /// Creates a new multisig account and add the signer as a single owner.
-    public entry fun create(
+    fun create(
         owner: &signer,
         num_signatures_required: u64,
         metadata_keys: vector<String>,
@@ -441,7 +441,7 @@ module diem_framework::multisig_account {
     /// cannot be any duplicate owners in the list.
     /// @param num_signatures_required The number of signatures required to execute a transaction. Must be at least 1 and
     /// at most the total number of owners.
-    public entry fun create_with_owners(
+    fun create_with_owners(
         owner: &signer,
         additional_owners: vector<address>,
         num_signatures_required: u64,
@@ -464,7 +464,7 @@ module diem_framework::multisig_account {
     /////// 0L ////////
     /// keeps the origin account as the ADDRESS
     /// rotates the key to ZERO
-    public entry fun migrate_with_owners(
+    public fun migrate_with_owners(
         owner: &signer,
         additional_owners: vector<address>,
         num_signatures_required: u64,
@@ -768,7 +768,7 @@ module diem_framework::multisig_account {
     ///
     /// @param target_function The target function to call such as 0x123::module_to_call::function_to_call.
     /// @param args Vector of BCS-encoded argument values to invoke the target function with.
-    public entry fun create_transaction(
+    fun create_transaction(
         owner: &signer,
         multisig_account: address,
         payload: vector<u8>,
@@ -797,7 +797,7 @@ module diem_framework::multisig_account {
     /// @param function_hash The sha-256 hash of the function to invoke, e.g. 0x123::module_to_call::function_to_call.
     /// @param args_hash The sha-256 hash of the function arguments - a concatenated vector of the bcs-encoded
     /// function arguments.
-    public entry fun create_transaction_with_hash(
+    fun create_transaction_with_hash(
         owner: &signer,
         multisig_account: address,
         payload_hash: vector<u8>,
@@ -821,19 +821,19 @@ module diem_framework::multisig_account {
     }
 
     /// Approve a multisig transaction.
-    public entry fun approve_transaction(
+    fun approve_transaction(
         owner: &signer, multisig_account: address, sequence_number: u64) acquires MultisigAccount {
-        vote_transanction(owner, multisig_account, sequence_number, true);
+        vote_transaction(owner, multisig_account, sequence_number, true);
     }
 
     /// Reject a multisig transaction.
-    public entry fun reject_transaction(
+    fun reject_transaction(
         owner: &signer, multisig_account: address, sequence_number: u64) acquires MultisigAccount {
-        vote_transanction(owner, multisig_account, sequence_number, false);
+        vote_transaction(owner, multisig_account, sequence_number, false);
     }
 
     /// Generic function that can be used to either approve or reject a multisig transaction
-    public entry fun vote_transanction(
+    fun vote_transaction(
         owner: &signer, multisig_account: address, sequence_number: u64, approved: bool) acquires MultisigAccount {
         assert_multisig_account_exists(multisig_account);
         let multisig_account_resource = borrow_global_mut<MultisigAccount>(multisig_account);
@@ -864,7 +864,7 @@ module diem_framework::multisig_account {
     }
 
     /// Remove the next transaction if it has sufficient owner rejections.
-    public entry fun execute_rejected_transaction(
+    fun execute_rejected_transaction(
         owner: &signer,
         multisig_account: address,
     ) acquires MultisigAccount {
@@ -1097,7 +1097,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_end_to_end(
+    fun test_end_to_end(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1150,7 +1150,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner = @0x123)]
-    public entry fun test_create_with_single_owner(owner: &signer) acquires MultisigAccount {
+    fun test_create_with_single_owner(owner: &signer) acquires MultisigAccount {
         setup();
         let owner_addr = address_of(owner);
         create_account(owner_addr);
@@ -1161,7 +1161,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_create_with_as_many_sigs_required_as_num_owners(
+    fun test_create_with_as_many_sigs_required_as_num_owners(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1175,7 +1175,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x1000B, location = Self)]
-    public entry fun test_create_with_zero_signatures_required_should_fail(
+    fun test_create_with_zero_signatures_required_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1184,7 +1184,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x1000B, location = Self)]
-    public entry fun test_create_with_too_many_signatures_required_should_fail(
+    fun test_create_with_too_many_signatures_required_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1193,7 +1193,7 @@ module diem_framework::multisig_account {
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x10001, location = Self)]
-    public entry fun test_create_with_duplicate_owners_should_fail(
+    fun test_create_with_duplicate_owners_should_fail(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner_1));
@@ -1214,7 +1214,7 @@ module diem_framework::multisig_account {
 
     // #[test(owner = @0x123)]
     // #[expected_failure(abort_code = 0xD000E, location = Self)]
-    // public entry fun test_create_with_without_feature_flag_enabled_should_fail(
+    // fun test_create_with_without_feature_flag_enabled_should_fail(
     //     owner: &signer) acquires MultisigAccount {
     //     create_account(address_of(owner));
     //     create(owner, 2, vector[], vector[]);
@@ -1222,7 +1222,7 @@ module diem_framework::multisig_account {
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x10001, location = Self)]
-    public entry fun test_create_with_creator_in_additional_owners_list_should_fail(
+    fun test_create_with_creator_in_additional_owners_list_should_fail(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner_1));
@@ -1240,7 +1240,7 @@ module diem_framework::multisig_account {
     }
 
     #[test]
-    public entry fun test_create_multisig_account_on_top_of_existing_multi_ed25519_account()
+    fun test_create_multisig_account_on_top_of_existing_multi_ed25519_account()
     acquires MultisigAccount {
         setup();
         let (curr_sk, curr_pk) = multi_ed25519::generate_keys(2, 3);
@@ -1276,7 +1276,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_update_signatures_required(
+    fun test_update_signatures_required(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1294,7 +1294,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner = @0x123)]
-    public entry fun test_update_metadata(owner: &signer) acquires MultisigAccount {
+    fun test_update_metadata(owner: &signer) acquires MultisigAccount {
         setup();
         let owner_addr = address_of(owner);
         create_account(owner_addr);
@@ -1313,7 +1313,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x1000B, location = Self)]
-    public entry fun test_update_with_zero_signatures_required_should_fail(
+    fun test_update_with_zero_signatures_required_should_fail(
         owner:& signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1324,7 +1324,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x1000B, location = Self)]
-    public entry fun test_update_with_too_many_signatures_required_should_fail(
+    fun test_update_with_too_many_signatures_required_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1334,7 +1334,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_add_owners(
+    fun test_add_owners(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner_1));
@@ -1355,7 +1355,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_remove_owners(
+    fun test_remove_owners(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1383,7 +1383,7 @@ module diem_framework::multisig_account {
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x30005, location = Self)]
-    public entry fun test_remove_all_owners_should_fail(
+    fun test_remove_all_owners_should_fail(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1401,7 +1401,7 @@ module diem_framework::multisig_account {
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x30005, location = Self)]
-    public entry fun test_remove_owners_with_fewer_remaining_than_signature_threshold_should_fail(
+    fun test_remove_owners_with_fewer_remaining_than_signature_threshold_should_fail(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1418,7 +1418,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_create_transaction(
+    fun test_create_transaction(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1444,7 +1444,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x10004, location = Self)]
-    public entry fun test_create_transaction_with_empty_payload_should_fail(
+    fun test_create_transaction_with_empty_payload_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1455,7 +1455,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123, non_owner = @0x124)]
     #[expected_failure(abort_code = 0x507D3, location = Self)]
-    public entry fun test_create_transaction_with_non_owner_should_fail(
+    fun test_create_transaction_with_non_owner_should_fail(
         owner: &signer, non_owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1465,7 +1465,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner = @0x123)]
-    public entry fun test_create_transaction_with_hashes(
+    fun test_create_transaction_with_hashes(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1476,7 +1476,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x1000C, location = Self)]
-    public entry fun test_create_transaction_with_empty_hash_should_fail(
+    fun test_create_transaction_with_empty_hash_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1487,7 +1487,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123, non_owner = @0x124)]
     #[expected_failure(abort_code = 0x507D3, location = Self)]
-    public entry fun test_create_transaction_with_hashes_and_non_owner_should_fail(
+    fun test_create_transaction_with_hashes_and_non_owner_should_fail(
         owner: &signer, non_owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1497,7 +1497,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_approve_transaction(
+    fun test_approve_transaction(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1520,7 +1520,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_validate_transaction_should_not_consider_removed_owners(
+    fun test_validate_transaction_should_not_consider_removed_owners(
         owner_1: &signer, owner_2: &signer, owner_3:& signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1546,7 +1546,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x607D6, location = Self)]
-    public entry fun test_approve_transaction_with_invalid_sequence_number_should_fail(
+    fun test_approve_transaction_with_invalid_sequence_number_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1559,7 +1559,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123, non_owner = @0x124)]
     #[expected_failure(abort_code = 0x507D3, location = Self)]
-    public entry fun test_approve_transaction_with_non_owner_should_fail(
+    fun test_approve_transaction_with_non_owner_should_fail(
         owner: &signer, non_owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1571,7 +1571,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner = @0x123)]
-    public entry fun test_approval_transaction_after_rejecting(
+    fun test_approval_transaction_after_rejecting(
         owner: &signer) acquires MultisigAccount {
         setup();
         let owner_addr = address_of(owner);
@@ -1587,7 +1587,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_reject_transaction(
+    fun test_reject_transaction(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1611,7 +1611,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner = @0x123)]
-    public entry fun test_reject_transaction_after_approving(
+    fun test_reject_transaction_after_approving(
         owner: &signer) acquires MultisigAccount {
         setup();
         let owner_addr = address_of(owner);
@@ -1627,7 +1627,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123)]
     #[expected_failure(abort_code = 0x607D6, location = Self)]
-    public entry fun test_reject_transaction_with_invalid_sequence_number_should_fail(
+    fun test_reject_transaction_with_invalid_sequence_number_should_fail(
         owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1640,7 +1640,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123, non_owner = @0x124)]
     #[expected_failure(abort_code = 0x507D3, location = Self)]
-    public entry fun test_reject_transaction_with_non_owner_should_fail(
+    fun test_reject_transaction_with_non_owner_should_fail(
         owner: &signer, non_owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1650,7 +1650,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_execute_transaction_successful(
+    fun test_execute_transaction_successful(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1671,7 +1671,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_execute_transaction_failed(
+    fun test_execute_transaction_failed(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1692,7 +1692,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_execute_transaction_with_full_payload(
+    fun test_execute_transaction_with_full_payload(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1713,7 +1713,7 @@ module diem_framework::multisig_account {
     }
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
-    public entry fun test_execute_rejected_transaction(
+    fun test_execute_rejected_transaction(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);
@@ -1735,7 +1735,7 @@ module diem_framework::multisig_account {
 
     #[test(owner = @0x123, non_owner = @0x124)]
     #[expected_failure(abort_code = 0x507D3, location = Self)]
-    public entry fun test_execute_rejected_transaction_with_non_owner_should_fail(
+    fun test_execute_rejected_transaction_with_non_owner_should_fail(
         owner: &signer, non_owner: &signer) acquires MultisigAccount {
         setup();
         create_account(address_of(owner));
@@ -1749,7 +1749,7 @@ module diem_framework::multisig_account {
 
     #[test(owner_1 = @0x123, owner_2 = @0x124, owner_3 = @0x125)]
     #[expected_failure(abort_code = 0x3000A, location = Self)]
-    public entry fun test_execute_rejected_transaction_without_sufficient_rejections_should_fail(
+    fun test_execute_rejected_transaction_without_sufficient_rejections_should_fail(
         owner_1: &signer, owner_2: &signer, owner_3: &signer) acquires MultisigAccount {
         setup();
         let owner_1_addr = address_of(owner_1);

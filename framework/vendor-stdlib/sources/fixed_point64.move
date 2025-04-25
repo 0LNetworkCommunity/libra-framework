@@ -407,7 +407,7 @@ module diem_std::fixed_point64 {
     }
 
     #[test]
-    public entry fun test_sub() {
+    fun test_sub() {
         let x = create_from_rational(9, 7);
         let y = create_from_rational(1, 3);
         let result = sub(x, y);
@@ -418,7 +418,7 @@ module diem_std::fixed_point64 {
 
     #[test]
     #[expected_failure(abort_code = 0x10006, location = Self)]
-    public entry fun test_sub_should_abort() {
+    fun test_sub_should_abort() {
         let x = create_from_rational(1, 3);
         let y = create_from_rational(9, 7);
         let _ = sub(x, y);

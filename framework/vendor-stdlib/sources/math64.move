@@ -123,7 +123,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_ceil_div() {
+    fun test_ceil_div() {
         assert!(ceil_div(9, 3) == 3, 0);
         assert!(ceil_div(10, 3) == 4, 0);
         assert!(ceil_div(11, 3) == 4, 0);
@@ -135,7 +135,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_max_64() {
+    fun test_max_64() {
         let result = max(3u64, 6u64);
         assert!(result == 6, 0);
 
@@ -144,7 +144,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_min() {
+    fun test_min() {
         let result = min(3u64, 6u64);
         assert!(result == 3, 0);
 
@@ -153,7 +153,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_average() {
+    fun test_average() {
         let result = average(3u64, 6u64);
         assert!(result == 4, 0);
 
@@ -162,13 +162,13 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_average_does_not_overflow() {
+    fun test_average_does_not_overflow() {
         let result = average(18446744073709551615, 18446744073709551615);
         assert!(result == 18446744073709551615, 0);
     }
 
     #[test]
-    public entry fun test_pow() {
+    fun test_pow() {
         let result = pow(10u64, 18u64);
         assert!(result == 1000000000000000000, 0);
 
@@ -180,7 +180,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_mul_div() {
+    fun test_mul_div() {
         let tmp: u64 = 1<<63;
         assert!(mul_div(tmp,tmp,tmp) == tmp, 0);
 
@@ -190,7 +190,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_floor_lg2() {
+    fun test_floor_lg2() {
         let idx: u8 = 0;
         while (idx < 64) {
             assert!(floor_log2(1<<idx) == idx, 0);
@@ -204,7 +204,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_log2() {
+    fun test_log2() {
         let idx: u8 = 0;
         while (idx < 64) {
             let res = log2(1<<idx);
@@ -228,7 +228,7 @@ module diem_std::math64 {
     }
 
     #[test]
-    public entry fun test_sqrt() {
+    fun test_sqrt() {
         let result = sqrt(0);
         assert!(result == 0, 0);
 

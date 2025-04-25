@@ -300,7 +300,7 @@ module diem_framework::fungible_asset {
 
     /// Transfer an `amount` of fungible asset from `from_store`, which should be owned by `sender`, to `receiver`.
     /// Note: it does not move the underlying object.
-    public entry fun transfer<T: key>(
+    public fun transfer<T: key>(
         sender: &signer,
         from: Object<T>,
         to: Object<T>,

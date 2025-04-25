@@ -168,7 +168,7 @@ module ol_framework::community_wallet_advance {
 
   /// Disable the community wallet if the loan is overdue, callable
   /// by any authorized user account
-  public entry fun maybe_deauthorize(user: &signer, dv_account: address) acquires Advances {
+  fun maybe_deauthorize(user: &signer, dv_account: address) acquires Advances {
     reauthorization::is_v8_authorized(signer::address_of(user));
     if (is_delinquent(dv_account)){
       donor_voice_reauth::set_requires_reauth(user, dv_account);

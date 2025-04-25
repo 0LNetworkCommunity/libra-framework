@@ -11,7 +11,7 @@ module ol_framework::test_musical_chairs {
 
 
   #[test(root = @ol_framework)]
-  public entry fun eval_compliance_happy(root: signer) {
+  fun eval_compliance_happy(root: signer) {
 
     let musical_chairs_default_seats = 10;
     let vals = mock::genesis_n_vals(&root, 5);
@@ -36,7 +36,7 @@ module ol_framework::test_musical_chairs {
 
   #[test(root = @ol_framework)]
   // only one seat opens up
-  public entry fun eval_compliance_one_val(root: signer) {
+  fun eval_compliance_one_val(root: signer) {
 
     let vals = mock::genesis_n_vals(&root, 5);
     assert!(vector::length(&vals) == 5, 7357001);
