@@ -1,7 +1,5 @@
 module this_address::message {
-    // use std::string;
     use std::signer;
-    // use diem_std::debug;
 
     struct MessageHolder has key {
         message: u64,
@@ -13,7 +11,7 @@ module this_address::message {
       state.message
     }
 
-    fun set_message(account: signer, num: u64)
+    public entry fun set_message(account: signer, num: u64)
     acquires MessageHolder {
         let account_addr = signer::address_of(&account);
         if (!exists<MessageHolder>(account_addr)) {
