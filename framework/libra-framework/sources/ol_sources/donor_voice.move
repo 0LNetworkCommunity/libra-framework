@@ -50,7 +50,6 @@ module ol_framework::donor_voice {
 
 
     friend diem_framework::genesis;
-
     friend ol_framework::community_wallet_init;
     friend ol_framework::donor_voice_txs;
 

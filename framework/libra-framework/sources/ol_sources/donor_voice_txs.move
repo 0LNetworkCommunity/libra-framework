@@ -924,6 +924,13 @@ module ol_framework::donor_voice_txs {
       propose_reauthorization_impl(donor, multisig_address);
     }
   }
+  /// standalone function to close the poll after threshold or expiration passed
+  /// NOTE: calling the vote tx with a duplicate vote will also finalize
+  /// the poll without affecting the result.
+  // Anyone cal call this
+  public entry fun maybe_tally_reauth_tx(multisig_address: address) {
+    donor_voice_governance::maybe_tally_reauth(multisig_address);
+  }
 
   // LIQUIDATE TXS
 

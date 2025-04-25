@@ -158,6 +158,7 @@ module ol_framework::test_donor_voice {
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
+
       mock::trigger_epoch(root);
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
@@ -190,7 +191,7 @@ module ol_framework::test_donor_voice {
       assert!(is_donor, 7357003);
 
       // Bob proposes a tx that will come from the donor directed account.
-      // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
+      // It is not yet scheduled because it doesn't have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
       let uid_of_transfer = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (_found, _idx, _status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
       assert!(!completed, 7357004);
@@ -223,10 +224,6 @@ module ol_framework::test_donor_voice {
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
-
-      // since Eve is the majority donor, and has almost all the votes, the voting will end early. On the next epoch the vote should end
-      mock::trigger_epoch(root);
-      donor_voice_txs::vote_veto_tx(dave, donor_voice_address, id_num);
 
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
@@ -709,7 +706,6 @@ module ol_framework::test_donor_voice {
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
-
       // Dave proposes to liquidate the account.
       donor_voice_txs::test_propose_liquidation(dave, donor_voice_address);
 
@@ -717,11 +713,6 @@ module ol_framework::test_donor_voice {
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
-
-      mock::trigger_epoch(root);
-
-      // needs a vote on the day after the threshold has passed
-      donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
 
       let list = donor_voice::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
@@ -800,10 +791,6 @@ module ol_framework::test_donor_voice {
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
-
-      mock::trigger_epoch(root);
-      // needs a vote on the day after the threshold has passed
-      donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
 
       let list = donor_voice::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
