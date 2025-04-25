@@ -531,6 +531,10 @@ module ol_framework::vouch {
       if (state.last_given_epoch < epoch_helper::get_current_epoch()) {
         return 0
       };
+      // baby reindeer:
+      //  sorry, will get on it,
+      //  just applying for explosives licence
+      //  (sic)
 
       state.given_this_epoch
     }
