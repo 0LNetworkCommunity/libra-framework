@@ -490,18 +490,6 @@ module ol_framework::donor_voice_txs {
         amount_transferred
     }
 
-    // /// handles the payment in the case of unlocked advanced/loaned coins.
-    // /// Intended for minor admin purposes, using the credit limit.
-    // /// see more: donor_voice_advance.move
-    // fun handle_advance_unlocked_payment(vm: &signer, t: &TimedTransfer): u64 acquires TxSchedule {
-    //   let multisig_address = guid::id_creator_address(&t.uid);
-
-    //   let state = borrow_global<TxSchedule>(multisig_address);
-    //   let amount_transferred = community_wallet_advance::transfer_credit(vm, &state.guid_capability, t.tx.payee, t.tx.value);
-
-    //   amount_transferred
-    // }
-
 
     #[test_only]
     public(friend) fun find_by_deadline(multisig_address: address, epoch: u64): vector<guid::ID> acquires TxSchedule {
@@ -992,6 +980,13 @@ module ol_framework::donor_voice_txs {
       // go ahead and propose it
       propose_reauthorization_impl(donor, multisig_address);
     }
+  }
+  /// standalone function to close the poll after threshold or expiration passed
+  /// NOTE: calling the vote tx with a duplicate vote will also finalize
+  /// the poll without affecting the result.
+  // Anyone cal call this
+  public entry fun maybe_tally_reauth_tx(multisig_address: address) {
+    donor_voice_governance::maybe_tally_reauth(multisig_address);
   }
 
   // LIQUIDATE TXS
