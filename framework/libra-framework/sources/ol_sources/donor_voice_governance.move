@@ -23,7 +23,6 @@ module ol_framework::donor_voice_governance {
     use ol_framework::epoch_helper;
     use ol_framework::donor_voice_reauth;
     use std::vector;
-    // use ol_framework::debug::print;
 
     friend ol_framework::donor_voice;
     friend ol_framework::donor_voice_txs;
@@ -98,7 +97,7 @@ module ol_framework::donor_voice_governance {
 
 
     /// return the index on the pending ballots list for the data searched
-    fun find_ballot_by_data<T: drop + store>(dv_account: address, search_data: &T): (bool, u64) acquires Governance {
+    fun ballot_idx_by_data<T: drop + store>(dv_account: address, search_data: &T): (bool, u64) acquires Governance {
 
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(dv_account);
 
@@ -156,19 +155,20 @@ module ol_framework::donor_voice_governance {
     }
 
     /// Vote for a governance proposal of generic type.
-    fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, in_favor: bool): Option<bool> acquires Governance{
+    fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, propostal_data: T, in_favor: bool): Option<bool> acquires Governance{
       assert_is_voter(donor, multisig_address);
-      let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
-      // In a Reauth vote there is only ever one proposal at a time.
-      let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
 
-      if (vector::is_empty(pending_list)) {
+      let (found, index) = ballot_idx_by_data(multisig_address, &propostal_data);
+
+      if (!found) {
         return option::none<bool>()
       };
 
-      let ballot = vector::borrow_mut(pending_list, 0);
-      let ballot_guid = ballot::get_ballot_id(ballot);
-      let tally_state = ballot::get_type_struct_mut(ballot);
+      let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
+      let ballot_mut = pending_ballot_mut_at_index(state, index);
+
+      let ballot_guid = ballot::get_ballot_id(ballot_mut);
+      let tally_state = ballot::get_type_struct_mut(ballot_mut);
       let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
 
       turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight)
@@ -286,22 +286,22 @@ module ol_framework::donor_voice_governance {
       cumulative_deposits::get_cumulative_deposits(dv_account)
     }
 
-
-    /// Check if the user is a donor to this account
     //////// GOV ACTIONS ////////
+
+
     /////// VETO VOTE //////////
-    /// private function to vote on a ballot based on a Donor's voting power.
-    fun vote_veto(user: &signer, ballot: &mut TurnoutTally<Veto>, uid: &guid::ID, multisig_address: address): Option<bool> {
-      let user_votes = get_user_donations(multisig_address, signer::address_of(user));
+    // /// private function to vote on a ballot based on a Donor's voting power.
+    // fun vote_veto(user: &signer, ballot: &mut TurnoutTally<Veto>, uid: &guid::ID, multisig_address: address): Option<bool> {
+    //   let user_votes = get_user_donations(multisig_address, signer::address_of(user));
 
-      let veto_tx = true; // True means  approve the ballot, meaning: "veto this transaction". Rejecting the ballot would mean "approve the transaction".
+    //   let veto_tx = true; // True means  approve the ballot, meaning: "veto this transaction". Rejecting the ballot would mean "approve the transaction".
 
-      turnout_tally::vote<Veto>(user, ballot, uid, veto_tx, user_votes)
-    }
+    //   turnout_tally::vote<Veto>(user, ballot, uid, veto_tx, user_votes)
+    // }
 
     /// Liquidation tally only. The handler for liquidation exists in Donor Voice, where a tx script will call it.
     public(friend) fun vote_reauthorize(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
-      vote_gov<Reauth>(donor, multisig_address, true)
+      vote_gov<Reauth>(donor, multisig_address, Reauth {}, true)
     }
 
 
@@ -312,13 +312,13 @@ module ol_framework::donor_voice_governance {
 
     /// Liquidation voting only. The handler for liquidation exists in donor_voice_tx
     public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance{
-      vote_gov<Liquidate>(donor, multisig_address, true)
+      vote_gov<Liquidate>(donor, multisig_address, Liquidate {}, true)
     }
 
 
     //////// TX HELPERS /////////
 
-
+    // Check if the user is a donor to the multisig address.
     public(friend) fun assert_is_voter(sig: &signer, dv_account: address) {
       let user = signer::address_of(sig);
       assert!(check_is_donor(dv_account, user), error::permission_denied(ENOT_A_DONOR));
@@ -351,7 +351,7 @@ module ol_framework::donor_voice_governance {
     }
 
 
-    //NOTE: Veto has a different workflow than the other two. The veto is proposed by a transaction, and the transaction ID is passed to the proposal.
+    // NOTE: Veto has a different workflow than the other two. The veto is proposed by a transaction, and the transaction ID is passed to the proposal.
     // there can be multiple vetoes in pending state in parallel, so we need to check if there is a veto for this transaction uuid.
 
     // with a known transaction uid, scan all the pending vetoes to see if there is a veto for that transaction, and what the index is.
@@ -382,14 +382,9 @@ module ol_framework::donor_voice_governance {
     public(friend) fun veto_by_id(user: &signer, proposal_guid: &guid::ID): Option<bool> acquires Governance {
       let dv_account = guid::id_creator_address(proposal_guid);
       assert_is_voter(user, dv_account);
+      let proposal_data = Veto { guid: *proposal_guid };
 
-      let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(dv_account);
-
-      let ballot = ballot::get_ballot_by_id_mut(&mut state.tracker, proposal_guid);
-
-      let tally_state = ballot::get_type_struct_mut(ballot);
-
-      vote_veto(user, tally_state, proposal_guid, dv_account)
+      vote_gov<Veto>(user, dv_account, proposal_data, true)
     }
 
     public(friend) fun sync_ballot_and_tx_expiration(user: &signer, proposal_guid: &guid::ID, epoch_deadline: u64) acquires Governance {
@@ -430,6 +425,7 @@ module ol_framework::donor_voice_governance {
     }
 
     //////// VETO VIEWS ////////
+
     #[view]
     // for a transaction UID return if the address and proposal ID have any vetoes. guid::ID is destructured for view functions
     public fun tx_has_veto(dv_account: address, id: u64): bool acquires Governance {
@@ -446,9 +442,10 @@ module ol_framework::donor_voice_governance {
 
 
     #[view]
+    // Argumens requires a donor voice tx_id
     // returns a tuple of the (percent approval, turnout percent, threshold needed to pass)
-    public fun get_veto_tally(dv_account: address, id: u64): (u64, u64, u64) acquires Governance {
-      let (found, prop_id) = find_tx_veto_id(guid::create_id(dv_account, id));
+    public fun get_veto_tally(dv_account: address, tx_id: u64): (u64, u64, u64) acquires Governance {
+      let (found, prop_id) = find_tx_veto_id(guid::create_id(dv_account, tx_id));
       assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
 
       let state = borrow_global<Governance<TurnoutTally<Veto>>>(dv_account);
@@ -474,23 +471,12 @@ module ol_framework::donor_voice_governance {
 
     #[view]
     /// Returns the details of a vote result as a tuple.
-    ///
-    /// # Returns
-    ///
-    /// * `(percent_approval, turnout_percent, threshold_needed_to_pass, epoch_deadline, minimum_turnout_required)`
-    ///   - `percent_approval`: The percentage of votes that approved the proposal.
-    ///   - `turnout_percent`: The percentage of eligible voters who participated.
-    ///   - `threshold_needed_to_pass`: The minimum approval percentage required for the proposal to pass.
-    ///   - `epoch_deadline`: The epoch by which voting must be completed.
-    ///   - `minimum_turnout_required`: The minimum percentage of eligible voters that must participate for the vote to be valid.
-    /// - `approved`: bool of the result of the tally
-    /// - `is_complete`: bool that the tally has been concluded
     public fun get_reauth_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       tally_gov<Reauth>(dv_account)
     }
 
     #[view]
-    // returns the deadline (in epochs) for a reauthorization vote
+    /// returns the deadline (in epochs) for a reauthorization vote
     public fun get_reauth_expiry(dv_account: address): u64 acquires Governance {
       deadline_gov<Reauth>(dv_account)
     }
@@ -508,16 +494,6 @@ module ol_framework::donor_voice_governance {
 
     #[view]
     /// show the status of liquidation tally
-    /// # Returns
-    ///
-    /// * `(percent_approval, turnout_percent, threshold_needed_to_pass, epoch_deadline, minimum_turnout_required)`
-    ///   - `percent_approval`: The percentage of votes that approved the proposal.
-    ///   - `turnout_percent`: The percentage of eligible voters who participated.
-    ///   - `threshold_needed_to_pass`: The minimum approval percentage required for the proposal to pass.
-    ///   - `epoch_deadline`: The epoch by which voting must be completed.
-    ///   - `minimum_turnout_required`: The minimum percentage of eligible voters that must participate for the vote to be valid.
-    /// - `approved`: bool of the result of the tally
-    /// - `is_complete`: bool that the tally has been concluded
     public fun get_liquidation_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       tally_gov<Liquidate>(dv_account)
     }
