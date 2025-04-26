@@ -527,6 +527,15 @@ module ol_framework::vouch {
     /// get count of given vouches this epoch
     public fun get_given_this_epoch(addr: address): u64 acquires VouchesLifetime {
       let state = borrow_global<VouchesLifetime>(addr);
+      // if the last given epoch is in the past, reset the count
+      if (state.last_given_epoch < epoch_helper::get_current_epoch()) {
+        return 0
+      };
+      // baby reindeer:
+      //  sorry, will get on it,
+      //  just applying for explosives licence
+      //  (sic)
+
       state.given_this_epoch
     }
 
