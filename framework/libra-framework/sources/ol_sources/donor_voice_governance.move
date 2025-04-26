@@ -168,7 +168,9 @@ module ol_framework::donor_voice_governance {
       let tally_state = ballot::get_type_struct_mut(ballot_mut);
       let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
 
-      turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight)
+      turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight);
+
+      maybe_close_gov<T>(multisig_address)
     }
 
     /// A generic governance tally function that returns details of a governance vote.
@@ -176,7 +178,7 @@ module ol_framework::donor_voice_governance {
     /// # Arguments
     ///
     /// * `dv_account` - The Donor Voice account address where the governance ballot exists
-    /// * `data` - The data identifying the specific ballot to tally
+    /// * `ballot_guid` - The GUID of the ballot to search for
     ///
     /// # Type Parameters
     ///
@@ -196,15 +198,18 @@ module ol_framework::donor_voice_governance {
     /// # Errors
     ///
     /// * `ENO_BALLOT_FOUND` - If no ballot is found for the given governance action
-    fun tally_gov<T: drop + store>(dv_account: address, data: &T): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      let (found, index) = ballot_idx_by_data(dv_account, data);
-      assert!(found, error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
-
+    fun tally_gov<T: drop + store>(dv_account: address, ballot_guid: guid::ID): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<T>>>(dv_account);
-      let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
-      let ballot = vector::borrow(pending_list, index);
+
+      // Search for the ballot using the provided GUID
+      let (found, idx, status_enum, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
+
+      // Get the ballot and its tally data
+      let ballot = ballot::get_ballot(&state.tracker, idx, status_enum);
       let tally = ballot::get_type_struct(ballot);
 
+      // Extract all the relevant metrics from the tally
       let approval_pct = turnout_tally::get_current_ballot_approval(tally);
       let turnout_pct = turnout_tally::get_current_ballot_participation(tally);
       let current_threshold = turnout_tally::get_current_threshold_required(tally);
@@ -419,6 +424,27 @@ module ol_framework::donor_voice_governance {
       turnout_tally::extend_deadline(tally_state, epoch_deadline);
     }
 
+    /// Helper function to get all pending ballot IDs for a specific governance type
+    fun get_pending_ballot_ids<T: drop + store>(dv_account: address): vector<u64> acquires Governance {
+      let state = borrow_global<Governance<TurnoutTally<T>>>(dv_account);
+      let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      let result = vector::empty<u64>();
+      let i = 0;
+      let len = vector::length(pending_list);
+
+      while (i < len) {
+        let ballot = vector::borrow(pending_list, i);
+        let guid = ballot::get_ballot_id(ballot);
+        // Get the ID number directly from the ID
+        let id_num = guid::id_creation_num(&guid);
+        vector::push_back(&mut result, id_num);
+        i = i + 1;
+      };
+
+      result
+    }
+
     //////// VIEWS ////////
 
     #[view]
@@ -480,11 +506,12 @@ module ol_framework::donor_voice_governance {
     ///
     /// * `ENO_BALLOT_FOUND` - If no veto ballot exists for the given transaction ID
     public fun get_veto_tally(dv_account: address, tx_id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      let guid = guid::create_id(dv_account, tx_id);
-      let (found, _) = find_tx_veto_id(guid);
+      let tx_guid = guid::create_id(dv_account, tx_id);
+      // First find the ballot GUID associated with this transaction
+      let (found, ballot_guid) = find_tx_veto_id(tx_guid);
       assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
 
-      tally_gov<Veto>(dv_account, &Veto { guid })
+      tally_gov<Veto>(dv_account, ballot_guid)
     }
 
     /////// REAUTH VIEWS ////////
@@ -499,7 +526,18 @@ module ol_framework::donor_voice_governance {
     #[view]
     /// Returns the details of a vote result as a tuple.
     public fun get_reauth_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      tally_gov<Reauth>(dv_account, &Reauth {})
+      // For reauth, we need to find the ballot GUID first
+      let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
+      let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      // Make sure there's a reauth ballot
+      assert!(!vector::is_empty(pending_list), error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
+
+      // Get the GUID of the first (and typically only) reauth ballot
+      let ballot = vector::borrow(pending_list, 0);
+      let ballot_guid = ballot::get_ballot_id(ballot);
+
+      tally_gov<Reauth>(dv_account, ballot_guid)
     }
 
     #[view]
@@ -520,12 +558,35 @@ module ol_framework::donor_voice_governance {
     #[view]
     /// show the status of liquidation tally
     public fun get_liquidation_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      tally_gov<Liquidate>(dv_account, &Liquidate {})
+      // For liquidation, we need to find the ballot GUID first
+      let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
+      let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      // Make sure there's a liquidation ballot
+      assert!(!vector::is_empty(pending_list), error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
+
+      // Get the GUID of the first (and typically only) liquidation ballot
+      let ballot = vector::borrow(pending_list, 0);
+      let ballot_guid = ballot::get_ballot_id(ballot);
+
+      tally_gov<Liquidate>(dv_account, ballot_guid)
     }
 
     #[view]
     // returns the deadline (in epochs) for a liquidation vote
     public fun get_liquidation_deadline(dv_account: address): u64 acquires Governance {
       deadline_gov<Liquidate>(dv_account, &Liquidate {})
+    }
+
+    #[view]
+    /// Returns a tuple containing three vectors of ballot IDs:
+    /// (reauth_ids, liquidation_ids, veto_ids)
+    /// Each vector contains the ID numbers of pending ballots for the respective governance action.
+    public fun get_all_pending_ballot_ids(dv_account: address): (vector<u64>, vector<u64>, vector<u64>) acquires Governance {
+      let reauth_ids = get_pending_ballot_ids<Reauth>(dv_account);
+      let liquidation_ids = get_pending_ballot_ids<Liquidate>(dv_account);
+      let veto_ids = get_pending_ballot_ids<Veto>(dv_account);
+
+      (reauth_ids, liquidation_ids, veto_ids)
     }
 }

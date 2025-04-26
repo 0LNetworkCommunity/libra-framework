@@ -226,6 +226,11 @@ module ol_framework::test_donor_voice {
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
 
+      // the veto governance structures should
+      // no longer show a pending veto
+      let has_veto = donor_voice_governance::tx_has_veto_pending(donor_voice_address, tx_id_num);
+      assert!(!has_veto, 7357010); // propose does not cast a vote.
+
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
       &uid_of_transfer), 7357010);
