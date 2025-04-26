@@ -16,7 +16,7 @@ module ol_framework::donor_voice_governance {
     use std::option::{Self, Option};
     use ol_framework::receipts;
     use ol_framework::turnout_tally::{Self, TurnoutTally};
-    use ol_framework::ballot::{Self, BallotTracker};
+    use ol_framework::ballot::{Self, Ballot, BallotTracker};
     use ol_framework::cumulative_deposits;
     use ol_framework::reauthorization;
     use diem_framework::account;
@@ -36,6 +36,8 @@ module ol_framework::donor_voice_governance {
     const ENO_BALLOT_FOUND: u64 = 2;
     /// A proposal already exists with this data
     const EDUPLICATE_PROPOSAL: u64 = 3;
+    /// No pending ballot found
+    const ENO_PENDING_BALLOT_FOUND: u64 = 4;
 
     /////// CONSTANTS ////////
     /// Tally expires after number of epochs.
@@ -95,23 +97,30 @@ module ol_framework::donor_voice_governance {
     }
 
 
-    fun find_pending_by_data<T: drop + store>(tx_id: guid::ID): (bool, guid::ID) acquires Governance {
-      let dv_account = guid::id_creator_address(&tx_id);
-      let state = borrow_global_mut<Governance<TurnoutTally<Veto>>>(dv_account);
+    /// return the index on the pending ballots list for the data searched
+    fun find_ballot_by_data<T: drop + store>(dv_account: address, search_data: &T): (bool, u64) acquires Governance {
+
+      let state = borrow_global_mut<Governance<TurnoutTally<T>>>(dv_account);
 
       let pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
       let i = 0;
       while (i < vector::length(pending)) {
         let a_ballot = vector::borrow(pending, i);
         let turnout_tally = ballot::get_type_struct(a_ballot);
-        let proposed_veto = turnout_tally::get_tally_data(turnout_tally);
-        if (proposed_veto.guid == tx_id) {
-          return (true, ballot::get_ballot_id(a_ballot))
+        let proposal_data = turnout_tally::get_tally_data(turnout_tally);
+        if (search_data == proposal_data) {
+          return (true, i)
         };
         i = i + 1;
       };
 
-      (false, guid::create_id(@0x1, 0))
+      (false, 0)
+    }
+
+    /// get a mutable ballot from the pending list by index
+    fun pending_ballot_mut_at_index<T: drop + store>(state: &mut Governance<TurnoutTally<T>>, index: u64 ): &mut Ballot<TurnoutTally<T>>  {
+      let pending = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
+      vector::borrow_mut(pending, index)
     }
 
     /// a private function to propose a ballot for a veto. This is called by a verified donor.
