@@ -214,13 +214,14 @@ module ol_framework::test_donor_voice {
 
       // now vote on the proposal
       // note need to destructure ID for the entry and view functions
-      let id_num = guid::id_creation_num(&uid_of_transfer);
+      let tx_id_num = guid::id_creation_num(&uid_of_transfer);
 
       // proposing is not same as voting, now eve votes
       // NOTE: there is a tx function that can propose and vote in single step
-      donor_voice_txs::vote_veto_tx(eve, donor_voice_address, id_num);
+      donor_voice_txs::vote_veto_tx(eve, donor_voice_address, tx_id_num);
 
       let (approve_pct, _turnout, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      diem_std::debug::print(&approve_pct);
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);

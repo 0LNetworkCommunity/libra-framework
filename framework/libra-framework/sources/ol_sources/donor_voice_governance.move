@@ -98,10 +98,13 @@ module ol_framework::donor_voice_governance {
 
     /// return the index on the pending ballots list for the data searched
     fun ballot_idx_by_data<T: drop + store>(dv_account: address, search_data: &T): (bool, u64) acquires Governance {
-
+      diem_std::debug::print(search_data);
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(dv_account);
 
       let pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+
+      diem_std::debug::print(pending);
+
       let i = 0;
       while (i < vector::length(pending)) {
         let a_ballot = vector::borrow(pending, i);
@@ -147,18 +150,22 @@ module ol_framework::donor_voice_governance {
         max_extensions
       );
 
+      // set an ID for the proposal
       let guid = account::create_guid_with_capability(cap);
       let id = guid::id(&guid);
+      diem_std::debug::print(&guid);
 
       ballot::propose_ballot(&mut gov_state.tracker, guid, t);
       id
     }
 
     /// Vote for a governance proposal of generic type.
-    fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, propostal_data: T, in_favor: bool): Option<bool> acquires Governance{
+    fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, proposal_data: T, in_favor: bool): Option<bool> acquires Governance{
       assert_is_voter(donor, multisig_address);
+      diem_std::debug::print(&proposal_data);
 
-      let (found, index) = ballot_idx_by_data(multisig_address, &propostal_data);
+      let (found, index) = ballot_idx_by_data(multisig_address, &proposal_data);
+      diem_std::debug::print(&found);
 
       if (!found) {
         return option::none<bool>()
@@ -442,8 +449,9 @@ module ol_framework::donor_voice_governance {
 
 
     #[view]
-    // Argumens requires a donor voice tx_id
+    // Arguments requires a donor voice tx_id
     // returns a tuple of the (percent approval, turnout percent, threshold needed to pass)
+    // TODO: unify with other tallies
     public fun get_veto_tally(dv_account: address, tx_id: u64): (u64, u64, u64) acquires Governance {
       let (found, prop_id) = find_tx_veto_id(guid::create_id(dv_account, tx_id));
       assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
