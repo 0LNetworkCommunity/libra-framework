@@ -199,7 +199,7 @@ module ol_framework::test_donor_voice {
       // Eve wants to propose a Veto, but this should fail at this, because
       // the tx is not yet scheduled
       let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
-      let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let has_veto = donor_voice_governance::tx_has_veto_pending(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(!has_veto, 7357005); // propose does not cast a vote.
 
       // Now Carol, along with Bob, as admins have proposed the payment.
@@ -209,7 +209,7 @@ module ol_framework::test_donor_voice {
 
       // Eve tries again after it has been scheduled
       let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
-      let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let has_veto = donor_voice_governance::tx_has_veto_pending(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(has_veto, 7357007); // propose does not cast a vote.
 
       // now vote on the proposal
@@ -220,7 +220,7 @@ module ol_framework::test_donor_voice {
       // NOTE: there is a tx function that can propose and vote in single step
       donor_voice_txs::vote_veto_tx(eve, donor_voice_address, tx_id_num);
 
-      let (approve_pct, _turnout, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let (approve_pct, _turnout, req_threshold, _, _, _, _) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       diem_std::debug::print(&approve_pct);
 
       assert!(approve_pct == 10000, 7357008);
