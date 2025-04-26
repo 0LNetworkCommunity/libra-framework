@@ -525,17 +525,26 @@ module ol_framework::donor_voice_governance {
 
     #[view]
     /// Returns the details of a vote result as a tuple.
-    public fun get_reauth_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      // For reauth, we need to find the ballot GUID first
+    ///
+    /// # Arguments
+    ///
+    /// * `dv_account` - The Donor Voice account address
+    /// * `id` - The ID number of the reauthorization ballot to tally
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing ballot details (see `tally_gov` for details)
+    ///
+    /// # Errors
+    ///
+    /// * `ENO_BALLOT_FOUND` - If no reauth ballot exists with the given ID
+    public fun get_reauth_tally(dv_account: address, id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
+      let ballot_guid = guid::create_id(dv_account, id);
+
+      // Check if the ballot exists before tallying
       let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
-      let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
-
-      // Make sure there's a reauth ballot
-      assert!(!vector::is_empty(pending_list), error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
-
-      // Get the GUID of the first (and typically only) reauth ballot
-      let ballot = vector::borrow(pending_list, 0);
-      let ballot_guid = ballot::get_ballot_id(ballot);
+      let (found, _, _, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
 
       tally_gov<Reauth>(dv_account, ballot_guid)
     }
@@ -556,18 +565,27 @@ module ol_framework::donor_voice_governance {
     }
 
     #[view]
-    /// show the status of liquidation tally
-    public fun get_liquidation_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      // For liquidation, we need to find the ballot GUID first
+    /// Show the status of a liquidation tally.
+    ///
+    /// # Arguments
+    ///
+    /// * `dv_account` - The Donor Voice account address
+    /// * `id` - The ID number of the liquidation ballot to tally
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing ballot details (see `tally_gov` for details)
+    ///
+    /// # Errors
+    ///
+    /// * `ENO_BALLOT_FOUND` - If no liquidation ballot exists with the given ID
+    public fun get_liquidation_tally(dv_account: address, id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
+      let ballot_guid = guid::create_id(dv_account, id);
+
+      // Check if the ballot exists before tallying
       let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
-      let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
-
-      // Make sure there's a liquidation ballot
-      assert!(!vector::is_empty(pending_list), error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
-
-      // Get the GUID of the first (and typically only) liquidation ballot
-      let ballot = vector::borrow(pending_list, 0);
-      let ballot_guid = ballot::get_ballot_id(ballot);
+      let (found, _, _, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
 
       tally_gov<Liquidate>(dv_account, ballot_guid)
     }
