@@ -32,6 +32,7 @@ use std::{
 };
 use url::Url;
 
+#[derive(Debug)]
 /// Struct to organize all the TXS sending, so we're not creating new Client on every TX, if there are multiple.
 pub struct Sender {
     pub local_account: LocalAccount,
@@ -216,7 +217,7 @@ impl Sender {
         println!("transaction sent");
         self.response = Some(r.clone());
         spin.finish_and_clear();
-        // debug!("{:?}", &r);
+        info!("{:?}", &self);
         OLProgress::complete("transaction success");
         Ok(r)
     }

@@ -6,6 +6,7 @@ use std::{path::PathBuf, process::exit};
 
 use anyhow::anyhow;
 use clap::{Parser, Subcommand};
+use diem_logger::{Level, Logger};
 use libra_config::config_cli::ConfigCli;
 use libra_query::query_cli::QueryCli;
 use libra_txs::txs_cli::TxsCli;
@@ -40,6 +41,8 @@ enum Sub {
 }
 
 fn main() -> anyhow::Result<()> {
+    Logger::new().level(Level::Info).init();
+
     let cli = LibraCli::parse();
 
     // Hack. Diem forge API compatibility.
