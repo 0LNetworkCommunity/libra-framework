@@ -371,8 +371,8 @@ module ol_framework::donor_voice_governance {
     ///   - `threshold_needed_to_pass`: The minimum approval percentage required for the proposal to pass.
     ///   - `epoch_deadline`: The epoch by which voting must be completed.
     ///   - `minimum_turnout_required`: The minimum percentage of eligible voters that must participate for the vote to be valid.
-    /// - `is_complete`: bool that the tally has been concluded
     /// - `approved`: bool of the result of the tally
+    /// - `is_complete`: bool that the tally has been concluded
     public fun get_reauth_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
       let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
@@ -430,7 +430,17 @@ module ol_framework::donor_voice_governance {
 
 
     #[view]
-    // returns a tuple of the (percent approval, turnout percent, threshold needed to pass)
+    /// show the status of liquidation tally
+    /// # Returns
+    ///
+    /// * `(percent_approval, turnout_percent, threshold_needed_to_pass, epoch_deadline, minimum_turnout_required)`
+    ///   - `percent_approval`: The percentage of votes that approved the proposal.
+    ///   - `turnout_percent`: The percentage of eligible voters who participated.
+    ///   - `threshold_needed_to_pass`: The minimum approval percentage required for the proposal to pass.
+    ///   - `epoch_deadline`: The epoch by which voting must be completed.
+    ///   - `minimum_turnout_required`: The minimum percentage of eligible voters that must participate for the vote to be valid.
+    /// - `approved`: bool of the result of the tally
+    /// - `is_complete`: bool that the tally has been concluded
     public fun get_liquidation_tally(dv_account: address): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
       let pending_list = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
