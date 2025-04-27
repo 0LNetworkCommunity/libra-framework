@@ -70,20 +70,18 @@ module ol_framework::test_donor_voice_governance {
         i = i + 1;
       };
 
+      // find the ballot_id while it's pending
       let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
+      let ballot_id = *vector::borrow(&pending, 0);
 
-      let pending_id = vector::borrow(&pending, 0);
-      let (percent_approval, _turnout_percent, _threshold_needed_to_pass, epoch_deadline, _minimum_turnout_required, is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address, *pending_id);
+      let (percent_approval, _turnout_percent, _threshold_needed_to_pass, epoch_deadline, _minimum_turnout_required, is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address, ballot_id);
 
       assert!(percent_approval == 10000, 7357001);
       assert!(epoch_deadline == 30, 7357002);
       assert!(is_complete == true, 7357003);
 
-      let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
-      let pending_id = vector::borrow(&pending, 0);
-
       // tally result also shows complete
-      let (_percent_approval, _turnout_percent, _threshold_needed_to_pass, _epoch_deadline, _minimum_turnout_required, is_complete, approved) =  donor_voice_governance::get_reauth_tally(dv_address, *pending_id);
+      let (_percent_approval, _turnout_percent, _threshold_needed_to_pass, _epoch_deadline, _minimum_turnout_required, is_complete, approved) =  donor_voice_governance::get_reauth_tally(dv_address, ballot_id);
 
       assert!(is_complete == true, 7357004);
       assert!(approved == true, 7357005);
