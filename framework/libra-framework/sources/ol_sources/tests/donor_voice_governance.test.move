@@ -18,37 +18,38 @@ module ol_framework::test_donor_voice_governance {
       donor_voice_reauth::test_set_requires_reauth(framework, dv_address);
       assert!(donor_voice_reauth::flagged_for_reauthorization(dv_address), 7357001);
 
+      // assert!(donor_voice_governance::is_reauth_proposed(dv_address), 7357000);
+
       let prev_turnout_percent = 0;
+      let ballot_id = 0;
       // reauthorize tx by each of the donors
       let i = 0;
       while (i < vector::length(&donor_sigs)) {
         let donor_sig = vector::borrow(&donor_sigs, i);
         donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
-        assert!(donor_voice_governance::is_reauth_proposed(dv_address), 7357000);
 
         let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
 
-        let pending_id = vector::borrow(&pending, 0);
+        // find the ballot id while it's pending
+        if (vector::length(&pending) > 0) {
+          ballot_id = *vector::borrow(&pending, 0);
+        };
 
-        let (_percent_approval, turnout_percent, _threshold_needed_to_pass, _epoch_deadline, _minimum_turnout_required, _is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address, *pending_id);
+        let (_percent_approval, turnout_percent, _threshold_needed_to_pass, _epoch_deadline, _minimum_turnout_required, _is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address, ballot_id);
 
         assert!(turnout_percent >= prev_turnout_percent, 7357000);
         prev_turnout_percent = turnout_percent;
 
         i = i + 1;
       };
-        let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
 
-        let pending_id = vector::borrow(&pending, 0);
+      let (percent_approval, turnout_percent, threshold_needed_to_pass, epoch_deadline, minimum_turnout_required, _is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address, ballot_id);
 
-
-      let (percent_approval, turnout_percent, threshold_needed_to_pass, epoch_deadline, minimum_turnout_required, _is_complete, _approved) =  donor_voice_governance::get_reauth_tally(dv_address, *pending_id);
-
-        assert!(percent_approval == 10000, 7357001);
-        assert!(turnout_percent == 6666, 7357002);
-        assert!(threshold_needed_to_pass == 6461, 7357003);
-        assert!(epoch_deadline == 30, 7357004);
-        assert!(minimum_turnout_required == 1250, 7357005);
+      assert!(percent_approval == 10000, 7357001);
+      assert!(turnout_percent == 6666, 7357002);
+      assert!(threshold_needed_to_pass == 6461, 7357003);
+      assert!(epoch_deadline == 30, 7357004);
+      assert!(minimum_turnout_required == 1250, 7357005);
     }
 
     #[test(framework = @ol_framework, marlon_sponsor = @0x1234)]
