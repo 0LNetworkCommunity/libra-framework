@@ -332,12 +332,14 @@ module ol_framework::test_burn {
     let marlon_rando = @0x12345;
     ol_account::create_account(root, marlon_rando);
 
+
     let rando_money = 5;
     let coin_option = ol_account::test_vm_withdraw(root, alice, rando_money);
 
     if (option::is_some(&coin_option)) {
       let c = option::extract(&mut coin_option);
-      // shortcut: we have the VM use alices money to pay a fee for marlon.
+      ////// THE TEST
+      // marlon needs to have had fees tracking initialized.
       transaction_fee::vm_pay_fee(root, marlon_rando, c);
     };
     option::destroy_none(coin_option);

@@ -32,12 +32,12 @@ module ol_framework::demo {
         *&borrow_global<MessageHolder>(addr).message
     }
 
-    public entry fun print_this(account: &signer) {
+    fun print_this(account: &signer) {
       print(&11111111);
       print(&signer::address_of(account));
     }
 
-    public entry fun set_message(account: &signer, message: string::String)
+    fun set_message(account: &signer, message: string::String)
     acquires MessageHolder {
         let account_addr = signer::address_of(account);
         if (!exists<MessageHolder>(account_addr)) {
@@ -57,7 +57,7 @@ module ol_framework::demo {
     }
 
     #[test(account = @0x1)]
-    public entry fun sender_can_set_message(account: signer) acquires MessageHolder {
+    fun sender_can_set_message(account: signer) acquires MessageHolder {
         let addr = signer::address_of(&account);
         diem_framework::account::create_account_for_test(addr);
         set_message(&account,  string::utf8(b"Hello, Blockchain"));

@@ -170,12 +170,16 @@ module diem_framework::code {
 
         // including this for future compatibility.
         // only system accounts can publish so this is always a `false`
-        if (!is_policy_exempted_address(addr)) { // wrapping this to prevent fat finger
-          // assert!(
-          //     pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
-          //     error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
-          // );
-        };
+        // TODO: determine if this policy is necessary for system
+        // upgrades or not. And second, determine if needed for user
+        // testing.
+
+        // if (!is_policy_exempted_address(addr)) { // wrapping this to prevent fat finger
+        //   assert!(
+        //       pack.upgrade_policy.policy > upgrade_policy_arbitrary().policy,
+        //       error::invalid_argument(EINCOMPATIBLE_POLICY_DISABLED),
+        //   );
+        // };
 
         if (!exists<PackageRegistry>(addr)) {
             move_to(owner, PackageRegistry { packages: vector::empty() })

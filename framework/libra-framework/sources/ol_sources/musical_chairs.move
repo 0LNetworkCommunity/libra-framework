@@ -245,7 +245,7 @@ module ol_framework::musical_chairs {
   //////// TESTS ////////
 
   #[test(vm = @ol_framework)]
-  public entry fun initialize_chairs(vm: signer) acquires Chairs {
+  fun initialize_chairs(vm: signer) acquires Chairs {
     chain_id::initialize_for_test(&vm, 4);
     initialize(&vm, 10);
     assert!(get_current_seats() == 10, 1004);

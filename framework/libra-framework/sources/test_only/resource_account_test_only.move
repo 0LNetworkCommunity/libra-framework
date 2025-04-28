@@ -90,7 +90,7 @@ module diem_framework::resource_account {
     /// Creates a new resource account and rotates the authentication key to either
     /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
     /// or the source accounts current auth key.
-    public entry fun create_resource_account(
+    fun create_resource_account(
         origin: &signer,
         seed: vector<u8>,
         optional_auth_key: vector<u8>,
@@ -104,45 +104,6 @@ module diem_framework::resource_account {
         );
     }
 
-    // /// Creates a new resource account, transfer the amount of coins from the origin to the resource
-    // /// account, and rotates the authentication key to either the optional auth key if it is
-    // /// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
-    // /// this function adds additional resource ownership to the resource account and should only be
-    // /// used for resource accounts that need access to `Coin<DiemCoin>`.
-    // public entry fun depr_create_resource_account_and_fund(
-    //     origin: &signer,
-    //     seed: vector<u8>,
-    //     optional_auth_key: vector<u8>,
-    //     fund_amount: u64,
-    // ) acquires Container {
-    //     let (resource, resource_signer_cap) = account::create_resource_account(origin, seed);
-    //     coin::register<DiemCoin>(&resource);
-    //     coin::transfer<DiemCoin>(origin, signer::address_of(&resource), fund_amount);
-    //     rotate_account_authentication_key_and_store_capability(
-    //         origin,
-    //         resource,
-    //         resource_signer_cap,
-    //         optional_auth_key,
-    //     );
-    // }
-
-    // /// Creates a new resource account, publishes the package under this account transaction under
-    // /// this account and leaves the signer cap readily available for pickup.
-    // public entry fun create_resource_account_and_publish_package(
-    //     origin: &signer,
-    //     seed: vector<u8>,
-    //     metadata_serialized: vector<u8>,
-    //     code: vector<vector<u8>>,
-    // ) acquires Container {
-    //     let (resource, resource_signer_cap) = account::create_resource_account(origin, seed);
-    //     diem_framework::code::publish_package_txn(&resource, metadata_serialized, code);
-    //     rotate_account_authentication_key_and_store_capability(
-    //         origin,
-    //         resource,
-    //         resource_signer_cap,
-    //         ZERO_AUTH_KEY,
-    //     );
-    // }
 
     /// rotates the account key and stores the signer capability (does not
     /// change an address)
@@ -204,7 +165,7 @@ module diem_framework::resource_account {
     }
 
     #[test(user = @0x1111)]
-    public entry fun test_create_account_and_retrieve_cap(user: signer) acquires Container {
+    fun test_create_account_and_retrieve_cap(user: signer) acquires Container {
         let user_addr = signer::address_of(&user);
         account::create_account(user_addr);
 
@@ -222,7 +183,7 @@ module diem_framework::resource_account {
 
     #[test(user = @0x1111)]
     #[expected_failure(abort_code = 0x10002, location = diem_std::simple_map)]
-    public entry fun test_create_account_and_retrieve_cap_resource_address_does_not_exist(user: signer) acquires Container {
+    fun test_create_account_and_retrieve_cap_resource_address_does_not_exist(user: signer) acquires Container {
         let user_addr = signer::address_of(&user);
         account::create_account(user_addr);
 
@@ -240,7 +201,7 @@ module diem_framework::resource_account {
     }
 
     // #[test(framework = @0x1, user = @0x1234)]
-    // public entry fun with_coin(framework: signer, user: signer) acquires Container {
+    // fun with_coin(framework: signer, user: signer) acquires Container {
     //     let user_addr = signer::address_of(&user);
     //     diem_framework::diem_account::create_account(copy user_addr);
 
@@ -260,7 +221,7 @@ module diem_framework::resource_account {
 
     #[test(framework = @0x1, user = @0x2345)]
     #[expected_failure(abort_code = 0x60005, location = diem_framework::coin)]
-    public entry fun without_coin(framework: signer, user: signer) acquires Container {
+    fun without_coin(framework: signer, user: signer) acquires Container {
         let user_addr = signer::address_of(&user);
         diem_framework::diem_account::create_account(user_addr);
 

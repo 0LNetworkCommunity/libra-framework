@@ -715,7 +715,7 @@ module diem_framework::coin {
     }
 
     #[test_only]
-    public entry fun create_fake_money(
+    fun create_fake_money(
         source: &signer,
         destination: &signer,
         amount: u64
@@ -733,7 +733,7 @@ module diem_framework::coin {
     }
 
     #[test(source = @0x1, destination = @0x2)]
-    public entry fun end_to_end(
+    fun end_to_end(
         source: signer,
         destination: signer,
     ) acquires CoinInfo, CoinStore {
@@ -782,7 +782,7 @@ module diem_framework::coin {
     }
 
     #[test(source = @0x1, destination = @0x2)]
-    public entry fun end_to_end_no_supply(
+    fun end_to_end_no_supply(
         source: signer,
         destination: signer,
     ) acquires CoinInfo, CoinStore {
@@ -836,7 +836,7 @@ module diem_framework::coin {
 
     #[test(source = @0x1, destination = @0x2)]
     #[expected_failure(abort_code = 0x60005, location = Self)]
-    public entry fun fail_transfer(
+    fun fail_transfer(
         source: signer,
         destination: signer,
     ) acquires CoinInfo, CoinStore {
@@ -860,7 +860,7 @@ module diem_framework::coin {
     }
 
     // #[test(source = @0x1, destination = @0x2)]
-    // public entry fun test_burn_from_with_capability(
+    // fun test_burn_from_with_capability(
     //     source: signer,
     // ) acquires CoinInfo, CoinStore {
     //     let source_addr = signer::address_of(&source);
@@ -901,7 +901,7 @@ module diem_framework::coin {
     }
 
     #[test(source = @0x1)]
-    public entry fun test_extract(
+    fun test_extract(
         source: signer,
     ) acquires CoinInfo, CoinStore {
         let source_addr = signer::address_of(&source);
@@ -948,7 +948,7 @@ module diem_framework::coin {
     }
 
     // #[test(account = @0x1)]
-    // public entry fun burn_frozen(account: signer) acquires CoinInfo, CoinStore {
+    // fun burn_frozen(account: signer) acquires CoinInfo, CoinStore {
     //     let account_addr = signer::address_of(&account);
     //     account::create_account_for_test(account_addr);
     //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
@@ -968,7 +968,7 @@ module diem_framework::coin {
 
     // #[test(account = @0x1)]
     // #[expected_failure(abort_code = 0x5000A, location = Self)]
-    // public entry fun withdraw_frozen(account: signer) acquires CoinInfo, CoinStore {
+    // fun withdraw_frozen(account: signer) acquires CoinInfo, CoinStore {
     //     let account_addr = signer::address_of(&account);
     //     account::create_account_for_test(account_addr);
     //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
@@ -986,7 +986,7 @@ module diem_framework::coin {
 
     // #[test(account = @0x1)]
     // #[expected_failure(abort_code = 0x5000A, location = Self)]
-    // public entry fun deposit_frozen(account: signer) acquires CoinInfo, CoinStore {
+    // fun deposit_frozen(account: signer) acquires CoinInfo, CoinStore {
     //     let account_addr = signer::address_of(&account);
     //     account::create_account_for_test(account_addr);
     //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
@@ -1003,7 +1003,7 @@ module diem_framework::coin {
     // }
 
     // #[test(account = @0x1)]
-    // public entry fun deposit_widthdraw_unfrozen(account: signer) acquires CoinInfo, CoinStore {
+    // fun deposit_widthdraw_unfrozen(account: signer) acquires CoinInfo, CoinStore {
     //     let account_addr = signer::address_of(&account);
     //     account::create_account_for_test(account_addr);
     //     let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(&account, 18, true);
@@ -1146,7 +1146,7 @@ module diem_framework::coin {
     }
 
     #[test(framework = @diem_framework)]
-    public entry fun test_register_twice_should_not_fail(framework: &signer) {
+    fun test_register_twice_should_not_fail(framework: &signer) {
         let framework_addr = signer::address_of(framework);
         account::create_account_for_test(framework_addr);
         let (burn_cap, freeze_cap, mint_cap) = initialize_and_register_fake_money(framework, 1, true);
@@ -1164,7 +1164,7 @@ module diem_framework::coin {
     }
 
     #[test(framework = @diem_framework)]
-    public entry fun test_collect_from_and_drain(
+    fun test_collect_from_and_drain(
         framework: signer,
     ) acquires CoinInfo, CoinStore {
         let framework_addr = signer::address_of(&framework);

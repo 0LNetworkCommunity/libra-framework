@@ -1,7 +1,5 @@
 module this_address::message {
-    // use std::string;
     use std::signer;
-    // use diem_std::debug;
 
     struct MessageHolder has key {
         message: u64,

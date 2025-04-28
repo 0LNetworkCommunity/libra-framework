@@ -368,7 +368,7 @@ module diem_framework::stake {
     // Commit note: in 0L the validator owner and operator are the same.
 
     /// Rotate the consensus key of the validator, it'll take effect in next epoch.
-    public entry fun rotate_consensus_key(
+    fun rotate_consensus_key(
         operator: &signer,
         validator_address: address,
         new_consensus_pubkey: vector<u8>,
@@ -400,6 +400,7 @@ module diem_framework::stake {
     }
 
     /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
+    /// Entry function necessary for validator configuration
     public entry fun update_network_and_fullnode_addresses(
         operator: &signer,
         validator_address: address,

@@ -46,16 +46,16 @@ async fn smoke_publish() {
 
     cli.run().await.expect("cli could not publish contract");
 
-    // 2. now that the contract is published lets add some state to it
-    cli.subcommand = Some(GenerateTransaction {
-        function_id: format!("0x{}::message::set_message", &val_addr_string),
-        type_args: None,
-        args: Some("42u64".to_string()),
-    });
+    // // 2. now that the contract is published lets add some state to it
+    // cli.subcommand = Some(GenerateTransaction {
+    //     function_id: format!("0x{}::message::set_message", &val_addr_string),
+    //     type_args: None,
+    //     args: Some("42u64".to_string()),
+    // });
 
-    cli.run()
-        .await
-        .expect("cli could not call deployed contract function");
+    // cli.run()
+    //     .await
+    //     .expect("cli could not call deployed contract function");
 
     // 2. now that the contract is published lets add some state to it
     cli.subcommand = Some(GenerateTransaction {

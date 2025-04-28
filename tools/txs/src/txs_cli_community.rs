@@ -214,13 +214,21 @@ pub struct ProposeTx {
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
-            self.community_wallet,
-            self.recipient,
-            gas_coin::cast_decimal_to_coin(self.amount as f64),
-            self.description.clone().into_bytes(),
-            self.advance,
-        );
+        let payload = if self.advance {
+            libra_stdlib::donor_voice_txs_propose_advance_tx(
+                self.community_wallet,
+                self.recipient,
+                gas_coin::cast_decimal_to_coin(self.amount as f64),
+                self.description.clone().into_bytes(),
+            )
+        } else {
+            libra_stdlib::donor_voice_txs_propose_payment_tx(
+                self.community_wallet,
+                self.recipient,
+                gas_coin::cast_decimal_to_coin(self.amount as f64),
+                self.description.clone().into_bytes(),
+            )
+        };
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -450,7 +458,6 @@ async fn propose_single(
         instruction.parsed.unwrap(),
         gas_coin::cast_decimal_to_coin(instruction.amount as f64),
         instruction.description.clone().into_bytes(),
-        instruction.is_advance,
     );
     sender.sign_submit_wait(payload).await?;
     Ok(())
@@ -486,23 +493,6 @@ impl ReauthVoteTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
-        Ok(())
-    }
-}
-
-// TODO remove after migration is completed
-#[derive(clap::Args)]
-pub struct MigrateOfferTx {
-    #[clap(short, long)]
-    /// The Community Wallet to propose the offer
-    pub community_wallet: AccountAddress,
-}
-
-impl MigrateOfferTx {
-    pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::multi_action_migration_migrate_offer(self.community_wallet);
-        sender.sign_submit_wait(payload).await?;
-        println!("You have migrated the account to have the Offer structure. You can proceed with the authority offer now.");
         Ok(())
     }
 }

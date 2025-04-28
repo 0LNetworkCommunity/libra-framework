@@ -24,7 +24,7 @@
     // The threshold (percent approval/rejection which needs to be met) is determined post-hoc. Referenda are expensive, for communities, leaders, and voters. Instead of scapping a vote which doesn't achieve a pre-established number of participants (quorum), the vote is allowed to be tallied and be seen as valid. However, the threshold must be higher (more than 51%) in cases where the turnout is low. In blockchain polkadot network has prior art for this: https://wiki.polkadot.network/docs/en/learn-governance#adaptive-quorum-biasing
     // In Polkadot implementation there are positive and negative biasing. Negative biasing (when turnout is low, a lower amount of votes is needed) seems to be an edge case.
 
-    // Regarding deadlines. The problem with adaptive thresholds is that it favors the engaged community. If you are unaware of the process, or if the process occurred silently, it's very challenging to swing the vote. So the minority vote may be disadvantaged due to lack of engagement, and there should be some accomodation. If they are coming late to the vote, AND in significant numbers, then they can get an extension. The initial design aims to allow an extension if on the day the poll closes, a sufficient amount of the vote was shifted in the minority direction, an extra day is added. This will happen for each new deadline.
+    // Regarding deadlines. The problem with adaptive thresholds is that it favors the engaged community. If you are unaware of the process, or if the process occurred silently, it's very challenging to swing the vote. So the minority vote may be disadvantaged due to lack of engagement, and there should be some accommodation. If they are coming late to the vote, AND in significant numbers, then they can get an extension. The initial design aims to allow an extension if on the day the poll closes, a sufficient amount of the vote was shifted in the minority direction, an extra day is added. This will happen for each new deadline.
 
     // THE BALLOT
     // Ballot is a single proposal that can be voted on.
@@ -99,9 +99,9 @@
     /// for voting to happen with the VoteLib module, the guid creation capability must be passed in, and so the signer for the addres (the "sponsor" of the ballot) must move the capability to be accessible by the contract logic.
 
 
-    struct TurnoutTally<Data> has key, store, drop { // Note, this is a hot potato. Any methods chaning it must return the struct to caller.
+    struct TurnoutTally<Data> has key, store, drop { // Note, this is a hot potato. Any methods changing it must return the struct to caller.
       data: Data,
-      cfg_deadline: u64, // original deadline, which may be extended. Note dedaline is at the END of this epoch (cfg_deadline + 1 stops taking votes)
+      cfg_deadline: u64, // original deadline, which may be extended. Note deadline is at the END of this epoch (cfg_deadline + 1 stops taking votes)
       cfg_max_extensions: u64, // if 0 then no max. Election can run until threshold is met.
       cfg_min_turnout: u64,
       cfg_minority_extension: bool,
@@ -139,11 +139,11 @@
           max_votes: max_vote_enrollment,
           votes_approve: 0,
           votes_reject: 0,
-          extended_deadline: deadline,
+          extended_deadline: deadline, // DEPRECATED
           last_epoch_voted: 0,
           last_epoch_approve: 0,
           last_epoch_reject: 0,
-          provisional_pass_epoch: 0,
+          provisional_pass_epoch: 0, // DEPRECATED
           tally_approve_pct: 0,
           tally_turnout_pct: 0,
           tally_pass: false,
@@ -151,11 +151,11 @@
     }
 
     fun update_enrollment<Data: drop + store>(ballot: &mut TurnoutTally<Data>, enrollment: vector<address>) {
-      assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
+      assert!(!is_poll_closed(ballot), error::invalid_state(ECOMPLETED));
       ballot.enrollment = enrollment;
     }
 
-    // Only the contract, which is the keeper of the TurnoutTally, can allow a user to temporarily hold the TurnoutTally struct to update the vote. The user cannot arbiltrarily update the vote, with an arbitrary number of votes.
+    // Only the contract, which is the keeper of the TurnoutTally, can allow a user to temporarily hold the TurnoutTally struct to update the vote. The user cannot arbitrarily update the vote, with an arbitrary number of votes.
     // This is a hot potato, it cannot be dropped.
 
     // the vote flow will return if the ballot passed (on the vote that gets over the threshold). This can be used for triggering actions lazily.
@@ -168,7 +168,7 @@
       weight: u64
     ): Option<bool> {
       // voting should not be complete
-      assert!(!maybe_complete(ballot), error::invalid_state(ECOMPLETED));
+      assert!(!is_poll_closed(ballot), error::invalid_state(ECOMPLETED));
 
       // check if this person voted already.
       // If the vote is the same directionally (approve, reject), exit early.
@@ -176,52 +176,55 @@
       let user_addr = signer::address_of(user);
       let (_, is_found) = vote_receipt::find_prior_vote_idx(user_addr, uid);
 
-      assert!(!is_found, error::invalid_state(EALREADY_VOTED));
+      // TODO: handle a user changing the vote
+      // Commit note: do not abort so that a duplicate voter can tally
+      // and close the poll
+      if(!is_found) {
+        // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
+        let epoch_now = epoch_helper::get_current_epoch();
+        if (epoch_now > ballot.last_epoch_voted) {
+          ballot.last_epoch_approve = ballot.votes_approve;
+          ballot.last_epoch_reject = ballot.votes_reject;
+        };
 
-      // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
-      let epoch_now = epoch_helper::get_current_epoch();
-      if (epoch_now > ballot.last_epoch_voted) {
-        ballot.last_epoch_approve = ballot.votes_approve;
-        ballot.last_epoch_reject = ballot.votes_reject;
-      };
+        // in every case, add the new vote
+        ballot.last_epoch_voted = epoch_now;
+        if (approve_reject) {
+          ballot.votes_approve = ballot.votes_approve + weight;
+        } else {
+          ballot.votes_reject = ballot.votes_reject + weight;
+        };
 
-      // in every case, add the new vote
-      ballot.last_epoch_voted = epoch_now;
-      if (approve_reject) {
-        ballot.votes_approve = ballot.votes_approve + weight;
-      } else {
-        ballot.votes_reject = ballot.votes_reject + weight;
+        // this will handle the case of updating the receipt in case this is a second vote.
+        vote_receipt::make_receipt(user, uid, approve_reject, weight);
+
+
       };
 
       // always tally on each vote
       // make sure all extensions happened in previous step.
-      maybe_tally(ballot);
-
-      // this will handle the case of updating the receipt in case this is a second vote.
-      vote_receipt::make_receipt(user, uid, approve_reject, weight);
-
-      if (ballot.completed) { return option::some(ballot.tally_pass) };
-      option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
+      maybe_tally(ballot)
     }
 
-    fun maybe_complete<Data: drop + store>(ballot: &mut TurnoutTally<Data>): bool {
+    public fun is_poll_closed<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
       let epoch = epoch_helper::get_current_epoch();
       // if completed, exit early
       if (ballot.completed) { return true }; // this should be checked above anyways.
 
-      // this may be a vote that never expires, until a decision is reached
-      if (ballot.cfg_deadline == 0 ) { return false };
-
-      // if original and extended deadline have passed, stop tally
-      // while we are here, update to "completed".
-      if (
-        epoch > ballot.cfg_deadline &&
-        epoch > ballot.extended_deadline
-      ) {
-        ballot.completed = true;
-        return true
+      if (ballot.cfg_deadline == 0) {
+        // if the deadline is 0, then it never expires.
+        return false
       };
-      ballot.completed
+
+      // the poll expires after this time.
+      epoch > ballot.cfg_deadline
+    }
+
+    public fun maybe_close_poll<Data: drop + store>(ballot: &mut TurnoutTally<Data>): bool {
+      let closed = is_poll_closed(ballot);
+      ballot.completed = closed;
+
+      closed
     }
 
     public(friend) fun retract<Data: drop + store>(
@@ -246,73 +249,23 @@
     }
 
     /// The handler for a third party contract may wish to extend the ballot deadline.
-    /// DANGER: the thirdparty ballot contract needs to know what it is doing. If this ballot object is exposed to end users it's game over.
+    /// DANGER: the third-party ballot contract needs to know what it is doing. If this ballot object is exposed to end users it's game over.
 
     public(friend) fun extend_deadline<Data: drop + store>(ballot: &mut TurnoutTally<Data>, new_epoch: u64) {
 
       ballot.extended_deadline = new_epoch;
     }
 
-    /// A third party contract can optionally call this function to extend the deadline to extend ballots in competitive situations.
-    /// we may need to extend the ballot if on the last day (TBD a wider window) the vote had a big shift in favor of the minority vote.
-    /// All that needs to be done, is on the return of vote(), to then call this function.
-    /// It's a useful feature, but it will not be included by default in all votes.
 
-    fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
+    /// Evaluate the poll, and calculate the turnout and threshold.
+    /// The tally must be called after the threshold is met.
+    /// Each vote will try to tally, since the first vote above the threshold
+    /// will cause the poll to close early.
+    /// If the poll expires this function can also be called, outside of a vote
+    /// can close the poll.
+    /// (note: a duplicate vote will also call this function without affecting the result)
+    public fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>): Option<bool> {
 
-      let epoch = epoch_helper::get_current_epoch();
-
-      // TODO: The exension window below of 1 day is not sufficient to make
-      // much difference in practice (the threshold is most likely reached at that point).
-
-      // Are we on the last day of voting (extension window)? If not exit
-      if (epoch == ballot.extended_deadline || epoch == ballot.cfg_deadline) { return ballot.extended_deadline };
-
-      if (is_competitive(ballot)) {
-        // we may have extended already, but we don't want to extend more than once per day.
-        if (ballot.extended_deadline > epoch) { return ballot.extended_deadline };
-
-        // extend the deadline by 1 day
-        ballot.extended_deadline = epoch + 1;
-      };
-
-
-      ballot.extended_deadline
-    }
-
-    fun is_competitive<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
-      let (prev_lead, prev_trail, prev_lead_updated, prev_trail_updated) = if (ballot.last_epoch_approve > ballot.last_epoch_reject) {
-        // if the "approve" vote WAS leading.
-        (ballot.last_epoch_approve, ballot.last_epoch_reject, ballot.votes_approve, ballot.votes_reject)
-
-      } else {
-        (ballot.last_epoch_reject, ballot.last_epoch_approve, ballot.votes_reject, ballot.votes_approve)
-      };
-
-
-      // no votes yet
-      if (prev_lead == 0 && prev_trail == 0) { return false };
-      if (prev_lead_updated == 0 && prev_trail_updated == 0) { return false};
-
-      let prior_margin = ((prev_lead - prev_trail) * PCT_SCALE) / (prev_lead + prev_trail);
-
-
-      // the current margin may have flipped, so we need to check the direction of the vote.
-      // if so then give an automatic extensions
-      if (prev_lead_updated < prev_trail_updated) {
-        return true
-      } else {
-        let current_margin = (prev_lead_updated - prev_trail_updated) * PCT_SCALE / (prev_lead_updated + prev_trail_updated);
-
-        if (current_margin - prior_margin > MINORITY_EXT_MARGIN) {
-          return true
-        }
-      };
-      false
-    }
-
-    /// stop tallying if the expiration is passed or the threshold has been met.
-    fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>) {
       let total_votes = ballot.votes_approve + ballot.votes_reject;
 
       assert!(ballot.max_votes >= total_votes, error::invalid_state(EVOTES_GREATER_THAN_ENROLLMENT));
@@ -327,61 +280,24 @@
       // check the threshold that needs to be met met turnout
       ballot.tally_approve_pct = fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total_votes));
 
-      // the first vote which crosses the threshold causes the poll to end.
-      if (ballot.tally_approve_pct > thresh) {
+      if (
+        // Threshold must be above dynamically calculated threshold
+        ballot.tally_approve_pct > thresh &&
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
-        if (ballot.tally_turnout_pct > ballot.cfg_min_turnout) {
-          let epoch = epoch_helper::get_current_epoch();
-
-          // cool off period, to next epoch.
-          if (ballot.provisional_pass_epoch == 0) {
-            // setting the next epoch in which the tally will be final.
-            // NOTE: requires a second vote to be cast to finalize the tally.
-            // automatically passing once the threshold is reached disadvantages inactive participants.
-            // We propose it takes one vote plus one day once reaching threshold.
-            ballot.provisional_pass_epoch = epoch;
-
-          } else if (epoch > ballot.provisional_pass_epoch) {
-            // multiple days may have passed since the provisional pass.
+        ballot.tally_turnout_pct > ballot.cfg_min_turnout
+        ) {
             ballot.completed = true;
             ballot.tally_pass = true;
-          };
-        }
-      };
+        } else {
+          maybe_close_poll(ballot);
+        };
+
+      if (ballot.completed) { return option::some(ballot.tally_pass) };
+      option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
     }
 
-    #[view]
-    // TODO: this should probably use Decimal.move
-    // can't multiply fixed_point32 types directly.
-    public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
-      // let's just do a line
 
-      let turnout = fixed_point32::create_from_rational(voters, max_votes);
-      let turnout_scaled_x = fixed_point32::multiply_u64(PCT_SCALE, turnout); // scale to two decimal points.
-      // only implemeting the negative slope case. Unsure why the other is needed.
-
-      assert!(THRESH_AT_LOW_TURNOUT_Y1 > THRESH_AT_HIGH_TURNOUT_Y2, error::invalid_state(EVOTE_CALC_PARAMS));
-
-      // the minimum passing threshold is the low turnout threshold.
-      // same for the maximum turnout threshold.
-      if (turnout_scaled_x < LOW_TURNOUT_X1) {
-        return THRESH_AT_LOW_TURNOUT_Y1
-      } else if (turnout_scaled_x > HIGH_TURNOUT_X2) {
-        return THRESH_AT_HIGH_TURNOUT_Y2
-      };
-
-
-      let abs_m = fixed_point32::create_from_rational(
-        (THRESH_AT_LOW_TURNOUT_Y1 - THRESH_AT_HIGH_TURNOUT_Y2), (HIGH_TURNOUT_X2 - LOW_TURNOUT_X1)
-      );
-
-      let abs_mx = fixed_point32::multiply_u64(LOW_TURNOUT_X1, *&abs_m);
-      let b = THRESH_AT_LOW_TURNOUT_Y1 + abs_mx;
-      let y =  b - fixed_point32::multiply_u64(turnout_scaled_x, *&abs_m);
-
-      return y
-    }
 
     //////// GETTERS ////////
 
@@ -422,7 +338,10 @@
     /// get current tally percentage scaled
     public(friend) fun get_current_ballot_approval<Data: store>(ballot: &TurnoutTally<Data>): u64 {
       let total = ballot.votes_approve + ballot.votes_reject;
-      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve ,total))
+      if (total == 0) {
+        return 0
+      };
+      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total))
     }
 
     public(friend) fun get_minimum_turnout<Data: store>(ballot: &TurnoutTally<Data>): u64 {
@@ -445,8 +364,102 @@
     }
 
     /// is it complete and what's the result
-    fun maybe_complete_result<Data: copy + store>(ballot: &TurnoutTally<Data>): (bool, bool) {
+    public(friend) fun get_result<Data: store>(ballot: &TurnoutTally<Data>): (bool, bool) {
       (ballot.completed, ballot.tally_pass)
     }
+
+    #[view]
+    // TODO: this should probably use Decimal.move
+    // can't multiply fixed_point32 types directly.
+    public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
+      // let's just do a line
+
+      let turnout = fixed_point32::create_from_rational(voters, max_votes);
+      let turnout_scaled_x = fixed_point32::multiply_u64(PCT_SCALE, turnout); // scale to two decimal points.
+      // only implemeting the negative slope case. Unsure why the other is needed.
+
+      assert!(THRESH_AT_LOW_TURNOUT_Y1 > THRESH_AT_HIGH_TURNOUT_Y2, error::invalid_state(EVOTE_CALC_PARAMS));
+
+      // the minimum passing threshold is the low turnout threshold.
+      // same for the maximum turnout threshold.
+      if (turnout_scaled_x < LOW_TURNOUT_X1) {
+        return THRESH_AT_LOW_TURNOUT_Y1
+      } else if (turnout_scaled_x > HIGH_TURNOUT_X2) {
+        return THRESH_AT_HIGH_TURNOUT_Y2
+      };
+
+
+      let abs_m = fixed_point32::create_from_rational(
+        (THRESH_AT_LOW_TURNOUT_Y1 - THRESH_AT_HIGH_TURNOUT_Y2), (HIGH_TURNOUT_X2 - LOW_TURNOUT_X1)
+      );
+
+      let abs_mx = fixed_point32::multiply_u64(LOW_TURNOUT_X1, *&abs_m);
+      let b = THRESH_AT_LOW_TURNOUT_Y1 + abs_mx;
+      let y =  b - fixed_point32::multiply_u64(turnout_scaled_x, *&abs_m);
+
+      return y
+    }
+
+
+    //////// TODO ///////
+    // TODO: evaluate if we want dynamic deadlines
+    // based on competitiveness
+
+    // /// A third party contract can optionally call this function to extend the deadline to extend ballots in competitive situations.
+    // /// we may need to extend the ballot if on the last day (TBD a wider window) the vote had a big shift in favor of the minority vote.
+    // /// All that needs to be done, is on the return of vote(), to then call this function.
+    // /// It's a useful feature, but it will not be included by default in all votes.
+    // fun maybe_auto_competitive_extend<Data: drop + store>(ballot: &mut TurnoutTally<Data>):u64  {
+
+    //   let epoch = epoch_helper::get_current_epoch();
+
+    //   // TODO: The extension window below of 1 day is not sufficient to make
+    //   // much difference in practice (the threshold is most likely reached at that point).
+
+    //   // Are we on the last day of voting (extension window)? If not exit
+    //   if (epoch == ballot.extended_deadline || epoch == ballot.cfg_deadline) { return ballot.extended_deadline };
+
+    //   if (is_competitive(ballot)) {
+    //     // we may have extended already, but we don't want to extend more than once per day.
+    //     if (ballot.extended_deadline > epoch) { return ballot.extended_deadline };
+
+    //     // extend the deadline by 1 day
+    //     ballot.extended_deadline = epoch + 1;
+    //   };
+
+
+    //   ballot.extended_deadline
+    // }
+
+    // fun is_competitive<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
+    //   let (prev_lead, prev_trail, prev_lead_updated, prev_trail_updated) = if (ballot.last_epoch_approve > ballot.last_epoch_reject) {
+    //     // if the "approve" vote WAS leading.
+    //     (ballot.last_epoch_approve, ballot.last_epoch_reject, ballot.votes_approve, ballot.votes_reject)
+
+    //   } else {
+    //     (ballot.last_epoch_reject, ballot.last_epoch_approve, ballot.votes_reject, ballot.votes_approve)
+    //   };
+
+
+    //   // no votes yet
+    //   if (prev_lead == 0 && prev_trail == 0) { return false };
+    //   if (prev_lead_updated == 0 && prev_trail_updated == 0) { return false};
+
+    //   let prior_margin = ((prev_lead - prev_trail) * PCT_SCALE) / (prev_lead + prev_trail);
+
+
+    //   // the current margin may have flipped, so we need to check the direction of the vote.
+    //   // if so then give an automatic extensions
+    //   if (prev_lead_updated < prev_trail_updated) {
+    //     return true
+    //   } else {
+    //     let current_margin = (prev_lead_updated - prev_trail_updated) * PCT_SCALE / (prev_lead_updated + prev_trail_updated);
+
+    //     if (current_margin - prior_margin > MINORITY_EXT_MARGIN) {
+    //       return true
+    //     }
+    //   };
+    //   false
+    // }
 
   }

@@ -21,7 +21,7 @@ module ol_framework::community_wallet_advance {
   use std::error;
   use std::signer;
   use std::timestamp;
-  use diem_framework::account::{Self, GUIDCapability};
+  use diem_framework::account::{Self, WithdrawCapability};
   use diem_framework::coin::{Coin};
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{Self, LibraCoin};
@@ -109,11 +109,17 @@ module ol_framework::community_wallet_advance {
   }
   /// Only can be called on epoch boundary as part of the donor_voice_txs.move authorization flow.
   /// Will withdraw funds and track the logger
-  public(friend) fun transfer_credit(framework_sig: &signer, guid_cap: &GUIDCapability, recipient: address, amount: u64): u64 acquires Advances {
-    let dv_account = account::get_guid_capability_address(guid_cap);
+  public(friend) fun transfer_credit(withdraw_cap: &WithdrawCapability, recipient: address, amount: u64): u64 acquires Advances {
+    let dv_account = account::get_withdraw_cap_address(withdraw_cap);
+
     can_withdraw_amount(dv_account, amount);
     log_withdrawal(dv_account, amount);
-    ol_account::vm_transfer(framework_sig, dv_account, recipient, amount);
+
+    ol_account::transfer_with_capability(
+      withdraw_cap,
+      recipient,
+      amount,
+    );
     // TODO: check if there is any possibility of partial amount sent
     amount
   }
@@ -162,7 +168,7 @@ module ol_framework::community_wallet_advance {
 
   /// Disable the community wallet if the loan is overdue, callable
   /// by any authorized user account
-  public entry fun maybe_deauthorize(user: &signer, dv_account: address) acquires Advances {
+  fun maybe_deauthorize(user: &signer, dv_account: address) acquires Advances {
     reauthorization::is_v8_authorized(signer::address_of(user));
     if (is_delinquent(dv_account)){
       donor_voice_reauth::set_requires_reauth(user, dv_account);

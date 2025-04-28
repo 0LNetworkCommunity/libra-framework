@@ -92,7 +92,7 @@ module ol_framework::test_donor_voice {
       //need to be caged to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, vector::length(&vals));
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -124,7 +124,7 @@ module ol_framework::test_donor_voice {
       //need to cage to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, 2);
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -134,7 +134,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -158,6 +158,7 @@ module ol_framework::test_donor_voice {
       let vals = mock::genesis_n_vals(root, 5); // need to include eve to init funds
       mock::ol_initialize_coin_and_fund_vals(root, 100000, true);
       // start at epoch 1, since turnout tally needs epoch info, and 0 may cause issues
+
       mock::trigger_epoch(root);
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
@@ -190,8 +191,8 @@ module ol_framework::test_donor_voice {
       assert!(is_donor, 7357003);
 
       // Bob proposes a tx that will come from the donor directed account.
-      // It is not yet scheduled because it doesnt have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
-      let uid_of_transfer = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      // It is not yet scheduled because it doesn't have the MultiAuth quorum. Still waiting for Alice or Carol to approve.
+      let uid_of_transfer = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (_found, _idx, _status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
       assert!(!completed, 7357004);
 
@@ -203,7 +204,7 @@ module ol_framework::test_donor_voice {
 
       // Now Carol, along with Bob, as admins have proposed the payment.
       // Now the payment should be scheduled
-      let uid_of_transfer = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let uid_of_transfer = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357006); // is scheduled
 
       // Eve tries again after it has been scheduled
@@ -223,10 +224,6 @@ module ol_framework::test_donor_voice {
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
-
-      // since Eve is the majority donor, and has almost all the votes, the voting will end early. On the next epoch the vote should end
-      mock::trigger_epoch(root);
-      donor_voice_txs::vote_veto_tx(dave, donor_voice_address, id_num);
 
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
@@ -259,7 +256,7 @@ module ol_framework::test_donor_voice {
       //need to cage to finalize donor directed workflow and release control of the account
       multi_action::finalize_and_cage(&resource_sig, 2);
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000c, 100, b"thanks carol", false);
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000c, 100, b"thanks carol");
 
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
@@ -270,7 +267,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000c, 100, b"thanks carol", false);
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000c, 100, b"thanks carol");
 
       // confirm it is scheduled
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
@@ -310,7 +307,7 @@ module ol_framework::test_donor_voice {
       multi_action::finalize_and_cage(&resource_sig, 2);
 
 
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -320,7 +317,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -387,7 +384,7 @@ module ol_framework::test_donor_voice {
 
       donor_voice_reauth::test_set_authorized(root, donor_voice_address);
 
-      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon", false);
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -397,7 +394,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon", false);
+      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -463,7 +460,7 @@ module ol_framework::test_donor_voice {
 
       slow_wallet::user_set_slow(marlon_rando);
 
-      let first_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon", false);
+      let first_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &first_uid_bob);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -473,7 +470,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &first_uid_bob), 7357008);
 
-      let first_uid_carol = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon", false);
+      let first_uid_carol = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &first_uid_carol);
       assert!(found, 7357009);
       assert!(idx == 0, 73570010);
@@ -487,7 +484,7 @@ module ol_framework::test_donor_voice {
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &first_uid_bob), 73570014);
 
-      let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!", false);
+      let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &second_uid_bob);
       assert!(found, 73570015);
       assert!(idx == 0, 73570016); // since the above payment was approved, now
@@ -498,7 +495,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &second_uid_bob), 73570019);
 
-      let second_uid_carol = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!", false);
+      let second_uid_carol = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &second_uid_carol);
@@ -594,7 +591,7 @@ module ol_framework::test_donor_voice {
 
       slow_wallet::user_set_slow(marlon_rando);
 
-      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon", false);
+      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -604,7 +601,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357008);
 
-      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon", false);
+      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357009);
       assert!(idx == 0, 73570010); // it's index 0 of approved payments
@@ -622,7 +619,7 @@ module ol_framework::test_donor_voice {
       // one epoch goes by and then new payment to marlon
       mock::trigger_epoch(root); // into epoch 1
 
-      let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!", false);
+      let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &second_uid_bob);
       assert!(found, 73570015);
       assert!(idx == 0, 73570016); // now pending is empty, should be first
@@ -632,7 +629,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &second_uid_bob), 73570019);
 
-      let second_uid_carol = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!", false);
+      let second_uid_carol = donor_voice_txs::test_propose_payment(carol, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &second_uid_carol);
@@ -709,7 +706,6 @@ module ol_framework::test_donor_voice {
       let is_donor = donor_voice_governance::check_is_donor(donor_voice_address, signer::address_of(dave));
       assert!(is_donor, 7357003);
 
-
       // Dave proposes to liquidate the account.
       donor_voice_txs::test_propose_liquidation(dave, donor_voice_address);
 
@@ -717,11 +713,6 @@ module ol_framework::test_donor_voice {
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
-
-      mock::trigger_epoch(root);
-
-      // needs a vote on the day after the threshold has passed
-      donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
 
       let list = donor_voice::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
@@ -800,10 +791,6 @@ module ol_framework::test_donor_voice {
 
       // Dave proposed, now Dave and Eve need to vote
       donor_voice_txs::vote_liquidation_tx(eve, donor_voice_address);
-
-      mock::trigger_epoch(root);
-      // needs a vote on the day after the threshold has passed
-      donor_voice_txs::vote_liquidation_tx(dave, donor_voice_address);
 
       let list = donor_voice::get_liquidation_queue();
       assert!(vector::length(&list) > 0, 7357005);
@@ -912,7 +899,7 @@ module ol_framework::test_donor_voice {
       let gov_mode_id = ol_features_constants::get_governance_mode();
       features::change_feature_flags(root, vector::singleton(gov_mode_id), vector::empty());
 
-      let _uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob", false);
+      let _uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d)]
@@ -939,9 +926,7 @@ module ol_framework::test_donor_voice {
 
       let (_bal, bob_bal_before) = ol_account::balance(@0x1000b);
 
-      let advance_is_true = true; // this is the test, so you don't miss it
-
-      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob", advance_is_true);
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357001);
       assert!(idx == 0, 7357002);
@@ -951,7 +936,7 @@ module ol_framework::test_donor_voice {
       // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address, &uid), 7357005);
 
-      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob", advance_is_true);
+      let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357006);
       assert!(idx == 0, 7357007);

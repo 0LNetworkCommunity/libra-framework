@@ -274,7 +274,6 @@ impl AppCfg {
         &mut self,
         chain_id: Option<NamedChain>,
     ) -> anyhow::Result<&mut NetworkPlaylist> {
-        // TODO: avoid clone
         let np = &mut self.network_playlist;
 
         let chain_id = chain_id.unwrap_or(self.workspace.default_chain_id);

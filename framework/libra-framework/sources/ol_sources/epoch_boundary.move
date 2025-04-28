@@ -25,6 +25,7 @@ module diem_framework::epoch_boundary {
   use ol_framework::match_index;
   use ol_framework::proof_of_fee;
   use ol_framework::infra_escrow;
+  use ol_framework::migration_capability;
   use ol_framework::musical_chairs;
   use ol_framework::donor_voice_txs;
   use ol_framework::libra_coin::LibraCoin;
@@ -117,6 +118,8 @@ module diem_framework::epoch_boundary {
     pof_thermo_increase: bool,
     pof_thermo_amount: u64,
   }
+
+  // struct EpochBoundaryCapability {}
 
   /// initialize structs, requires both signers since BoundaryBit can only be
   // accessed by VM
@@ -252,6 +255,7 @@ module diem_framework::epoch_boundary {
 
   /// testnet helper to allow testnet root account to set flip the boundary bit
   /// used for testing cli tools for polling and triggering
+  /// Public entry function necessary for smoke tests.
   public entry fun smoke_enable_trigger(core_resource: &signer)
   acquires BoundaryBit {
     // cannot call this on mainnet
@@ -294,8 +298,12 @@ module diem_framework::epoch_boundary {
   // This function handles the necessary migrations that occur at the epoch boundary
   // when new modules or structures are added by chain upgrades.
   fun migrate_data(framework: &signer) {
+    system_addresses::assert_ol(framework);
+    let migration_cap = migration_capability::create_cap(framework);
     randomness::initialize(framework);
-    migrations::execute(framework);
+    migrations::execute(framework, &migration_cap);
+    migration_capability::destroy_cap(framework, migration_cap);
+
   }
 
   /// Contains all of 0L's business logic for end of epoch.

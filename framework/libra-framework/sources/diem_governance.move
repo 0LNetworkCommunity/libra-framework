@@ -189,7 +189,7 @@ module diem_framework::diem_governance {
     /// Create a single-step or multi-step proposal
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
-    public entry fun create_proposal_v2(
+    fun create_proposal_v2(
         proposer: &signer,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
@@ -334,7 +334,7 @@ module diem_framework::diem_governance {
 
 
     /// Vote on proposal with `proposal_id`
-    public entry fun vote(
+    fun vote(
         voter: &signer,
         proposal_id: u64,
         should_pass: bool,
@@ -378,7 +378,8 @@ module diem_framework::diem_governance {
         }
     }
 
-    public entry fun add_approved_script_hash_script(proposal_id: u64) acquires ApprovedExecutionHashes {
+    // TODO: possibly deprecated
+    fun add_approved_script_hash_script(proposal_id: u64) acquires ApprovedExecutionHashes {
         add_approved_script_hash(proposal_id)
     }
 
@@ -434,7 +435,7 @@ module diem_framework::diem_governance {
     //////// 0L ////////
     // hack for smoke testing:
     // is the proposal approved and ready for resolution?
-    public entry fun assert_can_resolve(proposal_id: u64) {
+    fun assert_can_resolve(proposal_id: u64) {
       assert!(get_can_resolve(proposal_id), error::invalid_state(EPROPOSAL_NOT_RESOLVABLE_YET));
     }
 
@@ -511,7 +512,7 @@ module diem_framework::diem_governance {
         reconfiguration::danger_reconfigure_ignore_timestamp(diem_framework);
     }
 
-    /// Any end user can triger epoch/boundary and reconfiguration
+    /// Any end user can trigger epoch/boundary and reconfiguration
     /// as long as the VM set the BoundaryBit to true.
     /// We do this because we don't want the VM calling complex
     /// logic itself. Any abort would cause a halt.
@@ -519,6 +520,7 @@ module diem_framework::diem_governance {
     /// decides the epoch can change. Any error will just cause the
     /// user's transaction to abort, but the chain will continue.
     /// Whatever fix is needed can be done online with on-chain governance.
+    /// Public function for production triggering of epoch boundary.
     public entry fun trigger_epoch(_sig: &signer) acquires
     GovernanceResponsbility { // doesn't need a signer
       let _ = epoch_boundary::can_trigger(); // will abort if false
@@ -561,7 +563,7 @@ module diem_framework::diem_governance {
     }
 
     #[test_only]
-    public entry fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
+    fun create_proposal_for_test(proposer: signer, multi_step:bool) acquires GovernanceConfig, GovernanceEvents {
         let execution_hash = vector::empty<u8>();
         vector::push_back(&mut execution_hash, 1);
 
@@ -585,7 +587,7 @@ module diem_framework::diem_governance {
     }
 
     #[test_only]
-    public entry fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
+    fun resolve_proposal_for_test(proposal_id: u64, signer_address: address, multi_step: bool, finish_multi_step_execution: bool): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
         if (multi_step) {
             let execution_hash = vector::empty<u8>();
             vector::push_back(&mut execution_hash, 1);

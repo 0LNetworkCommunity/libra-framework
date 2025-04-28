@@ -493,6 +493,8 @@ module diem_framework::account {
     ///
     /// Because we ask for a valid `cap_update_table`, this kind of attack is not possible. Bob would not have the secret key of Alice's address
     /// to rotate his address to Alice's address in the first place.
+    /// Public entry function require for TXS cli to provide the
+    /// rotation proof and capability.
     public entry fun rotate_authentication_key(
         account: &signer,
         from_scheme: u8,
@@ -536,6 +538,10 @@ module diem_framework::account {
         update_auth_key_and_originating_address_table(addr, account_resource, new_auth_key);
     }
 
+    /// Final step in rotating account keys
+    /// A user with the capability offer, can now set
+    /// a new key.
+    /// Entry function necessary for txs CLI rotation of keys
     public entry fun rotate_authentication_key_with_rotation_capability(
         delegate_signer: &signer,
         rotation_cap_offerer_address: address,
@@ -626,6 +632,7 @@ module diem_framework::account {
     }
 
     /// Revoke the rotation capability offer given to `to_be_revoked_recipient_address` from `account`
+    /// Entry function necessary for account key rotation.
     public entry fun revoke_rotation_capability(account: &signer, to_be_revoked_address: address) acquires Account {
         assert!(exists_at(to_be_revoked_address), error::not_found(EACCOUNT_DOES_NOT_EXIST));
         let addr = signer::address_of(account);
@@ -635,7 +642,7 @@ module diem_framework::account {
     }
 
     /// Revoke any rotation capability offer in the specified account.
-    public entry fun revoke_any_rotation_capability(account: &signer) acquires Account {
+    fun revoke_any_rotation_capability(account: &signer) acquires Account {
         let account_resource = borrow_global_mut<Account>(signer::address_of(account));
         option::extract(&mut account_resource.rotation_capability_offer.for);
     }
@@ -649,7 +656,7 @@ module diem_framework::account {
     /// `recipient_address` in the account owner's `SignerCapabilityOffer`, this will replace the
     /// previous `recipient_address` upon successful verification (the previous recipient will no longer have access
     /// to the account owner's signer capability).
-    public entry fun offer_signer_capability(
+    fun offer_signer_capability(
         account: &signer,
         signer_capability_sig_bytes: vector<u8>,
         account_scheme: u8,
@@ -690,7 +697,7 @@ module diem_framework::account {
 
     /// Revoke the account owner's signer capability offer for `to_be_revoked_address` (i.e., the address that
     /// has a signer capability offer from `account` but will be revoked in this function).
-    public entry fun revoke_signer_capability(account: &signer, to_be_revoked_address: address) acquires Account {
+    fun revoke_signer_capability(account: &signer, to_be_revoked_address: address) acquires Account {
         assert!(exists_at(to_be_revoked_address), error::not_found(EACCOUNT_DOES_NOT_EXIST));
         let addr = signer::address_of(account);
         let account_resource = borrow_global_mut<Account>(addr);
@@ -699,7 +706,7 @@ module diem_framework::account {
     }
 
     /// Revoke any signer capability offer in the specified account.
-    public entry fun revoke_any_signer_capability(account: &signer) acquires Account {
+    fun revoke_any_signer_capability(account: &signer) acquires Account {
         let account_resource = borrow_global_mut<Account>(signer::address_of(account));
         option::extract(&mut account_resource.signer_capability_offer.for);
     }
@@ -1036,6 +1043,10 @@ module diem_framework::account {
       WithdrawCapability { addr: signer::address_of(owner) }
     }
 
+    public fun destroy_withdraw_capability(cap: WithdrawCapability)  {
+        let WithdrawCapability { addr: _ } = cap;
+    }
+
     public fun get_withdraw_cap_address(cap: &WithdrawCapability): address {
         cap.addr
     }
@@ -1076,7 +1087,7 @@ module diem_framework::account {
     }
 
     #[test(user = @0x1)]
-    public entry fun test_create_resource_account(user: signer) acquires Account {
+    fun test_create_resource_account(user: signer) acquires Account {
         let (resource_account, resource_account_cap) = create_resource_account(&user, x"01");
         let resource_addr = signer::address_of(&resource_account);
         assert!(resource_addr != signer::address_of(&user), 0);
@@ -1085,7 +1096,7 @@ module diem_framework::account {
 
     #[test]
     #[expected_failure(abort_code = 0x10007, location = Self)]
-    public entry fun test_cannot_control_resource_account_via_auth_key() acquires Account {
+    fun test_cannot_control_resource_account_via_auth_key() acquires Account {
         let alice_pk = x"4141414141414141414141414141414141414141414141414141414141414145";
         let alice = create_account_from_ed25519_public_key(alice_pk);
         let alice_auth = get_authentication_key(signer::address_of(&alice)); // must look like a valid public key
@@ -1130,7 +1141,7 @@ module diem_framework::account {
     struct DummyResource has key {}
 
     #[test(user = @0x1)]
-    public entry fun test_module_capability(user: signer) acquires Account, DummyResource {
+    fun test_module_capability(user: signer) acquires Account, DummyResource {
         let (resource_account, signer_cap) = create_resource_account(&user, x"01");
         assert!(signer::address_of(&resource_account) != signer::address_of(&user), 0);
 
@@ -1142,7 +1153,7 @@ module diem_framework::account {
     }
 
     #[test(user = @0x1)]
-    public entry fun test_resource_account_and_create_account(user: signer) acquires Account {
+    fun test_resource_account_and_create_account(user: signer) acquires Account {
         let resource_addr = create_resource_address(&@0x1, x"01");
         create_account_unchecked(resource_addr);
 
@@ -1151,7 +1162,7 @@ module diem_framework::account {
 
     #[test(user = @0x1)]
     #[expected_failure(abort_code = 0x8000f, location = Self)]
-    public entry fun test_duplice_create_resource_account(user: signer) acquires Account {
+    fun test_duplice_create_resource_account(user: signer) acquires Account {
         create_resource_account(&user, x"01");
         create_resource_account(&user, x"01");
     }
@@ -1185,7 +1196,7 @@ module diem_framework::account {
 
     #[test]
     /// Verify test-only sequence number mocking
-    public entry fun mock_sequence_numbers()
+    fun mock_sequence_numbers()
     acquires Account {
         let addr: address = @0x1234; // Define test address
         create_account(addr); // Initialize account resource
@@ -1205,7 +1216,7 @@ module diem_framework::account {
 
     #[test(alice = @0xa11ce)]
     #[expected_failure(abort_code = 65537, location = diem_framework::ed25519)]
-    public entry fun test_empty_public_key(alice: signer) acquires Account, OriginatingAddress {
+    fun test_empty_public_key(alice: signer) acquires Account, OriginatingAddress {
         create_account(signer::address_of(&alice));
         let pk = vector::empty<u8>();
         let sig = x"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
@@ -1214,7 +1225,7 @@ module diem_framework::account {
 
     #[test(alice = @0xa11ce)]
     #[expected_failure(abort_code = 262151, location = Self)]
-    public entry fun test_empty_signature(alice: signer) acquires Account, OriginatingAddress {
+    fun test_empty_signature(alice: signer) acquires Account, OriginatingAddress {
         create_account(signer::address_of(&alice));
         let test_signature = vector::empty<u8>();
         let pk = x"0000000000000000000000000000000000000000000000000000000000000000";
@@ -1222,7 +1233,7 @@ module diem_framework::account {
     }
 
     #[test_only]
-    public entry fun create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer {
+    fun create_account_from_ed25519_public_key(pk_bytes: vector<u8>): signer {
         let pk = ed25519::new_unvalidated_public_key_from_bytes(pk_bytes);
         let curr_auth_key = ed25519::unvalidated_public_key_to_authentication_key(&pk);
         let alice_address = from_bcs::to_address(curr_auth_key);
@@ -1236,7 +1247,7 @@ module diem_framework::account {
 
     #[test(bob = @0x345)]
     #[expected_failure(abort_code = 65544, location = Self)]
-    public entry fun test_invalid_offer_signer_capability(bob: signer) acquires Account {
+    fun test_invalid_offer_signer_capability(bob: signer) acquires Account {
         let (_alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
         let alice = create_account_from_ed25519_public_key(alice_pk_bytes);
@@ -1262,7 +1273,7 @@ module diem_framework::account {
     }
 
     #[test(bob = @0x345)]
-    public entry fun test_valid_check_signer_capability_and_create_authorized_signer(bob: signer) acquires Account {
+    fun test_valid_check_signer_capability_and_create_authorized_signer(bob: signer) acquires Account {
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
         let alice = create_account_from_ed25519_public_key(alice_pk_bytes);
@@ -1288,7 +1299,7 @@ module diem_framework::account {
     }
 
     #[test(bob = @0x345)]
-    public entry fun test_get_signer_cap_and_is_signer_cap(bob: signer) acquires Account {
+    fun test_get_signer_cap_and_is_signer_cap(bob: signer) acquires Account {
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
         let alice = create_account_from_ed25519_public_key(alice_pk_bytes);
@@ -1314,7 +1325,7 @@ module diem_framework::account {
 
     #[test(bob = @0x345, charlie = @0x567)]
     #[expected_failure(abort_code = 393230, location = Self)]
-    public entry fun test_invalid_check_signer_capability_and_create_authorized_signer(bob: signer, charlie: signer) acquires Account {
+    fun test_invalid_check_signer_capability_and_create_authorized_signer(bob: signer, charlie: signer) acquires Account {
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
         let alice = create_account_from_ed25519_public_key(alice_pk_bytes);
@@ -1340,7 +1351,7 @@ module diem_framework::account {
     }
 
     #[test(bob = @0x345)]
-    public entry fun test_valid_revoke_signer_capability(bob: signer) acquires Account {
+    fun test_valid_revoke_signer_capability(bob: signer) acquires Account {
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
         let alice = create_account_from_ed25519_public_key(alice_pk_bytes);
@@ -1363,7 +1374,7 @@ module diem_framework::account {
 
     #[test(bob = @0x345, charlie = @0x567)]
     #[expected_failure(abort_code = 393230, location = Self)]
-    public entry fun test_invalid_revoke_signer_capability(bob: signer, charlie: signer) acquires Account {
+    fun test_invalid_revoke_signer_capability(bob: signer, charlie: signer) acquires Account {
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
         let alice = create_account_from_ed25519_public_key(alice_pk_bytes);
@@ -1390,7 +1401,7 @@ module diem_framework::account {
     // Tests for offering rotation capabilities
     //
     #[test(bob = @0x345, framework = @diem_framework)]
-    public entry fun test_valid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
+    fun test_valid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
@@ -1417,7 +1428,7 @@ module diem_framework::account {
 
     #[test(bob = @0x345, framework = @diem_framework)]
     #[expected_failure(abort_code = 65544, location = Self)]
-    public entry fun test_invalid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
+    fun test_invalid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
@@ -1441,7 +1452,7 @@ module diem_framework::account {
     }
 
     #[test(bob = @0x345, framework = @diem_framework)]
-    public entry fun test_valid_revoke_rotation_capability(bob: signer, framework: signer) acquires Account {
+    fun test_valid_revoke_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
@@ -1466,7 +1477,7 @@ module diem_framework::account {
 
     #[test(bob = @0x345, charlie = @0x567, framework = @diem_framework)]
     #[expected_failure(abort_code = 393234, location = Self)]
-    public entry fun test_invalid_revoke_rotation_capability(bob: signer, charlie: signer, framework: signer) acquires Account {
+    fun test_invalid_revoke_rotation_capability(bob: signer, charlie: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
         let alice_pk_bytes = ed25519::validated_public_key_to_bytes(&alice_pk);
@@ -1495,7 +1506,7 @@ module diem_framework::account {
     //
 
     #[test(account = @diem_framework)]
-    public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_multi_ed25519(account: signer) acquires Account, OriginatingAddress {
+    fun test_valid_rotate_authentication_key_multi_ed25519_to_multi_ed25519(account: signer) acquires Account, OriginatingAddress {
         initialize(&account);
         let (curr_sk, curr_pk) = multi_ed25519::generate_keys(2, 3);
         let curr_pk_unvalidated = multi_ed25519::public_key_to_unvalidated(&curr_pk);
@@ -1534,7 +1545,7 @@ module diem_framework::account {
     }
 
     #[test(account = @diem_framework)]
-    public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_ed25519(account: signer) acquires Account, OriginatingAddress {
+    fun test_valid_rotate_authentication_key_multi_ed25519_to_ed25519(account: signer) acquires Account, OriginatingAddress {
         initialize(&account);
 
         let (curr_sk, curr_pk) = multi_ed25519::generate_keys(2, 3);
@@ -1582,7 +1593,7 @@ module diem_framework::account {
 
     #[test(account = @diem_framework)]
     #[expected_failure(abort_code = 0x20014, location = Self)]
-    public entry fun test_max_guid(account: &signer) acquires Account {
+    fun test_max_guid(account: &signer) acquires Account {
         let addr = signer::address_of(account);
         create_account_unchecked(addr);
         let account_state = borrow_global_mut<Account>(addr);
