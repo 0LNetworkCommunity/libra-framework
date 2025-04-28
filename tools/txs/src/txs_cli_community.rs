@@ -491,8 +491,128 @@ pub struct ReauthVoteTx {
 
 impl ReauthVoteTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
+        // we'll try to tally the poll, this should never abort.
+        let payload = libra_stdlib::donor_voice_txs_maybe_tally_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
+
+        let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
+        sender.sign_submit_wait(payload).await.ok();
+
+        // Call the view function to show current tally
+        let res = query_view::get_view(
+            sender.client(),
+            "0x1::donor_voice_governance::get_reauth_tally",
+            None,
+            Some(self.community_wallet.to_canonical_string()),
+        )
+        .await?;
+
+        display_reauth_tally_results(&res);
+
         Ok(())
+    }
+}
+
+/// Displays the reauthorization poll results in a readable format
+fn display_reauth_tally_results(res: &serde_json::Value) {
+    // Parse the response according to the documented structure
+    if let Some(arr) = res.as_array() {
+        if arr.len() >= 7 {
+            // Extract and format percentage values (divide by 100 for display)
+            let percent_approval = arr[0]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0) as f64
+                / 100.0;
+            let turnout_percent = arr[1]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0) as f64
+                / 100.0;
+            let threshold_needed = arr[2]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0) as f64
+                / 100.0;
+            let epoch_deadline = arr[3]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0);
+            let min_turnout_required = arr[4]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0) as f64
+                / 100.0;
+            let approved = arr[5].as_bool().unwrap_or(false);
+            let is_complete = arr[6].as_bool().unwrap_or(false);
+
+            println!("\nReauthorization Poll Status:");
+            println!("------------------------------");
+            println!("Approval Rate:       {:.2}%", percent_approval);
+            println!("Voter Turnout:       {:.2}%", turnout_percent);
+            println!("Approval Threshold:  {:.2}%", threshold_needed);
+            println!("Minimum Turnout:     {:.2}%", min_turnout_required);
+            println!("Epoch Deadline:      {}", epoch_deadline);
+            println!(
+                "Poll Complete:       {}",
+                if is_complete { "Yes" } else { "No" }
+            );
+
+            if is_complete {
+                println!(
+                    "Result:              {}",
+                    if approved { "APPROVED" } else { "REJECTED" }
+                );
+
+                // Add explanation for rejection if the poll was not approved
+                if !approved {
+                    let approval_passing = percent_approval >= threshold_needed;
+                    let turnout_passing = turnout_percent >= min_turnout_required;
+
+                    println!("Rejection Reason:    ");
+                    if !approval_passing && !turnout_passing {
+                        println!("                    • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
+                                 percent_approval, threshold_needed, turnout_percent, min_turnout_required);
+                    } else if !approval_passing {
+                        println!("                    • Approval rate too low: {:.2}% (threshold: {:.2}%)",
+                                 percent_approval, threshold_needed);
+                    } else if !turnout_passing {
+                        println!(
+                            "                    • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
+                            turnout_percent, min_turnout_required
+                        );
+                    } else {
+                        println!(
+                            "                    • Unknown reason (possible logic error in tally)"
+                        );
+                    }
+                }
+            } else {
+                // Provide more detailed status about passing/failing conditions
+                let approval_passing = percent_approval >= threshold_needed;
+                let turnout_passing = turnout_percent >= min_turnout_required;
+
+                if approval_passing && turnout_passing {
+                    println!("Current Status:     On track to PASS");
+                } else {
+                    println!("Current Status:     Not passing requirements");
+
+                    if !approval_passing && !turnout_passing {
+                        println!("                    • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
+                                percent_approval, threshold_needed, turnout_percent, min_turnout_required);
+                    } else if !approval_passing {
+                        println!("                    • Approval rate too low: {:.2}% (threshold: {:.2}%)",
+                                percent_approval, threshold_needed);
+                    } else {
+                        println!(
+                            "                    • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
+                            turnout_percent, min_turnout_required
+                        );
+                    }
+                }
+            }
+        } else {
+            println!("Unexpected response format from reauth tally view");
+        }
     }
 }

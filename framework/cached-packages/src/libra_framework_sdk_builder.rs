@@ -191,6 +191,14 @@ pub enum EntryFunctionCall {
     /// Public function for production triggering of epoch boundary.
     DiemGovernanceTriggerEpoch {},
 
+    /// Standalone function to close the poll after threshold or expiration passed
+    /// The reason for a separate function is so that closing the poll and
+    /// voting may not need to be in the same transaction. They can be atomic
+    /// and produce better error messages.
+    DonorVoiceTxsMaybeTallyReauthTx {
+        multisig_address: AccountAddress,
+    },
+
     /// A signer of the multisig can propose a payment
     /// Public entry function required for txs cli
     DonorVoiceTxsProposeAdvanceTx {
@@ -215,11 +223,12 @@ pub enum EntryFunctionCall {
         description: Vec<u8>,
     },
 
-    /// A donor of the program can propose a veto
+    /// A donor of the program can propose a veto to a scheduled transaction
+    /// by the tx_id.
     /// Public entry function required for txs cli.
     DonorVoiceTxsProposeVetoTx {
         multisig_address: AccountAddress,
-        id: u64,
+        tx_id: u64,
     },
 
     /// After proposed, subsequent voters call this to vote liquidation
@@ -491,6 +500,9 @@ impl EntryFunctionCall {
             } => diem_governance_ol_vote(proposal_id, should_pass),
             DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
             DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
+            DonorVoiceTxsMaybeTallyReauthTx { multisig_address } => {
+                donor_voice_txs_maybe_tally_reauth_tx(multisig_address)
+            }
             DonorVoiceTxsProposeAdvanceTx {
                 multisig_address,
                 payee,
@@ -508,8 +520,8 @@ impl EntryFunctionCall {
             } => donor_voice_txs_propose_payment_tx(multisig_address, payee, value, description),
             DonorVoiceTxsProposeVetoTx {
                 multisig_address,
-                id,
-            } => donor_voice_txs_propose_veto_tx(multisig_address, id),
+                tx_id,
+            } => donor_voice_txs_propose_veto_tx(multisig_address, tx_id),
             DonorVoiceTxsVoteLiquidationTx { multisig_address } => {
                 donor_voice_txs_vote_liquidation_tx(multisig_address)
             }
@@ -989,6 +1001,27 @@ pub fn diem_governance_trigger_epoch() -> TransactionPayload {
     ))
 }
 
+/// Standalone function to close the poll after threshold or expiration passed
+/// The reason for a separate function is so that closing the poll and
+/// voting may not need to be in the same transaction. They can be atomic
+/// and produce better error messages.
+pub fn donor_voice_txs_maybe_tally_reauth_tx(
+    multisig_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("donor_voice_txs").to_owned(),
+        ),
+        ident_str!("maybe_tally_reauth_tx").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
+    ))
+}
+
 /// A signer of the multisig can propose a payment
 /// Public entry function required for txs cli
 pub fn donor_voice_txs_propose_advance_tx(
@@ -1062,11 +1095,12 @@ pub fn donor_voice_txs_propose_payment_tx(
     ))
 }
 
-/// A donor of the program can propose a veto
+/// A donor of the program can propose a veto to a scheduled transaction
+/// by the tx_id.
 /// Public entry function required for txs cli.
 pub fn donor_voice_txs_propose_veto_tx(
     multisig_address: AccountAddress,
-    id: u64,
+    tx_id: u64,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1080,7 +1114,7 @@ pub fn donor_voice_txs_propose_veto_tx(
         vec![],
         vec![
             bcs::to_bytes(&multisig_address).unwrap(),
-            bcs::to_bytes(&id).unwrap(),
+            bcs::to_bytes(&tx_id).unwrap(),
         ],
     ))
 }
@@ -1817,6 +1851,18 @@ mod decoder {
         }
     }
 
+    pub fn donor_voice_txs_maybe_tally_reauth_tx(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::DonorVoiceTxsMaybeTallyReauthTx {
+                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn donor_voice_txs_propose_advance_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -1865,7 +1911,7 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::DonorVoiceTxsProposeVetoTx {
                 multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
-                id: bcs::from_bytes(script.args().get(1)?).ok()?,
+                tx_id: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -2251,6 +2297,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "diem_governance_trigger_epoch".to_string(),
             Box::new(decoder::diem_governance_trigger_epoch),
+        );
+        map.insert(
+            "donor_voice_txs_maybe_tally_reauth_tx".to_string(),
+            Box::new(decoder::donor_voice_txs_maybe_tally_reauth_tx),
         );
         map.insert(
             "donor_voice_txs_propose_advance_tx".to_string(),

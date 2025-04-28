@@ -339,6 +339,11 @@ module ol_framework::slow_wallet {
     // Getter for retrieving the list of slow wallets.
     // NOTE: this includes all slow wallets, active or not.
     public fun get_slow_list(): vector<address> acquires SlowWalletList{
+      get_slow_list_internal()
+    }
+
+    // Internal implementation to avoid circular references that confuse the formal verifier
+    fun get_slow_list_internal(): vector<address> acquires SlowWalletList {
       if (exists<SlowWalletList>(@ol_framework)) {
         let s = borrow_global<SlowWalletList>(@ol_framework);
         return *&s.list
