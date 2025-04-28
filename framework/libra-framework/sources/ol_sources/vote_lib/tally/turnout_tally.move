@@ -42,6 +42,7 @@
     use std::error;
     use std::option::{Self, Option};
     use ol_framework::epoch_helper;
+    use ol_framework::testnet;
     use ol_framework::vote_receipt;
 
     friend ol_framework::donor_voice_governance;
@@ -49,8 +50,6 @@
     friend ol_framework::test_turnout_tally;
     #[test_only]
     friend ol_framework::turnout_tally_demo;
-
-
 
     /// The ballot has already been completed.
     const ECOMPLETED: u64 = 1;
@@ -74,6 +73,7 @@
     const HIGH_TURNOUT_X2: u64 = 8750;// 87.5% turnout
     const THRESH_AT_LOW_TURNOUT_Y1: u64 = 10000;// 100% pass at low turnout
     const THRESH_AT_HIGH_TURNOUT_Y2: u64 = 5100;// 51% pass at high turnout
+    // TODO: this is not implemented, revisit.
     const MINORITY_EXT_MARGIN: u64 = 500; // The change in vote gap between majority and minority must have changed in the last day by this amount to for the minority to get an extension.
 
     // poor man's enum for the ballot status. Wen enum?
@@ -128,11 +128,17 @@
       deadline: u64,
       max_extensions: u64,
     ): TurnoutTally<Data> {
+        let cfg_min_turnout = if (testnet::is_not_mainnet()) {
+          500 //
+        } else {
+          LOW_TURNOUT_X1
+        };
+
         TurnoutTally<Data> {
           data,
           cfg_deadline: deadline,
           cfg_max_extensions: max_extensions, // 0 means infinite extensions
-          cfg_min_turnout: 1250,
+          cfg_min_turnout, // requires unanimous vote to pass
           cfg_minority_extension: true,
           completed: false,
           enrollment: vector::empty<address>(), // TODO: maybe consider merkle roots, or bloom filters here.
@@ -197,8 +203,6 @@
 
         // this will handle the case of updating the receipt in case this is a second vote.
         vote_receipt::make_receipt(user, uid, approve_reject, weight);
-
-
       };
 
       // always tally on each vote

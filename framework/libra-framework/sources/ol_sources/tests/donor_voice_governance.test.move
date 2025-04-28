@@ -49,7 +49,8 @@ module ol_framework::test_donor_voice_governance {
       assert!(turnout_percent == 6666, 7357002);
       assert!(threshold_needed_to_pass == 6461, 7357003);
       assert!(epoch_deadline == 30, 7357004);
-      assert!(minimum_turnout_required == 1250, 7357005);
+      // uses testnet turnout of 5%
+      assert!(minimum_turnout_required == 500, 7357005);
     }
 
     #[test(framework = @ol_framework, marlon_sponsor = @0x1234)]
