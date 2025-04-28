@@ -495,7 +495,7 @@ module ol_framework::donor_voice_txs {
     let multisig_address = guid::id_creator_address(tx_uid);
     donor_voice_governance::assert_is_voter(sender, multisig_address);
 
-    let veto_is_approved = donor_voice_governance::veto_by_id(sender, veto_uid);
+    let veto_is_approved = donor_voice_governance::veto_by_id(sender, tx_uid);
     if (option::is_none(&veto_is_approved)) return;
 
     // check is scheduled
@@ -564,7 +564,7 @@ module ol_framework::donor_voice_txs {
     if (found && status == scheduled_enum()) {
       let epochs_duration = DEFAULT_VETO_DURATION;
 
-      let uid = donor_voice_governance::propose_veto(&state.guid_capability, uid_of_tx,  epochs_duration);
+      let uid = donor_voice_governance::propose_veto(&state.guid_capability, uid_of_tx, epochs_duration);
       return option::some(uid)
     };
     option::none()
@@ -887,14 +887,17 @@ module ol_framework::donor_voice_txs {
 
 
   // VETO TXs
-  /// A donor of the program can propose a veto
+  /// A donor of the program can propose a veto to a scheduled transaction
+  /// by the tx_id.
   /// Public entry function required for txs cli.
-  public entry fun propose_veto_tx(donor: &signer, multisig_address: address, id: u64) acquires TxSchedule, Freeze{
-    let tx_uid = guid::create_id(multisig_address, id);
-    let opt_uid_of_gov_prop = propose_veto(donor, &tx_uid);
+  public entry fun propose_veto_tx(donor: &signer, multisig_address: address, tx_id: u64) acquires TxSchedule, Freeze{
+    let guid = guid::create_id(multisig_address, tx_id);
+    // one thing is the id of the scheduled payment
+    // another ID is that of the veto proposal
+    let opt_uid_of_gov_prop = propose_veto(donor, &guid);
     if (option::is_some(&opt_uid_of_gov_prop)) { // check successful proposal
       let veto_uid = option::borrow(&opt_uid_of_gov_prop);
-      veto_handler(donor, veto_uid, &tx_uid);
+      veto_handler(donor, veto_uid, &guid);
     }
   }
 
@@ -924,9 +927,10 @@ module ol_framework::donor_voice_txs {
       propose_reauthorization_impl(donor, multisig_address);
     }
   }
-  /// standalone function to close the poll after threshold or expiration passed
-  /// NOTE: calling the vote tx with a duplicate vote will also finalize
-  /// the poll without affecting the result.
+  /// Standalone function to close the poll after threshold or expiration passed
+  /// The reason for a separate function is so that closing the poll and
+  /// voting may not need to be in the same transaction. They can be atomic
+  /// and produce better error messages.
   // Anyone cal call this
   public entry fun maybe_tally_reauth_tx(multisig_address: address) {
     donor_voice_governance::maybe_tally_reauth(multisig_address);

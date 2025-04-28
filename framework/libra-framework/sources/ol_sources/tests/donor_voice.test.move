@@ -199,7 +199,7 @@ module ol_framework::test_donor_voice {
       // Eve wants to propose a Veto, but this should fail at this, because
       // the tx is not yet scheduled
       let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
-      let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let has_veto = donor_voice_governance::tx_has_veto_pending(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(!has_veto, 7357005); // propose does not cast a vote.
 
       // Now Carol, along with Bob, as admins have proposed the payment.
@@ -209,18 +209,32 @@ module ol_framework::test_donor_voice {
 
       // Eve tries again after it has been scheduled
       let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
-      let has_veto = donor_voice_governance::tx_has_veto(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let has_veto = donor_voice_governance::tx_has_veto_pending(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(has_veto, 7357007); // propose does not cast a vote.
 
       // now vote on the proposal
       // note need to destructure ID for the entry and view functions
-      let id_num = guid::id_creation_num(&uid_of_transfer);
+      let tx_id_num = guid::id_creation_num(&uid_of_transfer);
 
       // proposing is not same as voting, now eve votes
       // NOTE: there is a tx function that can propose and vote in single step
-      donor_voice_txs::vote_veto_tx(eve, donor_voice_address, id_num);
+      donor_voice_txs::vote_veto_tx(eve, donor_voice_address, tx_id_num);
 
-      let (approve_pct, _turnout, req_threshold) = donor_voice_governance::get_veto_tally(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
+      let is_pending = donor_voice_governance::tx_has_veto_pending(donor_voice_address, tx_id_num);
+
+      // the vote has completed, and so this payment tx
+      // will not appear as having a veto pending
+      assert!(!is_pending, 7357008);
+
+      // if we want to tally a accepted or rejected veto
+      // from the past, we need to get the ballot id
+      // and then tally by ballot id.
+
+      let (_pending, approved, _rejected) = donor_voice_governance::get_veto_ballots(donor_voice_address);
+
+      let ballot_id = vector::borrow(&approved, 0);
+
+      let (approve_pct, _, req_threshold, _, _, _approve, _is_complete) = donor_voice_governance::get_veto_tally(donor_voice_address, *ballot_id);
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
