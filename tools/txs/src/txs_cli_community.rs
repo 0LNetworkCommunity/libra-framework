@@ -5,7 +5,7 @@ use diem_logger::error;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_query::{account_queries, query_view};
-use libra_types::move_resource::gas_coin;
+use libra_types::{exports::Client, move_resource::gas_coin};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -495,22 +495,72 @@ impl ReauthVoteTx {
         let payload = libra_stdlib::donor_voice_txs_maybe_tally_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await?;
 
+        // Submit the reauthorization vote
         let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await.ok();
 
-        // Call the view function to show current tally
-        let res = query_view::get_view(
-            sender.client(),
-            "0x1::donor_voice_governance::get_reauth_tally",
-            None,
-            Some(self.community_wallet.to_canonical_string()),
-        )
-        .await?;
+        // First, check if we have pending reauthorization ballots
+        let ballot_id =
+            fetch_pending_reauth_ballots(sender.client(), self.community_wallet).await?;
 
-        display_reauth_tally_results(&res);
+        // Display tally results based on the ballot ID
+        if let Some(id) = ballot_id {
+            println!("Found reauthorization ballot with ID: {}", id);
+
+            let args = format!(
+                "{} {}",
+                self.community_wallet.to_canonical_string(),
+                id.to_string()
+            );
+            // Call the view function with the specific ballot ID, which is required by the Move function
+            let res = query_view::get_view(
+                sender.client(),
+                "0x1::donor_voice_governance::get_reauth_tally",
+                None,
+                Some(args),
+            )
+            .await?;
+
+            display_reauth_tally_results(&res);
+        } else {
+            println!("No pending reauthorization ballots found");
+            // Cannot call get_reauth_tally without a ballot ID as it's a required parameter
+            println!("Cannot display tally results without a valid ballot ID");
+        }
 
         Ok(())
     }
+}
+
+/// Fetches pending reauthorization ballot IDs for a community wallet
+async fn fetch_pending_reauth_ballots(
+    client: &Client,
+    community_wallet: AccountAddress,
+) -> anyhow::Result<Option<u64>> {
+    let reauth_ballots = query_view::get_view(
+        client,
+        "0x1::donor_voice_governance::get_reauth_ballots",
+        None,
+        Some(community_wallet.to_canonical_string()),
+    )
+    .await?;
+
+    // Process the ballot data to extract the ballot ID
+    if let Some(ballot_array) = reauth_ballots.as_array() {
+        if let Some(pending_ballots) = ballot_array.get(0).and_then(|v| v.as_array()) {
+            if !pending_ballots.is_empty() {
+                if let Some(ballot_id) = pending_ballots
+                    .get(0)
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| s.parse::<u64>().ok())
+                {
+                    return Ok(Some(ballot_id));
+                }
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 /// Displays the reauthorization poll results in a readable format
