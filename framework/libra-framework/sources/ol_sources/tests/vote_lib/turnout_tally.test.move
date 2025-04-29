@@ -137,8 +137,7 @@ module ol_framework::test_turnout_tally {
 
       // 10 of 100 is not enough to get over any dynamic threshold.
 
-      assert!(option::is_none(&result_opt), 735702);
-
+      assert!(option::is_some(&result_opt), 735702);
 
       // NOW carol votes to get over the threshold
       let result_opt = turnout_tally_demo::vote(carol, @0x1000a, &uid, 15, true);
@@ -146,6 +145,9 @@ module ol_framework::test_turnout_tally {
       assert!(r == true, 735703); // voted in favor
       assert!(w == 15, 735704);
       assert!(option::is_some(&result_opt), 735705);
+
+      let outcome = option::extract(&mut result_opt);
+      assert!(outcome == true, 735706);
   }
 
 
