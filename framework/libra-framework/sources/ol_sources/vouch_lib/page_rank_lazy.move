@@ -7,10 +7,20 @@ module ol_framework::page_rank_lazy {
     use ol_framework::root_of_trust;
 
     friend ol_framework::vouch_txs;
+    friend ol_framework::founder;
+    friend ol_framework::vouch_limits;
+
+    #[test_only]
+    friend ol_framework::test_page_rank;
+    #[test_only]
+    friend ol_framework::mock;
 
     //////// ERROR CODES ////////
     /// trust record not initialized
     const ENOT_INITIALIZED: u64 = 2;
+
+    /// max addresses processed
+    const EMAX_PROCESSED_ADDRESSES: u64 = 3;
 
     //////// CONSTANTS ////////
     // Max score on a single vouch
@@ -43,8 +53,9 @@ module ol_framework::page_rank_lazy {
         };
     }
 
+
     // Calculate or retrieve cached trust score
-    public fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
+    public(friend) fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
         let current_timestamp = timestamp::now_seconds();
 
         // If user has no trust record, they have no score
@@ -204,9 +215,7 @@ module ol_framework::page_rank_lazy {
     ) acquires UserTrustRecord {
 
         // Circuit breaker: stop processing if we've hit our limit
-        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-            return
-        };
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
         // Skip if we've already visited this node (cycle detection)
         if (vector::contains(visited, &user)) {
@@ -229,6 +238,11 @@ module ol_framework::page_rank_lazy {
         let new_visited = *visited; // Clone the visited list
         vector::push_back(&mut new_visited, user);
 
+
+        if (vector::length(&outgoing_vouches) == 0) {
+            return
+        };
+
         // Recursively process downstream addresses
         let i = 0;
         let len = vector::length(&outgoing_vouches);
@@ -250,6 +264,18 @@ module ol_framework::page_rank_lazy {
 
             i = i + 1;
         };
+    }
+
+    //////// CACHE ////////
+
+    /// Refresh the cache
+    /// state updates must be called by a user.
+    /// Vouch tree updates could be a DDOS vector
+    public entry fun refresh_cache(user: address) acquires UserTrustRecord{
+      // assert initialized
+      assert!(exists<UserTrustRecord>(user), error::invalid_state(ENOT_INITIALIZED));
+      // get_score
+      let _score = get_trust_score(user);
     }
 
     //////// GETTERS ////////
