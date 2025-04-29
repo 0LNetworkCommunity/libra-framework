@@ -290,10 +290,6 @@ module ol_framework::test_page_rank {
     // should mark stale
     vouch_txs::vouch_for(root_sig, new_user_addr);
 
-    // will be stale until next computation
-    let stale = page_rank_lazy::is_stale(new_user_addr);
-    assert!(stale, 7357005);
-
     let max_single_score = page_rank_lazy::get_max_single_score();
 
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);

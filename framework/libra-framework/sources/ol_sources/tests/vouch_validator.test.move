@@ -6,6 +6,7 @@ module ol_framework::test_validator_vouch {
   use ol_framework::vouch_txs;
   use ol_framework::mock;
   use ol_framework::proof_of_fee;
+  use ol_framework::page_rank_lazy;
 
   // Happy Day scenarios
   #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c)]
@@ -204,12 +205,16 @@ module ol_framework::test_validator_vouch {
     vouch::set_vouch_price(root, 0);
 
     let users = mock::create_test_end_users(root, 22, 0);
+    page_rank_lazy::maybe_initialize_trust_record(alice);
 
     let i = 0;
     while (i < vector::length(&users)) {
       let sig = vector::borrow(&users, i);
       // init vouch for 10 validators
       vouch::init(sig);
+      page_rank_lazy::maybe_initialize_trust_record(sig);
+
+      diem_std::debug::print(&signer::address_of(sig));
       // alice vouches for 10 validators
       vouch_txs::vouch_for(alice, signer::address_of(sig));
       i = i + 1;
