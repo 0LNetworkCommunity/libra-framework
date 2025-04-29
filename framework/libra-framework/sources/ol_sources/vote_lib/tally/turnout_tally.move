@@ -65,6 +65,8 @@
     const ENO_BALLOT_FOUND: u64 = 6;
     /// Bad status enum
     const EBAD_STATUS_ENUM: u64 = 7;
+    /// initialized with zero
+    const EINITIALZE_ZERO: u64 = 8;
 
     // TODO: These may be variable on a per project basis. And these
     // should just be defaults.
@@ -272,8 +274,13 @@
 
       let total_votes = ballot.votes_approve + ballot.votes_reject;
 
+      if (total_votes == 0) {
+        return option::none<bool>()
+      };
+
       assert!(ballot.max_votes >= total_votes, error::invalid_state(EVOTES_GREATER_THAN_ENROLLMENT));
 
+      assert!(ballot.max_votes > 0, error::invalid_state(EINITIALZE_ZERO));
       // figure out the turnout
       let m = fixed_point32::create_from_rational(total_votes, ballot.max_votes);
 
@@ -376,11 +383,12 @@
     // TODO: this should probably use Decimal.move
     // can't multiply fixed_point32 types directly.
     public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
-      // let's just do a line
+      assert!(voters > 0, error::invalid_state(EINITIALZE_ZERO));
+      assert!(max_votes > 0, error::invalid_state(EINITIALZE_ZERO));
 
       let turnout = fixed_point32::create_from_rational(voters, max_votes);
       let turnout_scaled_x = fixed_point32::multiply_u64(PCT_SCALE, turnout); // scale to two decimal points.
-      // only implemeting the negative slope case. Unsure why the other is needed.
+      // only implementing the negative slope case. Unsure why the other is needed.
 
       assert!(THRESH_AT_LOW_TURNOUT_Y1 > THRESH_AT_HIGH_TURNOUT_Y2, error::invalid_state(EVOTE_CALC_PARAMS));
 
