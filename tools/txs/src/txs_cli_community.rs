@@ -508,7 +508,7 @@ impl ReauthVoteTx {
             println!("Found reauthorization ballot with ID: {}", id);
 
             let args = format!(
-                "{} {}",
+                "{}, {}",
                 self.community_wallet.to_canonical_string(),
                 id.to_string()
             );
