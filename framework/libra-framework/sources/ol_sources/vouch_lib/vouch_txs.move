@@ -10,15 +10,25 @@ module ol_framework::vouch_txs {
   use ol_framework::page_rank_lazy;
   use ol_framework::vouch;
   use ol_framework::vouch_limits;
+  use ol_framework::error;
+
+  /// a recipients score should only increase
+  const ESCORE_SHOULD_NOT_REDUCE: u64 = 1;
 
   public entry fun vouch_for(grantor: &signer, friend_account: address) {
     let grantor_addr = signer::address_of(grantor);
+
     vouch_limits::assert_under_limit(grantor_addr, friend_account);
-    vouch::vouch_for(grantor, friend_account);
-    page_rank_lazy::mark_as_stale(grantor_addr);
+    let friend_score_pre = page_rank_lazy::get_trust_score(friend_account);
+
     page_rank_lazy::mark_as_stale(friend_account);
+    vouch::vouch_for(grantor, friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
     founder::maybe_set_friendly_founder(friend_account);
+
+    let friend_score_post = page_rank_lazy::get_trust_score(friend_account);
+    assert!(friend_score_post > friend_score_pre, error::invalid_state(ESCORE_SHOULD_NOT_REDUCE));
+
   }
 
   public entry fun revoke(grantor: &signer, friend_account: address) {
