@@ -621,19 +621,19 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
 
                     println!("Rejection Reason:    ");
                     if !approval_passing && !turnout_passing {
-                        println!("                    • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
+                        println!("                     • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
                                  percent_approval, threshold_needed, turnout_percent, min_turnout_required);
                     } else if !approval_passing {
-                        println!("                    • Approval rate too low: {:.2}% (threshold: {:.2}%)",
+                        println!("                     • Approval rate too low: {:.2}% (threshold: {:.2}%)",
                                  percent_approval, threshold_needed);
                     } else if !turnout_passing {
                         println!(
-                            "                    • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
+                            "                     • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
                             turnout_percent, min_turnout_required
                         );
                     } else {
                         println!(
-                            "                    • Unknown reason (possible logic error in tally)"
+                            "                     • Unknown reason (possible logic error in tally)"
                         );
                     }
                 }
@@ -643,19 +643,19 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
                 let turnout_passing = turnout_percent >= min_turnout_required;
 
                 if approval_passing && turnout_passing {
-                    println!("Current Status:     On track to PASS");
+                    println!("Current Status:      On track to PASS");
                 } else {
-                    println!("Current Status:     Not passing requirements");
+                    println!("Current Status:      Not passing requirements");
 
                     if !approval_passing && !turnout_passing {
-                        println!("                    • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
+                        println!("                     • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
                                 percent_approval, threshold_needed, turnout_percent, min_turnout_required);
                     } else if !approval_passing {
-                        println!("                    • Approval rate too low: {:.2}% (threshold: {:.2}%)",
+                        println!("                     • Approval rate too low: {:.2}% (threshold: {:.2}%)",
                                 percent_approval, threshold_needed);
                     } else {
                         println!(
-                            "                    • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
+                            "                     • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
                             turnout_percent, min_turnout_required
                         );
                     }
