@@ -41,7 +41,7 @@ enum Sub {
 }
 
 fn main() -> anyhow::Result<()> {
-    Logger::new().level(Level::Info).init();
+    Logger::new().level(Level::Warn).init();
 
     let cli = LibraCli::parse();
 

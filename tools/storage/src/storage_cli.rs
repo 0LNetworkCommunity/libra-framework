@@ -84,7 +84,7 @@ pub enum Sub {
 
 impl StorageCli {
     pub async fn run(self) -> Result<()> {
-        Logger::new().level(Level::Info).init();
+        Logger::new().level(Level::Warn).init();
         let _mp = MetricsPusher::start(vec![]);
 
         match self.command {
