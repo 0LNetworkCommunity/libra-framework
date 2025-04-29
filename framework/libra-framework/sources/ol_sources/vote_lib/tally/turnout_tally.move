@@ -293,10 +293,10 @@
 
       if (
         // Threshold must be above dynamically calculated threshold
-        ballot.tally_approve_pct > thresh &&
+        ballot.tally_approve_pct >= thresh &&
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
-        ballot.tally_turnout_pct > ballot.cfg_min_turnout
+        ballot.tally_turnout_pct >= ballot.cfg_min_turnout
         ) {
             ballot.completed = true;
             ballot.tally_pass = true;
