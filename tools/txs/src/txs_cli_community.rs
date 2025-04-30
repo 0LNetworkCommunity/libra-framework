@@ -510,7 +510,7 @@ impl ReauthVoteTx {
             let args = format!(
                 "{}, {}",
                 self.community_wallet.to_canonical_string(),
-                id.to_string()
+                id
             );
             // Call the view function with the specific ballot ID, which is required by the Move function
             let res = query_view::get_view(
@@ -547,10 +547,9 @@ async fn fetch_pending_reauth_ballots(
 
     // Process the ballot data to extract the ballot ID
     if let Some(ballot_array) = reauth_ballots.as_array() {
-        if let Some(pending_ballots) = ballot_array.get(0).and_then(|v| v.as_array()) {
+        if let Some(pending_ballots) = ballot_array.first().and_then(|v| v.as_array()) {
             if !pending_ballots.is_empty() {
-                if let Some(ballot_id) = pending_ballots
-                    .get(0)
+                if let Some(ballot_id) = pending_ballots.first()
                     .and_then(|v| v.as_str())
                     .and_then(|s| s.parse::<u64>().ok())
                 {
@@ -567,7 +566,8 @@ async fn fetch_pending_reauth_ballots(
 fn display_reauth_tally_results(res: &serde_json::Value) {
     // Parse the response according to the documented structure
     if let Some(arr) = res.as_array() {
-        if arr.len() >= 7 {
+        if arr.len() >= 9 {
+            // Now expecting 9 values instead of 7
             // Extract and format percentage values (divide by 100 for display)
             let percent_approval = arr[0]
                 .as_str()
@@ -595,6 +595,19 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
                 / 100.0;
             let approved = arr[5].as_bool().unwrap_or(false);
             let is_complete = arr[6].as_bool().unwrap_or(false);
+            let status_enum = arr[7]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0);
+            let ballot_completed = arr[8].as_bool().unwrap_or(false);
+
+            // Map status_enum to human-readable status
+            let status_str = match status_enum {
+                0 => "Pending",
+                1 => "Approved",
+                2 => "Rejected",
+                _ => "Unknown",
+            };
 
             println!("\nReauthorization Poll Status:");
             println!("------------------------------");
@@ -603,9 +616,14 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
             println!("Approval Threshold:  {:.2}%", threshold_needed);
             println!("Minimum Turnout:     {:.2}%", min_turnout_required);
             println!("Epoch Deadline:      {}", epoch_deadline);
+            println!("Ballot Status:       {}", status_str);
             println!(
                 "Poll Complete:       {}",
                 if is_complete { "Yes" } else { "No" }
+            );
+            println!(
+                "Ballot Completed:    {}",
+                if ballot_completed { "Yes" } else { "No" }
             );
 
             if is_complete {
@@ -662,7 +680,7 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
                 }
             }
         } else {
-            println!("Unexpected response format from reauth tally view");
+            println!("Unexpected response format from reauth tally view - expected 9 values but received {}. The server may be running an outdated version.", arr.len());
         }
     }
 }
