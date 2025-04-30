@@ -213,8 +213,6 @@ module ol_framework::test_validator_vouch {
       // init vouch for 10 validators
       vouch::init(sig);
       page_rank_lazy::maybe_initialize_trust_record(sig);
-
-      diem_std::debug::print(&signer::address_of(sig));
       // alice vouches for 10 validators
       vouch_txs::vouch_for(alice, signer::address_of(sig));
       i = i + 1;

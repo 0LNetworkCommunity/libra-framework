@@ -70,8 +70,6 @@ module ol_framework::test_donor_voice_governance {
       // everyone votes
       let i = 0;
       while (i < vector::length(&donor_sigs)) {
-        diem_std::debug::print(&444444);
-        diem_std::debug::print(&i);
         let donor_sig = vector::borrow(&donor_sigs, i);
         donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
         let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
@@ -84,13 +82,14 @@ module ol_framework::test_donor_voice_governance {
       };
 
       // find the ballot_id while it's pending
-      let (percent_approval, _turnout_percent, _threshold_needed_to_pass, epoch_deadline, _minimum_turnout_required, is_complete, approved, _, _) =  donor_voice_governance::get_reauth_tally(dv_address, ballot_id);
+      let (percent_approval, _turnout_percent, _threshold_needed_to_pass, epoch_deadline, _minimum_turnout_required, is_closed, approved, status_enum, completed) =  donor_voice_governance::get_reauth_tally(dv_address, ballot_id);
 
       assert!(percent_approval == 10000, 7357001);
       assert!(epoch_deadline == 30, 7357002);
-      assert!(is_complete == true, 7357004);
+      assert!(is_closed == true, 7357004);
       assert!(approved == true, 7357005);
-
+      assert!(status_enum == 2, 7357006);
+      assert!(completed == true, 7357007);
 
       // great, the CW should now be operational
       donor_voice_reauth::assert_authorized(dv_address);
@@ -117,8 +116,6 @@ module ol_framework::test_donor_voice_governance {
       // everyone votes
       let i = 0;
       while (i < vector::length(&donor_sigs)) {
-        diem_std::debug::print(&444444);
-        diem_std::debug::print(&i);
         let donor_sig = vector::borrow(&donor_sigs, i);
         donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
         let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
