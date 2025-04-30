@@ -491,10 +491,6 @@ pub struct ReauthVoteTx {
 
 impl ReauthVoteTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        // we'll try to tally the poll, this should never abort.
-        let payload = libra_stdlib::donor_voice_txs_maybe_tally_reauth_tx(self.community_wallet);
-        sender.sign_submit_wait(payload).await?;
-
         // Submit the reauthorization vote
         let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await.ok();
@@ -507,11 +503,7 @@ impl ReauthVoteTx {
         if let Some(id) = ballot_id {
             println!("Found reauthorization ballot with ID: {}", id);
 
-            let args = format!(
-                "{}, {}",
-                self.community_wallet.to_canonical_string(),
-                id
-            );
+            let args = format!("{}, {}", self.community_wallet.to_canonical_string(), id);
             // Call the view function with the specific ballot ID, which is required by the Move function
             let res = query_view::get_view(
                 sender.client(),
@@ -549,7 +541,8 @@ async fn fetch_pending_reauth_ballots(
     if let Some(ballot_array) = reauth_ballots.as_array() {
         if let Some(pending_ballots) = ballot_array.first().and_then(|v| v.as_array()) {
             if !pending_ballots.is_empty() {
-                if let Some(ballot_id) = pending_ballots.first()
+                if let Some(ballot_id) = pending_ballots
+                    .first()
                     .and_then(|v| v.as_str())
                     .and_then(|s| s.parse::<u64>().ok())
                 {
