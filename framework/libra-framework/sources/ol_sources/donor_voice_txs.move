@@ -908,6 +908,10 @@ module ol_framework::donor_voice_txs {
     donor_voice_governance::vote_reauthorize(donor, guid_cap, true);
   }
 
+  public entry fun maybe_close_reauth(multisig_address: address) {
+    donor_voice_governance::garbage_gov<donor_voice_governance::Reauth>(multisig_address);
+  }
+
   // LIQUIDATE TXS
 
   /// A donor can propose the liquidation of a Donor Voice account

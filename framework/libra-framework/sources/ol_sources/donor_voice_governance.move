@@ -172,14 +172,13 @@ module ol_framework::donor_voice_governance {
       let ballot_guid = guid::create_id(multisig_address, ballot_id);
 
       // Find the ballot with the given GUID
-      let (found, idx, status_enum, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
+      // in PENDING
+      let (found, idx) = ballot::find_index_of_ballot(&state.tracker, &ballot_guid, ballot::get_pending_enum());
 
-      if (!found) {
-        return option::none<bool>()
-      };
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
 
       // Get the ballot and vote on it
-      let ballot_mut = ballot::get_ballot_mut(&mut state.tracker, idx, status_enum);
+      let ballot_mut = ballot::get_ballot_mut(&mut state.tracker, idx, ballot::get_pending_enum());
       let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
 
       turnout_tally::vote(donor, ballot::get_type_struct_mut(ballot_mut), &ballot_guid, in_favor, user_weight)
@@ -244,10 +243,11 @@ module ol_framework::donor_voice_governance {
       (approval_pct, turnout_pct, required_threshold, epoch_deadline, minimum_turnout, approved, is_closed, status_enum, ballot_completed)
     }
 
+
     /// Maybe close the poll and move the pending ballot to the approved or rejected list.
     /// This function checks if a specific ballot can be finalized, and if so,
     /// moves it from the pending list to either the approved or rejected list.
-    ///
+    /// NOTE: this does not re-compute and save the tally.
     /// # Arguments
     ///
     /// * `multisig_address` - The address of the Donor Voice account where the governance is stored
@@ -263,7 +263,7 @@ module ol_framework::donor_voice_governance {
     /// * `Some(true)` - The vote passed
     /// * `Some(false)` - The vote failed
     /// * `None` - The vote is still ongoing or no ballot exists
-    fun maybe_tally_and_complete<T: drop + store>(multisig_address: address, ballot_id: u64): Option<bool> acquires Governance {
+    public(friend) fun maybe_complete<T: drop + store>(multisig_address: address, ballot_id: u64): Option<bool> acquires Governance {
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
       let ballot_guid = guid::create_id(multisig_address, ballot_id);
 
@@ -278,19 +278,20 @@ module ol_framework::donor_voice_governance {
       let this_ballot = vector::borrow_mut(ballot_list, idx);
       let tally_state = ballot::get_type_struct_mut(this_ballot);
 
-      let result = turnout_tally::save_tally(tally_state);
+      let (completed, approved) = turnout_tally::get_result(tally_state);
 
-      if (option::is_some(&result)) {
-        let result_enum = if (*option::borrow(&result)) {
+      if (completed) {
+        let result_enum = if (approved) {
           ballot::get_approved_enum()
         } else {
           ballot::get_rejected_enum()
         };
 
         ballot::complete_and_move(&mut state.tracker, &ballot_guid, result_enum);
+        return option::some(approved)
       };
 
-      result
+      option::none<bool>()
     }
 
     /// Returns the deadline (in epochs) for a ballot of the specified type.
@@ -321,6 +322,42 @@ module ol_framework::donor_voice_governance {
       turnout_tally::get_expiration_epoch(ballot_data)
     }
 
+    /// Garbage collection to find all pending ballots which are over their
+    /// deadline and expire them
+    public(friend) fun garbage_gov<T: drop + store>(dv_account: address) acquires Governance {
+      let state = borrow_global_mut<Governance<TurnoutTally<T>>>(dv_account);
+      // first build the list of IDs that are expired
+
+      let pending_guids = vector::empty();
+
+      let list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
+      let len = vector::length(list);
+      let i = 0;
+      while (i < len) {
+        let ballot = vector::borrow_mut(list, i);
+        let ballot_guid = ballot::get_ballot_id(ballot);
+
+        let ballot_data = ballot::get_type_struct_mut(ballot);
+
+        // check if the deadline has passed
+        if (turnout_tally::is_poll_closed(ballot_data)) {
+          vector::push_back(&mut pending_guids, ballot_guid);
+        };
+        i = i + 1;
+      };
+
+
+      // then mark the ids as completed
+
+      let i = 0;
+      while (i < vector::length(&pending_guids)) {
+        let id = vector::borrow(&pending_guids, i);
+         ballot::complete_and_move(&mut state.tracker, id, ballot::get_rejected_enum());
+        i = i + 1;
+      };
+    }
+
+    /// function to assert the ballot would pass
     fun assert_pass_gov<T: drop + store>(dv_account: address, id: u64) acquires
     Governance {
       let ballot_guid = guid::create_id(dv_account, id);
@@ -378,7 +415,7 @@ module ol_framework::donor_voice_governance {
           donor_voice_reauth::reauthorize_now(guid_capability);
         };
 
-        maybe_tally_and_complete<Reauth>(multisig_address, ballot_id);
+        maybe_complete<Reauth>(multisig_address, ballot_id);
       } else {
         // go ahead and propose it
         maybe_propose_reauth(guid_capability);
@@ -477,7 +514,7 @@ module ol_framework::donor_voice_governance {
       // Use the ID we already have instead of searching for it
 
       vote_gov<Veto>(user, dv_account, ballot_id, true);
-      maybe_tally_and_complete<Veto>(dv_account, ballot_id)
+      maybe_complete<Veto>(dv_account, ballot_id)
     }
 
     /// The veto process for a donor voice transactions
