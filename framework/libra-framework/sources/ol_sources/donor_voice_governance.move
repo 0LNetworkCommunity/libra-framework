@@ -278,7 +278,7 @@ module ol_framework::donor_voice_governance {
       let this_ballot = vector::borrow_mut(ballot_list, idx);
       let tally_state = ballot::get_type_struct_mut(this_ballot);
 
-      let result = turnout_tally::maybe_tally(tally_state);
+      let result = turnout_tally::save_tally(tally_state);
 
       if (option::is_some(&result)) {
         let result_enum = if (*option::borrow(&result)) {
@@ -379,7 +379,6 @@ module ol_framework::donor_voice_governance {
         };
 
         maybe_tally_and_complete<Reauth>(multisig_address, ballot_id);
-
       } else {
         // go ahead and propose it
         maybe_propose_reauth(guid_capability);

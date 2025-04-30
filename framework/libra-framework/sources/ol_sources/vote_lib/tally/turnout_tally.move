@@ -208,7 +208,7 @@
 
       // always tally on each vote
       // make sure all extensions happened in previous step.
-      maybe_tally(ballot)
+      save_tally(ballot)
     }
 
     public fun is_poll_closed<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
@@ -269,7 +269,7 @@
     /// If the poll expires this function can also be called, outside of a vote
     /// can close the poll.
     /// (note: a duplicate vote will also call this function without affecting the result)
-    public fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>): Option<bool> {
+    public fun save_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>): Option<bool> {
 
       // figure out the turnout
       ballot.tally_turnout_pct = get_current_ballot_participation(ballot);
@@ -282,10 +282,10 @@
 
       if (
         // Threshold must be above dynamically calculated threshold
-        ballot.tally_approve_pct > thresh &&
+        ballot.tally_approve_pct >= thresh &&
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
-        ballot.tally_turnout_pct > ballot.cfg_min_turnout
+        ballot.tally_turnout_pct >= ballot.cfg_min_turnout
         ) {
             ballot.completed = true;
             ballot.tally_pass = true;
