@@ -307,7 +307,8 @@
     public(friend) fun assert_pass<Data: drop + store>(ballot: & TurnoutTally<Data>) {
       let thresh = get_current_threshold_required(ballot);
       assert!(ballot.tally_approve_pct > thresh, error::invalid_state(ENOT_ABOVE_THRESHOLD));
-    assert!(ballot.tally_turnout_pct > ballot.cfg_min_turnout, error::invalid_state(EINSUFFICIENT_TURNOUT));
+      assert!(ballot.tally_turnout_pct > ballot.cfg_min_turnout, error::invalid_state(EINSUFFICIENT_TURNOUT));
+
     }
 
 

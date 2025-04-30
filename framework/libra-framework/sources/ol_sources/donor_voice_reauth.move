@@ -92,10 +92,9 @@ module ol_framework::donor_voice_reauth {
 
     /// force the abort if not authorized
     public(friend) fun assert_authorized(dv_account: address) acquires DonorAuthorized {
-
-       assert!(exists<DonorAuthorized>(dv_account), error::invalid_state(ENOT_INITIALIZED));
-       assert!(!authorization_expired(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
-       assert!(has_activity_in_last_year(dv_account), error::invalid_state(ENO_YEARLY_ACTIVITY));
+      assert!(exists<DonorAuthorized>(dv_account), error::invalid_state(ENOT_INITIALIZED));
+      assert!(!authorization_expired(dv_account), error::invalid_state(EDONOR_VOICE_AUTHORITY_EXPIRED));
+      assert!(has_activity_in_last_year(dv_account), error::invalid_state(ENO_YEARLY_ACTIVITY));
       assert!(!flagged_for_reauthorization(dv_account), error::invalid_state(EFLAGGED_FOR_REAUTH));
     }
 

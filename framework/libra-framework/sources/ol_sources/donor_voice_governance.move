@@ -38,6 +38,8 @@ module ol_framework::donor_voice_governance {
     const EDUPLICATE_PROPOSAL: u64 = 3;
     /// No pending ballot found
     const ENO_PENDING_BALLOT_FOUND: u64 = 4;
+    /// Reauthorization not required, the account is in good standing.
+    const EREAUTH_NOT_REQUIRED: u64 = 5;
 
     /////// CONSTANTS ////////
     /// Tally expires after number of epochs.
@@ -99,18 +101,26 @@ module ol_framework::donor_voice_governance {
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(dv_account);
       let pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
 
+      let is_found = false;
+      let count_found = 0;
+      let idx = 0;
+
       let i = 0;
       while (i < vector::length(pending)) {
         let a_ballot = vector::borrow(pending, i);
         let turnout_tally = ballot::get_type_struct(a_ballot);
         let proposal_data = turnout_tally::get_tally_data(turnout_tally);
         if (search_data == proposal_data) {
-          return (true, i)
+          is_found = true;
+          count_found = count_found + 1;
+          idx = i;
         };
         i = i + 1;
       };
 
-      (false, 0)
+      assert!(count_found < 2, error::invalid_argument(EDUPLICATE_PROPOSAL));
+
+      (is_found, idx)
     }
 
     /// get a mutable ballot from the pending list by index
@@ -124,7 +134,7 @@ module ol_framework::donor_voice_governance {
       let dv_account = account::get_guid_capability_address(cap);
       let gov_state = borrow_global_mut<Governance<TurnoutTally<T>>>(dv_account);
 
-      assert!(is_unique_pending_proposal(&gov_state.tracker, &proposal), error::invalid_argument(EDUPLICATE_PROPOSAL));
+      assert!(no_pending_proposal(&gov_state.tracker, &proposal), error::invalid_argument(EDUPLICATE_PROPOSAL));
 
       // what's the maximum universe of valid votes.
       let max_votes_enrollment = get_enrollment(dv_account);
@@ -156,6 +166,7 @@ module ol_framework::donor_voice_governance {
     fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, proposal_data: T, in_favor: bool): Option<bool> acquires Governance {
       assert_is_voter(donor, multisig_address);
 
+
       let (found, index) = pending_ballot_idx_by_data(multisig_address, &proposal_data);
 
       if (!found) {
@@ -163,15 +174,16 @@ module ol_framework::donor_voice_governance {
       };
 
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
+
       let ballot_mut = pending_ballot_mut_at_index(state, index);
 
       let ballot_guid = ballot::get_ballot_id(ballot_mut);
       let tally_state = ballot::get_type_struct_mut(ballot_mut);
       let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
 
-      turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight);
+      turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight)
 
-      maybe_close_gov<T>(multisig_address)
+      // maybe_close_gov<T>(multisig_address)
     }
 
     /// A generic governance tally function that returns details of a governance vote.
@@ -248,8 +260,12 @@ module ol_framework::donor_voice_governance {
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
       // In a Reauth vote there is only ever one proposal at a time.
       let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
+      diem_std::debug::print(&401);
+      diem_std::debug::print(pending_list);
+
 
       if (vector::is_empty(pending_list)) {
+        diem_std::debug::print(&404);
         return option::none<bool>()
       };
 
@@ -300,8 +316,25 @@ module ol_framework::donor_voice_governance {
       turnout_tally::get_expiration_epoch(ballot_data)
     }
 
+    fun assert_pass_gov<T: drop + store>(dv_account: address, id: u64) acquires
+    Governance {
+      let ballot_guid = guid::create_id(dv_account, id);
+      let state = borrow_global<Governance<TurnoutTally<T>>>(dv_account);
+
+      // Search for the ballot using the provided GUID
+      let (found, idx, status_enum, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
+
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
+
+      // Get the ballot and its tally data
+      let ballot = ballot::get_ballot(&state.tracker, idx, status_enum);
+      let tally = ballot::get_type_struct(ballot);
+
+      turnout_tally::assert_pass(tally);
+    }
+
     /// Check if a proposal has already been made for this transaction.
-    fun is_unique_pending_proposal<T: drop + store>(tracker: &BallotTracker<TurnoutTally<T>>, data: &T): bool {
+    fun no_pending_proposal<T: drop + store>(tracker: &BallotTracker<TurnoutTally<T>>, data: &T): bool {
       // NOTE: Ballot.move does not check for duplicates. We need to check here.
       let list_pending = ballot::get_list_ballots_by_enum(tracker, ballot::get_pending_enum());
 
@@ -326,7 +359,7 @@ module ol_framework::donor_voice_governance {
 
     //////// GOV ACTIONS ////////
 
-    /// Liquidation tally only. The handler for liquidation exists in Donor Voice, where a tx script will call it.
+    /// Reauth tally only.
     public(friend) fun vote_reauthorize(donor: &signer, multisig_address: address): Option<bool> acquires Governance {
       vote_gov<Reauth>(donor, multisig_address, Reauth {}, true)
     }
@@ -335,6 +368,43 @@ module ol_framework::donor_voice_governance {
     public(friend) fun maybe_tally_reauth(multisig_address: address): Option<bool> acquires Governance {
       maybe_close_gov<Reauth>(multisig_address)
     }
+
+
+    public(friend) fun handle_reauth_vote(donor: &signer, guid_capability: &account::GUIDCapability) acquires Governance {
+      let multisig_address = account::get_guid_capability_address(guid_capability);
+      if (is_reauth_proposed(multisig_address)) {
+        diem_std::debug::print(&100000);
+
+        let res = vote_reauthorize(donor, multisig_address);
+        diem_std::debug::print(&100001);
+        diem_std::debug::print(&res);
+
+        // if the reauthorization is already proposed, then we can vote on it.
+        reauthorize_handler(multisig_address, guid_capability);
+
+      } else {
+        diem_std::debug::print(&200000);
+
+        // go ahead and propose it
+        propose_reauth(guid_capability);
+      }
+    }
+
+
+    /// propose and vote on the veto of a specific transaction.
+    /// The transaction must first have been scheduled, otherwise this proposal will abort.
+    fun reauthorize_handler(dv_account: address, guid_capability: &account::GUIDCapability) acquires Governance {
+        let res = maybe_tally_reauth(dv_account);
+        diem_std::debug::print(&6666);
+        diem_std::debug::print(&res);
+        // if tally closes and reauth is true
+        if (option::is_some(&res) && *option::borrow(&res)) {
+          diem_std::debug::print(&77777);
+          donor_voice_reauth::reauthorize_now(guid_capability);
+        }
+    }
+
+
 
     /// Liquidation voting only. The handler for liquidation exists in donor_voice_tx
     public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance {
@@ -368,10 +438,16 @@ module ol_framework::donor_voice_governance {
       propose_gov<Liquidate>(cap, data, epochs_duration)
     }
 
+    /// reauthorization cannot be proposed arbitrarily by a donor
+    /// it must be flagged by a policy issue (e.g. doesn't pay back advances)
+    /// must be inactive for a year
+    /// the reauthorization window/mandate of 5 years expired.
     public(friend) fun propose_reauth(
       cap: &account::GUIDCapability,
     ): guid::ID acquires Governance {
       let data = Reauth {};
+      let dv_address = account::get_guid_capability_address(cap);
+      assert!(!donor_voice_reauth::is_authorized(dv_address), error::invalid_argument(EREAUTH_NOT_REQUIRED));
       propose_gov<Reauth>(cap, data, REAUTH_TALLY_EXPIRES)
     }
 
@@ -551,6 +627,21 @@ module ol_framework::donor_voice_governance {
     }
 
     #[view]
+    /// gets a current pending reauth ballot, or aborts
+    public fun get_proposed_reauth_ballot(dv_account: address): u64 acquires Governance {
+      let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
+      let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
+      // there should never be more than one pending reauth ballot
+      assert!(vector::length(list_pending) == 1, error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
+
+      let ballot = vector::borrow(list_pending, 0);
+      let guid = ballot::get_ballot_id(ballot);
+
+      guid::id_creation_num(&guid)
+    }
+
+    #[view]
+    /// gets a current pending reauth ballot, or aborts
     public fun is_reauth_proposed(dv_account: address): bool acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
       let list_pending = ballot::get_list_ballots_by_enum(&state.tracker, ballot::get_pending_enum());
@@ -587,6 +678,13 @@ module ol_framework::donor_voice_governance {
     /// returns the deadline (in epochs) for a reauthorization vote
     public fun get_reauth_expiry(dv_account: address): u64 acquires Governance {
       deadline_gov<Reauth>(dv_account, &Reauth {})
+    }
+
+    #[view]
+    /// should produce a useful error if cannot pass
+    public fun reauth_would_pass(dv_account: address, ballot_id: u64): bool acquires Governance {
+      assert_pass_gov<Reauth>(dv_account, ballot_id);
+      true
     }
 
     /////// LIQ VIEWS ////////

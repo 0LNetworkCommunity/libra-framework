@@ -571,25 +571,6 @@ module ol_framework::donor_voice_txs {
   }
 
 
-  /// REAUTHORIZATION
-  fun propose_reauthorization_impl(donor: &signer, multisig_address: address) acquires TxSchedule {
-    donor_voice_governance::assert_is_voter(donor, multisig_address);
-    let state = borrow_global<TxSchedule>(multisig_address);
-    donor_voice_governance::propose_reauth(&state.guid_capability);
-  }
-
-  /// propose and vote on the veto of a specific transaction.
-  /// The transaction must first have been scheduled, otherwise this proposal will abort.
-  fun reauthorize_handler(donor: &signer, dv_account: address) acquires TxSchedule {
-      donor_voice_governance::assert_is_voter(donor, dv_account);
-      let res = donor_voice_governance::vote_reauthorize(donor, dv_account);
-      let state = borrow_global<TxSchedule>(dv_account);
-      // if tally closes and reauth is true
-      if (option::is_some(&res) && *option::borrow(&res)) {
-        donor_voice_reauth::reauthorize_now(&state.guid_capability);
-    }
-  }
-
   #[test_only]
   public(friend) fun test_propose_veto(donor: &signer, uid_of_tx: &guid::ID):
   Option<guid::ID>  acquires TxSchedule {
@@ -919,21 +900,10 @@ module ol_framework::donor_voice_txs {
   /// After proposed, subsequent donors can vote to reauth an account
   /// Public entry function required for txs cli.
   public entry fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
-    if (donor_voice_governance::is_reauth_proposed(multisig_address)) {
-      // if the reauthorization is already proposed, then we can vote on it.
-      reauthorize_handler(donor, multisig_address);
-    } else {
-      // go ahead and propose it
-      propose_reauthorization_impl(donor, multisig_address);
-    }
-  }
-  /// Standalone function to close the poll after threshold or expiration passed
-  /// The reason for a separate function is so that closing the poll and
-  /// voting may not need to be in the same transaction. They can be atomic
-  /// and produce better error messages.
-  // Anyone cal call this
-  public entry fun maybe_tally_reauth_tx(multisig_address: address) {
-    donor_voice_governance::maybe_tally_reauth(multisig_address);
+    donor_voice_governance::assert_is_voter(donor, multisig_address);
+    let state = borrow_global<TxSchedule>(multisig_address);
+    let guid_cap = &state.guid_capability;
+    donor_voice_governance::handle_reauth_vote(donor, guid_cap);
   }
 
   // LIQUIDATE TXS

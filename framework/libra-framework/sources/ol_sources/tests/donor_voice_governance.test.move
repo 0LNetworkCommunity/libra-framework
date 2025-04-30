@@ -58,7 +58,7 @@ module ol_framework::test_donor_voice_governance {
       let _vals = mock::genesis_n_vals(framework, 3);
       mock::ol_initialize_coin_and_fund_vals(framework, 100000, true);
 
-      let (dv_sig, _admin_sigs, donor_sigs) = mock::mock_dv(framework, marlon_sponsor, 2);
+      let (dv_sig, _admin_sigs, donor_sigs) = mock::mock_dv(framework, marlon_sponsor, 4);
 
       let dv_address = signer::address_of(&dv_sig);
       donor_voice_reauth::test_set_requires_reauth(framework, dv_address);
@@ -69,6 +69,8 @@ module ol_framework::test_donor_voice_governance {
       // everyone votes
       let i = 0;
       while (i < vector::length(&donor_sigs)) {
+        diem_std::debug::print(&444444);
+        diem_std::debug::print(&i);
         let donor_sig = vector::borrow(&donor_sigs, i);
         donor_voice_txs::vote_reauth_tx(donor_sig, dv_address);
         let (pending, _, _ ) = donor_voice_governance::get_reauth_ballots(dv_address);
