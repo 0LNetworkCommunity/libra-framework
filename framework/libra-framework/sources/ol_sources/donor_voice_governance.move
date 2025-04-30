@@ -163,27 +163,26 @@ module ol_framework::donor_voice_governance {
     }
 
     /// Vote for a governance proposal of generic type.
-    fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, proposal_data: T, in_favor: bool): Option<bool> acquires Governance {
+    fun vote_gov<T: drop + store>(donor: &signer, multisig_address: address, ballot_id: u64, in_favor: bool): Option<bool> acquires Governance {
       assert_is_voter(donor, multisig_address);
 
+      let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
 
-      let (found, index) = pending_ballot_idx_by_data(multisig_address, &proposal_data);
+      // Create ballot GUID from the ID number
+      let ballot_guid = guid::create_id(multisig_address, ballot_id);
+
+      // Find the ballot with the given GUID
+      let (found, idx, status_enum, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
 
       if (!found) {
         return option::none<bool>()
       };
 
-      let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
-
-      let ballot_mut = pending_ballot_mut_at_index(state, index);
-
-      let ballot_guid = ballot::get_ballot_id(ballot_mut);
-      let tally_state = ballot::get_type_struct_mut(ballot_mut);
+      // Get the ballot and vote on it
+      let ballot_mut = ballot::get_ballot_mut(&mut state.tracker, idx, status_enum);
       let user_weight = get_user_donations(multisig_address, signer::address_of(donor));
 
-      turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight)
-
-      // maybe_tally_and_complete<T>(multisig_address)
+      turnout_tally::vote(donor, ballot::get_type_struct_mut(ballot_mut), &ballot_guid, in_favor, user_weight)
     }
 
     /// A generic governance tally function that returns details of a governance vote.
@@ -365,7 +364,10 @@ module ol_framework::donor_voice_governance {
       if (is_reauth_proposed(multisig_address)) {
         diem_std::debug::print(&100000);
 
-        let res = vote_gov<Reauth>(donor, multisig_address, Reauth {}, approve);
+        // Get the ballot ID if available
+        let ballot_id = get_proposed_reauth_ballot(multisig_address);
+
+        let res = vote_gov<Reauth>(donor, multisig_address, ballot_id, approve);
         diem_std::debug::print(&100001);
         diem_std::debug::print(&res);
         // if tally closes and reauth is true
@@ -400,7 +402,17 @@ module ol_framework::donor_voice_governance {
 
     /// Liquidation voting only. The handler for liquidation exists in donor_voice_tx
     public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance {
-      vote_gov<Liquidate>(donor, multisig_address, Liquidate {}, true)
+      // Check if liquidation is already proposed and get the first ballot ID
+      if (!is_liquidation_proposed(multisig_address)) {
+        return option::none<bool>()
+      };
+
+      // Get the ballot ID - there should only be one pending liquidation ballot at a time
+      let (pending_ids, _, _) = get_liquidation_ballots(multisig_address);
+      assert!(!vector::is_empty(&pending_ids), error::invalid_argument(ENO_PENDING_BALLOT_FOUND));
+      let ballot_id = *vector::borrow(&pending_ids, 0);
+
+      vote_gov<Liquidate>(donor, multisig_address, ballot_id, true)
     }
 
     //////// TX HELPERS /////////
@@ -473,12 +485,12 @@ module ol_framework::donor_voice_governance {
 
     /// Public script transaction to propose a veto, or vote on it if it already exists.
     /// should only be called by the Donor Voice.move so that the handlers can be called on "pass" conditions.
-    public(friend) fun veto_by_id(user: &signer, ballot_guid: &guid::ID): Option<bool> acquires Governance {
+    public(friend) fun veto_by_ballot_id(user: &signer, ballot_guid: &guid::ID): Option<bool> acquires Governance {
       let dv_account = guid::id_creator_address(ballot_guid);
       assert_is_voter(user, dv_account);
-      let proposal_data = Veto { guid: *ballot_guid };
-
-      vote_gov<Veto>(user, dv_account, proposal_data, true)
+      let ballot_id = guid::id_creation_num(ballot_guid);
+      // Use the ID we already have instead of searching for it
+      vote_gov<Veto>(user, dv_account, ballot_id, true)
     }
 
     /// The veto process for a donor voice transactions

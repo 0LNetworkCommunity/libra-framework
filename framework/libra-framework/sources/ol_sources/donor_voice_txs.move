@@ -495,7 +495,7 @@ module ol_framework::donor_voice_txs {
     let multisig_address = guid::id_creator_address(tx_uid);
     donor_voice_governance::assert_is_voter(sender, multisig_address);
 
-    let veto_is_approved = donor_voice_governance::veto_by_id(sender, tx_uid);
+    let veto_is_approved = donor_voice_governance::veto_by_ballot_id(sender, tx_uid);
     if (option::is_none(&veto_is_approved)) return;
 
     // check is scheduled
