@@ -903,7 +903,8 @@ module ol_framework::donor_voice_txs {
     donor_voice_governance::assert_is_voter(donor, multisig_address);
     let state = borrow_global<TxSchedule>(multisig_address);
     let guid_cap = &state.guid_capability;
-    donor_voice_governance::handle_reauth_vote(donor, guid_cap);
+    // TODO: add approve/reject options
+    donor_voice_governance::vote_reauthorize(donor, guid_cap, true);
   }
 
   // LIQUIDATE TXS

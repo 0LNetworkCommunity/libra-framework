@@ -183,7 +183,7 @@ module ol_framework::donor_voice_governance {
 
       turnout_tally::vote(donor, tally_state, &ballot_guid, in_favor, user_weight)
 
-      // maybe_close_gov<T>(multisig_address)
+      // maybe_tally_and_complete<T>(multisig_address)
     }
 
     /// A generic governance tally function that returns details of a governance vote.
@@ -256,7 +256,7 @@ module ol_framework::donor_voice_governance {
     /// * `Some(true)` - The vote passed
     /// * `Some(false)` - The vote failed
     /// * `None` - The vote is still ongoing or no ballot exists
-    fun maybe_close_gov<T: drop + store>(multisig_address: address): Option<bool> acquires Governance {
+    fun maybe_tally_and_complete<T: drop + store>(multisig_address: address): Option<bool> acquires Governance {
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
       // In a Reauth vote there is only ever one proposal at a time.
       let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
@@ -360,49 +360,41 @@ module ol_framework::donor_voice_governance {
     //////// GOV ACTIONS ////////
 
     /// Reauth tally only.
-    public(friend) fun vote_reauthorize(donor: &signer, multisig_address: address): Option<bool> acquires Governance {
-      vote_gov<Reauth>(donor, multisig_address, Reauth {}, true)
-    }
-
-    /// standalone function which can close the poll
-    public(friend) fun maybe_tally_reauth(multisig_address: address): Option<bool> acquires Governance {
-      maybe_close_gov<Reauth>(multisig_address)
-    }
-
-
-    public(friend) fun handle_reauth_vote(donor: &signer, guid_capability: &account::GUIDCapability) acquires Governance {
+    public(friend) fun vote_reauthorize(donor: &signer, guid_capability: &account::GUIDCapability, approve: bool) acquires Governance {
       let multisig_address = account::get_guid_capability_address(guid_capability);
       if (is_reauth_proposed(multisig_address)) {
         diem_std::debug::print(&100000);
 
-        let res = vote_reauthorize(donor, multisig_address);
+        let res = vote_gov<Reauth>(donor, multisig_address, Reauth {}, approve);
         diem_std::debug::print(&100001);
-        diem_std::debug::print(&res);
-
-        // if the reauthorization is already proposed, then we can vote on it.
-        reauthorize_handler(multisig_address, guid_capability);
-
-      } else {
-        diem_std::debug::print(&200000);
-
-        // go ahead and propose it
-        propose_reauth(guid_capability);
-      }
-    }
-
-
-    /// propose and vote on the veto of a specific transaction.
-    /// The transaction must first have been scheduled, otherwise this proposal will abort.
-    fun reauthorize_handler(dv_account: address, guid_capability: &account::GUIDCapability) acquires Governance {
-        let res = maybe_tally_reauth(dv_account);
-        diem_std::debug::print(&6666);
         diem_std::debug::print(&res);
         // if tally closes and reauth is true
         if (option::is_some(&res) && *option::borrow(&res)) {
           diem_std::debug::print(&77777);
           donor_voice_reauth::reauthorize_now(guid_capability);
         }
+
+      } else {
+        diem_std::debug::print(&200000);
+
+        // go ahead and propose it
+        maybe_propose_reauth(guid_capability);
+      }
     }
+
+
+    // /// propose and vote on the veto of a specific transaction.
+    // /// The transaction must first have been scheduled, otherwise this proposal will abort.
+    // fun reauthorize_handler(dv_account: address, guid_capability: &account::GUIDCapability) acquires Governance {
+    //     let res = maybe_tally_reauth(dv_account);
+    //     diem_std::debug::print(&6666);
+    //     diem_std::debug::print(&res);
+    //     // if tally closes and reauth is true
+    //     if (option::is_some(&res) && *option::borrow(&res)) {
+    //       diem_std::debug::print(&77777);
+    //       donor_voice_reauth::reauthorize_now(guid_capability);
+    //     }
+    // }
 
 
 
@@ -442,7 +434,7 @@ module ol_framework::donor_voice_governance {
     /// it must be flagged by a policy issue (e.g. doesn't pay back advances)
     /// must be inactive for a year
     /// the reauthorization window/mandate of 5 years expired.
-    public(friend) fun propose_reauth(
+    public(friend) fun maybe_propose_reauth(
       cap: &account::GUIDCapability,
     ): guid::ID acquires Governance {
       let data = Reauth {};
