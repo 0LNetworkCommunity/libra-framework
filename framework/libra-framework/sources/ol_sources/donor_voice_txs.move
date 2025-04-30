@@ -489,16 +489,17 @@ module ol_framework::donor_voice_txs {
   // NOTE: veto and tx both have UIDs but they are separate
   fun veto_handler(
     sender: &signer,
-    veto_uid: &guid::ID,
+    ballot_uid: &guid::ID,
     tx_uid: &guid::ID,
   ) acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(tx_uid);
     donor_voice_governance::assert_is_voter(sender, multisig_address);
 
-    let veto_is_approved = donor_voice_governance::veto_by_ballot_id(sender, tx_uid);
+    // NOTE: we are voting with the BALLOT ID
+    let veto_is_approved = donor_voice_governance::veto_by_ballot_id(sender, ballot_uid);
     if (option::is_none(&veto_is_approved)) return;
 
-    // check is scheduled
+    // check the TX is no longer scheduled
     assert!(is_scheduled(multisig_address, tx_uid), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
 
     if (*option::borrow(&veto_is_approved)) {
@@ -519,7 +520,7 @@ module ol_framework::donor_voice_txs {
         // is the same as the end of the veto ballot
         // This is because the ballot expiration can be
         // extended based on the threshold of votes.
-        donor_voice_governance::sync_ballot_and_tx_expiration(sender, veto_uid, tx_mut.deadline)
+        donor_voice_governance::sync_ballot_and_tx_expiration(sender, ballot_uid, tx_mut.deadline)
       }
 
     }
@@ -943,11 +944,11 @@ module ol_framework::donor_voice_txs {
   // TODO: flagged for deprecation. Propose_veto_tx handles both proposing and
   // voting
   /// After proposed, subsequent veto voters call this to vote on a tx veto
-  public fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
-    let tx_uid = guid::create_id(multisig_address, id);
-    let (found, veto_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);
+  public fun vote_veto_tx(donor: &signer, multisig_address: address, tx_id_num: u64)  acquires TxSchedule, Freeze {
+    let tx_uid = guid::create_id(multisig_address, tx_id_num);
+    let (found, ballot_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);
     assert!(found, error::invalid_argument(ENO_VETO_ID_FOUND));
-    veto_handler(donor, &veto_uid, &tx_uid);
+    veto_handler(donor, &ballot_uid, &tx_uid);
   }
 
   #[test_only]

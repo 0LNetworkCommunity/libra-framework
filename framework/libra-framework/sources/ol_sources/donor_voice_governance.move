@@ -245,16 +245,13 @@ module ol_framework::donor_voice_governance {
     }
 
     /// Maybe close the poll and move the pending ballot to the approved or rejected list.
-    /// This function checks if there's a ballot that can be finalized, and if so,
+    /// This function checks if a specific ballot can be finalized, and if so,
     /// moves it from the pending list to either the approved or rejected list.
-    ///
-    /// Unlike the tally_gov function which requires data to identify a specific ballot,
-    /// this function processes the first pending ballot for the given type.
-    /// For Reauth votes, there's typically only one proposal at a time.
     ///
     /// # Arguments
     ///
     /// * `multisig_address` - The address of the Donor Voice account where the governance is stored
+    /// * `ballot_id` - The specific ballot ID to check and potentially complete
     ///
     /// # Type Parameters
     ///
@@ -266,29 +263,31 @@ module ol_framework::donor_voice_governance {
     /// * `Some(true)` - The vote passed
     /// * `Some(false)` - The vote failed
     /// * `None` - The vote is still ongoing or no ballot exists
-    fun maybe_tally_and_complete<T: drop + store>(multisig_address: address): Option<bool> acquires Governance {
+    fun maybe_tally_and_complete<T: drop + store>(multisig_address: address, ballot_id: u64): Option<bool> acquires Governance {
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
-      // In a Reauth vote there is only ever one proposal at a time.
-      let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
+      let ballot_guid = guid::create_id(multisig_address, ballot_id);
 
-      if (vector::is_empty(pending_list)) {
+      // Find the ballot with the given ID in the pending list
+      let (found, idx, status_enum, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
+
+      if (!found || status_enum != ballot::get_pending_enum()) {
         return option::none<bool>()
       };
 
-      let this_ballot = vector::borrow_mut(pending_list, 0);
+      let ballot_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, status_enum);
+      let this_ballot = vector::borrow_mut(ballot_list, idx);
       let tally_state = ballot::get_type_struct_mut(this_ballot);
 
       let result = turnout_tally::maybe_tally(tally_state);
 
       if (option::is_some(&result)) {
-        let guid = ballot::get_ballot_id(this_ballot);
         let result_enum = if (*option::borrow(&result)) {
           ballot::get_approved_enum()
         } else {
           ballot::get_rejected_enum()
         };
 
-        ballot::move_ballot(&mut state.tracker, &guid, ballot::get_pending_enum(), result_enum);
+        ballot::complete_and_move(&mut state.tracker, &ballot_guid, result_enum);
       };
 
       result
@@ -379,7 +378,7 @@ module ol_framework::donor_voice_governance {
           donor_voice_reauth::reauthorize_now(guid_capability);
         };
 
-        maybe_tally_and_complete<Reauth>(multisig_address);
+        maybe_tally_and_complete<Reauth>(multisig_address, ballot_id);
 
       } else {
         // go ahead and propose it
@@ -477,7 +476,9 @@ module ol_framework::donor_voice_governance {
       assert_is_voter(user, dv_account);
       let ballot_id = guid::id_creation_num(ballot_guid);
       // Use the ID we already have instead of searching for it
-      vote_gov<Veto>(user, dv_account, ballot_id, true)
+
+      vote_gov<Veto>(user, dv_account, ballot_id, true);
+      maybe_tally_and_complete<Veto>(dv_account, ballot_id)
     }
 
     /// The veto process for a donor voice transactions

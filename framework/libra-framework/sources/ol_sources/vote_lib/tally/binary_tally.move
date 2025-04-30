@@ -230,24 +230,11 @@
             REJECTED // rejected
           };
           // since we have a result lets update the Ballot state
-          complete_and_move<IssueData>(tracker, uid, *&status_enum);
+          ballot::complete_and_move(tracker, uid, *&status_enum);
           return option::some(passed)
         };
 
         option::none()
-    }
-
-    public(friend) fun complete_and_move<IssueData: drop + store>(
-      tracker: &mut BallotTracker<BinaryTally<IssueData>>,
-      uid: &guid::ID,
-      to_status_enum: u8
-    ) {
-      let (found, _idx, status_enum, _completed) = ballot::find_anywhere(tracker, uid);
-      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
-
-      let b = ballot::get_ballot_by_id_mut(tracker, uid);
-      ballot::complete_ballot(b);
-      ballot::move_ballot(tracker, uid, status_enum, to_status_enum);
     }
 
     // Convenience function to overwrite the tally data of a ballot, in case you got boxed in somewhere

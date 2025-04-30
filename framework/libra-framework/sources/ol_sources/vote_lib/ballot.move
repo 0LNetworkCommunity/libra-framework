@@ -286,10 +286,26 @@
     public fun move_ballot<TallyType: drop + store>(
       tracker: &mut BallotTracker<TallyType>,
       id: &guid::ID,
-      from_status_enum: u8,
       to_status_enum: u8,
     ) {
+      let (found, _, from_status_enum, _) = find_anywhere(tracker, id);
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
       let b = extract_ballot(tracker, id, from_status_enum);
+      let to_list = get_list_ballots_by_enum_mut<TallyType>(tracker, to_status_enum);
+      vector::push_back(to_list, b);
+    }
+        /// extract a ballot and put on another list.
+    public fun complete_and_move<TallyType: drop + store>(
+      tracker: &mut BallotTracker<TallyType>,
+      id: &guid::ID,
+      to_status_enum: u8,
+    ) {
+      let (found, _, from_status_enum, _) = find_anywhere(tracker, id);
+      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
+
+      let b = extract_ballot(tracker, id, from_status_enum);
+      complete_ballot(&mut b);
+
       let to_list = get_list_ballots_by_enum_mut<TallyType>(tracker, to_status_enum);
       vector::push_back(to_list, b);
     }
