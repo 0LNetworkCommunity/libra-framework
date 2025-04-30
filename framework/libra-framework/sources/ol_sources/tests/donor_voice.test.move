@@ -222,43 +222,29 @@ module ol_framework::test_donor_voice {
       // NOTE: there is a tx function that can propose and vote in single step
       donor_voice_txs::vote_veto_tx(eve, donor_voice_address, tx_id_num);
 
-      // let (pending, _approved, _rejected) = donor_voice_governance::get_veto_ballots(donor_voice_address);
-      // let ballot_id = vector::borrow(&pending, 0);
-
-
-      // let (_found, _idx, _status_enum, _completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid_of_transfer);
-
-      // let is_pending = donor_voice_governance::tx_has_veto_pending(donor_voice_address, tx_id_num);
+      let is_pending = donor_voice_governance::tx_has_veto_pending(donor_voice_address, tx_id_num);
 
       // the vote has completed, and so this payment tx
       // will not appear as having a veto pending
-      // assert!(!is_pending, 7357008);
-
-      // if we want to tally a accepted or rejected veto
-      // from the past, we need to get the ballot id
-      // and then tally by ballot id.
-
+      assert!(!is_pending, 7357008);
 
 
 
       let (approve_pct, _, req_threshold, _, _, approved, is_closed, status, is_complete) = donor_voice_governance::get_veto_tally(donor_voice_address, ballot_id_num);
-      diem_std::debug::print(&approve_pct);
-      diem_std::debug::print(&req_threshold);
-      diem_std::debug::print(&approved);
-      diem_std::debug::print(&is_closed);
-      diem_std::debug::print(&status);
-      diem_std::debug::print(&is_complete);
 
-
-      // assert!(approve_pct == 10000, 7357008);
-      // assert!(req_threshold == 5100, 7357009);
+      assert!(approve_pct == 10000, 7357008);
+      assert!(req_threshold == 5100, 7357009);
+      assert!(approved, 7357010);
+      assert!(is_closed, 7357011);
+      assert!(status == 2, 7357012);
+      assert!(is_complete, 7357013);
 
       // // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
-      &uid_of_transfer), 7357010);
+      &uid_of_transfer), 7357014);
 
-      // // it's vetoed
-      // assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357011);
+      // it's vetoed
+      assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357015);
     }
 
     // should not be able sign a tx twice
