@@ -185,12 +185,17 @@ module ol_framework::donor_voice_governance {
       turnout_tally::vote(donor, ballot::get_type_struct_mut(ballot_mut), &ballot_guid, in_favor, user_weight)
     }
 
-    /// A generic governance tally function that returns details of a governance vote.
+    /// A generic governance tally function that returns detailed metrics about a governance vote.
+    ///
+    /// This function looks up a specific ballot by its GUID and returns comprehensive information
+    /// about its current state, including voting percentages, thresholds, deadlines, and status.
+    /// It's used by the governance system to determine the outcome of votes across different
+    /// governance types (reauthorization, liquidation, veto).
     ///
     /// # Arguments
     ///
-    /// * `dv_account` - The Donor Voice account address where the governance ballot exists
-    /// * `ballot_guid` - The GUID of the ballot to search for
+    /// * `dv_account` - The Donor Voice account address where the governance ballot is stored
+    /// * `ballot_guid` - The unique GUID identifying the specific ballot to retrieve
     ///
     /// # Type Parameters
     ///
@@ -199,18 +204,20 @@ module ol_framework::donor_voice_governance {
     /// # Returns
     ///
     /// A tuple containing:
-    /// * `approval_pct` - The percentage of votes that approved the proposal
-    /// * `turnout_pct` - The percentage of eligible voters who participated
-    /// * `required_threshold` - The minimum approval percentage required to pass
-    /// * `epoch_deadline` - The epoch by which voting must be completed
-    /// * `minimum_turnout` - The minimum percentage of eligible voters that must participate
-    /// * `approved` - Whether the proposal has been approved based on current votes
-    /// * `is_complete` - Whether the voting process has been completed
+    /// * `approval_pct` - The percentage (0-100) of votes that approved the proposal
+    /// * `turnout_pct` - The percentage (0-100) of eligible voters who participated
+    /// * `required_threshold` - The minimum approval percentage required for the proposal to pass
+    /// * `epoch_deadline` - The epoch number when voting ends
+    /// * `minimum_turnout` - The minimum percentage of eligible voters that must participate for a valid result
+    /// * `approved` - Whether the proposal has reached the approval threshold
+    /// * `is_complete` - Whether the voting process has been marked as complete
+    /// * `status_enum` - The current status of the ballot (pending, approved, rejected)
+    /// * `ballot_completed` - Whether the ballot itself has been marked as completed
     ///
     /// # Errors
     ///
-    /// * `ENO_BALLOT_FOUND` - If no ballot is found for the given governance action
-    fun tally_gov<T: drop + store>(dv_account: address, ballot_guid: guid::ID): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
+    /// * `ENO_BALLOT_FOUND` - If no ballot with the specified GUID exists in any state
+    fun tally_gov<T: drop + store>(dv_account: address, ballot_guid: guid::ID): (u64, u64, u64, u64, u64, bool, bool, u8, bool) acquires Governance {
       let state = borrow_global<Governance<TurnoutTally<T>>>(dv_account);
 
       // Search for the ballot using the provided GUID
@@ -228,9 +235,13 @@ module ol_framework::donor_voice_governance {
       let epoch_deadline = turnout_tally::get_expiration_epoch(tally);
       let minimum_turnout = turnout_tally::get_minimum_turnout(tally);
 
-      let (is_complete, approved) = turnout_tally::get_result(tally);
+      let (is_closed, approved) = turnout_tally::get_result(tally);
+      // TODO there's some nomenclature issues
+      // A ballot also keeps track of completion.
+      let ballot_completed = ballot::is_completed(ballot);
 
-      (approval_pct, turnout_pct, required_threshold, epoch_deadline, minimum_turnout, approved, is_complete)
+
+      (approval_pct, turnout_pct, required_threshold, epoch_deadline, minimum_turnout, approved, is_closed, status_enum, ballot_completed)
     }
 
     /// Maybe close the poll and move the pending ballot to the approved or rejected list.
@@ -259,12 +270,8 @@ module ol_framework::donor_voice_governance {
       let state = borrow_global_mut<Governance<TurnoutTally<T>>>(multisig_address);
       // In a Reauth vote there is only ever one proposal at a time.
       let pending_list = ballot::get_list_ballots_by_enum_mut(&mut state.tracker, ballot::get_pending_enum());
-      diem_std::debug::print(&401);
-      diem_std::debug::print(pending_list);
-
 
       if (vector::is_empty(pending_list)) {
-        diem_std::debug::print(&404);
         return option::none<bool>()
       };
 
@@ -362,43 +369,23 @@ module ol_framework::donor_voice_governance {
     public(friend) fun vote_reauthorize(donor: &signer, guid_capability: &account::GUIDCapability, approve: bool) acquires Governance {
       let multisig_address = account::get_guid_capability_address(guid_capability);
       if (is_reauth_proposed(multisig_address)) {
-        diem_std::debug::print(&100000);
-
         // Get the ballot ID if available
         let ballot_id = get_proposed_reauth_ballot(multisig_address);
 
         let res = vote_gov<Reauth>(donor, multisig_address, ballot_id, approve);
-        diem_std::debug::print(&100001);
-        diem_std::debug::print(&res);
+
         // if tally closes and reauth is true
         if (option::is_some(&res) && *option::borrow(&res)) {
-          diem_std::debug::print(&77777);
           donor_voice_reauth::reauthorize_now(guid_capability);
-        }
+        };
+
+        maybe_tally_and_complete<Reauth>(multisig_address);
 
       } else {
-        diem_std::debug::print(&200000);
-
         // go ahead and propose it
         maybe_propose_reauth(guid_capability);
       }
     }
-
-
-    // /// propose and vote on the veto of a specific transaction.
-    // /// The transaction must first have been scheduled, otherwise this proposal will abort.
-    // fun reauthorize_handler(dv_account: address, guid_capability: &account::GUIDCapability) acquires Governance {
-    //     let res = maybe_tally_reauth(dv_account);
-    //     diem_std::debug::print(&6666);
-    //     diem_std::debug::print(&res);
-    //     // if tally closes and reauth is true
-    //     if (option::is_some(&res) && *option::borrow(&res)) {
-    //       diem_std::debug::print(&77777);
-    //       donor_voice_reauth::reauthorize_now(guid_capability);
-    //     }
-    // }
-
-
 
     /// Liquidation voting only. The handler for liquidation exists in donor_voice_tx
     public(friend) fun vote_liquidation(donor: &signer, multisig_address: address): Option<bool> acquires Governance {
@@ -592,28 +579,30 @@ module ol_framework::donor_voice_governance {
     /// # Arguments
     ///
     /// * `dv_account` - The Donor Voice account address
-    /// * `tx_id` - The transaction ID being vetoed
+    /// * `ballot_id` - The ballot ID number
     ///
     /// # Returns
     ///
     /// A tuple containing:
-    /// * `approval_pct` - The percentage of votes that approved the veto
-    /// * `turnout_pct` - The percentage of eligible voters who participated
+    /// * `approval_pct` - The percentage (0-100) of votes that approved the proposal
+    /// * `turnout_pct` - The percentage (0-100) of eligible voters who participated
     /// * `required_threshold` - The minimum approval percentage required to pass
     /// * `epoch_deadline` - The epoch by which voting must be completed
     /// * `minimum_turnout` - The minimum percentage of eligible voters that must participate
-    /// * `approved` - Whether the veto has been approved based on current votes
-    /// * `is_complete` - Whether the voting process has been completed
+    /// * `approved` - Whether the proposal has reached the approval threshold
+    /// * `is_complete` - Whether the voting process has been marked as complete
+    /// * `status_enum` - The current status of the ballot (pending, approved, rejected)
+    /// * `ballot_completed` - Whether the ballot itself has been marked as completed
     ///
     /// # Errors
     ///
-    /// * `ENO_BALLOT_FOUND` - If no veto ballot exists for the given transaction ID
-    public fun get_veto_tally(dv_account: address, ballot_id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
+    /// * `ENO_BALLOT_FOUND` - If no veto ballot exists for the given ballot ID
+    public fun get_veto_tally(dv_account: address, ballot_id: u64): (u64, u64, u64, u64, u64, bool, bool, u8, bool) acquires Governance {
       let guid = guid::create_id(dv_account, ballot_id);
       tally_gov<Veto>(dv_account, guid)
     }
 
-    public fun get_veto_tally_by_tx_id(dv_account: address, tx_id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
+    public fun get_veto_tally_by_tx_id(dv_account: address, tx_id: u64): (u64, u64, u64, u64, u64, bool, bool, u8, bool) acquires Governance {
       let tx_guid = guid::create_id(dv_account, tx_id);
       // First find the ballot GUID associated with this transaction
       let (found, ballot_guid) = find_tx_veto_id(tx_guid);
@@ -662,19 +651,22 @@ module ol_framework::donor_voice_governance {
     ///
     /// # Returns
     ///
-    /// A tuple containing ballot details (see `tally_gov` for details)
+    /// A tuple containing:
+    /// * `approval_pct` - The percentage (0-100) of votes that approved the proposal
+    /// * `turnout_pct` - The percentage (0-100) of eligible voters who participated
+    /// * `required_threshold` - The minimum approval percentage required to pass
+    /// * `epoch_deadline` - The epoch by which voting ends
+    /// * `minimum_turnout` - The minimum percentage of eligible voters that must participate
+    /// * `approved` - Whether the proposal has reached the approval threshold
+    /// * `is_complete` - Whether the voting process has been marked as complete
+    /// * `status_enum` - The current status of the ballot (pending, approved, rejected)
+    /// * `ballot_completed` - Whether the ballot itself has been marked as completed
     ///
     /// # Errors
     ///
     /// * `ENO_BALLOT_FOUND` - If no reauth ballot exists with the given ID
-    public fun get_reauth_tally(dv_account: address, id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
-      let ballot_guid = guid::create_id(dv_account, id);
-
-      // Check if the ballot exists before tallying
-      let state = borrow_global<Governance<TurnoutTally<Reauth>>>(dv_account);
-      let (found, _, _, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
-      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
-
+    public fun get_reauth_tally(dv_account: address, ballot_id: u64): (u64, u64, u64, u64, u64, bool, bool, u8, bool) acquires Governance {
+      let ballot_guid = guid::create_id(dv_account, ballot_id);
       tally_gov<Reauth>(dv_account, ballot_guid)
     }
 
@@ -717,19 +709,22 @@ module ol_framework::donor_voice_governance {
     ///
     /// # Returns
     ///
-    /// A tuple containing ballot details (see `tally_gov` for details)
+    /// A tuple containing:
+    /// * `approval_pct` - The percentage (0-100) of votes that approved the proposal
+    /// * `turnout_pct` - The percentage (0-100) of eligible voters who participated
+    /// * `required_threshold` - The minimum approval percentage required to pass
+    /// * `epoch_deadline` - The epoch by which voting ends
+    /// * `minimum_turnout` - The minimum percentage of eligible voters that must participate
+    /// * `approved` - Whether the proposal has reached the approval threshold
+    /// * `is_complete` - Whether the voting process has been marked as complete
+    /// * `status_enum` - The current status of the ballot (pending, approved, rejected)
+    /// * `ballot_completed` - Whether the ballot itself has been marked as completed
     ///
     /// # Errors
     ///
     /// * `ENO_BALLOT_FOUND` - If no liquidation ballot exists with the given ID
-    public fun get_liquidation_tally(dv_account: address, id: u64): (u64, u64, u64, u64, u64, bool, bool) acquires Governance {
+    public fun get_liquidation_tally(dv_account: address, id: u64): (u64, u64, u64, u64, u64, bool, bool, u8, bool) acquires Governance {
       let ballot_guid = guid::create_id(dv_account, id);
-
-      // Check if the ballot exists before tallying
-      let state = borrow_global<Governance<TurnoutTally<Liquidate>>>(dv_account);
-      let (found, _, _, _) = ballot::find_anywhere(&state.tracker, &ballot_guid);
-      assert!(found, error::invalid_argument(ENO_BALLOT_FOUND));
-
       tally_gov<Liquidate>(dv_account, ballot_guid)
     }
 

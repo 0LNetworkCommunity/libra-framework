@@ -234,7 +234,7 @@ module ol_framework::test_donor_voice {
 
       let ballot_id = vector::borrow(&approved, 0);
 
-      let (approve_pct, _, req_threshold, _, _, _approve, _is_complete) = donor_voice_governance::get_veto_tally(donor_voice_address, *ballot_id);
+      let (approve_pct, _, req_threshold, _, _, _approve, _is_complete, _, _) = donor_voice_governance::get_veto_tally(donor_voice_address, *ballot_id);
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);

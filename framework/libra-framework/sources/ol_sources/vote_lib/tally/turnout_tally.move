@@ -192,15 +192,10 @@
       // Commit note: do not abort so that a duplicate voter can tally
       // and close the poll
       if(!is_found) {
-        // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
-        let epoch_now = epoch_helper::get_current_epoch();
-        if (epoch_now > ballot.last_epoch_voted) {
-          ballot.last_epoch_approve = ballot.votes_approve;
-          ballot.last_epoch_reject = ballot.votes_reject;
-        };
+        // commit note: deprecated tracking
 
         // in every case, add the new vote
-        ballot.last_epoch_voted = epoch_now;
+        ballot.last_epoch_voted = epoch_helper::get_current_epoch();
         if (approve_reject) {
           ballot.votes_approve = ballot.votes_approve + weight;
         } else {
