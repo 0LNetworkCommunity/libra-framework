@@ -13,10 +13,13 @@ module ol_framework::donor_voice_migration {
     use std::vector;
     use diem_framework::multisig_account;
     use diem_framework::system_addresses;
+    use diem_framework::timestamp;
+    use ol_framework::activity;
     use ol_framework::multi_action;
     use ol_framework::migration_capability::{Self, MigrationCapability};
     use ol_framework::donor_voice;
     use ol_framework::donor_voice_governance;
+
 
     friend ol_framework::migrations;
 
@@ -58,6 +61,7 @@ module ol_framework::donor_voice_migration {
             multi_action::maybe_init_auth_offer(&multisig_signer, multisig_address);
 
             donor_voice_governance::maybe_init_dv_governance(&multisig_signer);
+            activity::lazy_initialize(&multisig_signer, timestamp::now_seconds());
 
         }
     }

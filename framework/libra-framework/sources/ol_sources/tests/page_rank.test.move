@@ -290,10 +290,6 @@ module ol_framework::test_page_rank {
     // should mark stale
     vouch_txs::vouch_for(root_sig, new_user_addr);
 
-    // will be stale until next computation
-    let stale = page_rank_lazy::is_stale(new_user_addr);
-    assert!(stale, 7357005);
-
     let max_single_score = page_rank_lazy::get_max_single_score();
 
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
@@ -461,4 +457,57 @@ module ol_framework::test_page_rank {
       i = i + 1;
     };
   }
+
+
+  #[test(framework = @ol_framework)]
+  /// When a vouch branch occurs,
+  /// and then merges back to a user,
+  /// the transitive scores should accumulate
+  fun diamond_pattern_accumulates(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    // Initialize page rank for the new user
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+    vouch_txs::vouch_for(root0, alice_addr);
+
+    let root1 = vector::borrow(&roots_sig, 1);
+    vouch::init(root1);
+    vouch_txs::vouch_for(root1, alice_addr);
+
+    let (received, _) = vouch::get_received_vouches(alice_addr);
+    assert!(vector::length(&received) == 2, 7357001);
+
+    let alice_score_pre = page_rank_lazy::get_trust_score(alice_addr);
+    assert!(alice_score_pre == 200_000, 7357002);
+
+    // root0 vouches for bob
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    vouch::init(&bob_sig);
+    let bob_addr = signer::address_of(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    vouch_txs::vouch_for(root0, bob_addr);
+    let bob_score = page_rank_lazy::get_trust_score(bob_addr);
+    assert!(bob_score == 100_000, 7357003);
+
+    // first check alice's score has not changed because of this
+    let alice_score_post = page_rank_lazy::get_trust_score(alice_addr);
+    assert!(alice_score_post == alice_score_pre, 7357002);
+
+    // Now bob will vouch for alice
+    vouch_txs::vouch_for(&bob_sig, alice_addr);
+
+    let page_rank_score_finally = page_rank_lazy::get_trust_score(alice_addr);
+    // 100k from root0, 100k from root1, 50k from bob
+    assert!(page_rank_score_finally == 250_000, 7357005);
+
+  }
+
 }

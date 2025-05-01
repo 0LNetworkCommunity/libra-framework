@@ -1,5 +1,5 @@
 /// Separate the vouch txs module
-/// founder caused a dependency cycle
+/// to prevent dependency cycles
 
 module ol_framework::vouch_txs {
   use std::signer;
@@ -14,9 +14,8 @@ module ol_framework::vouch_txs {
   public entry fun vouch_for(grantor: &signer, friend_account: address) {
     let grantor_addr = signer::address_of(grantor);
     vouch_limits::assert_under_limit(grantor_addr, friend_account);
-    vouch::vouch_for(grantor, friend_account);
-    page_rank_lazy::mark_as_stale(grantor_addr);
     page_rank_lazy::mark_as_stale(friend_account);
+    vouch::vouch_for(grantor, friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
     founder::maybe_set_friendly_founder(friend_account);
   }

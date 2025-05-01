@@ -5,7 +5,7 @@ use diem_logger::error;
 use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib;
 use libra_query::{account_queries, query_view};
-use libra_types::move_resource::gas_coin;
+use libra_types::{exports::Client, move_resource::gas_coin};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fs, path::PathBuf};
 
@@ -491,33 +491,76 @@ pub struct ReauthVoteTx {
 
 impl ReauthVoteTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        // we'll try to tally the poll, this should never abort.
-        let payload = libra_stdlib::donor_voice_txs_maybe_tally_reauth_tx(self.community_wallet);
-        sender.sign_submit_wait(payload).await?;
-
+        // Submit the reauthorization vote
         let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
         sender.sign_submit_wait(payload).await.ok();
 
-        // Call the view function to show current tally
-        let res = query_view::get_view(
-            sender.client(),
-            "0x1::donor_voice_governance::get_reauth_tally",
-            None,
-            Some(self.community_wallet.to_canonical_string()),
-        )
-        .await?;
+        // First, check if we have pending reauthorization ballots
+        let ballot_id =
+            fetch_pending_reauth_ballots(sender.client(), self.community_wallet).await?;
 
-        display_reauth_tally_results(&res);
+        // Display tally results based on the ballot ID
+        if let Some(id) = ballot_id {
+            println!("Found reauthorization ballot with ID: {}", id);
+
+            let args = format!("{}, {}", self.community_wallet.to_canonical_string(), id);
+            // Call the view function with the specific ballot ID, which is required by the Move function
+            let res = query_view::get_view(
+                sender.client(),
+                "0x1::donor_voice_governance::get_reauth_tally",
+                None,
+                Some(args),
+            )
+            .await?;
+
+            display_reauth_tally_results(&res);
+        } else {
+            println!("No pending reauthorization ballots found");
+            // Cannot call get_reauth_tally without a ballot ID as it's a required parameter
+            println!("Cannot display tally results without a valid ballot ID");
+        }
 
         Ok(())
     }
+}
+
+/// Fetches pending reauthorization ballot IDs for a community wallet
+async fn fetch_pending_reauth_ballots(
+    client: &Client,
+    community_wallet: AccountAddress,
+) -> anyhow::Result<Option<u64>> {
+    let reauth_ballots = query_view::get_view(
+        client,
+        "0x1::donor_voice_governance::get_reauth_ballots",
+        None,
+        Some(community_wallet.to_canonical_string()),
+    )
+    .await?;
+
+    // Process the ballot data to extract the ballot ID
+    if let Some(ballot_array) = reauth_ballots.as_array() {
+        if let Some(pending_ballots) = ballot_array.first().and_then(|v| v.as_array()) {
+            if !pending_ballots.is_empty() {
+                if let Some(ballot_id) = pending_ballots
+                    .first()
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| s.parse::<u64>().ok())
+                {
+                    return Ok(Some(ballot_id));
+                }
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 /// Displays the reauthorization poll results in a readable format
 fn display_reauth_tally_results(res: &serde_json::Value) {
     // Parse the response according to the documented structure
     if let Some(arr) = res.as_array() {
-        if arr.len() >= 7 {
+        if arr.len() >= 9 {
+            // Now expecting 9 values instead of 7
             // Extract and format percentage values (divide by 100 for display)
             let percent_approval = arr[0]
                 .as_str()
@@ -545,6 +588,19 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
                 / 100.0;
             let approved = arr[5].as_bool().unwrap_or(false);
             let is_complete = arr[6].as_bool().unwrap_or(false);
+            let status_enum = arr[7]
+                .as_str()
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0);
+            let ballot_completed = arr[8].as_bool().unwrap_or(false);
+
+            // Map status_enum to human-readable status
+            let status_str = match status_enum {
+                0 => "Pending",
+                1 => "Approved",
+                2 => "Rejected",
+                _ => "Unknown",
+            };
 
             println!("\nReauthorization Poll Status:");
             println!("------------------------------");
@@ -553,9 +609,14 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
             println!("Approval Threshold:  {:.2}%", threshold_needed);
             println!("Minimum Turnout:     {:.2}%", min_turnout_required);
             println!("Epoch Deadline:      {}", epoch_deadline);
+            println!("Ballot Status:       {}", status_str);
             println!(
                 "Poll Complete:       {}",
                 if is_complete { "Yes" } else { "No" }
+            );
+            println!(
+                "Ballot Completed:    {}",
+                if ballot_completed { "Yes" } else { "No" }
             );
 
             if is_complete {
@@ -571,19 +632,19 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
 
                     println!("Rejection Reason:    ");
                     if !approval_passing && !turnout_passing {
-                        println!("                    • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
+                        println!("                     • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
                                  percent_approval, threshold_needed, turnout_percent, min_turnout_required);
                     } else if !approval_passing {
-                        println!("                    • Approval rate too low: {:.2}% (threshold: {:.2}%)",
+                        println!("                     • Approval rate too low: {:.2}% (threshold: {:.2}%)",
                                  percent_approval, threshold_needed);
                     } else if !turnout_passing {
                         println!(
-                            "                    • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
+                            "                     • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
                             turnout_percent, min_turnout_required
                         );
                     } else {
                         println!(
-                            "                    • Unknown reason (possible logic error in tally)"
+                            "                     • Unknown reason (possible logic error in tally)"
                         );
                     }
                 }
@@ -593,26 +654,26 @@ fn display_reauth_tally_results(res: &serde_json::Value) {
                 let turnout_passing = turnout_percent >= min_turnout_required;
 
                 if approval_passing && turnout_passing {
-                    println!("Current Status:     On track to PASS");
+                    println!("Current Status:      On track to PASS");
                 } else {
-                    println!("Current Status:     Not passing requirements");
+                    println!("Current Status:      Not passing requirements");
 
                     if !approval_passing && !turnout_passing {
-                        println!("                    • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
+                        println!("                     • Both approval rate ({:.2}% < {:.2}%) and turnout ({:.2}% < {:.2}%) below thresholds",
                                 percent_approval, threshold_needed, turnout_percent, min_turnout_required);
                     } else if !approval_passing {
-                        println!("                    • Approval rate too low: {:.2}% (threshold: {:.2}%)",
+                        println!("                     • Approval rate too low: {:.2}% (threshold: {:.2}%)",
                                 percent_approval, threshold_needed);
                     } else {
                         println!(
-                            "                    • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
+                            "                     • Voter turnout too low: {:.2}% (minimum: {:.2}%)",
                             turnout_percent, min_turnout_required
                         );
                     }
                 }
             }
         } else {
-            println!("Unexpected response format from reauth tally view");
+            println!("Unexpected response format from reauth tally view - expected 9 values but received {}. The server may be running an outdated version.", arr.len());
         }
     }
 }

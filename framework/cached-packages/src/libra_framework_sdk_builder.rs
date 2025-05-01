@@ -191,14 +191,6 @@ pub enum EntryFunctionCall {
     /// Public function for production triggering of epoch boundary.
     DiemGovernanceTriggerEpoch {},
 
-    /// Standalone function to close the poll after threshold or expiration passed
-    /// The reason for a separate function is so that closing the poll and
-    /// voting may not need to be in the same transaction. They can be atomic
-    /// and produce better error messages.
-    DonorVoiceTxsMaybeTallyReauthTx {
-        multisig_address: AccountAddress,
-    },
-
     /// A signer of the multisig can propose a payment
     /// Public entry function required for txs cli
     DonorVoiceTxsProposeAdvanceTx {
@@ -338,6 +330,13 @@ pub enum EntryFunctionCall {
     OlAccountTransfer {
         to: AccountAddress,
         amount: u64,
+    },
+
+    /// Refresh the cache
+    /// state updates must be called by a user.
+    /// Vouch tree updates could be a DDOS vector
+    PageRankLazyRefreshCache {
+        user: AccountAddress,
     },
 
     /// retract bid
@@ -500,9 +499,6 @@ impl EntryFunctionCall {
             } => diem_governance_ol_vote(proposal_id, should_pass),
             DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
             DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
-            DonorVoiceTxsMaybeTallyReauthTx { multisig_address } => {
-                donor_voice_txs_maybe_tally_reauth_tx(multisig_address)
-            }
             DonorVoiceTxsProposeAdvanceTx {
                 multisig_address,
                 payee,
@@ -553,6 +549,7 @@ impl EntryFunctionCall {
             } => multisig_account_update_signatures_required(new_num_signatures_required),
             OlAccountCreateAccount { auth_key } => ol_account_create_account(auth_key),
             OlAccountTransfer { to, amount } => ol_account_transfer(to, amount),
+            PageRankLazyRefreshCache { user } => page_rank_lazy_refresh_cache(user),
             ProofOfFeePofRetractBid {} => proof_of_fee_pof_retract_bid(),
             ProofOfFeePofUpdateBid { bid, epoch_expiry } => {
                 proof_of_fee_pof_update_bid(bid, epoch_expiry)
@@ -1001,27 +998,6 @@ pub fn diem_governance_trigger_epoch() -> TransactionPayload {
     ))
 }
 
-/// Standalone function to close the poll after threshold or expiration passed
-/// The reason for a separate function is so that closing the poll and
-/// voting may not need to be in the same transaction. They can be atomic
-/// and produce better error messages.
-pub fn donor_voice_txs_maybe_tally_reauth_tx(
-    multisig_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("donor_voice_txs").to_owned(),
-        ),
-        ident_str!("maybe_tally_reauth_tx").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&multisig_address).unwrap()],
-    ))
-}
-
 /// A signer of the multisig can propose a payment
 /// Public entry function required for txs cli
 pub fn donor_voice_txs_propose_advance_tx(
@@ -1428,6 +1404,24 @@ pub fn ol_account_transfer(to: AccountAddress, amount: u64) -> TransactionPayloa
         ident_str!("transfer").to_owned(),
         vec![],
         vec![bcs::to_bytes(&to).unwrap(), bcs::to_bytes(&amount).unwrap()],
+    ))
+}
+
+/// Refresh the cache
+/// state updates must be called by a user.
+/// Vouch tree updates could be a DDOS vector
+pub fn page_rank_lazy_refresh_cache(user: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("page_rank_lazy").to_owned(),
+        ),
+        ident_str!("refresh_cache").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&user).unwrap()],
     ))
 }
 
@@ -1851,18 +1845,6 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_txs_maybe_tally_reauth_tx(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceTxsMaybeTallyReauthTx {
-                multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn donor_voice_txs_propose_advance_tx(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -2101,6 +2083,16 @@ mod decoder {
         }
     }
 
+    pub fn page_rank_lazy_refresh_cache(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PageRankLazyRefreshCache {
+                user: bcs::from_bytes(script.args().first()?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn proof_of_fee_pof_retract_bid(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::ProofOfFeePofRetractBid {})
@@ -2299,10 +2291,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_trigger_epoch),
         );
         map.insert(
-            "donor_voice_txs_maybe_tally_reauth_tx".to_string(),
-            Box::new(decoder::donor_voice_txs_maybe_tally_reauth_tx),
-        );
-        map.insert(
             "donor_voice_txs_propose_advance_tx".to_string(),
             Box::new(decoder::donor_voice_txs_propose_advance_tx),
         );
@@ -2385,6 +2373,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "ol_account_transfer".to_string(),
             Box::new(decoder::ol_account_transfer),
+        );
+        map.insert(
+            "page_rank_lazy_refresh_cache".to_string(),
+            Box::new(decoder::page_rank_lazy_refresh_cache),
         );
         map.insert(
             "proof_of_fee_pof_retract_bid".to_string(),

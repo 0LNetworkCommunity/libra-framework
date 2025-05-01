@@ -1,6 +1,7 @@
 #[test_only]
 
 module ol_framework::test_donor_voice {
+    use std::option;
     use ol_framework::ballot;
     use ol_framework::donor_voice;
     use ol_framework::donor_voice_txs;
@@ -36,11 +37,10 @@ module ol_framework::test_donor_voice {
         donor_voice_reauth::assert_authorized(donor_voice_address);
         donor_voice_reauth::set_requires_reauth(alice, donor_voice_address);
 
-        // donor_voice_reauth::set_requires_reauth(donor_voice_address);
-        // // Check if it's not yet authorized
+        // Check if it's not yet authorized
         assert!(!donor_voice_reauth::is_authorized(donor_voice_address), 7357001);
 
-        // // Use the test_set_authorized to authorize the wallet
+        // Use the test_set_authorized to authorize the wallet
         donor_voice_reauth::test_set_authorized(root, donor_voice_address);
         donor_voice_reauth::assert_authorized(donor_voice_address);
 
@@ -208,7 +208,9 @@ module ol_framework::test_donor_voice {
       assert!(donor_voice_txs::is_scheduled(donor_voice_address, &uid_of_transfer), 7357006); // is scheduled
 
       // Eve tries again after it has been scheduled
-      let _uid_of_veto_prop = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
+      let ballot_id = donor_voice_txs::test_propose_veto(eve, &uid_of_transfer);
+      let ballot_id_num = guid::id_creation_num(option::borrow(&ballot_id));
+
       let has_veto = donor_voice_governance::tx_has_veto_pending(donor_voice_address, guid::id_creation_num(&uid_of_transfer));
       assert!(has_veto, 7357007); // propose does not cast a vote.
 
@@ -226,25 +228,23 @@ module ol_framework::test_donor_voice {
       // will not appear as having a veto pending
       assert!(!is_pending, 7357008);
 
-      // if we want to tally a accepted or rejected veto
-      // from the past, we need to get the ballot id
-      // and then tally by ballot id.
 
-      let (_pending, approved, _rejected) = donor_voice_governance::get_veto_ballots(donor_voice_address);
 
-      let ballot_id = vector::borrow(&approved, 0);
-
-      let (approve_pct, _, req_threshold, _, _, _approve, _is_complete) = donor_voice_governance::get_veto_tally(donor_voice_address, *ballot_id);
+      let (approve_pct, _, req_threshold, _, _, approved, is_closed, status, is_complete) = donor_voice_governance::get_veto_tally(donor_voice_address, ballot_id_num);
 
       assert!(approve_pct == 10000, 7357008);
       assert!(req_threshold == 5100, 7357009);
+      assert!(approved, 7357010);
+      assert!(is_closed, 7357011);
+      assert!(status == 2, 7357012);
+      assert!(is_complete, 7357013);
 
-      // it is not yet scheduled, it's still only a proposal by an admin
+      // // it is not yet scheduled, it's still only a proposal by an admin
       assert!(!donor_voice_txs::is_scheduled(donor_voice_address,
-      &uid_of_transfer), 7357010);
+      &uid_of_transfer), 7357014);
 
       // it's vetoed
-      assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357011);
+      assert!(donor_voice_txs::is_veto(donor_voice_address, &uid_of_transfer), 7357015);
     }
 
     // should not be able sign a tx twice
@@ -755,7 +755,7 @@ module ol_framework::test_donor_voice {
       assert!(program_balance < program_balance_pre, 7357010);
       assert!(program_balance == 0, 7357011);
 
-      // eve shoul have received funds back
+      // eve should have received funds back
       assert!(eve_balance > eve_balance_pre, 7357010);
 
       // nothing should have been burned, it was a refund

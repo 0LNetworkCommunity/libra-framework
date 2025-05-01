@@ -11,7 +11,7 @@
 
     // The tally design single issue referendum, with only votes in favor or against, but with an adaptive threshold for the vote to pass.
 
-    // The design of the policies attempts to accomodate online voting where votes tend to happen:
+    // The design of the policies attempts to accommodate online voting where votes tend to happen:
     // 1. publicly
     // 2. asynchronously
     // 3. with a low turnout
@@ -21,8 +21,8 @@
 
     // The ballots have dynamic deadlines and thresholds.
     // deadlines can be extended by dissenting votes from the current majority vote. This cannot be done indefinitely, as the extension is capped by the max_deadline.
-    // The threshold (percent approval/rejection which needs to be met) is determined post-hoc. Referenda are expensive, for communities, leaders, and voters. Instead of scapping a vote which doesn't achieve a pre-established number of participants (quorum), the vote is allowed to be tallied and be seen as valid. However, the threshold must be higher (more than 51%) in cases where the turnout is low. In blockchain polkadot network has prior art for this: https://wiki.polkadot.network/docs/en/learn-governance#adaptive-quorum-biasing
-    // In Polkadot implementation there are positive and negative biasing. Negative biasing (when turnout is low, a lower amount of votes is needed) seems to be an edge case.
+    // The threshold (percent approval/rejection which needs to be met) is determined post-hoc. Referenda are expensive, for communities, leaders, and voters. Instead of scrapping a vote which doesn't achieve a pre-established number of participants (quorum), the vote is allowed to be tallied and be seen as valid. However, the threshold must be higher (more than 51%) in cases where the turnout is low. In blockchain polkadot network has prior art for this: https://wiki.polkadot.network/docs/en/learn-governance#adaptive-quorum-biasing
+    // In Polkadot's implementation there are positive and negative biasing. Negative biasing (when turnout is low, a lower amount of votes is needed) seems to be an edge case.
 
     // Regarding deadlines. The problem with adaptive thresholds is that it favors the engaged community. If you are unaware of the process, or if the process occurred silently, it's very challenging to swing the vote. So the minority vote may be disadvantaged due to lack of engagement, and there should be some accommodation. If they are coming late to the vote, AND in significant numbers, then they can get an extension. The initial design aims to allow an extension if on the day the poll closes, a sufficient amount of the vote was shifted in the minority direction, an extra day is added. This will happen for each new deadline.
 
@@ -65,6 +65,12 @@
     const ENO_BALLOT_FOUND: u64 = 6;
     /// Bad status enum
     const EBAD_STATUS_ENUM: u64 = 7;
+    /// initialized with zero
+    const EINITIALZE_ZERO: u64 = 8;
+    /// The vote approval is not above the threshold
+    const ENOT_ABOVE_THRESHOLD: u64 = 9;
+    /// The turnout is not above the minimum required
+    const EINSUFFICIENT_TURNOUT: u64 = 10;
 
     // TODO: These may be variable on a per project basis. And these
     // should just be defaults.
@@ -94,9 +100,9 @@
     // Historical completed ballots are also stored in a separate vector.
     // Developers can use Poll struct to instantiate an election.
     // or then can use Ballot, for a custom voting solution.
-    // lastly the developer can simply wrap refereundum into another struct with more context.
+    // lastly the developer can simply wrap referendum into another struct with more context.
 
-    /// for voting to happen with the VoteLib module, the guid creation capability must be passed in, and so the signer for the addres (the "sponsor" of the ballot) must move the capability to be accessible by the contract logic.
+    /// for voting to happen with the VoteLib module, the guid creation capability must be passed in, and so the signer for the address (the "sponsor" of the ballot) must move the capability to be accessible by the contract logic.
 
 
     struct TurnoutTally<Data> has key, store, drop { // Note, this is a hot potato. Any methods changing it must return the struct to caller.
@@ -186,15 +192,10 @@
       // Commit note: do not abort so that a duplicate voter can tally
       // and close the poll
       if(!is_found) {
-        // if we are in a new epoch than the previous last voter, then update that state (for purposes of extending competitive votes, if that option is set).
-        let epoch_now = epoch_helper::get_current_epoch();
-        if (epoch_now > ballot.last_epoch_voted) {
-          ballot.last_epoch_approve = ballot.votes_approve;
-          ballot.last_epoch_reject = ballot.votes_reject;
-        };
+        // commit note: deprecated tracking
 
         // in every case, add the new vote
-        ballot.last_epoch_voted = epoch_now;
+        ballot.last_epoch_voted = epoch_helper::get_current_epoch();
         if (approve_reject) {
           ballot.votes_approve = ballot.votes_approve + weight;
         } else {
@@ -207,7 +208,7 @@
 
       // always tally on each vote
       // make sure all extensions happened in previous step.
-      maybe_tally(ballot)
+      save_tally(ballot)
     }
 
     public fun is_poll_closed<Data: drop + store>(ballot: &TurnoutTally<Data>): bool {
@@ -268,28 +269,23 @@
     /// If the poll expires this function can also be called, outside of a vote
     /// can close the poll.
     /// (note: a duplicate vote will also call this function without affecting the result)
-    public fun maybe_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>): Option<bool> {
-
-      let total_votes = ballot.votes_approve + ballot.votes_reject;
-
-      assert!(ballot.max_votes >= total_votes, error::invalid_state(EVOTES_GREATER_THAN_ENROLLMENT));
+    public fun save_tally<Data: drop + store>(ballot: &mut TurnoutTally<Data>): Option<bool> {
 
       // figure out the turnout
-      let m = fixed_point32::create_from_rational(total_votes, ballot.max_votes);
+      ballot.tally_turnout_pct = get_current_ballot_participation(ballot);
 
-      ballot.tally_turnout_pct = fixed_point32::multiply_u64(PCT_SCALE, m); // scale up
 
       // calculate the dynamic threshold needed.
-      let thresh = get_threshold_from_turnout(total_votes, ballot.max_votes);
+      let thresh = get_current_threshold_required(ballot);
       // check the threshold that needs to be met met turnout
-      ballot.tally_approve_pct = fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(ballot.votes_approve, total_votes));
+      ballot.tally_approve_pct = get_current_ballot_approval(ballot);
 
       if (
         // Threshold must be above dynamically calculated threshold
-        ballot.tally_approve_pct > thresh &&
+        ballot.tally_approve_pct >= thresh &&
         // before marking it pass, make sure the minimum quorum was met
         // by default 12.50%
-        ballot.tally_turnout_pct > ballot.cfg_min_turnout
+        ballot.tally_turnout_pct >= ballot.cfg_min_turnout
         ) {
             ballot.completed = true;
             ballot.tally_pass = true;
@@ -301,20 +297,33 @@
       option::none<bool>() // return option::some() if complete, and bool if it passed, so it can be used in a third party contract handler for lazy evaluation.
     }
 
+    /// assert that the ballot would pass with the current tally
+    /// if not surface the error for why it does not
+    public(friend) fun assert_pass<Data: drop + store>(ballot: & TurnoutTally<Data>) {
+      let thresh = get_current_threshold_required(ballot);
+      assert!(ballot.tally_approve_pct > thresh, error::invalid_state(ENOT_ABOVE_THRESHOLD));
+      assert!(ballot.tally_turnout_pct > ballot.cfg_min_turnout, error::invalid_state(EINSUFFICIENT_TURNOUT));
+
+    }
+
 
 
     //////// GETTERS ////////
 
     /// get current tally percentage scaled
     public(friend) fun get_current_ballot_participation<Data: store>(ballot: &TurnoutTally<Data>): u64 {
-      let total = ballot.votes_approve + ballot.votes_reject;
-      if (ballot.votes_approve + ballot.votes_reject > ballot.max_votes) {
+      let total_votes = ballot.votes_approve + ballot.votes_reject;
+
+      if (total_votes == 0) {
         return 0
       };
-      if (ballot.max_votes == 0) {
-        return 0
-      };
-      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(total, ballot.max_votes))
+
+      assert!(ballot.max_votes >= total_votes, error::invalid_state(EVOTES_GREATER_THAN_ENROLLMENT));
+
+      assert!(ballot.max_votes > 0, error::invalid_state(EINITIALZE_ZERO));
+
+
+      return fixed_point32::multiply_u64(PCT_SCALE, fixed_point32::create_from_rational(total_votes, ballot.max_votes))
     }
 
     // with the current participation get the threshold to pass
@@ -376,11 +385,12 @@
     // TODO: this should probably use Decimal.move
     // can't multiply fixed_point32 types directly.
     public fun get_threshold_from_turnout(voters: u64, max_votes: u64): u64 {
-      // let's just do a line
+      assert!(voters > 0, error::invalid_state(EINITIALZE_ZERO));
+      assert!(max_votes > 0, error::invalid_state(EINITIALZE_ZERO));
 
       let turnout = fixed_point32::create_from_rational(voters, max_votes);
       let turnout_scaled_x = fixed_point32::multiply_u64(PCT_SCALE, turnout); // scale to two decimal points.
-      // only implemeting the negative slope case. Unsure why the other is needed.
+      // only implementing the negative slope case. Unsure why the other is needed.
 
       assert!(THRESH_AT_LOW_TURNOUT_Y1 > THRESH_AT_HIGH_TURNOUT_Y2, error::invalid_state(EVOTE_CALC_PARAMS));
 

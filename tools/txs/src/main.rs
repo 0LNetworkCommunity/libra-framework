@@ -5,6 +5,6 @@ use libra_txs::txs_cli::TxsCli;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    Logger::new().level(Level::Info).init();
+    Logger::new().level(Level::Warn).init();
     TxsCli::parse().run().await
 }

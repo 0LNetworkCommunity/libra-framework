@@ -649,26 +649,25 @@ module ol_framework::multi_action {
         assert!(status_enum == ballot::get_pending_enum(), error::invalid_state(EVOTING_CLOSED));
         assert!(!is_complete, error::invalid_argument(EVOTING_CLOSED));
 
-        let b = ballot::get_ballot_by_id_mut(&mut action.vote, id);
+        let ballot = ballot::get_ballot_by_id_mut(&mut action.vote, id);
 
-        let t = ballot::get_type_struct_mut(b);
+        let tally_data = ballot::get_type_struct_mut(ballot);
         let voter_addr = signer::address_of(sig);
         // prevent duplicates
-        assert!(!vector::contains(&t.votes, &voter_addr),
+        assert!(!vector::contains(&tally_data.votes, &voter_addr),
         error::invalid_argument(EDUPLICATE_VOTE));
 
-        vector::push_back(&mut t.votes, voter_addr);
+        vector::push_back(&mut tally_data.votes, voter_addr);
         let (n, _m) = get_threshold(multisig_address);
-        let passed = tally(t, n);
+        let passed = tally(tally_data, n);
 
         if (passed) {
-            ballot::complete_ballot(b);
-            ballot::move_ballot(
-                &mut action.vote,
-                id,
-                ballot::get_pending_enum(),
-                ballot::get_approved_enum()
-            );
+            ballot::complete_and_move(&mut action.vote, id, ballot::get_approved_enum());
+            // ballot::move_ballot(
+            //     &mut action.vote,
+            //     id,
+            //     ballot::get_approved_enum()
+            // );
         };
 
         // get the withdrawal capability, we're not allowed copy, but we can
@@ -725,7 +724,7 @@ module ol_framework::multi_action {
         while (i < len) {
             let id = vector::borrow(&expired_vec, i);
             // lets check the status just in case.
-            ballot::move_ballot(&mut a.vote, id, ballot::get_pending_enum(), ballot::get_rejected_enum());
+            ballot::move_ballot(&mut a.vote, id, ballot::get_rejected_enum());
             i = i + 1;
         };
     }

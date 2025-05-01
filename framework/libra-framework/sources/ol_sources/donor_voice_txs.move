@@ -489,16 +489,17 @@ module ol_framework::donor_voice_txs {
   // NOTE: veto and tx both have UIDs but they are separate
   fun veto_handler(
     sender: &signer,
-    veto_uid: &guid::ID,
+    ballot_uid: &guid::ID,
     tx_uid: &guid::ID,
   ) acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(tx_uid);
     donor_voice_governance::assert_is_voter(sender, multisig_address);
 
-    let veto_is_approved = donor_voice_governance::veto_by_id(sender, tx_uid);
+    // NOTE: we are voting with the BALLOT ID
+    let veto_is_approved = donor_voice_governance::veto_by_ballot_id(sender, ballot_uid);
     if (option::is_none(&veto_is_approved)) return;
 
-    // check is scheduled
+    // check the TX is no longer scheduled
     assert!(is_scheduled(multisig_address, tx_uid), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
 
     if (*option::borrow(&veto_is_approved)) {
@@ -519,7 +520,7 @@ module ol_framework::donor_voice_txs {
         // is the same as the end of the veto ballot
         // This is because the ballot expiration can be
         // extended based on the threshold of votes.
-        donor_voice_governance::sync_ballot_and_tx_expiration(sender, veto_uid, tx_mut.deadline)
+        donor_voice_governance::sync_ballot_and_tx_expiration(sender, ballot_uid, tx_mut.deadline)
       }
 
     }
@@ -570,25 +571,6 @@ module ol_framework::donor_voice_txs {
     option::none()
   }
 
-
-  /// REAUTHORIZATION
-  fun propose_reauthorization_impl(donor: &signer, multisig_address: address) acquires TxSchedule {
-    donor_voice_governance::assert_is_voter(donor, multisig_address);
-    let state = borrow_global<TxSchedule>(multisig_address);
-    donor_voice_governance::propose_reauth(&state.guid_capability);
-  }
-
-  /// propose and vote on the veto of a specific transaction.
-  /// The transaction must first have been scheduled, otherwise this proposal will abort.
-  fun reauthorize_handler(donor: &signer, dv_account: address) acquires TxSchedule {
-      donor_voice_governance::assert_is_voter(donor, dv_account);
-      let res = donor_voice_governance::vote_reauthorize(donor, dv_account);
-      let state = borrow_global<TxSchedule>(dv_account);
-      // if tally closes and reauth is true
-      if (option::is_some(&res) && *option::borrow(&res)) {
-        donor_voice_reauth::reauthorize_now(&state.guid_capability);
-    }
-  }
 
   #[test_only]
   public(friend) fun test_propose_veto(donor: &signer, uid_of_tx: &guid::ID):
@@ -919,21 +901,15 @@ module ol_framework::donor_voice_txs {
   /// After proposed, subsequent donors can vote to reauth an account
   /// Public entry function required for txs cli.
   public entry fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
-    if (donor_voice_governance::is_reauth_proposed(multisig_address)) {
-      // if the reauthorization is already proposed, then we can vote on it.
-      reauthorize_handler(donor, multisig_address);
-    } else {
-      // go ahead and propose it
-      propose_reauthorization_impl(donor, multisig_address);
-    }
+    donor_voice_governance::assert_is_voter(donor, multisig_address);
+    let state = borrow_global<TxSchedule>(multisig_address);
+    let guid_cap = &state.guid_capability;
+    // TODO: add approve/reject options
+    donor_voice_governance::vote_reauthorize(donor, guid_cap, true);
   }
-  /// Standalone function to close the poll after threshold or expiration passed
-  /// The reason for a separate function is so that closing the poll and
-  /// voting may not need to be in the same transaction. They can be atomic
-  /// and produce better error messages.
-  // Anyone cal call this
-  public entry fun maybe_tally_reauth_tx(multisig_address: address) {
-    donor_voice_governance::maybe_tally_reauth(multisig_address);
+
+  public entry fun maybe_close_reauth(multisig_address: address) {
+    donor_voice_governance::garbage_gov<donor_voice_governance::Reauth>(multisig_address);
   }
 
   // LIQUIDATE TXS
@@ -972,11 +948,11 @@ module ol_framework::donor_voice_txs {
   // TODO: flagged for deprecation. Propose_veto_tx handles both proposing and
   // voting
   /// After proposed, subsequent veto voters call this to vote on a tx veto
-  public fun vote_veto_tx(donor: &signer, multisig_address: address, id: u64)  acquires TxSchedule, Freeze {
-    let tx_uid = guid::create_id(multisig_address, id);
-    let (found, veto_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);
+  public fun vote_veto_tx(donor: &signer, multisig_address: address, tx_id_num: u64)  acquires TxSchedule, Freeze {
+    let tx_uid = guid::create_id(multisig_address, tx_id_num);
+    let (found, ballot_uid) = donor_voice_governance::find_tx_veto_id(tx_uid);
     assert!(found, error::invalid_argument(ENO_VETO_ID_FOUND));
-    veto_handler(donor, &veto_uid, &tx_uid);
+    veto_handler(donor, &ballot_uid, &tx_uid);
   }
 
   #[test_only]

@@ -6,6 +6,7 @@ module ol_framework::activity {
 
   friend ol_framework::filo_migration;
   friend ol_framework::ol_account;
+  friend ol_framework::donor_voice_migration;
   friend diem_framework::transaction_validation;
 
   #[test_only]

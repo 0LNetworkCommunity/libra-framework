@@ -130,12 +130,12 @@ module ol_framework::test_turnout_tally {
       let uid = turnout_tally_demo::propose_ballot_by_owner(alice, 100, 0);
 
       // lower vote
-      let result_opt = turnout_tally_demo::vote(bob, @0x1000a, &uid, 10, true);
+      let result_opt = turnout_tally_demo::vote(bob, @0x1000a, &uid, 1, true);
       let (r, w) = vote_receipt::get_receipt_data(@0x1000b, &uid);
       assert!(r == true, 0); // voted in favor
-      assert!(w == 10, 735701);
+      assert!(w == 1, 735701);
 
-      // 10 of 100 is not enough to get over any dynamic threshold.
+      // 1 of 100 turnout is not enough to get over any dynamic threshold.
 
       assert!(option::is_none(&result_opt), 735702);
 
