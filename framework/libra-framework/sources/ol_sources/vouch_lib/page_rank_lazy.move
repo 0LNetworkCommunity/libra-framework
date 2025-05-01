@@ -172,8 +172,14 @@ module ol_framework::page_rank_lazy {
             // Only visit if not already in path (avoid cycles)
             if (!vector::contains(visited, &neighbor)) {
                 // Mark as visited
-                vector::push_back(visited, neighbor);
+                if (neighbor != target) {
+                    // Don't mark the target as visited
+                    // because we want to be able to
+                    // find it again
+                    // NOTE: fixes diamond pattern not accumulating
 
+                    vector::push_back(visited, neighbor);
+                };
                 // we don't re-enter the root of
                 // trust list, because we don't
                 // want to accumulate points from
