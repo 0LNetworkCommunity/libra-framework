@@ -306,11 +306,6 @@ module ol_framework::slow_wallet {
       };
 
       if (exists<SlowWallet>(addr)) {
-        // if the account has never been activated, the unlocked amount is
-        // zero despite the state (which is stale, until there is a migration).
-        if (!reauthorization::is_v8_authorized(addr)) {
-          return 0
-        };
         let s = borrow_global<SlowWallet>(addr);
         return s.unlocked
       };

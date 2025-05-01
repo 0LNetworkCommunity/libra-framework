@@ -56,10 +56,13 @@ module diem_framework::timestamp {
     }
 
     #[test_only]
-    public fun set_time_has_started_for_testing(account: &signer) {
+    public fun set_time_has_started_for_testing(account: &signer) acquires CurrentTimeMicroseconds {
         if (!exists<CurrentTimeMicroseconds>(@diem_framework)) {
             set_time_has_started(account);
         };
+        // Tests shouldn't start at zero, no transactions ever run at 0
+        // plus we use Activity timestamp at zero to check for malformed accounts.
+        fast_forward_seconds(1);
     }
 
     #[view]

@@ -21,7 +21,7 @@ module ol_framework::test_filo_migration {
     assert!(account::exists_at(b_addr), 735701);
     assert!(!vouch::is_init(b_addr), 735701);
     assert!(!founder::is_founder(b_addr), 735702);
-    assert!(!activity::has_ever_been_touched(b_addr), 735703);
+    assert!(!activity::is_initialized(b_addr), 735703);
     // setup a v7 account without slow wallet.
     assert!(!slow_wallet::is_slow(b_addr), 735704);
   }
@@ -38,7 +38,7 @@ module ol_framework::test_filo_migration {
   /// error out
   fun v7_accept_tx_validation(framework: &signer, bob: &signer) {
     setup_one_v7_account(framework, bob);
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
 
   }
 
@@ -48,16 +48,16 @@ module ol_framework::test_filo_migration {
     setup_one_v7_account(framework, bob);
 
     //////// user sends migration tx ////////
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     // safety check: should not error if called again, lazy init
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     //////// end migration tx ////////
 
     let b_addr = signer::address_of(bob);
     // now the post-migration state should exist
     assert!(vouch::is_init(b_addr), 735706);
     assert!(founder::is_founder(b_addr), 735707);
-    assert!(activity::has_ever_been_touched(b_addr), 735708);
+    assert!(activity::is_initialized(b_addr), 735708);
     assert!(slow_wallet::is_slow(b_addr), 735709);
     // however the vouch is not sufficient
     assert!(!founder::has_friends(b_addr), 7357010);
@@ -82,7 +82,7 @@ module ol_framework::test_filo_migration {
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     //////// end migration tx ////////
 
     let (unlocked, total) = ol_account::balance(b_addr);
@@ -150,7 +150,7 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 0, 735705);
     assert!(total == 1000, 735706);
 
-    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!activity::is_initialized(b_addr), 735707);
     // uses transfer entry function
     ol_account::transfer(bob, marlon, 33);
   }
@@ -169,12 +169,12 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 0, 735705);
     assert!(total == 1000, 735706);
 
-    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!activity::is_initialized(b_addr), 735707);
 
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     founder::test_mock_friendly(framework, bob);
     //////// end migration tx ////////
 
@@ -196,18 +196,18 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 0, 735705);
     assert!(total == 1000, 735706);
 
-    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!activity::is_initialized(b_addr), 735707);
     assert!(!reauthorization::is_v8_authorized(b_addr), 735708);
 
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     //////// end migration tx ////////
 
     assert!(vouch::is_init(b_addr), 735706);
     assert!(founder::is_founder(b_addr), 735707);
-    assert!(activity::has_ever_been_touched(b_addr), 735708);
+    assert!(activity::is_initialized(b_addr), 735708);
     assert!(slow_wallet::is_slow(b_addr), 735709);
     // however the vouch is not sufficient
     assert!(!founder::has_friends(b_addr), 7357010);
@@ -234,13 +234,13 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 0, 735705);
     assert!(total == 1000, 735706);
 
-    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!activity::is_initialized(b_addr), 735707);
     assert!(!reauthorization::is_v8_authorized(b_addr), 735708);
 
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     //////// end migration tx ////////
     slow_wallet::test_epoch_drip(framework, 100);
 
@@ -261,13 +261,13 @@ module ol_framework::test_filo_migration {
     assert!(unlocked == 0, 735705);
     assert!(total == 1000, 735706);
 
-    assert!(!activity::has_ever_been_touched(b_addr), 735707);
+    assert!(!activity::is_initialized(b_addr), 735707);
     assert!(!reauthorization::is_v8_authorized(b_addr), 735708);
 
     //////// user sends migration tx ////////
     // The first time the user touches the account with a transaction
     // the migration should happen
-    mock::simulate_transaction_validation(bob);
+    mock::simulate_v8_migration(bob);
     //////// end migration tx ////////
 
     founder::test_mock_friendly(framework, bob);

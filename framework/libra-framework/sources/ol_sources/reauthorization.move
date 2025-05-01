@@ -18,7 +18,7 @@ module ol_framework::reauthorization {
 
     public fun assert_v8_authorized(account: address) {
 
-      let migrated = activity::has_ever_been_touched(account);
+      let migrated = activity::is_initialized(account);
       let founder = founder::is_founder(account);
       let is_cw = community_wallet::is_init(account);
 
@@ -35,28 +35,32 @@ module ol_framework::reauthorization {
 
     #[view]
     public fun is_v8_authorized(account: address): bool {
-      // case 1: user onboarded since v8 started
-      // has activity struct, and not founder, or community wallet
-      if (
-        activity::has_ever_been_touched(account) &&
-        !founder::is_founder(account) &&
-        !community_wallet::is_init(account)
-      ) {
-        return true
+      // Every newly create account since v8 will have the Activity struct.
+      // Check if this is a case of an account that has yet to migrate from V7.
+      // This also applies to donor-voice accounts.
+      if (!activity::is_initialized(account)) {
+        return false
       };
 
-      // case 2: a friendly founder with struct and vouches
-      if (
-        activity::has_ever_been_touched(account) &&
-        founder::is_founder(account) &&
-        !community_wallet::is_init(account)
-      ) {
-
-        return founder::has_friends(account)
-      };
-      // case 3: a community wallet which was reauthorized
+      // first deal with the special case of the community wallet
+      // case 1: a community wallet which was reauthorized
       if(community_wallet::is_init(account)) {
         return donor_voice_reauth::is_authorized(account)
+      };
+
+      // case 2: deal with v7 accounts "founder"
+      // and check that they are not bots
+      if (founder::is_founder(account)) {
+        return founder::has_friends(account)
+      };
+
+
+      // case 3: user onboarded since v8 started
+      // check only if the account is malformed
+      // i.e. has an activity struct but no activity
+
+      if (!activity::is_prehistoric(account)) {
+        return true
       };
 
       false

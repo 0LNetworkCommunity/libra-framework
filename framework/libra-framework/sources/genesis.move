@@ -183,8 +183,6 @@ module diem_framework::genesis {
         diem_framework: &signer,
         core_resources_auth_key: vector<u8>,
     ) {
-        // let (burn_cap, mint_cap) = diem_coin::initialize(diem_framework);
-
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
 
