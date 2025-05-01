@@ -63,10 +63,16 @@ module ol_framework::activity {
 
   public(friend) fun maybe_onboard(user_sig: &signer){
 
+    // genesis accounts should not start at 0
+    let onboarding_usecs = timestamp::now_seconds();
+    if (onboarding_usecs == 0) {
+      onboarding_usecs = 1;
+    };
+
     if (!exists<Activity>(signer::address_of(user_sig))) {
       move_to<Activity>(user_sig, Activity {
         last_touch_usecs: 0, // how we identify if a users has used the account after a peer created it.
-        onboarding_usecs: timestamp::now_seconds(),
+        onboarding_usecs,
       })
     }
   }
