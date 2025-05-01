@@ -74,21 +74,13 @@ module ol_framework::activity {
 
   #[view]
   // check if this is an account that has activity
-  public fun has_ever_been_touched(user: address): bool {
+  public fun has_ever_been_touched(user: address): bool acquires Activity {
     // I was beat, incomplete
     // I've been had, I was sad and blue
     // But you made me feel
     // Yeah, you made me feel
     // Shiny and new
-    exists<Activity>(user)
-
-    // TODO: check timestamp
-    // if (exists<Activity>(user)){
-    //   let state = borrow_global<Activity>(user);
-    //   return state.last_touch_usecs > 0
-    // };
-
-    // false
+    get_last_touch_usecs(user) > 0
   }
 
 
@@ -118,8 +110,7 @@ module ol_framework::activity {
   // If the account is a founder/pre-v8 account has been migrated
   // then it would have an onboarding timestamp of 0
   public fun is_prehistoric(user: address): bool acquires Activity {
-    let state = borrow_global<Activity>(user);
-    state.onboarding_usecs == 0
+    get_onboarding_usecs(user) == 0
   }
 
   #[test_only]

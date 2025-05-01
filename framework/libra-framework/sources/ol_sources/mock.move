@@ -148,6 +148,8 @@ public fun ol_test_genesis(root: &signer) {
     system_addresses::assert_ol(root);
     genesis::setup();
     genesis::test_end_genesis(root);
+    // should not be 0, activity.move checks this for inactive accounts
+    timestamp::fast_forward_seconds(1);
 
     let mint_cap = coin_init_minimal(root);
     libra_coin::restore_mint_cap(root, mint_cap);
@@ -573,16 +575,13 @@ public fun mock_vouch_score_50(framework: &signer, target_account: address): vec
 }
 
 #[test_only]
-/// two state initializations happen on first
-/// transaction
-public fun simulate_transaction_validation(sender: &signer) {
-    let time = timestamp::now_seconds();
-    // will initialize structs if first time
-    activity::increment(sender, time);
-
+/// simulate the v7 account state migrating to the new data structures
+public fun simulate_v8_migration(sender: &signer) {
     // run migrations
     // Note, Activity and Founder struct should have been set above
     filo_migration::maybe_migrate(sender);
+    // touching the account will also increment activity
+    activity::increment(sender, timestamp::now_seconds());
 }
 
 //////// META TESTS ////////

@@ -66,7 +66,7 @@ spec ol_framework::ol_account {
         aborts_if exists<slow_wallet::SlowWallet>(account_addr) &&
         slow_store.unlocked < amount;
 
-        aborts_if !activity::has_ever_been_touched(account_addr);
+        aborts_if !activity::is_initialized(account_addr);
 
         ensures result == Coin<LibraCoin>{value: amount};
     }
