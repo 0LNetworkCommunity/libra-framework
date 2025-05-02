@@ -220,15 +220,6 @@ module ol_framework::donor_voice_txs {
     }
 
 
-    #[view]
-    /// Check if the account is a Donor Voice account, and initialized properly.
-    public fun is_donor_voice(multisig_address: address):bool {
-      multi_action::is_multi_action(multisig_address) &&
-      multi_action::has_action<Payment>(multisig_address) &&
-      exists<Freeze>(multisig_address) &&
-      exists<TxSchedule>(multisig_address)
-    }
-
     ///////// MULTISIG ACTIONS TO SCHEDULE A TIMED TRANSFER /////////
     /// As in any MultiSig instance, the transaction which proposes the action (the scheduled transfer) must be signed by an authority on the MultiSig.
     /// The same function is the handler for the approval case of the MultiSig action.
@@ -251,9 +242,8 @@ module ol_framework::donor_voice_txs {
       donor_voice_reauth::assert_authorized(multisig_address);
 
 
-
-
-      assert!(slow_wallet::is_slow(payee), error::invalid_argument(EPAYEE_NOT_SLOW));
+      // Commit note: don't abort on not slow wallet, in cases of unlocked advance
+      // we place this check on the calling _tx entry function
 
       let tx = Payment {
         payee,
@@ -472,14 +462,17 @@ module ol_framework::donor_voice_txs {
     tx_uid: &guid::ID,
   ) acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(tx_uid);
+    let tx_id_num = guid::id_creation_num(tx_uid);
+
     donor_voice_governance::assert_is_voter(sender, multisig_address);
 
     // NOTE: we are voting with the BALLOT ID
     let veto_is_approved = donor_voice_governance::veto_by_ballot_id(sender, ballot_uid);
     if (option::is_none(&veto_is_approved)) return;
 
+
     // check the TX is no longer scheduled
-    assert!(is_scheduled(multisig_address, tx_uid), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
+    assert!(is_scheduled(multisig_address, tx_id_num), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
 
     if (*option::borrow(&veto_is_approved)) {
       // if the veto passes, freeze the account
@@ -509,7 +502,8 @@ module ol_framework::donor_voice_txs {
   // removed from proposed list.
   fun reject(uid: &guid::ID)  acquires TxSchedule, Freeze {
     let multisig_address = guid::id_creator_address(uid);
-    assert!(is_scheduled(multisig_address, uid), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
+    let id_num = guid::id_creation_num(uid);
+    assert!(is_scheduled(multisig_address, id_num), error::invalid_state(ENO_PENDING_TRANSACTION_AT_UID));
 
     let c = borrow_global_mut<TxSchedule>(multisig_address);
 
@@ -705,74 +699,170 @@ module ol_framework::donor_voice_txs {
     (t.tx.payee, t.tx.value, *&t.tx.description, t.deadline)
   }
 
-  /// Check the status of proposals in the MultiSig Workflow
-  /// NOTE: These are payments that have not yet been scheduled.
-  public fun get_multisig_proposal_state(directed_address: address, uid:
-  &guid::ID): (bool, u64, u8, bool) { // (is_found, index, state, is_voting_complete)
-    multi_action::get_proposal_status_by_id<Payment>(directed_address, uid)
+    /// Get the state of a specific transaction in the multisig workflow
+  /// Returns (found, idx, status_enum, completed)
+  public fun get_multisig_proposal_state(multisig_address: address, uid: &guid::ID): (bool, u64, u8, bool) {
+    multi_action::get_proposal_status_by_id<Payment>(multisig_address, uid)
   }
 
-  /// Get the status of a SCHEDULED payment which as already passed the multisig stage.
-  fun get_schedule_state(directed_address: address, uid: &guid::ID): (bool, u64, u8) acquires TxSchedule { // (is_found, index, state)
-    let state = borrow_global<TxSchedule>(directed_address);
+  /// Get the state of a scheduled transaction
+  /// Returns (found, idx, state_enum)
+  public fun get_schedule_state(multisig_address: address, uid: &guid::ID): (bool, u64, u8) acquires TxSchedule {
+    assert!(exists<TxSchedule>(multisig_address), error::not_found(ENOT_INIT_DONOR_VOICE));
+    let state = borrow_global<TxSchedule>(multisig_address);
     find_schedule_by_id(state, uid)
   }
 
   // Mapping the status enums to the multi-action (ballot) naming.
 
-  // multisig approval process
-  fun voting_enum(): u8 {
-    ballot::get_pending_enum()
+  // multisig approval process enums
+  #[view]
+  public fun voting_enum(): u8 {
+    ballot::get_pending_enum() // 1
   }
-  fun approved_enum(): u8 {
-    ballot::get_approved_enum()
+  #[view]
+  public fun approved_enum(): u8 {
+    ballot::get_approved_enum() // 2
   }
-  fun rejected_enum(): u8 {
-    ballot::get_rejected_enum()
+  #[view]
+  public fun rejected_enum(): u8 {
+    ballot::get_rejected_enum() // 3
   }
-  // payment process
-  fun scheduled_enum(): u8 {
+
+  // payment process enums
+
+  #[view]
+  public fun scheduled_enum(): u8 {
     4
   }
-  fun paid_enum(): u8 {
+  #[view]
+  public fun paid_enum(): u8 {
     5
   }
-  fun veto_enum(): u8 {
+  #[view]
+  public fun veto_enum(): u8 {
     6
   }
 
-  public fun is_voting(donor_voice_address: address, uid: &guid::ID): bool  {
+
+  //////// VIEWS ////////
+
+
+  #[view]
+  /// Check if the account is a Donor Voice account, and initialized properly.
+  public fun is_donor_voice(multisig_address: address):bool {
+    multi_action::is_multi_action(multisig_address) &&
+    multi_action::has_action<Payment>(multisig_address) &&
+    exists<Freeze>(multisig_address) &&
+    exists<TxSchedule>(multisig_address)
+  }
+
+  #[view]
+  /// Get the complete status of a transaction in both the multisig workflow and scheduling process
+  ///
+  /// This function provides a comprehensive view of a transaction's status throughout its lifecycle,
+  /// including both its state in the multisig approval process and its state in the payment scheduling system.
+  /// It's particularly useful for applications that need to track transactions across all stages
+  /// of the donor voice workflow.
+  ///
+  /// # Parameters
+  /// * `multisig_address`: The address of the donor voice account
+  /// * `tx_id`: The transaction ID number to query
+  ///
+  /// # Returns
+  /// A tuple containing:
+  /// * `proposal_found`: Whether the transaction was found in the multisig proposals
+  /// * `proposal_idx`: The index of the transaction in the multisig proposal list
+  /// * `proposal_status`: The status of the proposal in the multisig workflow:
+  ///   - `1`: Pending approval (voting)
+  ///   - `2`: Approved
+  ///   - `3`: Rejected
+  /// * `proposal_completed`: Whether the multisig proposal has been completed
+  /// * `schedule_found`: Whether the transaction was found in the scheduling system
+  /// * `schedule_idx`: The index of the transaction in the scheduling list
+  /// * `schedule_status`: The status of the transaction in the scheduling system:
+  ///   - `4`: Scheduled for execution
+  ///   - `5`: Paid/executed
+  ///   - `6`: Vetoed
+  ///
+  /// # Example Usage
+  /// ```
+  /// // Get full status of transaction with ID 42
+  /// let (proposal_found, proposal_idx, proposal_status, proposal_completed,
+  ///     schedule_found, schedule_idx, schedule_status) =
+  ///     donor_voice_txs::get_tx_status(donor_voice_address, 42);
+  ///
+  /// // Check if the transaction is approved by the multisig and scheduled for payment
+  /// if (proposal_found && proposal_status == 2 && proposal_completed &&
+  ///     schedule_found && schedule_status == 4) {
+  ///     // Transaction is approved and scheduled for payment
+  /// }
+  /// ```
+  public fun get_tx_status(multisig_address: address, tx_id: u64): (bool, u64, u8, bool, bool, u64, u8) acquires TxSchedule {
+    let uid = guid::create_id(multisig_address, tx_id);
+    let (proposal_found, proposal_idx, proposal_status, proposal_completed) = get_multisig_proposal_state(multisig_address, &uid);
+
+    let (schedule_found, schedule_idx, schedule_status) = get_schedule_state(multisig_address, &uid);
+    (proposal_found, proposal_idx, proposal_status, proposal_completed, schedule_found, schedule_idx, schedule_status)
+  }
+
+  #[view]
+  /// Check if a transaction proposal is currently in voting stage in the multisig workflow
+  /// Uses a transaction ID number instead of a GUID ID reference
+  public fun is_voting(donor_voice_address: address, tx_id: u64): bool  {
+    let uid = guid::create_id(donor_voice_address, tx_id);
     let (found, _, status, _) = get_multisig_proposal_state(donor_voice_address,
-    uid);
+    &uid);
     found && (status == voting_enum())
   }
-  public fun is_approved(donor_voice_address: address, uid: &guid::ID): bool {
+
+  #[view]
+  /// Check if a transaction proposal has been approved in the multisig workflow
+  /// Uses a transaction ID number instead of a GUID ID reference
+  public fun is_approved(donor_voice_address: address, tx_id: u64): bool {
+    let uid = guid::create_id(donor_voice_address, tx_id);
     let (found, _, status, _) =
-    get_multisig_proposal_state(donor_voice_address, uid);
+    get_multisig_proposal_state(donor_voice_address, &uid);
      found && (status == approved_enum())
   }
-  public fun is_rejected(donor_voice_address: address, uid: &guid::ID): bool {
+
+  #[view]
+  /// Check if a transaction proposal has been rejected in the multisig workflow
+  /// Uses a transaction ID number instead of a GUID ID reference
+  public fun is_rejected(donor_voice_address: address, tx_id: u64): bool {
+    let uid = guid::create_id(donor_voice_address, tx_id);
     let (found, _, status, _) =
-    get_multisig_proposal_state(donor_voice_address, uid);
+    get_multisig_proposal_state(donor_voice_address, &uid);
     found && (status == rejected_enum())
   }
 
-  public fun is_scheduled(donor_voice_address: address, uid: &guid::ID): bool acquires TxSchedule {
-    let (_, _, state) = get_schedule_state(donor_voice_address, uid);
+  #[view]
+  /// Check if a transaction has been scheduled for execution
+  /// Uses a transaction ID number instead of a GUID ID reference
+  public fun is_scheduled(donor_voice_address: address, tx_id: u64): bool acquires TxSchedule {
+    let uid = guid::create_id(donor_voice_address, tx_id);
+    let (_, _, state) = get_schedule_state(donor_voice_address, &uid);
     state == scheduled_enum()
   }
 
-  public fun is_paid(donor_voice_address: address, uid: &guid::ID): bool acquires TxSchedule {
-    let (_, _, state) = get_schedule_state(donor_voice_address, uid);
+  #[view]
+  /// Check if a transaction has been paid/executed successfully
+  /// Uses a transaction ID number instead of a GUID ID reference
+  public fun is_paid(donor_voice_address: address, tx_id: u64): bool acquires TxSchedule {
+    let uid = guid::create_id(donor_voice_address, tx_id);
+    let (_, _, state) = get_schedule_state(donor_voice_address, &uid);
     state == paid_enum()
   }
 
-  public fun is_veto(directed_address: address, uid: &guid::ID): bool acquires TxSchedule {
-    let (_, _, state) = get_schedule_state(directed_address, uid);
+  #[view]
+  /// Check if a transaction has been vetoed
+  /// Uses a transaction ID number instead of a GUID ID reference
+  public fun is_veto(directed_address: address, tx_id: u64): bool acquires TxSchedule {
+    let uid = guid::create_id(directed_address, tx_id);
+    let (_, _, state) = get_schedule_state(directed_address, &uid);
     state == veto_enum()
   }
 
-  //////// VIEWS ////////
 
   #[view]
   // getter to check if wallet is frozen
@@ -830,20 +920,76 @@ module ol_framework::donor_voice_txs {
     sum
   }
 
+  #[view]
+  /// Get all transaction IDs for a specific status across multisig workflow and scheduling
+  ///
+  /// This function retrieves all transaction IDs that are currently in the specified state
+  /// from either the multisig proposal process (pending, approved, rejected) or
+  /// the scheduling system (scheduled, paid, vetoed).
+  ///
+  /// # Parameters
+  /// * `donor_voice_address`: The address of the donor voice account to query
+  /// * `status_enum`: The status to filter transactions by:
+  ///   - `1`: Pending approval (voting in multisig)
+  ///   - `2`: Approved (in multisig)
+  ///   - `3`: Rejected (in multisig)
+  ///   - `4`: Scheduled for execution
+  ///   - `5`: Paid/executed
+  ///   - `6`: Vetoed
+  ///
+  /// # Returns
+  /// * `vector<u64>`: A vector containing all transaction IDs matching the specified status
+  ///
+  /// # Aborts
+  /// * `ENOT_VALID_STATE_ENUM`: If the provided status_enum is not valid
+  public fun list_by_status(donor_voice_address: address, status_enum: u8): vector<u64> acquires TxSchedule {
+    // For status enums 1-3, we need to check proposals in multisig workflow
+    if (status_enum == voting_enum() || status_enum == approved_enum() || status_enum == rejected_enum()) {
+      return multi_action::get_proposals_by_status<Payment>(donor_voice_address, status_enum)
+    };
+
+    // For status enums 4-6, we check the scheduling system
+    let state = borrow_global<TxSchedule>(donor_voice_address);
+
+    // Select the right list based on status_enum
+    let tx_list = if (status_enum == scheduled_enum()) {
+      &state.scheduled
+    } else if (status_enum == paid_enum()) {
+      &state.paid
+    } else if (status_enum == veto_enum()) {
+      &state.veto
+    } else {
+      assert!(false, error::invalid_argument(ENOT_VALID_STATE_ENUM));
+      &state.scheduled  // dummy return that never executes due to the assert
+    };
+
+    let ids = vector::empty<u64>();
+    let i = 0;
+    let len = vector::length(tx_list);
+
+    while (i < len) {
+      let t = vector::borrow(tx_list, i);
+      vector::push_back(&mut ids, guid::id_creation_num(&t.uid));
+      i = i + 1;
+    };
+
+    ids
+  }
+
+  // // Helper function to list proposals by status in the multisig system
+  // fun list_multisig_proposals_by_status(multisig_address: address, status_enum: u8): vector<u64> {
+  //   // Check if we have access to the multi_action module for the Payment type
+  //   if (!multi_action::has_action<Payment>(multisig_address)) {
+  //     return vector::empty<u64>()
+  //   };
+
+  //   // Use the new get_proposals_by_status function to fetch IDs directly
+  //   multi_action::get_proposals_by_status<Payment>(multisig_address, status_enum)
+  // }
 
   //////// TRANSACTIONS ////////
 
   // /// A signer of the multisig can propose a payment
-  // /// Public entry function required for txs cli.
-  // public entry fun propose_payment_tx(
-  //   auth: signer,
-  //   multisig_address: address,
-  //   payee: address,
-  //   value: u64,
-  //   description: vector<u8>,
-  // )  acquires TxSchedule {
-  //   donor_voice_reauth::assert_authorized(multisig_address);
-  //   propose_payment(&auth, multisig_address, payee, value, description);
   // }
 
   public entry fun propose_payment_tx(
