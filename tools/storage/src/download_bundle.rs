@@ -12,6 +12,7 @@ use std::str::FromStr;
 
 // Update GitHubContent structure for contents API
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct GitHubContent {
     download_url: Option<String>,
     #[serde(rename = "type")]
@@ -21,6 +22,7 @@ struct GitHubContent {
 
 // Add TreeResponse structures for the tree API
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct TreeItem {
     path: String,
     mode: String,
