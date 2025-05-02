@@ -604,6 +604,9 @@ module ol_framework::multi_action {
     ): guid::ID acquires Governance, Action {
         assert_authorized(sig, multisig_address);
         let ms = borrow_global_mut<Governance>(multisig_address);
+
+        assert!(exists<Action<ProposalData>>(multisig_address), error::invalid_argument(EACTION_NOT_FOUND));
+
         let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
         // go through all proposals and clean up expired ones.
         lazy_cleanup_expired(action);
