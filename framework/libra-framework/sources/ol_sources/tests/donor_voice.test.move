@@ -407,9 +407,11 @@ module ol_framework::test_donor_voice {
       // process epoch 3 accounts
       donor_voice_txs::process_donor_voice_accounts(root, 3);
 
-      let (_, bob_balance) = ol_account::balance(@0x1000b);
+      let (bob_unlocked, bob_balance) = ol_account::balance(@0x1000b);
       assert!(bob_balance > bob_balance_pre, 7357005);
       assert!(bob_balance == 10000100, 7357006);
+
+      assert!(bob_unlocked != 10000100, 7357007);
 
       // the first proposal should be processed
       let (found, idx, status_enum, completed) =
@@ -492,6 +494,59 @@ module ol_framework::test_donor_voice {
 
       assert!(marlon_rando_balance_post == marlon_rando_balance_pre + 100, 7357006);
     }
+
+    #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]
+    // Scenario: we are testing that the community wallet can use some
+    // unlocked coins, sending to marlon's unlocked account
+    fun dv_process_epoch_boundary_unlocked(root: &signer, alice: signer, bob: signer, carol: signer, marlon_rando: signer) {
+      let vals = mock::genesis_n_vals(root, 4);
+      mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
+      let marlon_addr = signer::address_of(&marlon_rando);
+      ol_account::create_account(root, marlon_addr);
+      let (_bal, marlon_rando_balance_pre) = ol_account::balance(marlon_addr);
+      assert!(marlon_rando_balance_pre == 0, 7357000);
+
+      let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(&alice, b"0x1");
+      let donor_voice_address = signer::address_of(&resource_sig);
+
+      // fund the account
+      ol_account::transfer(&alice, donor_voice_address, 100_000);
+      let (_, resource_balance) = ol_account::balance(donor_voice_address);
+      assert!(resource_balance == 100_000, 7357002);
+
+      // the account needs basic donor directed structs
+      donor_voice_txs::test_helper_make_donor_voice(root, &resource_sig, vals);
+
+      // vals claim the offer
+      multi_action::claim_offer(&alice, donor_voice_address);
+      multi_action::claim_offer(&bob, donor_voice_address);
+      multi_action::claim_offer(&carol, donor_voice_address);
+
+      //need to be caged to finalize donor directed workflow and release control of the account
+      multi_action::finalize_and_cage(&resource_sig, 2);
+      // slow_wallet::user_set_slow(marlon_rando);
+
+      donor_voice_reauth::test_set_authorized(root, donor_voice_address);
+
+      let is_unlocked_advance = true;
+
+      donor_voice_txs::propose_payment_tx(bob, donor_voice_address, marlon_addr, 100, b"thanks marlon", is_unlocked_advance);
+
+      donor_voice_txs::propose_payment_tx(carol, donor_voice_address, marlon_addr, 100, b"thanks marlon", is_unlocked_advance);
+
+      // PROCESS THE PAYMENT
+      // process epoch 3 accounts
+
+      mock::trigger_epoch(root); // into epoch 1
+      mock::trigger_epoch(root); // into epoch 2
+      mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
+      mock::trigger_epoch(root); // epoch 4 should include the payment
+
+      let (_bal, marlon_rando_balance_post) = ol_account::balance(marlon_addr);
+
+      assert!(marlon_rando_balance_post == marlon_rando_balance_pre + 100, 7357006);
+    }
+
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, dave = @0x1000d, marlon_rando = @0x123456)]
     fun dv_process_multi_same_epoch(root: &signer, alice: &signer, bob: &signer, carol: &signer, dave: &signer, marlon_rando: &signer) {
