@@ -1,5 +1,6 @@
-  #[test_only]
+#[test_only]
   module ol_framework::test_community_wallet{
+    use std::guid;
     use ol_framework::ballot;
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_advance;
@@ -185,7 +186,7 @@
         assert!(!completed, 7357007);
 
         // it is not yet scheduled, it's still only a proposal by an admin
-        assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
+        assert!(!donor_voice_txs::is_scheduled(alice_comm_wallet_addr, guid::id_creation_num(&uid)), 7357008);
 
         // dave votes the payment and it is approved.
         let uid = donor_voice_txs::test_propose_payment(dave, alice_comm_wallet_addr, @0x1000c, 100, b"thanks carol");
@@ -196,7 +197,7 @@
         assert!(completed, 7357007); // now completed
 
         // confirm it is scheduled
-        assert!(donor_voice_txs::is_scheduled(alice_comm_wallet_addr, &uid), 7357008);
+        assert!(donor_voice_txs::is_scheduled(alice_comm_wallet_addr, guid::id_creation_num(&uid)), 7357008);
 
         // PROCESS THE PAYMENT
         // the default timed payment is 3 epochs, we are in epoch 1

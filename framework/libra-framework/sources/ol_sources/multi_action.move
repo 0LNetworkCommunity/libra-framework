@@ -604,6 +604,9 @@ module ol_framework::multi_action {
     ): guid::ID acquires Governance, Action {
         assert_authorized(sig, multisig_address);
         let ms = borrow_global_mut<Governance>(multisig_address);
+
+        assert!(exists<Action<ProposalData>>(multisig_address), error::invalid_argument(EACTION_NOT_FOUND));
+
         let action = borrow_global_mut<Action<ProposalData>>(multisig_address);
         // go through all proposals and clean up expired ones.
         lazy_cleanup_expired(action);
@@ -850,7 +853,7 @@ module ol_framework::multi_action {
     struct PropGovSigners has key, store, copy, drop {
         add_remove: bool, // true = add, false = remove
         addresses: vector<address>,
-        n_of_m: Option<u64>, // Optionally change the n of m threshold. To only change the n_of_m threshold, an empty list of addresses is required.
+        n_of_m: Option<u64>, // Optionally change the n_of_m threshold. To only change the n_of_m threshold, an empty list of addresses is required.
     }
 
     // TODO: check if the addresses are on chain, does not contain the multisig_address and the current authorities
@@ -1016,6 +1019,39 @@ module ol_framework::multi_action {
         prop.expiration_epoch
     }
 
+    #[view]
+    /// Returns a vector of ID numbers (creation numbers) of proposals for a given status enum
+    ///
+    /// This function retrieves all proposal IDs that match the specified status.
+    /// It's useful for building UIs that need to display lists of proposals filtered
+    /// by their current state (pending, approved, rejected).
+    ///
+    /// # Parameters
+    /// * `multisig_address`: The address of the multisig account to query
+    /// * `status_enum`: The status to filter proposals by:
+    ///   - `1`: Pending (voting in progress)
+    ///   - `2`: Approved
+    ///   - `3`: Rejected
+    ///
+    /// # Returns
+    /// * `vector<u64>`: A vector containing all proposal IDs matching the specified status
+    public fun get_proposals_by_status<ProposalData: store + drop>(multisig_address: address, status_enum: u8): vector<u64> acquires Action {
+        let action = borrow_global<Action<ProposalData>>(multisig_address);
+        let ballots_ref = ballot::get_list_ballots_by_enum(&action.vote, status_enum);
+
+        let ids = vector::empty<u64>();
+        let i = 0;
+        let len = vector::length(ballots_ref);
+
+        while (i < len) {
+            let ballot = vector::borrow(ballots_ref, i);
+            let id = ballot::get_ballot_id(ballot);
+            vector::push_back(&mut ids, guid::id_creation_num(&id));
+            i = i + 1;
+        };
+
+        ids
+    }
 
     // TODO: remove this after offer migration is completed
     public(friend) entry fun init_gov_deprecated(sig: &signer) {

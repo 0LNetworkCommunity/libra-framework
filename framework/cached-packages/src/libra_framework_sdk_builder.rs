@@ -191,13 +191,8 @@ pub enum EntryFunctionCall {
     /// Public function for production triggering of epoch boundary.
     DiemGovernanceTriggerEpoch {},
 
-    /// A signer of the multisig can propose a payment
-    /// Public entry function required for txs cli
-    DonorVoiceTxsProposeAdvanceTx {
+    DonorVoiceTxsMaybeCloseReauth {
         multisig_address: AccountAddress,
-        payee: AccountAddress,
-        value: u64,
-        description: Vec<u8>,
     },
 
     /// A donor can propose the liquidation of a Donor Voice account
@@ -206,13 +201,12 @@ pub enum EntryFunctionCall {
         multisig_address: AccountAddress,
     },
 
-    /// A signer of the multisig can propose a payment
-    /// Public entry function required for txs cli.
     DonorVoiceTxsProposePaymentTx {
         multisig_address: AccountAddress,
         payee: AccountAddress,
         value: u64,
         description: Vec<u8>,
+        advance_unlocked: bool,
     },
 
     /// A donor of the program can propose a veto to a scheduled transaction
@@ -499,12 +493,9 @@ impl EntryFunctionCall {
             } => diem_governance_ol_vote(proposal_id, should_pass),
             DiemGovernanceSmokeTriggerEpoch {} => diem_governance_smoke_trigger_epoch(),
             DiemGovernanceTriggerEpoch {} => diem_governance_trigger_epoch(),
-            DonorVoiceTxsProposeAdvanceTx {
-                multisig_address,
-                payee,
-                value,
-                description,
-            } => donor_voice_txs_propose_advance_tx(multisig_address, payee, value, description),
+            DonorVoiceTxsMaybeCloseReauth { multisig_address } => {
+                donor_voice_txs_maybe_close_reauth(multisig_address)
+            }
             DonorVoiceTxsProposeLiquidateTx { multisig_address } => {
                 donor_voice_txs_propose_liquidate_tx(multisig_address)
             }
@@ -513,7 +504,14 @@ impl EntryFunctionCall {
                 payee,
                 value,
                 description,
-            } => donor_voice_txs_propose_payment_tx(multisig_address, payee, value, description),
+                advance_unlocked,
+            } => donor_voice_txs_propose_payment_tx(
+                multisig_address,
+                payee,
+                value,
+                description,
+                advance_unlocked,
+            ),
             DonorVoiceTxsProposeVetoTx {
                 multisig_address,
                 tx_id,
@@ -998,14 +996,7 @@ pub fn diem_governance_trigger_epoch() -> TransactionPayload {
     ))
 }
 
-/// A signer of the multisig can propose a payment
-/// Public entry function required for txs cli
-pub fn donor_voice_txs_propose_advance_tx(
-    multisig_address: AccountAddress,
-    payee: AccountAddress,
-    value: u64,
-    description: Vec<u8>,
-) -> TransactionPayload {
+pub fn donor_voice_txs_maybe_close_reauth(multisig_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -1014,14 +1005,9 @@ pub fn donor_voice_txs_propose_advance_tx(
             ]),
             ident_str!("donor_voice_txs").to_owned(),
         ),
-        ident_str!("propose_advance_tx").to_owned(),
+        ident_str!("maybe_close_reauth").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&multisig_address).unwrap(),
-            bcs::to_bytes(&payee).unwrap(),
-            bcs::to_bytes(&value).unwrap(),
-            bcs::to_bytes(&description).unwrap(),
-        ],
+        vec![bcs::to_bytes(&multisig_address).unwrap()],
     ))
 }
 
@@ -1044,13 +1030,12 @@ pub fn donor_voice_txs_propose_liquidate_tx(
     ))
 }
 
-/// A signer of the multisig can propose a payment
-/// Public entry function required for txs cli.
 pub fn donor_voice_txs_propose_payment_tx(
     multisig_address: AccountAddress,
     payee: AccountAddress,
     value: u64,
     description: Vec<u8>,
+    advance_unlocked: bool,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1067,6 +1052,7 @@ pub fn donor_voice_txs_propose_payment_tx(
             bcs::to_bytes(&payee).unwrap(),
             bcs::to_bytes(&value).unwrap(),
             bcs::to_bytes(&description).unwrap(),
+            bcs::to_bytes(&advance_unlocked).unwrap(),
         ],
     ))
 }
@@ -1845,15 +1831,12 @@ mod decoder {
         }
     }
 
-    pub fn donor_voice_txs_propose_advance_tx(
+    pub fn donor_voice_txs_maybe_close_reauth(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DonorVoiceTxsProposeAdvanceTx {
+            Some(EntryFunctionCall::DonorVoiceTxsMaybeCloseReauth {
                 multisig_address: bcs::from_bytes(script.args().first()?).ok()?,
-                payee: bcs::from_bytes(script.args().get(1)?).ok()?,
-                value: bcs::from_bytes(script.args().get(2)?).ok()?,
-                description: bcs::from_bytes(script.args().get(3)?).ok()?,
             })
         } else {
             None
@@ -1881,6 +1864,7 @@ mod decoder {
                 payee: bcs::from_bytes(script.args().get(1)?).ok()?,
                 value: bcs::from_bytes(script.args().get(2)?).ok()?,
                 description: bcs::from_bytes(script.args().get(3)?).ok()?,
+                advance_unlocked: bcs::from_bytes(script.args().get(4)?).ok()?,
             })
         } else {
             None
@@ -2291,8 +2275,8 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::diem_governance_trigger_epoch),
         );
         map.insert(
-            "donor_voice_txs_propose_advance_tx".to_string(),
-            Box::new(decoder::donor_voice_txs_propose_advance_tx),
+            "donor_voice_txs_maybe_close_reauth".to_string(),
+            Box::new(decoder::donor_voice_txs_maybe_close_reauth),
         );
         map.insert(
             "donor_voice_txs_propose_liquidate_tx".to_string(),

@@ -19,6 +19,7 @@ module ol_framework::donor_voice_migration {
     use ol_framework::migration_capability::{Self, MigrationCapability};
     use ol_framework::donor_voice;
     use ol_framework::donor_voice_governance;
+    use ol_framework::community_wallet_advance;
 
 
     friend ol_framework::migrations;
@@ -59,6 +60,8 @@ module ol_framework::donor_voice_migration {
 
             // create Offer structure
             multi_action::maybe_init_auth_offer(&multisig_signer, multisig_address);
+
+            community_wallet_advance::initialize(&multisig_signer);
 
             donor_voice_governance::maybe_init_dv_governance(&multisig_signer);
             activity::lazy_initialize(&multisig_signer, timestamp::now_seconds());
