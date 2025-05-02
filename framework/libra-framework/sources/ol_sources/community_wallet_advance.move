@@ -189,8 +189,11 @@ module ol_framework::community_wallet_advance {
   #[view]
   /// check if amount withdrawn will be below credit limit
   public fun can_withdraw_amount(dv_account: address, amount: u64): bool acquires Advances {
-    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
-    assert!(!is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
+    assert!(amount > 0, error::invalid_argument(EAMOUNT_IS_ZERO));
+    // TODO: delinquent checks requires a payment history
+    // and ability to service the loan.
+    // for v8 we depend on total credit available
+    // assert!(!is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
     let available = total_credit_available(dv_account);
     available > amount
   }
