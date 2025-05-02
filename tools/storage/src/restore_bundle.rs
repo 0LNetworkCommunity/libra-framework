@@ -161,12 +161,19 @@ impl RestoreBundle {
         for entry in file_list.flatten() {
             let content = fs::read_to_string(&entry)?;
             let updated_content = Self::update_manifest_paths(&content);
-            fs::write(&entry, &updated_content)?; // Add & here
-            verify_valid_transaction_list(&entry, self.version)?;
+            fs::write(&entry, &updated_content)?;
 
-            self.transaction_manifest = entry;
+            if verify_valid_transaction_list(&entry, self.version) {
+                self.transaction_manifest = entry;
+                return Ok(());
+            }
         }
-        Ok(())
+
+        // If we get here, no valid transaction manifest was found
+        bail!(
+            "No valid transaction manifest found for version {}",
+            self.version
+        );
     }
 
     fn update_manifest_paths(manifest_content: &str) -> String {
@@ -204,21 +211,31 @@ impl RestoreBundle {
     }
 }
 
-pub fn verify_valid_transaction_list(
-    transaction_manifest: &Path,
-    version: u64,
-) -> anyhow::Result<()> {
-    let s = fs::read_to_string(transaction_manifest)?;
-    let tm: TransactionBackup = serde_json::from_str(&s)?;
+pub fn verify_valid_transaction_list(transaction_manifest: &Path, version: u64) -> bool {
+    match fs::read_to_string(transaction_manifest) {
+        Ok(s) => match serde_json::from_str::<TransactionBackup>(&s) {
+            Ok(tm) => {
+                if version > tm.last_version {
+                    info!("The transaction you are looking for is newer than the last version in this bundle. Get a newer transaction backup");
+                    return false;
+                };
 
-    if tm.last_version < version {
-        bail!("the transaction you are looking for is newer than the last version in this bundle. Get a newer transaction backup");
-    };
-
-    if tm.first_version > version {
-        bail!("the transaction you are looking for is older than the last version in this bundle. Get an older transaction backup.");
+                if version < tm.first_version {
+                    info!("The transaction you are looking for is older than the last version in this bundle. Get an older transaction backup.");
+                    return false;
+                }
+                true
+            }
+            Err(e) => {
+                info!("Failed to parse transaction manifest: {}", e);
+                false
+            }
+        },
+        Err(e) => {
+            info!("Failed to read transaction manifest file: {}", e);
+            false
+        }
     }
-    Ok(())
 }
 
 #[test]
