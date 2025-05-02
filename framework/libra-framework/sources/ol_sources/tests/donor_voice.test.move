@@ -503,7 +503,7 @@ module ol_framework::test_donor_voice {
       mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
       let marlon_addr = signer::address_of(&marlon_rando);
       ol_account::create_account(root, marlon_addr);
-      let (_bal, marlon_rando_balance_pre) = ol_account::balance(marlon_addr);
+      let (marlon_unlocked_pre, marlon_rando_balance_pre) = ol_account::balance(marlon_addr);
       assert!(marlon_rando_balance_pre == 0, 7357000);
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(&alice, b"0x1");
@@ -542,9 +542,13 @@ module ol_framework::test_donor_voice {
       mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
       mock::trigger_epoch(root); // epoch 4 should include the payment
 
-      let (_bal, marlon_rando_balance_post) = ol_account::balance(marlon_addr);
+      let (marlon_unlocked_post, marlon_rando_balance_post) = ol_account::balance(marlon_addr);
 
       assert!(marlon_rando_balance_post == marlon_rando_balance_pre + 100, 7357006);
+
+      // check the marlon's balance is unlocked
+      assert!(marlon_unlocked_post > marlon_unlocked_pre, 7357007);
+      assert!(marlon_unlocked_post == marlon_unlocked_pre + 100, 7357007);
     }
 
 
@@ -693,7 +697,7 @@ module ol_framework::test_donor_voice {
       mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
       ol_account::create_account(root, signer::address_of(marlon_rando));
-      let (_bal, marlon_rando_balance_pre) = ol_account::balance(signer::address_of(marlon_rando));
+      let (_, marlon_rando_balance_pre) = ol_account::balance(signer::address_of(marlon_rando));
       assert!(marlon_rando_balance_pre == 0, 7357000);
 
 
