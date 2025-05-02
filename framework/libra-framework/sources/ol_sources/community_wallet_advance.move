@@ -21,7 +21,7 @@ module ol_framework::community_wallet_advance {
   use std::error;
   use std::signer;
   use std::timestamp;
-  use diem_framework::account::{Self, WithdrawCapability};
+  use diem_framework::account::{Self, GUIDCapability, WithdrawCapability};
   use diem_framework::coin::{Coin};
   use ol_framework::ol_account;
   use ol_framework::libra_coin::{Self, LibraCoin};
@@ -100,13 +100,6 @@ module ol_framework::community_wallet_advance {
     }
   }
 
-  /// check if amount withdrawn will be below credit limit
-  fun can_withdraw_amount(dv_account: address, amount: u64):bool acquires Advances {
-    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
-    assert!(!is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
-    let available = total_credit_available(dv_account);
-    available > amount
-  }
   /// Only can be called on epoch boundary as part of the donor_voice_txs.move authorization flow.
   /// Will withdraw funds and track the logger
   public(friend) fun transfer_credit(withdraw_cap: &WithdrawCapability, recipient: address, amount: u64): u64 acquires Advances {
@@ -117,6 +110,22 @@ module ol_framework::community_wallet_advance {
 
     ol_account::transfer_with_capability(
       withdraw_cap,
+      recipient,
+      amount,
+    );
+    // TODO: check if there is any possibility of partial amount sent
+    amount
+  }
+
+  public(friend) fun transfer_credit_vm(framework: &signer, guid_cap: &GUIDCapability, recipient: address, amount: u64): u64 acquires Advances {
+    let dv_account = account::get_guid_capability_address(guid_cap);
+
+    can_withdraw_amount(dv_account, amount);
+    log_withdrawal(dv_account, amount);
+
+    ol_account::vm_transfer(
+      framework,
+      dv_account,
       recipient,
       amount,
     );
@@ -173,6 +182,17 @@ module ol_framework::community_wallet_advance {
     if (is_delinquent(dv_account)){
       donor_voice_reauth::set_requires_reauth(user, dv_account);
     }
+  }
+
+  //////// VIEW FUNCTIONS ////////
+
+  #[view]
+  /// check if amount withdrawn will be below credit limit
+  public fun can_withdraw_amount(dv_account: address, amount: u64): bool acquires Advances {
+    assert!(amount> 0, error::invalid_argument(EAMOUNT_IS_ZERO));
+    assert!(!is_delinquent(dv_account), error::invalid_state(ELOAN_OVERDUE));
+    let available = total_credit_available(dv_account);
+    available > amount
   }
 
   #[view]
