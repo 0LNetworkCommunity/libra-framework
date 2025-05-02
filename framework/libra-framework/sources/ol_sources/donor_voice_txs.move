@@ -208,6 +208,7 @@ module ol_framework::donor_voice_txs {
 
       // Commit note: this should now failover gracefully
       donor_voice_governance::maybe_init_dv_governance(sig);
+      community_wallet_advance::initialize(sig);
     }
 
     /// Like any MultiSig instance, a sponsor which is the original owner of the account, needs to initialize the account.
@@ -832,20 +833,20 @@ module ol_framework::donor_voice_txs {
 
   //////// TRANSACTIONS ////////
 
-  /// A signer of the multisig can propose a payment
-  /// Public entry function required for txs cli.
-  public entry fun propose_payment_tx(
-    auth: signer,
-    multisig_address: address,
-    payee: address,
-    value: u64,
-    description: vector<u8>,
-  )  acquires TxSchedule {
-    donor_voice_reauth::assert_authorized(multisig_address);
-    propose_payment(&auth, multisig_address, payee, value, description);
-  }
+  // /// A signer of the multisig can propose a payment
+  // /// Public entry function required for txs cli.
+  // public entry fun propose_payment_tx(
+  //   auth: signer,
+  //   multisig_address: address,
+  //   payee: address,
+  //   value: u64,
+  //   description: vector<u8>,
+  // )  acquires TxSchedule {
+  //   donor_voice_reauth::assert_authorized(multisig_address);
+  //   propose_payment(&auth, multisig_address, payee, value, description);
+  // }
 
-  public entry fun propose_payment_tx_alt(
+  public entry fun propose_payment_tx(
     auth: signer,
     multisig_address: address,
     payee: address,
