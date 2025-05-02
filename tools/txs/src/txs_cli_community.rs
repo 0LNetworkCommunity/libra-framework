@@ -209,26 +209,18 @@ pub struct ProposeTx {
     pub description: String,
     #[clap(short, long)]
     /// Request small administrative advance
-    pub advance: bool,
+    pub unlocked_advance: bool,
 }
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload = if self.advance {
-            libra_stdlib::donor_voice_txs_propose_advance_tx(
+        let payload =  libra_stdlib::donor_voice_txs_propose_payment_tx(
                 self.community_wallet,
                 self.recipient,
                 gas_coin::cast_decimal_to_coin(self.amount as f64),
                 self.description.clone().into_bytes(),
-            )
-        } else {
-            libra_stdlib::donor_voice_txs_propose_payment_tx(
-                self.community_wallet,
-                self.recipient,
-                gas_coin::cast_decimal_to_coin(self.amount as f64),
-                self.description.clone().into_bytes(),
-            )
-        };
+                self.unlocked_advance,
+            );
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
@@ -406,7 +398,7 @@ impl BatchTx {
 
             println!("scheduling tx");
 
-            match propose_single(sender, &self.community_wallet, inst).await {
+            match propose_one_in_batch(sender, &self.community_wallet, inst).await {
                 Ok(_) => {
                     inst.proposed = Some(true);
                 }
@@ -448,7 +440,7 @@ impl BatchTx {
     }
 }
 
-async fn propose_single(
+async fn propose_one_in_batch(
     sender: &mut Sender,
     multisig: &AccountAddress,
     instruction: &ProposePay,
@@ -458,6 +450,7 @@ async fn propose_single(
         instruction.parsed.unwrap(),
         gas_coin::cast_decimal_to_coin(instruction.amount as f64),
         instruction.description.clone().into_bytes(),
+        false,
     );
     sender.sign_submit_wait(payload).await?;
     Ok(())
