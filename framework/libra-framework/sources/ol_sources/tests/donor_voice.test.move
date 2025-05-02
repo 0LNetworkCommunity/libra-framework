@@ -354,8 +354,10 @@ module ol_framework::test_donor_voice {
       let vals = mock::genesis_n_vals(root, 4);
       mock::ol_initialize_coin_and_fund_vals(root, 10000000, true);
 
-      let (_, bob_balance_pre) = ol_account::balance(@0x1000b);
+      let (bob_unlocked_pre, bob_balance_pre) = ol_account::balance(@0x1000b);
       assert!(bob_balance_pre == 10000000, 7357001);
+      assert!(bob_unlocked_pre == 10000000, 7357002);
+
 
       let (resource_sig, _cap) = ol_account::test_ol_create_resource_account(alice, b"0x1");
       let donor_voice_address = signer::address_of(&resource_sig);
@@ -363,7 +365,7 @@ module ol_framework::test_donor_voice {
       // fund the account
       ol_account::transfer(alice, donor_voice_address, 100);
       let (_, resource_balance) = ol_account::balance(donor_voice_address);
-      assert!(resource_balance == 100, 7357002);
+      assert!(resource_balance == 100, 7357003);
 
 
       // the account needs basic donor directed structs
@@ -391,37 +393,40 @@ module ol_framework::test_donor_voice {
 
       let uid = donor_voice_txs::test_propose_payment(carol, donor_voice_address, @0x1000b, 100, b"thanks bob");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
-      assert!(found, 7357004);
-      assert!(idx == 0, 7357005);
-      assert!(status_enum == ballot::get_approved_enum(), 7357006);
-      assert!(completed, 7357007); // now vote is completed
+      assert!(found, 7357009);
+      assert!(idx == 0, 7357010);
+      assert!(status_enum == ballot::get_approved_enum(), 7357011);
+      assert!(completed, 7357012); // now vote is completed
 
       // confirm it is scheduled
-      assert!(donor_voice_txs::is_scheduled(donor_voice_address, guid::id_creation_num(&uid)), 7357008);
+      assert!(donor_voice_txs::is_scheduled(donor_voice_address, guid::id_creation_num(&uid)), 7357013);
 
       // PROCESS THE PAYMENT
       // the default timed payment is 3 epochs, we are in epoch 1
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
-      assert!(vector::contains(&list, &uid), 7357009);
+      assert!(vector::contains(&list, &uid), 7357014);
 
       // process epoch 3 accounts
       donor_voice_txs::process_donor_voice_accounts(root, 3);
 
       let (bob_unlocked, bob_balance) = ol_account::balance(@0x1000b);
-      assert!(bob_balance > bob_balance_pre, 7357005);
-      assert!(bob_balance == 10000100, 7357006);
+      assert!(bob_balance > bob_balance_pre, 7357015);
+      assert!(bob_balance == 10000100, 7357016);
 
-      assert!(bob_unlocked != 10000100, 7357007);
+      // the new balance is locked
+      assert!(bob_unlocked != bob_balance, 7357017);
+      assert!(bob_unlocked == bob_unlocked_pre, 7357018);
+
 
       // the first proposal should be processed
       let (found, idx, status_enum, completed) =
       donor_voice_txs::get_multisig_proposal_state(donor_voice_address,
       &uid);
-      assert!(found, 73570021);
-      assert!(idx == 0, 73570022);
-      assert!(status_enum == ballot::get_approved_enum(), 73570023);
-      assert!(completed, 73570024); // now vote is completed
-      assert!(donor_voice_txs::is_paid(donor_voice_address, guid::id_creation_num(&uid)), 7357002501);
+      assert!(found, 7357018);
+      assert!(idx == 0, 7357019);
+      assert!(status_enum == ballot::get_approved_enum(), 7357020);
+      assert!(completed, 7357021); // now vote is completed
+      assert!(donor_voice_txs::is_paid(donor_voice_address, guid::id_creation_num(&uid)), 7357022);
     }
 
     #[test(root = @ol_framework, alice = @0x1000a, bob = @0x1000b, carol = @0x1000c, marlon_rando = @0x123456)]
