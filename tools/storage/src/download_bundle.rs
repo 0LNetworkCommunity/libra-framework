@@ -10,7 +10,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+// Update GitHubContent structure for contents API
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct GitHubContent {
     download_url: Option<String>,
     #[serde(rename = "type")]
@@ -18,6 +20,25 @@ struct GitHubContent {
     name: String,
 }
 
+// Add TreeResponse structures for the tree API
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+struct TreeItem {
+    path: String,
+    mode: String,
+    #[serde(rename = "type")]
+    item_type: String,
+    sha: String,
+    url: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct TreeResponse {
+    tree: Vec<TreeItem>,
+    truncated: bool,
+}
+
+// Rest of the original data structures
 #[derive(Debug)]
 pub struct EpochFolders {
     pub epoch_ending: String,
@@ -63,13 +84,13 @@ fn find_closest_transaction_folder(
         }
     }
 
-    // println!("For target version {}, found candidates:", target_version);
-    // if let Some((v, name)) = version_below {
-    //     println!("  Below target: {} ({})", name, v);
-    // }
-    // if let Some((v, name)) = version_above {
-    //     println!("  Above target: {} ({})", name, v);
-    // }
+    println!("For target version {}, found candidates:", target_version);
+    if let Some((v, name)) = version_below {
+        println!("  Below target: {} ({})", name, v);
+    }
+    if let Some((v, name)) = version_above {
+        println!("  Above target: {} ({})", name, v);
+    }
 
     // Choose the version below target
     version_below
@@ -84,37 +105,51 @@ pub async fn find_closest_epoch_folder(
     branch: &str,
     target_epoch: u64,
 ) -> Result<EpochFolders> {
+    // Update to use the Git Tree API instead of Contents API
     let api_url = format!(
-        "https://api.github.com/repos/{}/{}/contents/snapshots?ref={}",
+        "https://api.github.com/repos/{}/{}/git/trees/{}:snapshots",
         owner, repo, branch
     );
 
-    let contents: Vec<GitHubContent> = client
+    let response = client
         .get(&api_url)
         .header("User-Agent", "libra-framework-downloader")
         .send()
         .await
-        .context("Failed to list snapshots directory")?
+        .context("Failed to list snapshots directory")?;
+
+    let tree_response: TreeResponse = response
         .json()
         .await
         .context("Failed to parse snapshots directory contents")?;
+
+    if tree_response.truncated {
+        info!("Warning: GitHub Tree API response is truncated. Some folders might be missing.");
+    }
 
     // Separate folders by type
     let mut epoch_ending_folders: Vec<(u64, String)> = Vec::new();
     let mut state_epoch_folders: Vec<(u64, String)> = Vec::new();
     let mut transaction_folders: Vec<(u64, String)> = Vec::new();
 
-    for item in contents {
-        if item.content_type != "dir" {
+    for item in tree_response.tree {
+        // Only consider tree items (directories)
+        if item.item_type != "tree" {
             continue;
         }
 
-        if let Some(epoch) = parse_epoch_ending_number(&item.name) {
-            epoch_ending_folders.push((epoch, item.name));
-        } else if let Some((epoch, _version)) = parse_state_epoch_info(&item.name) {
-            state_epoch_folders.push((epoch, item.name));
-        } else if let Some(version) = parse_transaction_number(&item.name) {
-            transaction_folders.push((version, item.name));
+        // Extract just the folder name from the path
+        let folder_name = match Path::new(&item.path).file_name() {
+            Some(name) => name.to_string_lossy().to_string(),
+            None => continue,
+        };
+
+        if let Some(epoch) = parse_epoch_ending_number(&folder_name) {
+            epoch_ending_folders.push((epoch, folder_name));
+        } else if let Some((epoch, _version)) = parse_state_epoch_info(&folder_name) {
+            state_epoch_folders.push((epoch, folder_name));
+        } else if let Some(version) = parse_transaction_number(&folder_name) {
+            transaction_folders.push((version, folder_name));
         }
     }
 
@@ -189,62 +224,77 @@ pub async fn download_github_folder(
     output_dir: &str,
 ) -> Result<()> {
     let client = reqwest::Client::new();
-    let mut pending_dirs = vec![(path.to_string(), output_dir.to_string())];
 
     // Create the root output directory first
     fs::create_dir_all(output_dir)?;
 
-    while let Some((current_path, current_dir)) = pending_dirs.pop() {
-        let api_url = format!(
-            "https://api.github.com/repos/{}/{}/contents/{}?ref={}",
-            owner, repo, current_path, branch
+    // Use the Git Tree API with recursive flag to get all contents at once
+    let api_url = format!(
+        "https://api.github.com/repos/{}/{}/git/trees/{}:{}?recursive=1",
+        owner, repo, branch, path
+    );
+
+    info!("Downloading tree from: {}", api_url);
+
+    let response = client
+        .get(&api_url)
+        .header("User-Agent", "libra-framework-downloader")
+        .send()
+        .await
+        .context("Failed to send tree request")?;
+
+    let tree_response: TreeResponse = response
+        .json()
+        .await
+        .context("Failed to parse JSON tree response")?;
+
+    if tree_response.truncated {
+        info!("Warning: Response was truncated, not all files will be downloaded");
+    }
+
+    // Get the base path to properly handle nested directories
+    let base_path = Path::new(path)
+        .file_name()
+        .map_or(String::new(), |name| name.to_string_lossy().to_string());
+    let base_dir = Path::new(output_dir).join(base_path);
+    fs::create_dir_all(&base_dir)?;
+
+    // Process files from the tree
+    for item in tree_response.tree {
+        // Skip if not a blob (file)
+        if item.item_type != "blob" {
+            continue;
+        }
+
+        // The path in tree response is relative to the requested path
+        let relative_path = item.path;
+
+        // Compute where to save the file
+        let output_path = base_dir.join(&relative_path);
+
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = output_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        // Download the file content using raw GitHub URL
+        let content_url = format!(
+            "https://raw.githubusercontent.com/{}/{}/{}/{}/{}",
+            owner, repo, branch, path, relative_path
         );
 
-        info!("Downloading from: {}", api_url);
-
-        let contents: Vec<GitHubContent> = client
-            .get(&api_url)
+        let content = client
+            .get(&content_url)
             .header("User-Agent", "libra-framework-downloader")
             .send()
             .await
-            .context("Failed to send request")?
-            .json()
+            .with_context(|| format!("Failed to download file: {}", relative_path))?
+            .bytes()
             .await
-            .context("Failed to parse JSON response")?;
+            .with_context(|| format!("Failed to read bytes from: {}", relative_path))?;
 
-        // Extract the last component of the path to create the current directory
-        let current_folder = Path::new(&current_path)
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
-
-        // Create full directory path including the current folder
-        let full_dir_path = Path::new(&current_dir).join(&current_folder);
-        fs::create_dir_all(&full_dir_path)?;
-
-        for item in contents {
-            let output_path = full_dir_path.join(&item.name);
-
-            if item.content_type == "file" {
-                if let Some(download_url) = item.download_url {
-                    // println!("Downloading file: {}", item.name);
-                    let content = client
-                        .get(&download_url)
-                        .header("User-Agent", "libra-framework-downloader")
-                        .send()
-                        .await?
-                        .bytes()
-                        .await?;
-
-                    fs::write(&output_path, content)
-                        .with_context(|| format!("Failed to write file: {}", item.name))?;
-                }
-            } else if item.content_type == "dir" {
-                println!("Processing directory: {}", item.name);
-                let new_path = format!("{}/{}", current_path, item.name);
-                pending_dirs.push((new_path, full_dir_path.to_str().unwrap().to_string()));
-            }
-        }
+        fs::write(&output_path, content)
+            .with_context(|| format!("Failed to write file: {}", relative_path))?;
     }
 
     Ok(())
