@@ -214,13 +214,13 @@ pub struct ProposeTx {
 
 impl ProposeTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
-        let payload =  libra_stdlib::donor_voice_txs_propose_payment_tx(
-                self.community_wallet,
-                self.recipient,
-                gas_coin::cast_decimal_to_coin(self.amount as f64),
-                self.description.clone().into_bytes(),
-                self.unlocked_advance,
-            );
+        let payload = libra_stdlib::donor_voice_txs_propose_payment_tx(
+            self.community_wallet,
+            self.recipient,
+            gas_coin::cast_decimal_to_coin(self.amount as f64),
+            self.description.clone().into_bytes(),
+            self.unlocked_advance,
+        );
         sender.sign_submit_wait(payload).await?;
         Ok(())
     }
