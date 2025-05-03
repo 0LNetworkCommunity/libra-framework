@@ -463,7 +463,7 @@ module ol_framework::test_donor_voice {
 
       donor_voice_reauth::test_set_authorized(root, donor_voice_address);
 
-      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), 100, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -596,7 +596,7 @@ module ol_framework::test_donor_voice {
 
       slow_wallet::user_set_slow(marlon_rando);
 
-      let first_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
+      let first_uid_bob = donor_voice_txs::test_propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &first_uid_bob);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -620,7 +620,7 @@ module ol_framework::test_donor_voice {
       let list = donor_voice_txs::find_by_deadline(donor_voice_address, 3);
       assert!(vector::contains(&list, &first_uid_bob), 73570014);
 
-      let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
+      let second_uid_bob = donor_voice_txs::test_propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &second_uid_bob);
       assert!(found, 73570015);
       assert!(idx == 0, 73570016); // since the above payment was approved, now
@@ -727,7 +727,7 @@ module ol_framework::test_donor_voice {
 
       slow_wallet::user_set_slow(marlon_rando);
 
-      let uid = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
+      let uid = donor_voice_txs::test_propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_one, b"thanks marlon");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &uid);
       assert!(found, 7357004);
       assert!(idx == 0, 7357005);
@@ -755,7 +755,7 @@ module ol_framework::test_donor_voice {
       // one epoch goes by and then new payment to marlon
       mock::trigger_epoch(root); // into epoch 1
 
-      let second_uid_bob = donor_voice_txs::propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
+      let second_uid_bob = donor_voice_txs::test_propose_payment(bob, donor_voice_address, signer::address_of(marlon_rando), marlon_pay_two, b"thanks again!!!");
       let (found, idx, status_enum, completed) = donor_voice_txs::get_multisig_proposal_state(donor_voice_address, &second_uid_bob);
       assert!(found, 73570015);
       assert!(idx == 0, 73570016); // now pending is empty, should be first

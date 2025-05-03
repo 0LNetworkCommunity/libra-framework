@@ -229,17 +229,22 @@ module ol_framework::donor_voice_txs {
     /// and the limits must not have been exceeded.
 
     /// Returns the GUID of the transfer.
-    public(friend) fun propose_payment(
+    fun propose_payment(
       sender: &signer,
       multisig_address: address,
       payee: address,
       value: u64,
       description: vector<u8>,
     ): guid::ID acquires TxSchedule {
+      // check the CW has been reauthorized
+      donor_voice_reauth::assert_authorized(multisig_address);
+      // check the multisig admin is initialized
+      reauthorization::assert_v8_authorized(signer::address_of(sender));
+      // check the payee is initialized
+      reauthorization::assert_v8_authorized(payee);
+
 
       assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
-
-      donor_voice_reauth::assert_authorized(multisig_address);
 
 
       // Commit note: don't abort on not slow wallet, in cases of unlocked advance
