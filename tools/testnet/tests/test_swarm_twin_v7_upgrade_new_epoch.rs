@@ -5,7 +5,7 @@ use libra_testnet::twin_swarm;
 use libra_txs::txs_cli_governance::GovernanceTxs::EpochBoundary;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub},
-    txs_cli_user::UserTxs::HumanFounder,
+    txs_cli_user::UserTxs::ReJoin,
 };
 
 /// Checks that we can change epoch after a twin network is set
@@ -28,7 +28,7 @@ async fn test_swarm_twin_v7_upgrade_new_epoch() -> anyhow::Result<()> {
 
     // reactivate the validator account
     let mut txs_cli = TxsCli {
-        subcommand: Some(TxsSub::User(HumanFounder)),
+        subcommand: Some(TxsSub::User(ReJoin)),
         config_path: Some(val_one.app_cfg_path.clone()),
         ..Default::default()
     };

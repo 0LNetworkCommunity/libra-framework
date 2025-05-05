@@ -4,7 +4,7 @@ use libra_smoke_tests::libra_smoke::LibraSmoke;
 use libra_testnet::twin_swarm;
 use libra_txs::{
     txs_cli::{TxsCli, TxsSub},
-    txs_cli_user::UserTxs::HumanFounder,
+    txs_cli_user::UserTxs::ReJoin,
 };
 
 /// Checks we can submit the minimal transaction to the twin network
@@ -27,7 +27,7 @@ async fn test_swarm_twin_v7_upgrade_tx_success() -> anyhow::Result<()> {
     let val_one = &test_info[0];
 
     let txs_cli = TxsCli {
-        subcommand: Some(TxsSub::User(HumanFounder)),
+        subcommand: Some(TxsSub::User(ReJoin)),
         config_path: Some(val_one.app_cfg_path.clone()),
         ..Default::default()
     };
