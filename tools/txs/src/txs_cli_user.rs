@@ -24,7 +24,7 @@ pub enum UserTxs {
     SetSlow(SetSlowTx),
     RotationCapability(RotationCapabilityTx),
     RotateKey(RotateKeyTx),
-    HumanFounder,
+    ReJoin,
     Vouch(VouchTx),
 }
 
@@ -54,7 +54,7 @@ impl UserTxs {
                     }
                 }
             }
-            UserTxs::HumanFounder => {
+            UserTxs::ReJoin => {
                 println!("Migrating v7 account...");
                 let payload = libra_stdlib::filo_migration_maybe_migrate();
                 sender.sign_submit_wait(payload).await?;
