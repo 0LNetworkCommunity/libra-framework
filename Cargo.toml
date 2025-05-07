@@ -48,43 +48,44 @@ libra-types = { path = "types" }
 libra-txs = { path = "tools/txs" }
 libra-wallet = { path = "tools/wallet" }
 
-diem-api-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-debugger = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-db = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-forge = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-transactional-test-harness = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+diem-api-types = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-debugger = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-db = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-forge = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-transactional-test-harness = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
 
-diem = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-backup-cli = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-build-info = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-db-tool = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-rest-client = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-sdk = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-config = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-crypto = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-crypto-derive = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-global-constants = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-keygen = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-logger = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-gas = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-vm = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-vm-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-executor = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-executor-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-framework = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-cached-packages = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-github-client = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-release-builder = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-language-e2e-tests = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-push-metrics = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-state-view = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-storage-interface = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-diem-temppath = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git",tag = "1.6.2-diem.12" }
+
+diem = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-backup-cli = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-build-info = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-db-tool = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-node = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-rest-client = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-sdk = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-config = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-crypto = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-crypto-derive = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-global-constants = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-keygen = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-logger = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-types = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-gas = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-vm = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-vm-genesis = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-executor = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-executor-types = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-framework = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-cached-packages = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-github-client = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-release-builder = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-language-e2e-tests = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-push-metrics = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-state-view = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-storage-interface = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+diem-temppath = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
 
 ### External crate dependencies.
 # 0L NOTE: most of these are not used. But we leave the entire block here
@@ -331,14 +332,14 @@ serde_with = "^3"
 vergen = { version = "8.3.1", features = ["build", "git", "gitcl"] }
 
 ######## MOVE DEPENDENCIES ########
-move-binary-format = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
-move-vm-runtime = { git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+move-binary-format = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-core-types = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-command-line-common = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-compiler = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-model = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-vm-test-utils = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-vm-types = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
+move-vm-runtime = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
 
 # uses a profile similar to `cli` in Diem/Cargo.toml
 # optimized for performance and size
