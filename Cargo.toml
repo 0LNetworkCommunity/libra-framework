@@ -53,7 +53,8 @@ diem-debugger = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = 
 diem-db = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
 diem-forge = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
 diem-transactional-test-harness = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
-smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git", branch = "release" }
+
+smoke-test = { package = "smoke-test", git = "https://github.com/0LNetworkCommunity/diem.git",tag = "1.6.2-diem.12" }
 
 diem = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
 diem-backup-cli = { git = "https://github.com/0LNetworkCommunity/diem.git", tag = "1.6.2-diem.12" }
