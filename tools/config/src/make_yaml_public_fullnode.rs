@@ -104,7 +104,7 @@ execution:
 
 state_sync:
      state_sync_driver:
-        bootstrapping_mode: DownloadLatestStates
+        bootstrapping_mode: ExecuteOrApplyFromGenesis
         continuous_syncing_mode: ApplyTransactionOutputs
 
 full_node_networks:
