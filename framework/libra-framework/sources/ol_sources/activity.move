@@ -2,6 +2,7 @@
 /// Maintains the version number for the blockchain.
 module ol_framework::activity {
   use std::signer;
+  use std::error;
   use diem_std::timestamp;
 
   friend ol_framework::filo_migration;
@@ -37,8 +38,10 @@ module ol_framework::activity {
   }
 
   /// Increment the activity timestamp of a user
+  // NOTE: this serves to gate users who have not onboarded since v8 upgrade
   public(friend) fun increment(user: &signer, timestamp: u64) acquires Activity {
-    lazy_initialize(user, timestamp);
+
+    assert!(exists<Activity>(signer::address_of(user)), error::invalid_state(EACCOUNT_MALFORMED));
 
     let state = borrow_global_mut<Activity>(signer::address_of(user));
     state.last_touch_usecs = timestamp;
