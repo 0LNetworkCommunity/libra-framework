@@ -28,12 +28,15 @@ module ol_framework::activity {
   }
 
   /// Initialize the activity timestamp of a user
-  public(friend) fun lazy_initialize(user: &signer, timestamp: u64) {
+  public(friend) fun lazy_initialize(user: &signer, timestamp: u64) acquires Activity{
     if (!exists<Activity>(signer::address_of(user))) {
       move_to<Activity>(user, Activity {
         last_touch_usecs: timestamp,
         onboarding_usecs: timestamp
       })
+    } else {
+      let state = borrow_global_mut<Activity>(signer::address_of(user));
+      state.onboarding_usecs = timestamp;
     }
   }
 
