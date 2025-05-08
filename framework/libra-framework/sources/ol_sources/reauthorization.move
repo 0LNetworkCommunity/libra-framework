@@ -6,7 +6,6 @@ module ol_framework::reauthorization {
     use ol_framework::donor_voice_reauth;
     use ol_framework::founder;
 
-
     /// user account never migrated from V7 to V8
     const ENOT_MIGRATED_FROM_V7: u64 = 1;
 

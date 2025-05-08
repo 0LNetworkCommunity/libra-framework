@@ -76,7 +76,7 @@ module ol_framework::activity {
   }
 
   /// migrate or heal a pre-v8 account
-  public(friend) fun v8_migration(user_sig: &signer) acquires Activity {
+  public(friend) fun migrate(user_sig: &signer) acquires Activity {
     let addr = signer::address_of(user_sig);
     if (!exists<Activity>(addr)) {
       move_to<Activity>(user_sig, Activity {
