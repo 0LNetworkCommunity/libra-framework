@@ -3,6 +3,7 @@
 module ol_framework::activity {
   use std::signer;
   use std::error;
+  use ol_framework::testnet;
   use diem_std::timestamp;
 
   friend ol_framework::filo_migration;
@@ -29,15 +30,12 @@ module ol_framework::activity {
   }
 
   /// Initialize the activity timestamp of a user
-  public(friend) fun lazy_initialize(user: &signer, timestamp: u64) acquires Activity{
+  public(friend) fun lazy_initialize(user: &signer, timestamp: u64) {
     if (!exists<Activity>(signer::address_of(user))) {
       move_to<Activity>(user, Activity {
         last_touch_usecs: timestamp,
         onboarding_usecs: timestamp
       })
-    } else {
-      let state = borrow_global_mut<Activity>(signer::address_of(user));
-      state.onboarding_usecs = timestamp;
     }
   }
 
@@ -77,6 +75,22 @@ module ol_framework::activity {
     }
   }
 
+  /// migrate or heal a pre-v8 account
+  public(friend) fun v8_migration(user_sig: &signer) acquires Activity {
+    let addr = signer::address_of(user_sig);
+    if (!exists<Activity>(addr)) {
+      move_to<Activity>(user_sig, Activity {
+        last_touch_usecs: 0,
+        onboarding_usecs: 0,
+      })
+    } else if (is_pre_v8(addr)) {
+      // this is a pre-v8 account that might be malformed
+      let state = borrow_global_mut<Activity>(addr);
+      state.last_touch_usecs = 0;
+      state.onboarding_usecs = 0;
+    }
+  }
+
 
   #[view]
   // check if this is an account that has activity
@@ -111,6 +125,17 @@ module ol_framework::activity {
     exists<Activity>(user)
   }
 
+  #[view]
+  // check the timestamp prior to v8 launch
+  public fun is_pre_v8(user: address): bool acquires Activity {
+    if (testnet::is_testnet()) {
+      return false
+    };
+    get_onboarding_usecs(user) < 1747267200  // Date and time (GMT): Thursday, May 15, 2025 12:00:00 AM
+  }
+
+
+
 
   #[view]
   // If the account is a founder/pre-v8 account has been migrated
@@ -122,7 +147,7 @@ module ol_framework::activity {
   #[test_only]
   /// testnet help for framework account to mock activity
   public(friend) fun test_set_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
-    ol_framework::testnet::assert_testnet(framework);
+    testnet::assert_testnet(framework);
 
     let state = borrow_global_mut<Activity>(user);
     state.last_touch_usecs = timestamp;

@@ -56,10 +56,10 @@ module ol_framework::reauthorization {
 
 
       // case 3: user onboarded since v8 started
-      // check only if the account is malformed
-      // i.e. has an activity struct but no activity
+      // checks for edge cases where accounts were
+      // partially migrated
 
-      if (!activity::is_prehistoric(account)) {
+      if (!activity::is_pre_v8(account)) {
         return true
       };
 
