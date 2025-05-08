@@ -6,6 +6,7 @@ module ol_framework::activity {
   use diem_std::timestamp;
 
   friend ol_framework::filo_migration;
+  friend ol_framework::genesis;
   friend ol_framework::ol_account;
   friend ol_framework::donor_voice_migration;
   friend diem_framework::transaction_validation;
@@ -58,13 +59,6 @@ module ol_framework::activity {
       return state.last_touch_usecs
     };
     0
-  }
-
-  fun migrate(user_sig: &signer, timestamp: u64) {
-      move_to<Activity>(user_sig, Activity {
-        last_touch_usecs: timestamp,
-        onboarding_usecs: 0, // also how we identify pre-V8 "founder account",
-      });
   }
 
   public(friend) fun maybe_onboard(user_sig: &signer){
