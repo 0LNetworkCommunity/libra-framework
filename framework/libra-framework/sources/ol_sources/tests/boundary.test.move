@@ -265,7 +265,6 @@ module ol_framework::test_boundary {
   fun e2e_add_validator_sad_vouches(root: signer, alice: signer, marlon_rando: signer) {
     let _vals = common_test_setup(&root);
     // this test requires prod settings, since we don't check vouches on testing
-    testnet::unset(&root);
     // generate credentials for validator registration
     ol_account::transfer(&alice, @0x12345, 200000);
     let (_sk, pk, pop) = stake::generate_identity();
@@ -283,6 +282,9 @@ module ol_framework::test_boundary {
 
 
     mock::mock_bids(&vals);
+
+    // use prod settings on epoch boundary
+    testnet::unset(&root);
 
     mock::trigger_epoch(&root);
 

@@ -2,9 +2,12 @@
 /// Maintains the version number for the blockchain.
 module ol_framework::activity {
   use std::signer;
+  use std::error;
+  use ol_framework::testnet;
   use diem_std::timestamp;
 
   friend ol_framework::filo_migration;
+  friend ol_framework::genesis;
   friend ol_framework::ol_account;
   friend ol_framework::donor_voice_migration;
   friend diem_framework::transaction_validation;
@@ -37,8 +40,10 @@ module ol_framework::activity {
   }
 
   /// Increment the activity timestamp of a user
+  // NOTE: this serves to gate users who have not onboarded since v8 upgrade
   public(friend) fun increment(user: &signer, timestamp: u64) acquires Activity {
-    lazy_initialize(user, timestamp);
+
+    assert!(exists<Activity>(signer::address_of(user)), error::invalid_state(EACCOUNT_MALFORMED));
 
     let state = borrow_global_mut<Activity>(signer::address_of(user));
     state.last_touch_usecs = timestamp;
@@ -54,13 +59,6 @@ module ol_framework::activity {
     0
   }
 
-  fun migrate(user_sig: &signer, timestamp: u64) {
-      move_to<Activity>(user_sig, Activity {
-        last_touch_usecs: timestamp,
-        onboarding_usecs: 0, // also how we identify pre-V8 "founder account",
-      });
-  }
-
   public(friend) fun maybe_onboard(user_sig: &signer){
 
     // genesis accounts should not start at 0
@@ -74,6 +72,22 @@ module ol_framework::activity {
         last_touch_usecs: 0, // how we identify if a users has used the account after a peer created it.
         onboarding_usecs,
       })
+    }
+  }
+
+  /// migrate or heal a pre-v8 account
+  public(friend) fun migrate(user_sig: &signer) acquires Activity {
+    let addr = signer::address_of(user_sig);
+    if (!exists<Activity>(addr)) {
+      move_to<Activity>(user_sig, Activity {
+        last_touch_usecs: 0,
+        onboarding_usecs: 0,
+      })
+    } else if (is_pre_v8(addr)) {
+      // this is a pre-v8 account that might be malformed
+      let state = borrow_global_mut<Activity>(addr);
+      state.last_touch_usecs = 0;
+      state.onboarding_usecs = 0;
     }
   }
 
@@ -111,6 +125,17 @@ module ol_framework::activity {
     exists<Activity>(user)
   }
 
+  #[view]
+  // check the timestamp prior to v8 launch
+  public fun is_pre_v8(user: address): bool acquires Activity {
+    if (testnet::is_testnet()) {
+      return false
+    };
+    get_onboarding_usecs(user) < 1747267200  // Date and time (GMT): Thursday, May 15, 2025 12:00:00 AM
+  }
+
+
+
 
   #[view]
   // If the account is a founder/pre-v8 account has been migrated
@@ -122,7 +147,7 @@ module ol_framework::activity {
   #[test_only]
   /// testnet help for framework account to mock activity
   public(friend) fun test_set_activity(framework: &signer, user: address, timestamp: u64) acquires Activity {
-    ol_framework::testnet::assert_testnet(framework);
+    testnet::assert_testnet(framework);
 
     let state = borrow_global_mut<Activity>(user);
     state.last_touch_usecs = timestamp;
