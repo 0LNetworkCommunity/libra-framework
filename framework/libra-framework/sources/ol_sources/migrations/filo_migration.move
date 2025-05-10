@@ -20,7 +20,7 @@ module ol_framework::filo_migration {
     // Just a man and his will to survive.
 
     // did this account exist before level 8?
-    activity::lazy_initialize(user_sig, 0);
+    activity::migrate(user_sig);
 
     // I am the eye of the tiger
     // I am the founder of my destiny

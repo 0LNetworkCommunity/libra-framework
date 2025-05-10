@@ -6,7 +6,6 @@ module ol_framework::reauthorization {
     use ol_framework::donor_voice_reauth;
     use ol_framework::founder;
 
-
     /// user account never migrated from V7 to V8
     const ENOT_MIGRATED_FROM_V7: u64 = 1;
 
@@ -56,10 +55,10 @@ module ol_framework::reauthorization {
 
 
       // case 3: user onboarded since v8 started
-      // check only if the account is malformed
-      // i.e. has an activity struct but no activity
+      // checks for edge cases where accounts were
+      // partially migrated
 
-      if (!activity::is_prehistoric(account)) {
+      if (!activity::is_pre_v8(account)) {
         return true
       };
 

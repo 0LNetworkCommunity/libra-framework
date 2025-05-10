@@ -28,6 +28,7 @@ module diem_framework::genesis {
 
     //////// 0L ////////
     use diem_framework::validator_universe;
+    use diem_framework::activity;
     use ol_framework::ol_account;
     use ol_framework::musical_chairs;
     use ol_framework::proof_of_fee;
@@ -195,6 +196,7 @@ module diem_framework::genesis {
         // NOTE: smoke tests will fail without initializing tx fees as in genesis
         transaction_fee::initialize_fee_collection_and_distribution(diem_framework, 0);
 
+        activity::maybe_onboard(&core_resources);
         // NOTE: 0L: the commented code below shows that we are destroying
         // there capabilities elsewhere, at libra_coin::initialize
         coin::destroy_mint_cap(mint_cap_two);
