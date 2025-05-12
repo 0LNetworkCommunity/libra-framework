@@ -45,11 +45,11 @@ module ol_framework::activity {
   /// Increment the activity timestamp of a user
   // NOTE: this serves to gate users who have not onboarded since v8 upgrade
   public(friend) fun increment(user: &signer) acquires Activity {
-    let timestamp = timestamp::now_seconds();
     is_initialized(signer::address_of(user));
+    maybe_fix_malformed(user);
 
     let state = borrow_global_mut<Activity>(signer::address_of(user));
-    state.last_touch_usecs = timestamp;
+    state.last_touch_usecs = timestamp::now_seconds();
   }
 
   #[view]
@@ -62,8 +62,7 @@ module ol_framework::activity {
     0
   }
 
-  public(friend) fun maybe_onboard(user_sig: &signer){
-
+  public(friend) fun maybe_onboard(user_sig: &signer) {
     // genesis accounts should not start at 0
     let onboarding_usecs = timestamp::now_seconds();
     if (onboarding_usecs == 0) {
@@ -86,7 +85,11 @@ module ol_framework::activity {
         last_touch_usecs: 0,
         onboarding_usecs: 0,
       })
-    } else if (is_pre_v8(addr)) {
+    };
+
+    maybe_fix_malformed(user_sig);
+
+    if (is_pre_v8(addr)) {
       // this is a pre-v8 account that might be malformed
       let state = borrow_global_mut<Activity>(addr);
       state.last_touch_usecs = 0;
@@ -99,11 +102,12 @@ module ol_framework::activity {
     assert!(exists<Activity>(user), error::invalid_state(EACCOUNT_NOT_MIGRATED));
   }
 
-  public entry fun fix_malformed(user: &signer) acquires Activity {
+  /// some accounts with transactions immediately after the v8 upgrade
+  /// may have a malformed timestamp
+  public entry fun maybe_fix_malformed(user: &signer) acquires Activity {
     assert_initialized(signer::address_of(user));
     if (!is_timestamp_secs(signer::address_of(user))) {
       let state = borrow_global_mut<Activity>(signer::address_of(user));
-      state.last_touch_usecs = timestamp::now_seconds();
       state.onboarding_usecs = 0;
     }
   }
