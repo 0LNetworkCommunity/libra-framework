@@ -210,26 +210,26 @@ module ol_framework::page_rank_lazy {
 
     // Mark a user's trust score as stale
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
-        walk_stale(user, &vector::empty<address>(), 0);
+
+        let visited = vector::empty<address>();
+        walk_stale(user, &mut visited, 0);
     }
     // Internal helper function with cycle detection for marking nodes as stale
     // Uses vouch module to get outgoing vouches
     fun walk_stale(
         user: address,
-        visited: &vector<address>,
+        visited: &mut vector<address>,
         processed_count: u64
     ) acquires UserTrustRecord {
 
-        // Circuit breaker: stop processing if we've hit our limit
-        assert!(processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+        // commit note: marking stale should not abort
+        // if it hits limit then it should exit
 
         // Skip if we've already visited this node (cycle detection)
         if (vector::contains(visited, &user)) {
             return
         };
 
-        // Increment the number of addresses we've processed
-        processed_count = processed_count + 1;
 
         // Mark this user's record as stale if it exists
         if (exists<UserTrustRecord>(user)) {
@@ -237,14 +237,14 @@ module ol_framework::page_rank_lazy {
             record.is_stale = true;
         };
 
+        vector::push_back(visited, user);
+        // Increment the number of addresses we've processed
+        processed_count = processed_count + 1;
+
+
+        // Now walk their outgoing vouches
         // Get outgoing vouches from vouch module
         let (outgoing_vouches, _) = vouch::get_given_vouches(user);
-
-        // Create a new visited list that includes the current node
-        let new_visited = *visited; // Clone the visited list
-        vector::push_back(&mut new_visited, user);
-
-
         if (vector::length(&outgoing_vouches) == 0) {
             return
         };
@@ -253,20 +253,17 @@ module ol_framework::page_rank_lazy {
         let i = 0;
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
-            let each_vouchee = vector::borrow(&outgoing_vouches, i);
-            // Mark this user's record as stale if it exists
-            if (exists<UserTrustRecord>(*each_vouchee)) {
-                let record = borrow_global_mut<UserTrustRecord>(user);
-                record.is_stale = true;
-            };
-
             // If we've hit the circuit breaker, stop processing
             if (processed_count >= MAX_PROCESSED_ADDRESSES) {
                 break
             };
 
+            let each_vouchee = vector::borrow(&outgoing_vouches, i);
+
+            // commit note, removed, this is duplicated with the outer loop
+
             // Pass the updated visited list to avoid cycles
-            walk_stale(*each_vouchee, &new_visited, processed_count);
+            walk_stale(*each_vouchee, visited, processed_count);
 
             i = i + 1;
         };
