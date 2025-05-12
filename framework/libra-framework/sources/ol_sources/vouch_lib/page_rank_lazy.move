@@ -210,18 +210,18 @@ module ol_framework::page_rank_lazy {
 
     // Mark a user's trust score as stale
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
-        walk_stale(user, &vector::empty<address>(), &mut 0);
+        walk_stale(user, &vector::empty<address>(), 0);
     }
     // Internal helper function with cycle detection for marking nodes as stale
     // Uses vouch module to get outgoing vouches
     fun walk_stale(
         user: address,
         visited: &vector<address>,
-        processed_count: &mut u64
+        processed_count: u64
     ) acquires UserTrustRecord {
 
         // Circuit breaker: stop processing if we've hit our limit
-        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+        assert!(processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
         // Skip if we've already visited this node (cycle detection)
         if (vector::contains(visited, &user)) {
@@ -229,7 +229,7 @@ module ol_framework::page_rank_lazy {
         };
 
         // Increment the number of addresses we've processed
-        *processed_count = *processed_count + 1;
+        processed_count = processed_count + 1;
 
         // Mark this user's record as stale if it exists
         if (exists<UserTrustRecord>(user)) {
@@ -260,13 +260,13 @@ module ol_framework::page_rank_lazy {
                 record.is_stale = true;
             };
 
-            // Pass the updated visited list to avoid cycles
-            walk_stale(*each_vouchee, &new_visited, processed_count);
-
             // If we've hit the circuit breaker, stop processing
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+            if (processed_count >= MAX_PROCESSED_ADDRESSES) {
                 break
             };
+
+            // Pass the updated visited list to avoid cycles
+            walk_stale(*each_vouchee, &new_visited, processed_count);
 
             i = i + 1;
         };
