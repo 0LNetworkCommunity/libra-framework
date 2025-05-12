@@ -114,16 +114,18 @@ module ol_framework::activity {
 
   /// check for edge cases in initialization during v8 migration
   fun is_timestamp_secs(acc: address): bool acquires Activity {
-    let timestamp = get_last_activity_usecs(acc);
-
     // check if this is incorrectly in microsecs
-    if (timestamp > 1_000_000_000_000) {
+    if (get_last_activity_usecs(acc) < 1_000_000_000_000) {
       // this is a malformed account
       // we need to fix it
-      return false
+      return true
     };
 
-    timestamp > 0
+    if (get_onboarding_usecs(acc) < 1_000_000_000_000) {
+      return true
+    };
+
+    false
   }
 
 
@@ -172,7 +174,16 @@ module ol_framework::activity {
     if (testnet::is_testnet()) {
       return false
     };
-    get_onboarding_usecs(user) < 1_747_267_200  // Date and time (GMT): Thursday, May 15, 2025 12:00:00 AM
+
+    // catch edge cases of malformed timestamp
+    // should be considered a pre-v8 for
+    // purposes of triggering a migration
+    if (!is_timestamp_secs(user)) {
+      return true
+    };
+
+    get_onboarding_usecs(user) < 1_747_267_200
+    // Date and time (GMT): Thursday, May 15, 2025 12:00:00 AM
   }
 
 
