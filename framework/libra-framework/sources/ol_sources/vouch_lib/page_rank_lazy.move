@@ -212,7 +212,8 @@ module ol_framework::page_rank_lazy {
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
 
         let visited = vector::empty<address>();
-        walk_stale(user, &mut visited, 0);
+        let processed_count = 0;
+        walk_stale(user, &mut visited, processed_count);
     }
     // Internal helper function with cycle detection for marking nodes as stale
     // Uses vouch module to get outgoing vouches
@@ -221,6 +222,14 @@ module ol_framework::page_rank_lazy {
         visited: &mut vector<address>,
         processed_count: u64
     ) acquires UserTrustRecord {
+        // If we've hit the circuit breaker, stop processing
+        if (processed_count >= MAX_PROCESSED_ADDRESSES) {
+            return
+        };
+
+        if (!vouch::is_init(user)) {
+            return
+        };
 
         // commit note: marking stale should not abort
         // if it hits limit then it should exit
@@ -241,7 +250,6 @@ module ol_framework::page_rank_lazy {
         // Increment the number of addresses we've processed
         processed_count = processed_count + 1;
 
-
         // Now walk their outgoing vouches
         // Get outgoing vouches from vouch module
         let (outgoing_vouches, _) = vouch::get_given_vouches(user);
@@ -253,10 +261,6 @@ module ol_framework::page_rank_lazy {
         let i = 0;
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
-            // If we've hit the circuit breaker, stop processing
-            if (processed_count >= MAX_PROCESSED_ADDRESSES) {
-                break
-            };
 
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
 
