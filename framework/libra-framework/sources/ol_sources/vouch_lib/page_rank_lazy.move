@@ -210,28 +210,32 @@ module ol_framework::page_rank_lazy {
 
     // Mark a user's trust score as stale
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
-
         let visited = vector::empty<address>();
-        let processed_count = 0;
-        walk_stale(user, &mut visited, processed_count);
+        let processed_count: u64 = 0; // Initialize as a mutable local variable
+        walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
     }
+
     // Internal helper function with cycle detection for marking nodes as stale
     // Uses vouch module to get outgoing vouches
     fun walk_stale(
         user: address,
         visited: &mut vector<address>,
-        processed_count: u64
+        processed_count: &mut u64 // Changed to mutable reference
     ) acquires UserTrustRecord {
-        // If the number of nodes already processed on this path meets or exceeds the limit,
-        // this node (which would be the limit-th or (limit+1)-th) should not be processed further.
-        if (processed_count >= MAX_PROCESSED_ADDRESSES) {
-            return
-        };
-
         // Skip if we've already visited this node in the current traversal (cycle detection)
+        // This also ensures we only count/process each unique node once.
         if (vector::contains(visited, &user)) {
             return
         };
+
+        // Check if the global limit for processed nodes has been reached *before* processing this one.
+        // If *processed_count is already at the limit, we can't process another new node.
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+            return
+        };
+
+        // This node is new and will be processed. Increment the global count.
+        *processed_count = *processed_count + 1;
 
         // Process the current 'user' node:
         // 1. Mark its UserTrustRecord as stale if it exists.
@@ -243,11 +247,8 @@ module ol_framework::page_rank_lazy {
         // 2. Add this node to the visited set for the current traversal.
         vector::push_back(visited, user);
 
-        // Increment the count of processed nodes for the path taken to reach children.
-        let next_processed_count = processed_count + 1;
-
         // If the user is not initialized in the vouch system, they cannot have outgoing vouches.
-        // Staleness propagation stops here for this path, but 'user' itself has been processed.
+        // Staleness propagation stops here for this path, but 'user' itself has been processed and counted.
         if (!vouch::is_init(user)) {
             return
         };
@@ -263,8 +264,10 @@ module ol_framework::page_rank_lazy {
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
-            // Pass the incremented count for the next step in the path.
-            walk_stale(*each_vouchee, visited, next_processed_count);
+            // Pass the same mutable reference to processed_count.
+            // The checks at the beginning of the recursive call (visited and limit)
+            // will handle whether to proceed for 'each_vouchee'.
+            walk_stale(*each_vouchee, visited, processed_count);
             i = i + 1;
         };
     }
