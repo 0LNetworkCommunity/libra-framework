@@ -210,41 +210,51 @@ module ol_framework::page_rank_lazy {
 
     // Mark a user's trust score as stale
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
-        walk_stale(user, &vector::empty<address>(), &mut 0);
+        let visited = vector::empty<address>();
+        let processed_count: u64 = 0; // Initialize as a mutable local variable
+        walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
     }
+
     // Internal helper function with cycle detection for marking nodes as stale
     // Uses vouch module to get outgoing vouches
     fun walk_stale(
         user: address,
-        visited: &vector<address>,
-        processed_count: &mut u64
+        visited: &mut vector<address>,
+        processed_count: &mut u64 // Changed to mutable reference
     ) acquires UserTrustRecord {
-
-        // Circuit breaker: stop processing if we've hit our limit
-        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
-
-        // Skip if we've already visited this node (cycle detection)
+        // Skip if we've already visited this node in the current traversal (cycle detection)
+        // This also ensures we only count/process each unique node once.
         if (vector::contains(visited, &user)) {
             return
         };
 
-        // Increment the number of addresses we've processed
+        // Check if the global limit for processed nodes has been reached *before* processing this one.
+        // If *processed_count is already at the limit, we can't process another new node.
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+            return
+        };
+
+        // This node is new and will be processed. Increment the global count.
         *processed_count = *processed_count + 1;
 
-        // Mark this user's record as stale if it exists
+        // Process the current 'user' node:
+        // 1. Mark its UserTrustRecord as stale if it exists.
         if (exists<UserTrustRecord>(user)) {
             let record = borrow_global_mut<UserTrustRecord>(user);
             record.is_stale = true;
         };
 
-        // Get outgoing vouches from vouch module
+        // 2. Add this node to the visited set for the current traversal.
+        vector::push_back(visited, user);
+
+        // If the user is not initialized in the vouch system, they cannot have outgoing vouches.
+        // Staleness propagation stops here for this path, but 'user' itself has been processed and counted.
+        if (!vouch::is_init(user)) {
+            return
+        };
+
+        // Now walk their outgoing vouches
         let (outgoing_vouches, _) = vouch::get_given_vouches(user);
-
-        // Create a new visited list that includes the current node
-        let new_visited = *visited; // Clone the visited list
-        vector::push_back(&mut new_visited, user);
-
-
         if (vector::length(&outgoing_vouches) == 0) {
             return
         };
@@ -254,20 +264,10 @@ module ol_framework::page_rank_lazy {
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
-            // Mark this user's record as stale if it exists
-            if (exists<UserTrustRecord>(*each_vouchee)) {
-                let record = borrow_global_mut<UserTrustRecord>(user);
-                record.is_stale = true;
-            };
-
-            // Pass the updated visited list to avoid cycles
-            walk_stale(*each_vouchee, &new_visited, processed_count);
-
-            // If we've hit the circuit breaker, stop processing
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-                break
-            };
-
+            // Pass the same mutable reference to processed_count.
+            // The checks at the beginning of the recursive call (visited and limit)
+            // will handle whether to proceed for 'each_vouchee'.
+            walk_stale(*each_vouchee, visited, processed_count);
             i = i + 1;
         };
     }
