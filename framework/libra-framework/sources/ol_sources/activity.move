@@ -104,28 +104,30 @@ module ol_framework::activity {
 
   /// some accounts with transactions immediately after the v8 upgrade
   /// may have a malformed timestamp
+  // NOTE: make this an entry function to allow for
+  // manual migration
   public entry fun maybe_fix_malformed(user: &signer) acquires Activity {
     assert_initialized(signer::address_of(user));
     if (!is_timestamp_secs(signer::address_of(user))) {
       let state = borrow_global_mut<Activity>(signer::address_of(user));
       state.onboarding_usecs = 0;
+      // last_touch_usecs should be set in the transaction_validation
+      // but we'll set it here to be safe
+      state.last_touch_usecs = timestamp::now_seconds();
     }
   }
 
   /// check for edge cases in initialization during v8 migration
   fun is_timestamp_secs(acc: address): bool acquires Activity {
     // check if this is incorrectly in microsecs
-    if (get_last_activity_usecs(acc) < 1_000_000_000_000) {
-      // this is a malformed account
-      // we need to fix it
-      return true
+    if (
+      get_last_activity_usecs(acc) > 1_000_000_000_000 ||
+      get_onboarding_usecs(acc) > 1_000_000_000_000
+    ) {
+      return false
     };
 
-    if (get_onboarding_usecs(acc) < 1_000_000_000_000) {
-      return true
-    };
-
-    false
+    true
   }
 
 
