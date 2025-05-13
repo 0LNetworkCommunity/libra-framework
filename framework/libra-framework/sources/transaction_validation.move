@@ -207,7 +207,7 @@ module diem_framework::transaction_validation {
 
         //////// OL ////////
         // increments the activity tracker
-        activity::increment(&account, timestamp::now_microseconds());
+        activity::increment(&account);
 
         // Increment sequence number
         account::increment_sequence_number(addr);

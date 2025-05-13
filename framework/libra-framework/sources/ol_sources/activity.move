@@ -22,7 +22,9 @@ module ol_framework::activity {
 
   //////// ERROR CODES ///////
   /// account not initialized on v8 chain
-  const EACCOUNT_MALFORMED: u64 = 1;
+  const EACCOUNT_NOT_MIGRATED: u64 = 0;
+  /// account has malformed timestamp
+  const ETIMESTAMP_MALFORMED: u64 = 1;
 
   struct Activity has key {
     last_touch_usecs: u64,
@@ -30,8 +32,9 @@ module ol_framework::activity {
   }
 
   /// Initialize the activity timestamp of a user
-  public(friend) fun lazy_initialize(user: &signer, timestamp: u64) {
-    if (!exists<Activity>(signer::address_of(user))) {
+  public(friend) fun lazy_initialize(user: &signer) {
+    let timestamp = timestamp::now_seconds();
+    if (!is_initialized(signer::address_of(user))) {
       move_to<Activity>(user, Activity {
         last_touch_usecs: timestamp,
         onboarding_usecs: timestamp
@@ -41,33 +44,32 @@ module ol_framework::activity {
 
   /// Increment the activity timestamp of a user
   // NOTE: this serves to gate users who have not onboarded since v8 upgrade
-  public(friend) fun increment(user: &signer, timestamp: u64) acquires Activity {
-
-    assert!(exists<Activity>(signer::address_of(user)), error::invalid_state(EACCOUNT_MALFORMED));
+  public(friend) fun increment(user: &signer) acquires Activity {
+    is_initialized(signer::address_of(user));
+    maybe_fix_malformed(user);
 
     let state = borrow_global_mut<Activity>(signer::address_of(user));
-    state.last_touch_usecs = timestamp;
+    state.last_touch_usecs = timestamp::now_seconds();
   }
 
   #[view]
   /// get the last activity timestamp of a user
   public fun get_last_activity_usecs(user: address): u64 acquires Activity {
-    if (exists<Activity>(user)) {
+    if (is_initialized(user)) {
       let state = borrow_global<Activity>(user);
       return state.last_touch_usecs
     };
     0
   }
 
-  public(friend) fun maybe_onboard(user_sig: &signer){
-
+  public(friend) fun maybe_onboard(user_sig: &signer) {
     // genesis accounts should not start at 0
     let onboarding_usecs = timestamp::now_seconds();
     if (onboarding_usecs == 0) {
       onboarding_usecs = 1;
     };
 
-    if (!exists<Activity>(signer::address_of(user_sig))) {
+    if (!is_initialized(signer::address_of(user_sig))) {
       move_to<Activity>(user_sig, Activity {
         last_touch_usecs: 0, // how we identify if a users has used the account after a peer created it.
         onboarding_usecs,
@@ -78,17 +80,54 @@ module ol_framework::activity {
   /// migrate or heal a pre-v8 account
   public(friend) fun migrate(user_sig: &signer) acquires Activity {
     let addr = signer::address_of(user_sig);
-    if (!exists<Activity>(addr)) {
+    if (!is_initialized(addr)) {
       move_to<Activity>(user_sig, Activity {
         last_touch_usecs: 0,
         onboarding_usecs: 0,
       })
-    } else if (is_pre_v8(addr)) {
+    };
+
+    maybe_fix_malformed(user_sig);
+
+    if (is_pre_v8(addr)) {
       // this is a pre-v8 account that might be malformed
       let state = borrow_global_mut<Activity>(addr);
       state.last_touch_usecs = 0;
       state.onboarding_usecs = 0;
     }
+  }
+
+  fun assert_initialized(user: address) {
+    // check malformed accounts with microsecs
+    assert!(exists<Activity>(user), error::invalid_state(EACCOUNT_NOT_MIGRATED));
+  }
+
+  /// some accounts with transactions immediately after the v8 upgrade
+  /// may have a malformed timestamp
+  // NOTE: make this an entry function to allow for
+  // manual migration
+  public entry fun maybe_fix_malformed(user: &signer) acquires Activity {
+    assert_initialized(signer::address_of(user));
+    if (!is_timestamp_secs(signer::address_of(user))) {
+      let state = borrow_global_mut<Activity>(signer::address_of(user));
+      state.onboarding_usecs = 0;
+      // last_touch_usecs should be set in the transaction_validation
+      // but we'll set it here to be safe
+      state.last_touch_usecs = timestamp::now_seconds();
+    }
+  }
+
+  /// check for edge cases in initialization during v8 migration
+  fun is_timestamp_secs(acc: address): bool acquires Activity {
+    // check if this is incorrectly in microsecs
+    if (
+      get_last_activity_usecs(acc) > 1_000_000_000_000 ||
+      get_onboarding_usecs(acc) > 1_000_000_000_000
+    ) {
+      return false
+    };
+
+    true
   }
 
 
@@ -107,12 +146,16 @@ module ol_framework::activity {
 
   #[view]
   public fun get_last_touch_usecs(user: address): u64 acquires Activity {
+    assert_initialized(user);
+
     let state = borrow_global<Activity>(user);
     state.last_touch_usecs
   }
 
   #[view]
   public fun get_onboarding_usecs(user: address): u64 acquires Activity {
+    // check malformed accounts with microsecs
+    assert_initialized(user);
     let state = borrow_global<Activity>(user);
     state.onboarding_usecs
   }
@@ -128,10 +171,21 @@ module ol_framework::activity {
   #[view]
   // check the timestamp prior to v8 launch
   public fun is_pre_v8(user: address): bool acquires Activity {
+    assert_initialized(user);
+
     if (testnet::is_testnet()) {
       return false
     };
-    get_onboarding_usecs(user) < 1747267200  // Date and time (GMT): Thursday, May 15, 2025 12:00:00 AM
+
+    // catch edge cases of malformed timestamp
+    // should be considered a pre-v8 for
+    // purposes of triggering a migration
+    if (!is_timestamp_secs(user)) {
+      return true
+    };
+
+    get_onboarding_usecs(user) < 1_747_267_200
+    // Date and time (GMT): Thursday, May 15, 2025 12:00:00 AM
   }
 
 
