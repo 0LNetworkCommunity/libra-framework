@@ -222,36 +222,37 @@ module ol_framework::page_rank_lazy {
         visited: &mut vector<address>,
         processed_count: u64
     ) acquires UserTrustRecord {
-        // If we've hit the circuit breaker, stop processing
+        // If the number of nodes already processed on this path meets or exceeds the limit,
+        // this node (which would be the limit-th or (limit+1)-th) should not be processed further.
         if (processed_count >= MAX_PROCESSED_ADDRESSES) {
             return
         };
 
-        if (!vouch::is_init(user)) {
-            return
-        };
-
-        // commit note: marking stale should not abort
-        // if it hits limit then it should exit
-
-        // Skip if we've already visited this node (cycle detection)
+        // Skip if we've already visited this node in the current traversal (cycle detection)
         if (vector::contains(visited, &user)) {
             return
         };
 
-
-        // Mark this user's record as stale if it exists
+        // Process the current 'user' node:
+        // 1. Mark its UserTrustRecord as stale if it exists.
         if (exists<UserTrustRecord>(user)) {
             let record = borrow_global_mut<UserTrustRecord>(user);
             record.is_stale = true;
         };
 
+        // 2. Add this node to the visited set for the current traversal.
         vector::push_back(visited, user);
-        // Increment the number of addresses we've processed
-        processed_count = processed_count + 1;
+
+        // Increment the count of processed nodes for the path taken to reach children.
+        let next_processed_count = processed_count + 1;
+
+        // If the user is not initialized in the vouch system, they cannot have outgoing vouches.
+        // Staleness propagation stops here for this path, but 'user' itself has been processed.
+        if (!vouch::is_init(user)) {
+            return
+        };
 
         // Now walk their outgoing vouches
-        // Get outgoing vouches from vouch module
         let (outgoing_vouches, _) = vouch::get_given_vouches(user);
         if (vector::length(&outgoing_vouches) == 0) {
             return
@@ -261,14 +262,9 @@ module ol_framework::page_rank_lazy {
         let i = 0;
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
-
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
-
-            // commit note, removed, this is duplicated with the outer loop
-
-            // Pass the updated visited list to avoid cycles
-            walk_stale(*each_vouchee, visited, processed_count);
-
+            // Pass the incremented count for the next step in the path.
+            walk_stale(*each_vouchee, visited, next_processed_count);
             i = i + 1;
         };
     }
