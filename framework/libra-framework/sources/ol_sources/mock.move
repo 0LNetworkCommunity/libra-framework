@@ -581,7 +581,7 @@ public fun simulate_v8_migration(sender: &signer) {
     // Note, Activity and Founder struct should have been set above
     filo_migration::maybe_migrate(sender);
     // touching the account will also increment activity
-    activity::increment(sender, timestamp::now_seconds());
+    activity::increment(sender);
 }
 
 //////// META TESTS ////////
