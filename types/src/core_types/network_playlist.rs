@@ -21,7 +21,7 @@ pub struct HostProfile {
 /// First does a light port check on all peers, and eliminated unresponsive
 /// Then from a random list fetches the first 3 nodes to respond with a waypoint.
 /// picks the node with the highest waypoint.
-/// moves that node othe top of the seed peers vector.
+/// moves that node to the top of the seed peers vector.
 /// sets it in preferences as the default peer.
 impl Default for HostProfile {
     fn default() -> Self {

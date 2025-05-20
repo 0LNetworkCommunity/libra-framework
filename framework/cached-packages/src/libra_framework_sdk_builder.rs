@@ -115,6 +115,10 @@ pub enum EntryFunctionCall {
         cap_update_table: Vec<u8>,
     },
 
+    /// some accounts with transactions immediately after the v8 upgrade
+    /// may have a malformed timestamp
+    ActivityMaybeFixMalformed {},
+
     /// User opts into burns being sent to community (recycle burn).
     /// default is false (burn is final).
     BurnSetSendCommunity {
@@ -442,6 +446,7 @@ impl EntryFunctionCall {
                 new_public_key_bytes,
                 cap_update_table,
             ),
+            ActivityMaybeFixMalformed {} => activity_maybe_fix_malformed(),
             BurnSetSendCommunity { community } => burn_set_send_community(community),
             CodePublishPackageTxn {
                 metadata_serialized,
@@ -762,6 +767,23 @@ pub fn account_rotate_authentication_key_with_rotation_capability(
             bcs::to_bytes(&new_public_key_bytes).unwrap(),
             bcs::to_bytes(&cap_update_table).unwrap(),
         ],
+    ))
+}
+
+/// some accounts with transactions immediately after the v8 upgrade
+/// may have a malformed timestamp
+pub fn activity_maybe_fix_malformed() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("activity").to_owned(),
+        ),
+        ident_str!("maybe_fix_malformed").to_owned(),
+        vec![],
+        vec![],
     ))
 }
 
@@ -1696,6 +1718,14 @@ mod decoder {
         }
     }
 
+    pub fn activity_maybe_fix_malformed(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::ActivityMaybeFixMalformed {})
+        } else {
+            None
+        }
+    }
+
     pub fn burn_set_send_community(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::BurnSetSendCommunity {
@@ -2229,6 +2259,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "account_rotate_authentication_key_with_rotation_capability".to_string(),
             Box::new(decoder::account_rotate_authentication_key_with_rotation_capability),
+        );
+        map.insert(
+            "activity_maybe_fix_malformed".to_string(),
+            Box::new(decoder::activity_maybe_fix_malformed),
         );
         map.insert(
             "burn_set_send_community".to_string(),

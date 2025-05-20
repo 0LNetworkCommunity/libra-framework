@@ -18,5 +18,5 @@ pub fn global_config_dir() -> PathBuf {
         .join(GLOBAL_CONFIG_DIRECTORY_0L)
 }
 
-/// The coin scaling or decimal represenation of 1 coin in the VM. 1 coin is divisible by 1,000,000, or 6 decimals precision.
+/// The coin scaling or decimal representation of 1 coin in the VM. 1 coin is divisible by 1,000,000, or 6 decimals precision.
 pub const ONCHAIN_DECIMAL_PRECISION: u8 = 6;
