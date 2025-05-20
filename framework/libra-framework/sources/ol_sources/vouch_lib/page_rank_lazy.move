@@ -169,8 +169,11 @@ module ol_framework::page_rank_lazy {
         // and exit early
         if (
           root_of_trust::is_root_at_registry(@diem_framework, current) &&
-          root_of_trust::is_root_at_registry(@diem_framework, target)
+          root_of_trust::is_root_at_registry(@diem_framework, target) &&
+          current != target &&
+          vector::contains(&neighbors, &target) // Check if current directly vouches for target
         ) {
+            vector::push_back(visited, current);
             return next_power
         };
 
@@ -184,24 +187,24 @@ module ol_framework::page_rank_lazy {
 
             // Only visit if not already in path (avoid cycles)
             if (!vector::contains(visited, &neighbor)) {
-                // Mark as visited
-                if (neighbor != target) {
-                    // Don't mark the target as visited
+                    if (neighbor != target) {
+                    // Mark neighbor as visited
+                    // (Don't mark the target as visited
                     // because we want to be able to
-                    // find it again
-                    // NOTE: fixes diamond pattern not accumulating
+                    // find it again)
 
                     vector::push_back(visited, neighbor);
+                    // we don't re-enter the root of
+                    // trust list, because we don't
+                    // want to accumulate points from
+                    // roots vouching for each other.
+                    if(
+                      root_of_trust::is_root_at_registry(@diem_framework, neighbor)
+                      ) {
+                        continue
+                    };
                 };
-                // we don't re-enter the root of
-                // trust list, because we don't
-                // want to accumulate points from
-                // roots vouching for each other.
-                if(
-                  root_of_trust::is_root_at_registry(@diem_framework, neighbor)
-                  ) {
-                    continue
-                };
+
 
                 // Continue search from this neighbor with reduced power
                 let path_score = walk_from_node(
