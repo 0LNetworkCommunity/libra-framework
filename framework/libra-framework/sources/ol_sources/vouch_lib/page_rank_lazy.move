@@ -66,19 +66,21 @@ module ol_framework::page_rank_lazy {
         if (!user_record.is_stale) {
             return user_record.cached_score
         };
-        calculate_score(addr)
+        set_score(addr)
     }
 
     // always calculate the score
-    fun calculate_score(addr: address): u64 acquires UserTrustRecord {
+    fun set_score(addr: address): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
+        // diem_std::debug::print(&roots);
 
         // Compute score using selected algorithm
         let score = traverse_graph(&roots, addr);
+        diem_std::debug::print(&score);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
@@ -114,6 +116,7 @@ module ol_framework::page_rank_lazy {
                 );
             };
 
+
             root_idx = root_idx + 1;
         };
 
@@ -146,6 +149,8 @@ module ol_framework::page_rank_lazy {
 
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
+        diem_std::debug::print(&current);
+        diem_std::debug::print(&neighbor_count);
 
         // No neighbors means no path
         if (neighbor_count == 0) {
@@ -155,23 +160,26 @@ module ol_framework::page_rank_lazy {
         // Track total score from all paths
         let total_score = 0;
 
+
         // Calculate power passed to neighbors (50% decay)
         let next_power = current_power / 2;
 
         // if the both current and target are a root of trust
-        // catch the case
+        // catch the case of a root of trust vouching for another root of trust
         // and exit early
-        if(
+        if (
           root_of_trust::is_root_at_registry(@diem_framework, current) &&
           root_of_trust::is_root_at_registry(@diem_framework, target)
-          ) {
+        ) {
             return next_power
         };
 
         // Check ALL neighbors for paths to target
         let i = 0;
         while (i < neighbor_count) {
+
             let neighbor = *vector::borrow(&neighbors, i);
+            diem_std::debug::print(&neighbor);
 
 
             // Only visit if not already in path (avoid cycles)
@@ -286,7 +294,7 @@ module ol_framework::page_rank_lazy {
       // assert initialized
       assert!(exists<UserTrustRecord>(user), error::invalid_state(ENOT_INITIALIZED));
       // get_score
-      let _score = calculate_score(user);
+      let _score = set_score(user);
     }
 
     //////// GETTERS ////////
