@@ -510,4 +510,61 @@ module ol_framework::test_page_rank {
 
   }
 
+
+  #[test(framework = @ol_framework)]
+  /// a root of trust user may have their score
+  /// reduced from the initial voting power
+  /// scenario: two root of trust users are created
+  /// one of them vouches for alice, who then vouches for bob
+  /// who subsequently vouches for a root of trust user root1
+  /// root0 -> alice -> bob -> root1
+  fun root_score_reduction(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+    let root0_addr = signer::address_of(root0);
+
+    let root1 = vector::borrow(&roots_sig, 1);
+    vouch::init(root1);
+    let root1_addr = signer::address_of(root1);
+
+
+    ///////// Root 0 score is initially 0 ////////
+    let root0_score_pre = page_rank_lazy::get_trust_score(root0_addr);
+    assert!(root0_score_pre == 0, 7357001);
+    let root1_score_pre = page_rank_lazy::get_trust_score(root1_addr);
+    assert!(root1_score_pre == 0, 7357002);
+    /////////
+
+    // Alice receives a vouch from root0
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    // Initialize page rank for the new user
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    // Alice vouches for bob
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    vouch::init(&bob_sig);
+    let bob_addr = signer::address_of(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+
+    let bob_final_score = page_rank_lazy::get_trust_score(bob_addr);
+    assert!(bob_final_score == 50_000, 7357003);
+
+    vouch_txs::vouch_for(&bob_sig, root1_addr);
+
+    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+    diem_std::debug::print(&root1_cached_score);
+
+    diem_std::debug::print(&7777777777777777777);
+
+    page_rank_lazy::refresh_cache(root1_addr);
+    // diem_std::debug::print(&root1_score_post);
+  }
 }
