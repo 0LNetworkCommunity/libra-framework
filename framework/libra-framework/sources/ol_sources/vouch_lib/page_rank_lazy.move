@@ -56,7 +56,6 @@ module ol_framework::page_rank_lazy {
 
     // Calculate or retrieve cached trust score
     public(friend) fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
-        let current_timestamp = timestamp::now_seconds();
 
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
@@ -67,7 +66,13 @@ module ol_framework::page_rank_lazy {
         if (!user_record.is_stale) {
             return user_record.cached_score
         };
+        calculate_score(addr)
+    }
 
+    // always calculate the score
+    fun calculate_score(addr: address): u64 acquires UserTrustRecord {
+        // If user has no trust record, they have no score
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
@@ -78,7 +83,7 @@ module ol_framework::page_rank_lazy {
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
         user_record_mut.cached_score = score;
-        user_record_mut.score_computed_at_timestamp = current_timestamp;
+        user_record_mut.score_computed_at_timestamp = timestamp::now_seconds();
         user_record_mut.is_stale = false;
 
         score
@@ -281,7 +286,7 @@ module ol_framework::page_rank_lazy {
       // assert initialized
       assert!(exists<UserTrustRecord>(user), error::invalid_state(ENOT_INITIALIZED));
       // get_score
-      let _score = get_trust_score(user);
+      let _score = calculate_score(user);
     }
 
     //////// GETTERS ////////
