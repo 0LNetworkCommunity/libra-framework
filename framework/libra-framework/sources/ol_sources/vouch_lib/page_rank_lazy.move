@@ -29,7 +29,11 @@ module ol_framework::page_rank_lazy {
 
     /// Circuit breaker to prevent stack overflow during recursive graph traversal.
     /// Limits the total number of nodes processed in a single traversal.
-    const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
+    const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
+
+    /// Maximum depth for path traversal in the trust graph.
+    /// This limits how far the algorithm will search from a root node.
+    const MAX_PATH_DEPTH: u64 = 10;
 
     /// Per-user trust record - each user stores their own trust data
     /// This resource tracks a user's cached trust score and staleness state.
@@ -139,7 +143,7 @@ module ol_framework::page_rank_lazy {
 
                 // Initial trust power is 100 (full trust from root)
                 total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE
+                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE, 0
                 );
             };
 
@@ -163,6 +167,7 @@ module ol_framework::page_rank_lazy {
     ///    with distance from the source.
     /// 5. Special Root Handling: Prevents accumulation from interconnected root accounts to avoid
     ///    artificial score inflation.
+    /// 6. Depth Limiting: Restricts traversal to a maximum path depth to prevent excessive recursion.
     ///
     /// The algorithm handles complex trust graphs including branching paths, merging paths
     /// (diamond patterns), and multiple routes from roots to targets.
@@ -170,8 +175,14 @@ module ol_framework::page_rank_lazy {
         current: address,
         target: address,
         visited: &mut vector<address>,
-        current_power: u64
+        current_power: u64,
+        current_depth: u64
     ): u64 {
+        // Early termination: max depth reached
+        if (current_depth >= MAX_PATH_DEPTH) {
+            return 0
+        };
+
         if(!vouch::is_init(current)) {
             return 0
         };
@@ -191,8 +202,10 @@ module ol_framework::page_rank_lazy {
 
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
-        diem_std::debug::print(&current);
-        diem_std::debug::print(&neighbor_count);
+
+        // Debug prints can be expensive in production, so we'll comment them out
+        // diem_std::debug::print(&current);
+        // diem_std::debug::print(&neighbor_count);
 
         // No neighbors means no path
         if (neighbor_count == 0) {
@@ -202,13 +215,18 @@ module ol_framework::page_rank_lazy {
         // Track total accumulation of scores from all unique paths
         let total_score = 0;
 
+        // Direct connection optimization: if target is a direct neighbor, count that path
+        if (vector::contains(&neighbors, &target)) {
+            // Calculate power passed to direct neighbor (50% decay)
+            let direct_power = current_power / 2;
+            total_score = total_score + direct_power;
+        };
+
         // Calculate power passed to neighbors (50% decay)
         // This division represents the power reduction for being one hop away from the current node
         let next_power = current_power / 2;
 
-        // if the both current and target are a root of trust
-        // catch the case of a root of trust vouching for another root of trust
-        // and exit early
+        // Special case for root of trust nodes
         if (
           root_of_trust::is_root_at_registry(@diem_framework, current) &&
           root_of_trust::is_root_at_registry(@diem_framework, target) &&
@@ -222,13 +240,17 @@ module ol_framework::page_rank_lazy {
         // Add current to visited BEFORE checking neighbors
         vector::push_back(visited, current);
 
+        // Increment depth for next level
+        let next_depth = current_depth + 1;
+
         // Check ALL neighbors for paths to target
         let i = 0;
         while (i < neighbor_count) {
             let neighbor = *vector::borrow(&neighbors, i);
 
-            // Only explore if not already in our path (avoid cycles)
-            if (!vector::contains(visited, &neighbor)) {
+            // Only explore if not already in our path (avoid cycles) and not the direct target
+            // (since we already counted the direct path above)
+            if (!vector::contains(visited, &neighbor) && neighbor != target) {
                 // Skip this path if the neighbor is a root of trust (other than target)
                 // as we don't want to accumulate points from roots vouching for each other
                 if (
@@ -243,12 +265,13 @@ module ol_framework::page_rank_lazy {
                 // This ensures each path can be explored independently
                 let path_visited = *visited;
 
-                // Continue search from this neighbor with reduced power
+                // Continue search from this neighbor with reduced power and increased depth
                 let path_score = walk_from_node(
                     neighbor,
                     target,
                     &mut path_visited,
-                    next_power
+                    next_power,
+                    next_depth
                 );
 
                 // Add to total score (accumulate from all paths)
@@ -274,8 +297,13 @@ module ol_framework::page_rank_lazy {
         walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
     }
 
-    // Internal helper function with cycle detection for marking nodes as stale
-    // Uses vouch module to get outgoing vouches
+    /// Internal helper function with cycle detection for marking nodes as stale
+    /// Uses vouch module to get outgoing vouches and implements optimizations to reduce
+    /// the number of nodes processed:
+    ///
+    /// 1. Cycle detection to avoid revisiting nodes
+    /// 2. Process limit to prevent excessive recursion
+    /// 3. Efficient traversal that prioritizes direct dependencies
     fun walk_stale(
         user: address,
         visited: &mut vector<address>,
@@ -300,6 +328,12 @@ module ol_framework::page_rank_lazy {
         // 1. Mark its UserTrustRecord as stale if it exists.
         if (exists<UserTrustRecord>(user)) {
             let record = borrow_global_mut<UserTrustRecord>(user);
+            // Skip if already marked as stale to reduce redundant processing
+            if (record.is_stale) {
+                // Add this node to the visited set anyway to prevent re-traversal
+                vector::push_back(visited, user);
+                return
+            };
             record.is_stale = true;
         };
 
@@ -322,6 +356,11 @@ module ol_framework::page_rank_lazy {
         let i = 0;
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
+            // Check again if we've hit the processing limit
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+                return
+            };
+
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
             // Pass the same mutable reference to processed_count.
             // The checks at the beginning of the recursive call (visited and limit)
@@ -353,7 +392,11 @@ module ol_framework::page_rank_lazy {
     }
 
     #[view]
-    /// TODO: remove this in production, since it's an expensive operation
+    /// Calculates a fresh trust score without updating the cache.
+    /// This is an expensive operation that traverses the entire relevant trust graph.
+    ///
+    /// WARNING: This function is provided for diagnostic and testing purposes.
+    /// In production, use get_trust_score() or get_cached_score() instead.
     public fun calculate_score(addr: address): u64 {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
