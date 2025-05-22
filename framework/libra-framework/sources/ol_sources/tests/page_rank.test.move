@@ -531,9 +531,18 @@ module ol_framework::test_page_rank {
   /// When a vouch branch occurs,
   /// and then merges back to a user,
   /// the transitive scores should accumulate
+  // Root0 ->  Alice
+  // Root1 ->  Alice
+  // Root0 ->  Bob ->  Alice
   fun diamond_pattern_accumulates(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let root1 = vector::borrow(&roots_sig, 1);
+    vouch::init(root1);
 
     let alice_sig = mock::create_user_from_u64(framework, 11);
     let alice_addr = signer::address_of(&alice_sig);
@@ -541,12 +550,8 @@ module ol_framework::test_page_rank {
     // Initialize page rank for the new user
     page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
 
-    let root0 = vector::borrow(&roots_sig, 0);
-    vouch::init(root0);
+    // Both roots vouch for alice
     vouch_txs::vouch_for(root0, alice_addr);
-
-    let root1 = vector::borrow(&roots_sig, 1);
-    vouch::init(root1);
     vouch_txs::vouch_for(root1, alice_addr);
 
     let (received, _) = vouch::get_received_vouches(alice_addr);
@@ -573,6 +578,7 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&bob_sig, alice_addr);
 
     let page_rank_score_finally = page_rank_lazy::get_trust_score(alice_addr);
+    diem_std::debug::print(&page_rank_score_finally);
     // 100k from root0, 100k from root1, 50k from bob
     assert!(page_rank_score_finally == 250_000, 7357005);
 

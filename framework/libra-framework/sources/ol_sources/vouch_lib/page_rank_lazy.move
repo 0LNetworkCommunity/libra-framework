@@ -23,25 +23,29 @@ module ol_framework::page_rank_lazy {
     const EMAX_PROCESSED_ADDRESSES: u64 = 3;
 
     //////// CONSTANTS ////////
-    // Max score on a single vouch
+    /// Maximum score that can be assigned to a single vouch.
+    /// This provides an upper bound on direct trust from a single source.
     const MAX_VOUCH_SCORE: u64 = 100_000;
 
-    // Circuit breaker to prevent stack overflow
+    /// Circuit breaker to prevent stack overflow during recursive graph traversal.
+    /// Limits the total number of nodes processed in a single traversal.
     const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
 
-    // Per-user trust record - each user stores their own trust data
+    /// Per-user trust record - each user stores their own trust data
+    /// This resource tracks a user's cached trust score and staleness state.
     struct UserTrustRecord has key, drop {
-        // No need to store active_vouches - we'll get this from vouch module
-        // Cached trust score
+        /// Cached trust score - computed by traversing the trust graph
         cached_score: u64,
-        // When the score was last computed (timestamp)
+        /// When the score was last computed (timestamp in seconds)
         score_computed_at_timestamp: u64,
-        // Whether this node's trust data is stale and needs recalculation
+        /// Whether this node's trust data is stale and needs recalculation
+        /// Set to true when the trust graph changes in a way that affects this user
         is_stale: bool,
         // Shortest path to root now handled in a separate module
     }
 
-    // Initialize a user trust record if it doesn't exist
+    /// Initialize a user trust record if it doesn't exist.
+    /// This creates the basic structure needed to track a user's trust score.
     public fun maybe_initialize_trust_record(account: &signer) {
         let addr = signer::address_of(account);
         if (!exists<UserTrustRecord>(addr)) {
@@ -54,7 +58,18 @@ module ol_framework::page_rank_lazy {
     }
 
 
-    // Calculate or retrieve cached trust score
+    /// Calculate or retrieve cached trust score for an address.
+    /// Returns the cached score if it's valid, or recalculates if stale.
+    ///
+    /// This function uses an optimized page rank algorithm that:
+    /// 1. Finds all possible paths from roots of trust to the target
+    /// 2. Accumulates scores from all valid paths, including diamond patterns
+    /// 3. Applies trust decay proportional to distance from roots
+    ///
+    /// The calculation considers the entire trust graph and properly handles:
+    /// - Multiple paths to the same target
+    /// - Branching and merging paths
+    /// - Root-of-trust special cases
     public(friend) fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
 
         // If user has no trust record, they have no score
@@ -69,7 +84,13 @@ module ol_framework::page_rank_lazy {
         set_score(addr)
     }
 
-    // always calculate the score
+    /// Always calculate and update the trust score for an address.
+    /// This function:
+    /// 1. Gets the current roots of trust
+    /// 2. Traverses the graph to compute the score using our page rank algorithm
+    /// 3. Updates the user's cached score and marks it as fresh
+    ///
+    /// This is an expensive operation that should be used judiciously.
     fun set_score(addr: address): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
@@ -87,7 +108,16 @@ module ol_framework::page_rank_lazy {
         score
     }
 
-    // Simplified graph traversal - only uses exhaustive walk
+    /// Simplified graph traversal that finds all valid paths from each root of trust to the target address.
+    /// This function iterates through each root in the provided list and accumulates scores from all
+    /// paths that lead to the target.
+    ///
+    /// For each root, it:
+    /// 1. Creates a new empty visited set to track paths independently
+    /// 2. Calculates the score contribution via walk_from_node, which explores all possible paths
+    /// 3. Adds the score to the total accumulation
+    ///
+    /// The total accumulated score represents the combined trust value from all roots to the target.
     fun traverse_graph(
         roots: &vector<address>,
         target: address,
@@ -101,7 +131,8 @@ module ol_framework::page_rank_lazy {
             let root = *vector::borrow(roots, root_idx);
 
             let visited = vector::empty<address>();
-            vector::push_back(&mut visited, root);
+            // Create an initial empty visited set for each root traversal
+            // No need to add root to visited at this level since walk_from_node handles it
 
             if (root != target) {
               // NOTE: root, you don't don't give yourself points in the walk
@@ -119,7 +150,22 @@ module ol_framework::page_rank_lazy {
         total_score
     }
 
-    // Simplified full graph traversal from a single node - returns weighted score
+    /// Advanced graph traversal algorithm that finds and accumulates scores from all valid paths
+    /// from a starting node to a target. This function follows these principles:
+    ///
+    /// 1. Cycle Detection: Uses the visited set to avoid revisiting nodes already in the current path.
+    /// 2. Path Independence: Creates a copy of the visited set for each branch, ensuring separate paths
+    ///    are explored independently.
+    /// 3. Score Accumulation: Accumulates scores from all valid and unique paths rather than only
+    ///    returning the maximum score. This ensures "diamond patterns" (where multiple paths lead to
+    ///    the same target) properly accumulate their trust contributions.
+    /// 4. Trust Decay: Implements a 50% power reduction per hop, representing diminishing trust
+    ///    with distance from the source.
+    /// 5. Special Root Handling: Prevents accumulation from interconnected root accounts to avoid
+    ///    artificial score inflation.
+    ///
+    /// The algorithm handles complex trust graphs including branching paths, merging paths
+    /// (diamond patterns), and multiple routes from roots to targets.
     fun walk_from_node(
         current: address,
         target: address,
@@ -153,9 +199,8 @@ module ol_framework::page_rank_lazy {
             return 0
         };
 
-        // Track total score from all paths
+        // Track total accumulation of scores from all unique paths
         let total_score = 0;
-
 
         // Calculate power passed to neighbors (50% decay)
         // This division represents the power reduction for being one hop away from the current node
@@ -174,45 +219,41 @@ module ol_framework::page_rank_lazy {
             return next_power
         };
 
+        // Add current to visited BEFORE checking neighbors
+        vector::push_back(visited, current);
+
         // Check ALL neighbors for paths to target
         let i = 0;
         while (i < neighbor_count) {
-
             let neighbor = *vector::borrow(&neighbors, i);
 
-            // Only visit if not already in path (avoid cycles)
+            // Only explore if not already in our path (avoid cycles)
             if (!vector::contains(visited, &neighbor)) {
-                    if (neighbor != target) {
-                    // Mark neighbor as visited
-                    // (Don't mark the target as visited
-                    // because we want to be able to
-                    // find it again)
-
-                    vector::push_back(visited, neighbor);
-                    // we don't re-enter the root of
-                    // trust list, because we don't
-                    // want to accumulate points from
-                    // roots vouching for each other.
-                    if(
-                      root_of_trust::is_root_at_registry(@diem_framework, neighbor)
-                      ) {
-                        i = i + 1;
-                        continue
-                    };
+                // Skip this path if the neighbor is a root of trust (other than target)
+                // as we don't want to accumulate points from roots vouching for each other
+                if (
+                    neighbor != target &&
+                    root_of_trust::is_root_at_registry(@diem_framework, neighbor)
+                ) {
+                    i = i + 1;
+                    continue
                 };
 
+                // Create a copy of visited for this path exploration
+                // This ensures each path can be explored independently
+                let path_visited = *visited;
 
                 // Continue search from this neighbor with reduced power
-                // We pass the same next_power to each neighbor at the same level
-                // to ensure power reduction happens per hop, not per neighbor
                 let path_score = walk_from_node(
                     neighbor,
                     target,
-                    visited,
+                    &mut path_visited,
                     next_power
                 );
 
-                // Add to total score
+                // Add to total score (accumulate from all paths)
+                // This ensures that when multiple paths lead to the target ("diamond pattern"),
+                // all valid paths contribute to the final score rather than only taking the best one
                 total_score = total_score + path_score;
             };
 
@@ -222,7 +263,11 @@ module ol_framework::page_rank_lazy {
         total_score
     }
 
-    // Mark a user's trust score as stale
+    /// Mark a user's trust score as stale, propagating the staleness to impacted downstream accounts.
+    /// This function performs a controlled graph traversal to identify all accounts that may
+    /// need to have their trust scores recalculated due to changes in the vouch graph.
+    ///
+    /// Uses cycle detection and a maximum node limit to prevent infinite recursion or DOS attacks.
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
         let visited = vector::empty<address>();
         let processed_count: u64 = 0; // Initialize as a mutable local variable
@@ -305,6 +350,18 @@ module ol_framework::page_rank_lazy {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
         record.cached_score
+    }
+
+    #[view]
+    /// TODO: remove this in production, since it's an expensive operation
+    public fun calculate_score(addr: address): u64 {
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
+        // Cache is stale or expired - compute fresh score
+        // Default roots to system account if no registry
+        let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
+        // Compute score using selected algorithm
+        let score = traverse_graph(&roots, addr);
+        score
     }
 
     #[view]
