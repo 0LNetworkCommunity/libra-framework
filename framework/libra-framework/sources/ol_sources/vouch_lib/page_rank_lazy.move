@@ -162,6 +162,7 @@ module ol_framework::page_rank_lazy {
 
 
         // Calculate power passed to neighbors (50% decay)
+        // This division represents the power reduction for being one hop away from the current node
         let next_power = current_power / 2;
 
         // if the both current and target are a root of trust
@@ -201,12 +202,15 @@ module ol_framework::page_rank_lazy {
                     if(
                       root_of_trust::is_root_at_registry(@diem_framework, neighbor)
                       ) {
+                        i = i + 1;
                         continue
                     };
                 };
 
 
                 // Continue search from this neighbor with reduced power
+                // We pass the same next_power to each neighbor at the same level
+                // to ensure power reduction happens per hop, not per neighbor
                 let path_score = walk_from_node(
                     neighbor,
                     target,
