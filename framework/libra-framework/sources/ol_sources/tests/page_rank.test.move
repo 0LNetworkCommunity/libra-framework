@@ -458,6 +458,74 @@ module ol_framework::test_page_rank {
     };
   }
 
+    #[test(framework = @ol_framework)]
+  /// Tests the diminishing power of trust as the number of hops increases.
+  /// confirms that the score remains the same even
+  /// if prior users have neighbors that lead nowhere
+  fun test_diminishing_power_with_neighbors(framework: &signer) {
+    // Set up the test base with 10 root accounts
+    let roots_sig = test_base(framework);
+
+    // create 10 root of trust accounts
+    let users_sig = mock::create_test_end_users(framework, 10, 11);
+    let users_addr = mock::collect_addresses(&users_sig);
+
+    let decoy_users_sig = mock::create_test_end_users(framework, 10, 21);
+    let decoy_users_addr = mock::collect_addresses(&decoy_users_sig);
+
+
+    // First hop: the root vouches for user1 (at first hop)
+    let grantor_sig = vector::borrow(&roots_sig, 0);
+    let root0_score = page_rank_lazy::get_trust_score(signer::address_of(grantor_sig));
+    // in a simple initialization root doesn't have any vouches themselves
+    assert!(root0_score == 0, 7357100);
+
+    let max_single_score = page_rank_lazy::get_max_single_score();
+
+    let prev_score = max_single_score * 2;
+    let prev_vouch = 20;
+    // loop through the users and have the previous
+    // user vouch for the next user
+    let i = 0;
+    while (i < vector::length(&users_sig)) {
+      let beneficiary_addr = vector::borrow(&users_addr, i);
+      let beneficiary_sig = vector::borrow(&users_sig, i);
+
+      vouch::init(beneficiary_sig);
+      page_rank_lazy::maybe_initialize_trust_record(beneficiary_sig);
+
+      let grantor_acc = signer::address_of(grantor_sig);
+      vouch::test_set_received_list(grantor_acc, decoy_users_addr);
+      vouch::test_set_given_list(grantor_acc, decoy_users_addr);
+
+      vouch::vouch_for(grantor_sig, *beneficiary_addr);
+
+
+      let user1_score = page_rank_lazy::get_trust_score(*beneficiary_addr);
+
+      // in a simple initialization root doesn't have any vouches themselves
+      if (prev_score > 0) {
+        assert!(user1_score < prev_score, 7357101);
+        if (user1_score > 0) {
+          assert!(user1_score == prev_score/2, 7357102);
+        };
+      };
+
+      let vouch_limit = vouch_limits::calculate_score_limit(*beneficiary_addr);
+
+      // in a simple initialization root doesn't have any vouches themselves
+      if (prev_vouch > 1) {
+        assert!(vouch_limit < prev_vouch, 7357101);
+      };
+
+      // prep next loop
+      prev_score = user1_score;
+      prev_vouch = vouch_limit;
+      grantor_sig = vector::borrow(&users_sig, i);
+      i = i + 1;
+    };
+  }
+
 
   #[test(framework = @ol_framework)]
   /// When a vouch branch occurs,
@@ -560,11 +628,74 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
     let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+    assert!(root1_cached_score == 25_000, 7357004);
+  }
+
+
+  #[test(framework = @ol_framework)]
+  /// scenario, the graph reenters the root of trust
+  /// but it's  dead end, code should halt, and score should
+  /// not be affected by finding a neighbor that's root of trust
+  /// root0 -> alice -> bob -> root1
+  ///                -> root2
+  ///                -> root3
+  fun root_score_reduction_reentry(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+    let root0_addr = signer::address_of(root0);
+
+    let root1 = vector::borrow(&roots_sig, 1);
+    vouch::init(root1);
+    let root1_addr = signer::address_of(root1);
+
+    let root2 = vector::borrow(&roots_sig, 2);
+    vouch::init(root2);
+    let root2_addr = signer::address_of(root2);
+
+    let root3 = vector::borrow(&roots_sig, 2);
+    vouch::init(root3);
+    let root3_addr = signer::address_of(root3);
+
+    ///////// Root 0 score is initially 0 ////////
+    let root0_score_pre = page_rank_lazy::get_trust_score(root0_addr);
+    assert!(root0_score_pre == 0, 7357001);
+    let root1_score_pre = page_rank_lazy::get_trust_score(root1_addr);
+    assert!(root1_score_pre == 0, 7357002);
+    /////////
+
+    // Alice receives a vouch from root0
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    // Initialize page rank for the new user
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    // Alice vouches for bob
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    vouch::init(&bob_sig);
+    let bob_addr = signer::address_of(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    vouch_txs::vouch_for(root0, alice_addr);
+    //////// THE TEST: alice vouches for bob AND a separate root of trust
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    // don't run the epoch limit checks
+    vouch::vouch_for(&alice_sig, root2_addr);
+    vouch::vouch_for(&alice_sig, root3_addr);
+
+    ////////
+
+    let bob_final_score = page_rank_lazy::get_trust_score(bob_addr);
+    diem_std::debug::print(&bob_final_score);
+    assert!(bob_final_score == 50_000, 7357003);
+
+    vouch_txs::vouch_for(&bob_sig, root1_addr);
+
+    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
     diem_std::debug::print(&root1_cached_score);
-
-    diem_std::debug::print(&7777777777777777777);
-
-    page_rank_lazy::refresh_cache(root1_addr);
-    // diem_std::debug::print(&root1_score_post);
+    assert!(root1_cached_score == 25_000, 7357004);
   }
 }
