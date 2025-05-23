@@ -134,9 +134,7 @@ module ol_framework::page_rank_lazy {
         // For each root, calculate its contribution independently
         while (root_idx < roots_len) {
             // Check if the global limit for processed nodes has been reached
-            if (processed_count >= MAX_PROCESSED_ADDRESSES) {
-                break
-            };
+            assert!(processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
             let root = *vector::borrow(roots, root_idx);
             let visited = vector::empty<address>();
             if (root != target) {
@@ -175,9 +173,7 @@ module ol_framework::page_rank_lazy {
         processed_count: &mut u64
     ): u64 {
         // Always check the global processed count limit first
-        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-            return 0
-        };
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
         *processed_count = *processed_count + 1;
 
         // Early termination: max depth reached
@@ -186,9 +182,7 @@ module ol_framework::page_rank_lazy {
         };
 
         // Check if the global limit for processed nodes has been reached
-        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-            return 0
-        };
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
         *processed_count = *processed_count + 1;
 
         if(!vouch::is_init(current)) {
@@ -304,9 +298,7 @@ module ol_framework::page_rank_lazy {
 
         // Check if the global limit for processed nodes has been reached *before* processing this one.
         // If *processed_count is already at the limit, we can't process another new node.
-        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-            return
-        };
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
         // This node is new and will be processed. Increment the global count.
         *processed_count = *processed_count + 1;
@@ -344,9 +336,7 @@ module ol_framework::page_rank_lazy {
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
             // Check again if we've hit the processing limit
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-                return
-            };
+            assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
             // Pass the same mutable reference to processed_count.
