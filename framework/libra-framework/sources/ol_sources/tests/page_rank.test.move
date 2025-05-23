@@ -561,7 +561,7 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&alice_sig, bob_addr);
     vouch_txs::vouch_for(&bob_sig, carol_addr);
 
-    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    let (carol_score_post, _, _) = page_rank_lazy::calculate_score(carol_addr);
     assert!(carol_score_post == 25_000, 7357002);
   }
 
@@ -601,12 +601,12 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&carol_sig, alice_addr);
 
     // no change from single path
-    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    let (carol_score_post, _, _) = page_rank_lazy::calculate_score(carol_addr);
     assert!(carol_score_post == 25_000, 7357002);
 
     // alice does not get score from downstream users
     // TODO: is this the spec?
-    let alice_score_post = page_rank_lazy::calculate_score(alice_addr);
+    let (alice_score_post, _, _) = page_rank_lazy::calculate_score(alice_addr);
     assert!(alice_score_post == 100_000, 7357002);
   }
 
@@ -646,12 +646,12 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&carol_sig, signer::address_of(root0));
 
     // no change from single path
-    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    let (carol_score_post, _, _) = page_rank_lazy::calculate_score(carol_addr);
     assert!(carol_score_post == 25_000, 7357002);
 
     // alice score does not increment with additional loop from
     // TODO: is this the spec?
-    let alice_score_post = page_rank_lazy::calculate_score(alice_addr);
+    let (alice_score_post, _, _) = page_rank_lazy::calculate_score(alice_addr);
     diem_std::debug::print(&alice_score_post);
     assert!(alice_score_post == 100_000, 7357002);
   }
@@ -704,12 +704,12 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&dave_sig, alice_addr);
 
     // no change from single path
-    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    let (carol_score_post, _, _) = page_rank_lazy::calculate_score(carol_addr);
     assert!(carol_score_post == 25_000, 7357002);
 
     // alice score does not increment with additional loop from
     // TODO: is this the spec?
-    let alice_score_post = page_rank_lazy::calculate_score(alice_addr);
+    let (alice_score_post, _, _) = page_rank_lazy::calculate_score(alice_addr);
     assert!(alice_score_post == 100_000, 7357002);
   }
 
@@ -754,7 +754,7 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&alice_sig, carol_addr);
     vouch_txs::vouch_for(&bob_sig, carol_addr);
 
-    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    let (carol_score_post, _, _) = page_rank_lazy::calculate_score(carol_addr);
     diem_std::debug::print(&carol_score_post);
     assert!(carol_score_post == 100_000, 7357002);
   }
@@ -807,7 +807,7 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&bob_sig, carol_addr);
     vouch_txs::vouch_for(&carol_sig, dave_addr);
 
-    let dave_score_post = page_rank_lazy::calculate_score(dave_addr);
+    let (dave_score_post, _, _) = page_rank_lazy::calculate_score(dave_addr);
     // expect 50K from alice, and 25K via bob and carol
     diem_std::debug::print(&dave_score_post);
     assert!(dave_score_post == 75_000, 7357002);
@@ -863,7 +863,7 @@ module ol_framework::test_page_rank {
     // bob vouches for dave (short path)
     vouch_txs::vouch_for(&bob_sig, dave_addr);
 
-    let dave_score_post = page_rank_lazy::calculate_score(dave_addr);
+    let (dave_score_post, _, _) = page_rank_lazy::calculate_score(dave_addr);
     // expect 50K from alice, and 25K via bob and carol
     diem_std::debug::print(&dave_score_post);
     assert!(dave_score_post == 75_000, 7357002);

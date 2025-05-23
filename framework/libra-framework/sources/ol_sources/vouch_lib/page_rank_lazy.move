@@ -135,6 +135,24 @@ module ol_framework::page_rank_lazy {
         )
     }
 
+    /// REVERSE WALK EXPERIMENT: Traverse graph by walking backwards from target to roots of trust.
+    /// This version returns additional statistics: (score, max_depth_reached, accounts_processed)
+    fun traverse_graph_with_stats(
+        roots: &vector<address>,
+        target: address,
+    ): (u64, u64, u64) {
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+
+        // Start the reverse walk from the target
+        let score = walk_backwards_from_target_with_stats(
+            target, roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached
+        );
+
+        (score, max_depth_reached, processed_count)
+    }
+
     /// REVERSE WALK EXPERIMENT: Walk backwards from target toward roots of trust.
     /// This experimental function implements the reverse walk algorithm that starts from the target user
     /// and walks backwards through the vouch graph using received_vouches to find paths to any roots of trust.
@@ -202,6 +220,90 @@ module ol_framework::page_rank_lazy {
                     next_power,
                     next_depth,
                     processed_count
+                );
+                total_score = total_score + path_score;
+                neighbors_explored = neighbors_explored + 1;
+            };
+            i = i + 1;
+        };
+
+        total_score
+    }
+
+    /// REVERSE WALK EXPERIMENT: Walk backwards from target toward roots of trust.
+    /// This experimental function implements the reverse walk algorithm that starts from the target user
+    /// and walks backwards through the vouch graph using received_vouches to find paths to any roots of trust.
+    ///
+    /// Key differences from forward walk:
+    /// 1. Starts from target instead of iterating through all roots
+    /// 2. Uses get_received_vouches() instead of get_given_vouches() to traverse backwards
+    /// 3. Accumulates score when reaching any root in the roots vector
+    /// 4. Avoids exploring dead-end paths that don't lead to roots
+    /// 5. Maintains the same trust decay and cycle detection principles
+    ///
+    /// This should reduce processing budget by avoiding dead-end exploration.
+    fun walk_backwards_from_target_with_stats(
+        current: address,
+        roots: &vector<address>,
+        visited: &mut vector<address>,
+        current_power: u64,
+        current_depth: u64,
+        processed_count: &mut u64,
+        max_depth_reached: &mut u64
+    ): u64 {
+        // Track maximum depth reached
+        if (current_depth > *max_depth_reached) {
+            *max_depth_reached = current_depth;
+        };
+
+        // Early terminations that don't consume processing budget
+        if (current_depth >= MAX_PATH_DEPTH) return 0;
+        if (vector::contains(visited, &current)) return 0;
+        if (!vouch::is_init(current)) return 0;
+        if (current_power < 2) return 0;
+
+        // Check if we've reached a root of trust - this is our success condition!
+        if (vector::contains(roots, &current) && current_depth > 0) {
+            return current_power
+        };
+
+        // Budget check and consumption
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) return 0;
+        *processed_count = *processed_count + 1;
+
+        // Get who vouched FOR this current user (backwards direction)
+        let (received_from, _) = vouch::get_received_vouches(current);
+        let neighbor_count = vector::length(&received_from);
+
+        if (neighbor_count == 0) return 0;
+
+        let total_score = 0;
+        let next_power = current_power / 2;
+        let next_depth = current_depth + 1;
+
+        // Add current to visited and explore received vouches (backwards)
+        vector::push_back(visited, current);
+
+        // CRITICAL: Limit number of neighbors explored to prevent exponential explosion
+        let max_neighbors_to_explore = if (current_depth < 2) { 10 } else { 5 };
+        let neighbors_explored = 0;
+        let i = 0;
+
+        while (i < neighbor_count && neighbors_explored < max_neighbors_to_explore) {
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 5) break;
+
+            let neighbor = *vector::borrow(&received_from, i);
+            if (!vector::contains(visited, &neighbor)) {
+                // Create a copy of visited for this path
+                let visited_copy = *visited;
+                let path_score = walk_backwards_from_target_with_stats(
+                    neighbor,
+                    roots,
+                    &mut visited_copy,
+                    next_power,
+                    next_depth,
+                    processed_count,
+                    max_depth_reached
                 );
                 total_score = total_score + path_score;
                 neighbors_explored = neighbors_explored + 1;
@@ -407,14 +509,16 @@ module ol_framework::page_rank_lazy {
     ///
     /// WARNING: This function is provided for diagnostic and testing purposes.
     /// In production, use get_trust_score() or get_cached_score() instead.
-    public fun calculate_score(addr: address): u64 {
+    ///
+    /// Returns: (score, max_depth_reached, accounts_processed)
+    public fun calculate_score(addr: address): (u64, u64, u64) {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
         // Compute score using selected algorithm
-        let score = traverse_graph(&roots, addr);
-        score
+        let (score, max_depth, processed_count) = traverse_graph_with_stats(&roots, addr);
+        (score, max_depth, processed_count)
     }
 
     #[view]
