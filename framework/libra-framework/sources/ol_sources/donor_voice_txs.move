@@ -1005,6 +1005,8 @@ module ol_framework::donor_voice_txs {
     description: vector<u8>,
     advance_unlocked: bool,
   )  acquires TxSchedule {
+    reauthorization::assert_v8_authorized(signer::address_of(&auth));
+
     donor_voice_reauth::assert_authorized(multisig_address);
 
     let pay_is_slow = slow_wallet::is_slow(payee);
@@ -1031,6 +1033,8 @@ module ol_framework::donor_voice_txs {
   /// by the tx_id.
   /// Public entry function required for txs cli.
   public entry fun propose_veto_tx(donor: &signer, multisig_address: address, tx_id: u64) acquires TxSchedule, Freeze{
+    reauthorization::assert_v8_authorized(signer::address_of(donor));
+
     let guid = guid::create_id(multisig_address, tx_id);
     // one thing is the id of the scheduled payment
     // another ID is that of the veto proposal
@@ -1041,24 +1045,12 @@ module ol_framework::donor_voice_txs {
     }
   }
 
-  // /// A signer of the multisig can propose a payment
-  // /// Public entry function required for txs cli
-  // public entry fun propose_advance_tx(
-  //   auth: signer,
-  //   multisig_address: address,
-  //   payee: address,
-  //   value: u64,
-  //   description: vector<u8>,
-  // ) {
-  //   donor_voice_reauth::assert_authorized(multisig_address);
-  //   propose_advance(&auth, multisig_address, payee, value, description);
-  // }
-
   // REAUTH TXs
 
   /// After proposed, subsequent donors can vote to reauth an account
   /// Public entry function required for txs cli.
   public entry fun vote_reauth_tx(donor: &signer, multisig_address: address) acquires TxSchedule {
+    reauthorization::assert_v8_authorized(signer::address_of(donor));
     donor_voice_governance::assert_is_voter(donor, multisig_address);
     let state = borrow_global<TxSchedule>(multisig_address);
     let guid_cap = &state.guid_capability;
@@ -1075,10 +1067,14 @@ module ol_framework::donor_voice_txs {
   /// A donor can propose the liquidation of a Donor Voice account
   /// Public entry function required for txs cli.
   public entry fun propose_liquidate_tx(donor: &signer, multisig_address: address)  acquires TxSchedule {
+    reauthorization::assert_v8_authorized(signer::address_of(donor));
+
     propose_liquidation(donor, multisig_address);
   }
   /// After proposed, subsequent voters call this to vote liquidation
   public entry fun vote_liquidation_tx(donor: &signer, multisig_address: address) acquires Freeze {
+    reauthorization::assert_v8_authorized(signer::address_of(donor));
+
     liquidation_handler(donor, multisig_address);
   }
 
