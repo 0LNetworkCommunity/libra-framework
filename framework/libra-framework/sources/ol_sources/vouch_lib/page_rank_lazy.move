@@ -3,6 +3,7 @@ module ol_framework::page_rank_lazy {
     use std::signer;
     use std::timestamp;
     use std::vector;
+    use std::string;
     use ol_framework::vouch;
     use ol_framework::root_of_trust;
 
@@ -211,9 +212,11 @@ module ol_framework::page_rank_lazy {
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
 
-        // Debug prints can be expensive in production, so we'll comment them out
-        // diem_std::debug::print(&current);
-        // diem_std::debug::print(&neighbor_count);
+        // Debug path traversal
+        if (current_depth == 0) {
+            diem_std::debug::print(&string::utf8(b"Starting from root:"));
+            diem_std::debug::print(&current);
+        };
 
         // No neighbors means no path
         if (neighbor_count == 0) {
@@ -227,6 +230,10 @@ module ol_framework::page_rank_lazy {
         if (vector::contains(&neighbors, &target)) {
             // Calculate power passed to direct neighbor (50% decay)
             let direct_power = current_power / 2;
+            diem_std::debug::print(&string::utf8(b"Direct path found from:"));
+            diem_std::debug::print(&current);
+            diem_std::debug::print(&string::utf8(b"to target with power:"));
+            diem_std::debug::print(&direct_power);
             total_score = total_score + direct_power;
         };
 
@@ -253,27 +260,31 @@ module ol_framework::page_rank_lazy {
             let neighbor = *vector::borrow(&neighbors, i);
             if (!vector::contains(visited, &neighbor) && neighbor != target) {
                 if (
-                    neighbor != target &&
                     root_of_trust::is_root_at_registry(@diem_framework, neighbor)
                 ) {
                     i = i + 1;
                     continue
                 };
-                // Pass the same mutable visited vector, and backtrack after recursion
+                // Create a copy of visited for this branch to allow independent path exploration
+                let visited_copy = *visited;
                 let path_score = walk_from_node(
                     neighbor,
                     target,
-                    visited,
+                    &mut visited_copy,
                     next_power,
                     next_depth,
                     processed_count
                 );
+                if (path_score > 0) {
+                    diem_std::debug::print(&string::utf8(b"Found path via neighbor:"));
+                    diem_std::debug::print(&neighbor);
+                    diem_std::debug::print(&string::utf8(b"with score:"));
+                    diem_std::debug::print(&path_score);
+                };
                 total_score = total_score + path_score;
             };
             i = i + 1;
         };
-        // Backtrack: remove current from visited after all neighbors processed
-        vector::pop_back(visited);
         total_score
     }
 

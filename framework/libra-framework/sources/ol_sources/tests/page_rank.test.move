@@ -809,6 +809,7 @@ module ol_framework::test_page_rank {
 
     let dave_score_post = page_rank_lazy::calculate_score(dave_addr);
     // expect 50K from alice, and 25K via bob and carol
+    diem_std::debug::print(&dave_score_post);
     assert!(dave_score_post == 75_000, 7357002);
   }
 
