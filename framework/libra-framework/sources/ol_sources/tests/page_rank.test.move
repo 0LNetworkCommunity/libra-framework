@@ -800,10 +800,10 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(root0, alice_addr);
     vouch_txs::vouch_for(root0, bob_addr);
 
-    // alice vouches for dave
+    // alice vouches for dave (short path)
     vouch_txs::vouch_for(&alice_sig, dave_addr);
 
-    // bob vouches for carol who vouches for dave
+    // bob vouches for carol who vouches for dave (long path)
     vouch_txs::vouch_for(&bob_sig, carol_addr);
     vouch_txs::vouch_for(&carol_sig, dave_addr);
 
@@ -856,12 +856,12 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(root0, alice_addr);
     vouch_txs::vouch_for(root0, bob_addr);
 
-    // alice vouches for dave
+    // alice vouches for carol who vouches for dave (long path, inverted from above example)
     vouch_txs::vouch_for(&alice_sig, carol_addr);
     vouch_txs::vouch_for(&carol_sig, dave_addr);
 
-    // bob vouches for carol who vouches for dave
-    vouch_txs::vouch_for(&bob_sig, carol_addr);
+    // bob vouches for dave (short path)
+    vouch_txs::vouch_for(&bob_sig, dave_addr);
 
     let dave_score_post = page_rank_lazy::calculate_score(dave_addr);
     // expect 50K from alice, and 25K via bob and carol
