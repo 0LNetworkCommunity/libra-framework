@@ -176,101 +176,69 @@ module ol_framework::page_rank_lazy {
         current_depth: u64,
         processed_count: &mut u64
     ): u64 {
-        // Early termination: max depth reached - don't consume processing budget
-        if (current_depth >= MAX_PATH_DEPTH) {
-            return 0
-        };
+        // Early terminations that don't consume processing budget
+        if (current_depth >= MAX_PATH_DEPTH) return 0;
+        if (vector::contains(visited, &current)) return 0;
+        if (!vouch::is_init(current)) return 0;
+        if (current_power < 2) return 0;
+        if (current == target) return current_power;
 
-        // Early termination: already visited (cycle detection) - don't consume processing budget
-        if (vector::contains(visited, &current)) {
-            return 0
-        };
-
-        // Early termination: not initialized - don't consume processing budget
-        if(!vouch::is_init(current)) {
-            return 0
-        };
-
-        // Early termination: power too low - don't consume processing budget
-        if (current_power < 2) {
-            return 0
-        };
-
-        // Early termination: found target - don't consume processing budget for this simple case
-        if (current == target) {
-            return current_power
-        };
-
-        // Only now do we consume processing budget since we're doing real work
-        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+        // Budget check and consumption
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) return 0;
         *processed_count = *processed_count + 1;
 
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
 
-        // Debug path traversal - removed for performance
+        if (neighbor_count == 0) return 0;
 
-        // No neighbors means no path
-        if (neighbor_count == 0) {
-            return 0
-        };
-
-        // Track total accumulation of scores from all unique paths
         let total_score = 0;
 
-        // Direct connection optimization: if target is a direct neighbor, count that path
-        // But only if we haven't reached the depth limit for the next hop
+        // Direct connection check
         if (vector::contains(&neighbors, &target) && current_depth + 1 < MAX_PATH_DEPTH) {
-            // Calculate power passed to direct neighbor (50% decay)
-            let direct_power = current_power / 2;
-            total_score = total_score + direct_power;
+            total_score = total_score + (current_power / 2);
         };
 
-        // Calculate power passed to neighbors (50% decay)
-        // This division represents the power reduction for being one hop away from the current node
         let next_power = current_power / 2;
 
-        // Special case for root of trust nodes
+        // Special case for root-to-root vouching
         if (
           root_of_trust::is_root_at_registry(@diem_framework, current) &&
           root_of_trust::is_root_at_registry(@diem_framework, target) &&
           current != target &&
-          vector::contains(&neighbors, &target) // Check if current directly vouches for target
+          vector::contains(&neighbors, &target)
         ) {
             vector::push_back(visited, current);
             return next_power
         };
 
-        // Add current to visited BEFORE checking neighbors
+        // Add current to visited and explore neighbors
         vector::push_back(visited, current);
         let next_depth = current_depth + 1;
+
+        // CRITICAL: Limit number of neighbors explored to prevent exponential explosion
+        let max_neighbors_to_explore = if (current_depth < 2) { 10 } else { 5 };
+        let neighbors_explored = 0;
         let i = 0;
-        while (i < neighbor_count) {
-            // Check if we're approaching the processing limit before exploring more neighbors
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 10) {
-                // Stop exploring neighbors if we're too close to the limit
-                break
-            };
+
+        while (i < neighbor_count && neighbors_explored < max_neighbors_to_explore) {
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 5) break;
 
             let neighbor = *vector::borrow(&neighbors, i);
             if (!vector::contains(visited, &neighbor) && neighbor != target) {
-                if (
-                    root_of_trust::is_root_at_registry(@diem_framework, neighbor)
-                ) {
-                    i = i + 1;
-                    continue
+                if (!root_of_trust::is_root_at_registry(@diem_framework, neighbor)) {
+                    let visited_copy = *visited;
+                    let path_score = walk_from_node(
+                        neighbor,
+                        target,
+                        &mut visited_copy,
+                        next_power,
+                        next_depth,
+                        processed_count
+                    );
+                    total_score = total_score + path_score;
+                    neighbors_explored = neighbors_explored + 1;
                 };
-                // Create a copy of visited for this branch to allow independent path exploration
-                let visited_copy = *visited;
-                let path_score = walk_from_node(
-                    neighbor,
-                    target,
-                    &mut visited_copy,
-                    next_power,
-                    next_depth,
-                    processed_count
-                );
-                total_score = total_score + path_score;
             };
             i = i + 1;
         };
@@ -317,12 +285,6 @@ module ol_framework::page_rank_lazy {
         // 1. Mark its UserTrustRecord as stale if it exists.
         if (exists<UserTrustRecord>(user)) {
             let record = borrow_global_mut<UserTrustRecord>(user);
-            // Skip if already marked as stale to reduce redundant processing
-            if (record.is_stale) {
-                // Add this node to the visited set anyway to prevent re-traversal
-                vector::push_back(visited, user);
-                return
-            };
             record.is_stale = true;
         };
 
@@ -346,7 +308,7 @@ module ol_framework::page_rank_lazy {
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
             // Check again if we've hit the processing limit
-            assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 5) break;
 
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
             // Pass the same mutable reference to processed_count.
