@@ -93,7 +93,12 @@ module ol_framework::page_rank_lazy {
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
         // Compute score using selected algorithm
-        let score = traverse_graph(&roots, addr);
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+        let score = walk_backwards_from_target_with_stats(
+            addr, &roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached, MAX_PATH_DEPTH
+        );
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
         user_record_mut.cached_score = score;
@@ -101,39 +106,6 @@ module ol_framework::page_rank_lazy {
         user_record_mut.is_stale = false;
 
         score
-    }
-
-    /// Traverses the trust graph from the target user back to the roots of trust.
-    /// Uses received vouches to avoid dead-end paths and reduce processing.
-    fun traverse_graph(
-        roots: &vector<address>,
-        target: address,
-    ): u64 {
-        let processed_count: u64 = 0;
-        let max_depth_reached: u64 = 0;
-        let visited = vector::empty<address>();
-
-        // Start the reverse walk from the target and extract just the score
-        walk_backwards_from_target_with_stats(
-            target, roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached
-        )
-    }
-
-    /// Like `traverse_graph`, but also returns statistics: (score, max_depth, processed_count).
-    fun traverse_graph_with_stats(
-        roots: &vector<address>,
-        target: address,
-    ): (u64, u64, u64) {
-        let processed_count: u64 = 0;
-        let max_depth_reached: u64 = 0;
-        let visited = vector::empty<address>();
-
-        // Start the reverse walk from the target
-        let score = walk_backwards_from_target_with_stats(
-            target, roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached
-        );
-
-        (score, max_depth_reached, processed_count)
     }
 
     /// Walks backwards from the target toward roots of trust, accumulating trust score.
@@ -149,7 +121,8 @@ module ol_framework::page_rank_lazy {
         current_power: u64,
         current_depth: u64,
         processed_count: &mut u64,
-        max_depth_reached: &mut u64
+        max_depth_reached: &mut u64,
+        max_depth: u64
     ): u64 {
         // Track maximum depth reached
         if (current_depth > *max_depth_reached) {
@@ -157,7 +130,7 @@ module ol_framework::page_rank_lazy {
         };
 
         // Early terminations that don't consume processing budget
-        if (current_depth >= MAX_PATH_DEPTH) return 0;
+        if (current_depth >= max_depth) return 0;
         if (vector::contains(visited, &current)) return 0;
         if (!vouch::is_init(current)) return 0;
         if (current_power < 2) return 0;
@@ -184,17 +157,13 @@ module ol_framework::page_rank_lazy {
         // Add current to visited and explore received vouches (backwards)
         vector::push_back(visited, current);
 
-        // CRITICAL: Limit number of neighbors explored to prevent exponential explosion
-        let max_neighbors_to_explore = if (current_depth < 2) { 10 } else { 5 };
-        let neighbors_explored = 0;
         let i = 0;
 
-        while (i < neighbor_count && neighbors_explored < max_neighbors_to_explore) {
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 5) break;
+        while (i < neighbor_count) {
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES) break;
 
             let neighbor = *vector::borrow(&received_from, i);
             if (!vector::contains(visited, &neighbor)) {
-                // Create a copy of visited for this path
                 let visited_copy = *visited;
                 let path_score = walk_backwards_from_target_with_stats(
                     neighbor,
@@ -203,10 +172,10 @@ module ol_framework::page_rank_lazy {
                     next_power,
                     next_depth,
                     processed_count,
-                    max_depth_reached
+                    max_depth_reached,
+                    max_depth
                 );
                 total_score = total_score + path_score;
-                neighbors_explored = neighbors_explored + 1;
             };
             i = i + 1;
         };
@@ -271,7 +240,7 @@ module ol_framework::page_rank_lazy {
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
             // Check again if we've hit the processing limit
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 5) break;
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES) break;
 
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
             // Pass the same mutable reference to processed_count.
@@ -312,8 +281,29 @@ module ol_framework::page_rank_lazy {
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
         // Compute score using selected algorithm
-        let (score, max_depth, processed_count) = traverse_graph_with_stats(&roots, addr);
-        (score, max_depth, processed_count)
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+        let score = walk_backwards_from_target_with_stats(
+            addr, &roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached, MAX_PATH_DEPTH
+        );
+        (score, max_depth_reached, processed_count)
+    }
+
+    #[view]
+    /// Calculates a fresh trust score for a user without updating the cache, using a custom max depth.
+    /// Returns (score, max_depth_reached, accounts_processed).
+    /// Intended for diagnostics and testing only.
+    public fun calculate_score_depth(addr: address, max_depth: u64): (u64, u64, u64) {
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
+        let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+        let score = walk_backwards_from_target_with_stats(
+            addr, &roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached, max_depth
+        );
+        (score, max_depth_reached, processed_count)
     }
 
     #[view]
@@ -331,11 +321,10 @@ module ol_framework::page_rank_lazy {
     }
 
     //////// TEST HELPERS ///////
-
-    /// Sets up a mock trust network for testing.
-    /// - Initializes trust records and vouch structures for all test accounts.
-    /// - Sets up vouching relationships and unrelated ancestry for each account.
     #[test_only]
+    // Sets up a mock trust network for testing.
+    // - Initializes trust records and vouch structures for all test accounts.
+    // - Sets up vouching relationships and unrelated ancestry for each account.
     public fun setup_mock_trust_network(
         admin: &signer,
         root: &signer,
