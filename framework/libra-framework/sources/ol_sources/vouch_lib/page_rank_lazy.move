@@ -16,39 +16,34 @@ module ol_framework::page_rank_lazy {
     friend ol_framework::mock;
 
     //////// ERROR CODES ////////
-    /// trust record not initialized
+    /// Thrown if a trust record is missing for the user.
     const ENOT_INITIALIZED: u64 = 2;
 
-    /// max addresses processed
+    /// Thrown if the maximum number of nodes to process is exceeded.
     const EMAX_PROCESSED_ADDRESSES: u64 = 3;
 
     //////// CONSTANTS ////////
-    /// Maximum score that can be assigned to a single vouch.
-    /// This provides an upper bound on direct trust from a single source.
+    /// Maximum score assignable for a single vouch (upper bound for direct trust).
     const MAX_VOUCH_SCORE: u64 = 100_000;
 
-    /// Circuit breaker to prevent stack overflow during recursive graph traversal.
-    /// Limits the total number of nodes processed in a single traversal.
+    /// Maximum number of nodes processed in a single traversal (prevents stack overflow).
     const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
 
-    /// Maximum depth for path traversal in the trust graph.
-    /// This limits how far the algorithm will search from a root node.
+    /// Maximum allowed depth for trust graph traversal.
     const MAX_PATH_DEPTH: u64 = 5;
 
-    /// Per-user trust record - each user stores their own trust data
-    /// This resource tracks a user's cached trust score and staleness state.
+    /// Stores a user's trust score and its staleness state.
     struct UserTrustRecord has key, drop {
-        /// Cached trust score - computed by traversing the trust graph
+        /// Last computed trust score for this user.
         cached_score: u64,
-        /// When the score was last computed (timestamp in seconds)
+        /// Timestamp (seconds) when the score was last computed.
         score_computed_at_timestamp: u64,
-        /// Whether this node's trust data is stale and needs recalculation
-        /// Set to true when the trust graph changes in a way that affects this user
+        /// True if the trust score is outdated and needs recalculation.
         is_stale: bool,
-        // Shortest path to root now handled in a separate module
+        // Shortest path to root is managed in a separate module.
     }
 
-    /// Initialize a user trust record if it doesn't exist.
+    /// Initializes a trust record for the account if it does not already exist.
     /// This creates the basic structure needed to track a user's trust score.
     public fun maybe_initialize_trust_record(account: &signer) {
         let addr = signer::address_of(account);
@@ -62,8 +57,8 @@ module ol_framework::page_rank_lazy {
     }
 
 
-    /// Calculate or retrieve cached trust score for an address.
-    /// Returns the cached score if it's valid, or recalculates if stale.
+    /// Returns the cached trust score for an address, or recalculates it if stale.
+    /// Uses a reverse PageRank-like algorithm to aggregate trust from roots.
     ///
     /// This function uses an optimized page rank algorithm that:
     /// 1. Finds all possible paths from roots of trust to the target
@@ -88,13 +83,9 @@ module ol_framework::page_rank_lazy {
         set_score(addr)
     }
 
-    /// Always calculate and update the trust score for an address.
-    /// This function:
-    /// 1. Gets the current roots of trust
-    /// 2. Traverses the graph to compute the score using our page rank algorithm
-    /// 3. Updates the user's cached score and marks it as fresh
-    ///
-    /// This is an expensive operation that should be used judiciously.
+    /// Recalculates and updates the trust score for an address.
+    /// Traverses the trust graph from roots to the target and updates the cache.
+    /// This is a costly operation and should be used sparingly.
     fun set_score(addr: address): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
@@ -112,16 +103,8 @@ module ol_framework::page_rank_lazy {
         score
     }
 
-    /// REVERSE WALK EXPERIMENT: Traverse graph by walking backwards from target to roots of trust.
-    /// Instead of walking from all roots outward to a target user (using given_vouches), this
-    /// experimental approach walks from a target user backwards toward the roots of trust by
-    /// accessing received_vouches. This should reduce processing budget by avoiding dead-end paths.
-    ///
-    /// The algorithm:
-    /// 1. Starts from the target user
-    /// 2. Walks backwards through the vouch graph using received_vouches
-    /// 3. Accumulates trust score when reaching any root of trust
-    /// 4. Avoids exploring dead-end paths that don't lead to roots
+    /// Traverses the trust graph from the target user back to the roots of trust.
+    /// Uses received vouches to avoid dead-end paths and reduce processing.
     fun traverse_graph(
         roots: &vector<address>,
         target: address,
@@ -136,8 +119,7 @@ module ol_framework::page_rank_lazy {
         )
     }
 
-    /// REVERSE WALK EXPERIMENT: Traverse graph by walking backwards from target to roots of trust.
-    /// This version returns additional statistics: (score, max_depth_reached, accounts_processed)
+    /// Like `traverse_graph`, but also returns statistics: (score, max_depth, processed_count).
     fun traverse_graph_with_stats(
         roots: &vector<address>,
         target: address,
@@ -154,18 +136,12 @@ module ol_framework::page_rank_lazy {
         (score, max_depth_reached, processed_count)
     }
 
-    /// REVERSE WALK EXPERIMENT: Walk backwards from target toward roots of trust.
-    /// This experimental function implements the reverse walk algorithm that starts from the target user
-    /// and walks backwards through the vouch graph using received_vouches to find paths to any roots of trust.
-    ///
-    /// Key differences from forward walk:
-    /// 1. Starts from target instead of iterating through all roots
-    /// 2. Uses get_received_vouches() instead of get_given_vouches() to traverse backwards
-    /// 3. Accumulates score when reaching any root in the roots vector
-    /// 4. Avoids exploring dead-end paths that don't lead to roots
-    /// 5. Maintains the same trust decay and cycle detection principles
-    ///
-    /// This should reduce processing budget by avoiding dead-end exploration.
+    /// Walks backwards from the target toward roots of trust, accumulating trust score.
+    /// - Starts from the target user.
+    /// - Uses received vouches for traversal.
+    /// - Accumulates score when reaching a root.
+    /// - Avoids cycles and dead ends.
+    /// - Applies trust decay and limits neighbor exploration to control complexity.
     fun walk_backwards_from_target_with_stats(
         current: address,
         roots: &vector<address>,
@@ -238,28 +214,22 @@ module ol_framework::page_rank_lazy {
         total_score
     }
 
-    /// Mark a user's trust score as stale, propagating the staleness to impacted downstream accounts.
-    /// This function performs a controlled graph traversal to identify all accounts that may
-    /// need to have their trust scores recalculated due to changes in the vouch graph.
-    ///
-    /// Uses cycle detection and a maximum node limit to prevent infinite recursion or DOS attacks.
+    /// Marks a user's trust score as stale and propagates staleness to downstream accounts.
+    /// Uses cycle detection and a processing limit to prevent infinite recursion.
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
         let visited = vector::empty<address>();
         let processed_count: u64 = 0; // Initialize as a mutable local variable
         walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
     }
 
-    /// Internal helper function with cycle detection for marking nodes as stale
-    /// Uses vouch module to get outgoing vouches and implements optimizations to reduce
-    /// the number of nodes processed:
-    ///
-    /// 1. Cycle detection to avoid revisiting nodes
-    /// 2. Process limit to prevent excessive recursion
-    /// 3. Efficient traversal that prioritizes direct dependencies
+    /// Helper for `mark_as_stale`. Recursively marks downstream nodes as stale.
+    /// - Avoids revisiting nodes (cycle detection).
+    /// - Stops if the processing limit is reached.
+    /// - Only processes nodes initialized in the vouch system.
     fun walk_stale(
         user: address,
         visited: &mut vector<address>,
-        processed_count: &mut u64 // Changed to mutable reference
+        processed_count: &mut u64
     ) acquires UserTrustRecord {
         // Skip if we've already visited this node in the current traversal (cycle detection)
         // This also ensures we only count/process each unique node once.
@@ -314,9 +284,8 @@ module ol_framework::page_rank_lazy {
 
     //////// CACHE ////////
 
-    /// Refresh the cache
-    /// state updates must be called by a user.
-    /// Vouch tree updates could be a DDOS vector
+    /// Refreshes the cached trust score for a user by recalculating it.
+    /// Only callable by the user.
     public entry fun refresh_cache(user: address) acquires UserTrustRecord{
       // assert initialized
       assert!(exists<UserTrustRecord>(user), error::invalid_state(ENOT_INITIALIZED));
@@ -326,7 +295,7 @@ module ol_framework::page_rank_lazy {
 
     //////// GETTERS ////////
     #[view]
-    /// Get the cached trust score for a user
+    /// Returns the cached trust score for a user.
     public fun get_cached_score(addr: address): u64 acquires UserTrustRecord {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
@@ -334,13 +303,9 @@ module ol_framework::page_rank_lazy {
     }
 
     #[view]
-    /// Calculates a fresh trust score without updating the cache.
-    /// This is an expensive operation that traverses the entire relevant trust graph.
-    ///
-    /// WARNING: This function is provided for diagnostic and testing purposes.
-    /// In production, use get_trust_score() or get_cached_score() instead.
-    ///
-    /// Returns: (score, max_depth_reached, accounts_processed)
+    /// Calculates a fresh trust score for a user without updating the cache.
+    /// Returns (score, max_depth_reached, accounts_processed).
+    /// Intended for diagnostics and testing only.
     public fun calculate_score(addr: address): (u64, u64, u64) {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
@@ -352,7 +317,7 @@ module ol_framework::page_rank_lazy {
     }
 
     #[view]
-    // check if it's stale
+    /// Returns true if the user's trust score is marked as stale.
     public fun is_stale(addr: address): bool acquires UserTrustRecord {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
@@ -360,13 +325,16 @@ module ol_framework::page_rank_lazy {
     }
 
     #[view]
-    // get the const for highest vouch score
+    /// Returns the maximum possible score for a single vouch.
     public fun get_max_single_score(): u64 {
         MAX_VOUCH_SCORE
     }
 
     //////// TEST HELPERS ///////
 
+    /// Sets up a mock trust network for testing.
+    /// - Initializes trust records and vouch structures for all test accounts.
+    /// - Sets up vouching relationships and unrelated ancestry for each account.
     #[test_only]
     public fun setup_mock_trust_network(
         admin: &signer,
