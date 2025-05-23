@@ -97,7 +97,7 @@ module ol_framework::activity {
     }
   }
 
-  fun assert_initialized(user: address) {
+  public fun assert_initialized(user: address) {
     // check malformed accounts with microsecs
     assert!(exists<Activity>(user), error::invalid_state(EACCOUNT_NOT_MIGRATED));
   }

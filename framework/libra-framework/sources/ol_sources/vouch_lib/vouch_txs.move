@@ -5,6 +5,7 @@ module ol_framework::vouch_txs {
   use std::signer;
   use diem_framework::stake;
   use diem_framework::transaction_fee;
+  use ol_framework::activity;
   use ol_framework::founder;
   use ol_framework::ol_account;
   use ol_framework::page_rank_lazy;
@@ -12,12 +13,17 @@ module ol_framework::vouch_txs {
   use ol_framework::vouch_limits;
 
   public entry fun vouch_for(grantor: &signer, friend_account: address) {
+    // better error message
+    activity::assert_initialized(friend_account);
+
+    // You say you want a revolution
     let grantor_addr = signer::address_of(grantor);
     vouch_limits::assert_under_limit(grantor_addr, friend_account);
     page_rank_lazy::mark_as_stale(friend_account);
     vouch::vouch_for(grantor, friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
     founder::maybe_set_friendly_founder(friend_account);
+    // you better free your mind instead
   }
 
   public entry fun revoke(grantor: &signer, friend_account: address) {
