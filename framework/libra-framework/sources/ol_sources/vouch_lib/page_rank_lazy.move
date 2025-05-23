@@ -172,16 +172,12 @@ module ol_framework::page_rank_lazy {
         current_depth: u64,
         processed_count: &mut u64
     ): u64 {
-        // Always check the global processed count limit first
-        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
-        *processed_count = *processed_count + 1;
-
         // Early termination: max depth reached
         if (current_depth >= MAX_PATH_DEPTH) {
             return 0
         };
 
-        // Check if the global limit for processed nodes has been reached
+        // Always check the global processed count limit before processing this node
         assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
         *processed_count = *processed_count + 1;
 
@@ -216,7 +212,8 @@ module ol_framework::page_rank_lazy {
         let total_score = 0;
 
         // Direct connection optimization: if target is a direct neighbor, count that path
-        if (vector::contains(&neighbors, &target)) {
+        // But only if we haven't reached the depth limit for the next hop
+        if (vector::contains(&neighbors, &target) && current_depth + 1 < MAX_PATH_DEPTH) {
             // Calculate power passed to direct neighbor (50% decay)
             let direct_power = current_power / 2;
             total_score = total_score + direct_power;
