@@ -559,12 +559,6 @@ module ol_framework::test_page_rank {
 
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
-    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
-    diem_std::debug::print(&root1_cached_score);
-
-    diem_std::debug::print(&7777777777777777777);
-
     page_rank_lazy::refresh_cache(root1_addr);
-    // diem_std::debug::print(&root1_score_post);
   }
 }

@@ -76,11 +76,9 @@ module ol_framework::page_rank_lazy {
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
-        // diem_std::debug::print(&roots);
 
         // Compute score using selected algorithm
         let score = traverse_graph(&roots, addr);
-        diem_std::debug::print(&score);
 
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
@@ -149,8 +147,6 @@ module ol_framework::page_rank_lazy {
 
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
-        diem_std::debug::print(&current);
-        diem_std::debug::print(&neighbor_count);
 
         // No neighbors means no path
         if (neighbor_count == 0) {
@@ -182,8 +178,6 @@ module ol_framework::page_rank_lazy {
         while (i < neighbor_count) {
 
             let neighbor = *vector::borrow(&neighbors, i);
-            diem_std::debug::print(&neighbor);
-
 
             // Only visit if not already in path (avoid cycles)
             if (!vector::contains(visited, &neighbor)) {
