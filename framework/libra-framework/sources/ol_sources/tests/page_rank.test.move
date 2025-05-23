@@ -344,7 +344,7 @@ module ol_framework::test_page_rank {
   #[test(framework = @ol_framework)]
 
   /// Tests that users don't gain trust score from roots vouching for each other.
-  /// Demonstrates that the root check in page_rank_lazy::walk_from_node prevents
+  /// Demonstrates that the root checks in the page rank algorithm prevent
   /// score accumulation through root-to-root vouches, ensuring that the trust
   /// system isn't exploitable through root account manipulation.
   fun test_no_accumulation_from_root_vouches(framework: &signer) {
