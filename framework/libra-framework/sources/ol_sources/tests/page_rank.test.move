@@ -526,15 +526,188 @@ module ol_framework::test_page_rank {
     };
   }
 
+  #[test(framework = @ol_framework)]
+  /// Simple path
+  // Root0 ->  Alice
+  // Alice ->  Bob
+  // Bob ->  Carol
+  fun simple_path(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let carol_score_pre = page_rank_lazy::get_trust_score(carol_addr);
+    assert!(carol_score_pre == 0, 7357001);
+
+    // Both roots vouch for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    vouch_txs::vouch_for(&bob_sig, carol_addr);
+
+    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    assert!(carol_score_post == 25_000, 7357002);
+  }
 
   #[test(framework = @ol_framework)]
   /// When a vouch branch occurs,
   /// and then merges back to a user,
   /// the transitive scores should accumulate
   // Root0 ->  Alice
+  // Root0 ->  Bob
+  // Alice ->  Carol
+  // Bob ->  Carol
+  fun diamond_pattern(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let carol_score_pre = page_rank_lazy::get_trust_score(carol_addr);
+    assert!(carol_score_pre == 0, 7357001);
+
+    // Root 0 vouches for alice and bob
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(root0, bob_addr);
+
+    // alice and bob vouch for carol
+    vouch_txs::vouch_for(&alice_sig, carol_addr);
+    vouch_txs::vouch_for(&bob_sig, carol_addr);
+
+    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    diem_std::debug::print(&carol_score_post);
+    assert!(carol_score_post == 100_000, 7357002);
+  }
+
+  #[test(framework = @ol_framework)]
+  /// A full cycle of vouches, outside of root of trust
+  // Root0 ->  Alice -> Bob -> Carol -> Alice
+  fun cycle_pattern_single(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let carol_score_pre = page_rank_lazy::get_trust_score(carol_addr);
+    assert!(carol_score_pre == 0, 7357001);
+
+    // Both roots vouch for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    vouch_txs::vouch_for(&bob_sig, carol_addr);
+    // close the cycle
+    vouch_txs::vouch_for(&carol_sig, alice_addr);
+
+    // no change from single path
+    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    assert!(carol_score_post == 25_000, 7357002);
+
+    // alice does not get score from downstream users
+    // TODO: is this the spec?
+    let alice_score_post = page_rank_lazy::calculate_score(alice_addr);
+    assert!(alice_score_post == 100_000, 7357002);
+  }
+
+    #[test(framework = @ol_framework)]
+  /// A full cycle of vouches, outside of root of trust
+  // Root0 -> Alice -> Bob -> Carol -> Root0
+  fun cycle_pattern_with_root(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let carol_score_pre = page_rank_lazy::get_trust_score(carol_addr);
+    assert!(carol_score_pre == 0, 7357001);
+
+    // Both roots vouch for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    vouch_txs::vouch_for(&bob_sig, carol_addr);
+    // close the cycle to root0
+    vouch_txs::vouch_for(&carol_sig, signer::address_of(root0));
+
+    // no change from single path
+    let carol_score_post = page_rank_lazy::calculate_score(carol_addr);
+    assert!(carol_score_post == 25_000, 7357002);
+
+    // alice score does not increment with additional loop from root0
+    // TODO: is this the spec?
+    let alice_score_post = page_rank_lazy::calculate_score(alice_addr);
+    diem_std::debug::print(&alice_score_post);
+    assert!(alice_score_post == 100_000, 7357002);
+  }
+
+  #[test(framework = @ol_framework)]
+  /// Diamond pattern when alice has two vouches from root
+  // Root0 ->  Alice
+  // Root0 ->  Bob -> Alice
   // Root1 ->  Alice
-  // Root0 ->  Bob ->  Alice
-  fun diamond_pattern_accumulates(framework: &signer) {
+  fun diamond_patter_two_roots(framework: &signer) {
     // Set up the test base
     let roots_sig = test_base(framework);
 
@@ -581,7 +754,6 @@ module ol_framework::test_page_rank {
     diem_std::debug::print(&page_rank_score_finally);
     // 100k from root0, 100k from root1, 50k from bob
     assert!(page_rank_score_finally == 250_000, 7357005);
-
   }
 
 
