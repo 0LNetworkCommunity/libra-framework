@@ -29,7 +29,7 @@ module ol_framework::page_rank_lazy {
 
     /// Circuit breaker to prevent stack overflow during recursive graph traversal.
     /// Limits the total number of nodes processed in a single traversal.
-    const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
+    const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
 
     /// Maximum depth for path traversal in the trust graph.
     /// This limits how far the algorithm will search from a root node.
