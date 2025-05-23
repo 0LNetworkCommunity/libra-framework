@@ -33,7 +33,7 @@ module ol_framework::page_rank_lazy {
 
     /// Maximum depth for path traversal in the trust graph.
     /// This limits how far the algorithm will search from a root node.
-    const MAX_PATH_DEPTH: u64 = 4;
+    const MAX_PATH_DEPTH: u64 = 8;
 
     /// Per-user trust record - each user stores their own trust data
     /// This resource tracks a user's cached trust score and staleness state.
@@ -134,7 +134,11 @@ module ol_framework::page_rank_lazy {
         // For each root, calculate its contribution independently
         while (root_idx < roots_len) {
             // Check if the global limit for processed nodes has been reached
-            assert!(processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+            if (processed_count >= MAX_PROCESSED_ADDRESSES - 50) {
+                // Stop processing additional roots if we're close to the limit
+                break
+            };
+
             let root = *vector::borrow(roots, root_idx);
             let visited = vector::empty<address>();
             if (root != target) {
@@ -172,31 +176,34 @@ module ol_framework::page_rank_lazy {
         current_depth: u64,
         processed_count: &mut u64
     ): u64 {
-        // Early termination: max depth reached
+        // Early termination: max depth reached - don't consume processing budget
         if (current_depth >= MAX_PATH_DEPTH) {
             return 0
         };
 
-        // Always check the global processed count limit before processing this node
-        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
-        *processed_count = *processed_count + 1;
+        // Early termination: already visited (cycle detection) - don't consume processing budget
+        if (vector::contains(visited, &current)) {
+            return 0
+        };
 
+        // Early termination: not initialized - don't consume processing budget
         if(!vouch::is_init(current)) {
             return 0
         };
 
-        // Great, we found the target!
-        // then we get to return the power
-        // otherwise it will be zero
-        // when we run out of power or depth
+        // Early termination: power too low - don't consume processing budget
+        if (current_power < 2) {
+            return 0
+        };
+
+        // Early termination: found target - don't consume processing budget for this simple case
         if (current == target) {
             return current_power
         };
 
-        // Stop condition - only stop if power is too low
-        if (current_power < 2) {
-            return 0
-        };
+        // Only now do we consume processing budget since we're doing real work
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+        *processed_count = *processed_count + 1;
 
         let (neighbors, _) = vouch::get_given_vouches(current);
         let neighbor_count = vector::length(&neighbors);
@@ -239,6 +246,12 @@ module ol_framework::page_rank_lazy {
         let next_depth = current_depth + 1;
         let i = 0;
         while (i < neighbor_count) {
+            // Check if we're approaching the processing limit before exploring more neighbors
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 10) {
+                // Stop exploring neighbors if we're too close to the limit
+                break
+            };
+
             let neighbor = *vector::borrow(&neighbors, i);
             if (!vector::contains(visited, &neighbor) && neighbor != target) {
                 if (
