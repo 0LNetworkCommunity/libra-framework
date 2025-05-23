@@ -141,7 +141,7 @@ module ol_framework::page_rank_lazy {
         };
 
         // Budget check and consumption
-        if (*processed_count >= MAX_PROCESSED_ADDRESSES) return 0;
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
         *processed_count = *processed_count + 1;
 
         // Get who vouched FOR this current user (backwards direction)
@@ -160,7 +160,7 @@ module ol_framework::page_rank_lazy {
         let i = 0;
 
         while (i < neighbor_count) {
-            if (*processed_count >= MAX_PROCESSED_ADDRESSES) break;
+            assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
             let neighbor = *vector::borrow(&received_from, i);
             if (!vector::contains(visited, &neighbor)) {
