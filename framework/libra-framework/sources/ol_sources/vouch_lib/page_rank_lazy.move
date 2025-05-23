@@ -112,42 +112,103 @@ module ol_framework::page_rank_lazy {
         score
     }
 
-    /// Simplified graph traversal that finds all valid paths from each root of trust to the target address.
-    /// This function iterates through each root in the provided list and accumulates scores from all
-    /// paths that lead to the target.
+    /// REVERSE WALK EXPERIMENT: Traverse graph by walking backwards from target to roots of trust.
+    /// Instead of walking from all roots outward to a target user (using given_vouches), this
+    /// experimental approach walks from a target user backwards toward the roots of trust by
+    /// accessing received_vouches. This should reduce processing budget by avoiding dead-end paths.
     ///
-    /// For each root, it:
-    /// 1. Creates a new empty visited set to track paths independently
-    /// 2. Calculates the score contribution via walk_from_node, which explores all possible paths
-    /// 3. Adds the score to the total accumulation
-    ///
-    /// The total accumulated score represents the combined trust value from all roots to the target.
+    /// The algorithm:
+    /// 1. Starts from the target user
+    /// 2. Walks backwards through the vouch graph using received_vouches
+    /// 3. Accumulates trust score when reaching any root of trust
+    /// 4. Avoids exploring dead-end paths that don't lead to roots
     fun traverse_graph(
         roots: &vector<address>,
         target: address,
     ): u64 {
-        let total_score = 0;
-        let root_idx = 0;
-        let roots_len = vector::length(roots);
-        let processed_count: u64 = 0; // Track total processed nodes globally
+        let processed_count: u64 = 0;
+        let visited = vector::empty<address>();
 
-        // For each root, calculate its contribution independently
-        while (root_idx < roots_len) {
-            // Check if the global limit for processed nodes has been reached
-            if (processed_count >= MAX_PROCESSED_ADDRESSES - 50) {
-                // Stop processing additional roots if we're close to the limit
-                break
-            };
+        // Start the reverse walk from the target
+        walk_backwards_from_target(
+            target, roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count
+        )
+    }
 
-            let root = *vector::borrow(roots, root_idx);
-            let visited = vector::empty<address>();
-            if (root != target) {
-                total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count
-                );
-            };
-            root_idx = root_idx + 1;
+    /// REVERSE WALK EXPERIMENT: Walk backwards from target toward roots of trust.
+    /// This experimental function implements the reverse walk algorithm that starts from the target user
+    /// and walks backwards through the vouch graph using received_vouches to find paths to any roots of trust.
+    ///
+    /// Key differences from forward walk:
+    /// 1. Starts from target instead of iterating through all roots
+    /// 2. Uses get_received_vouches() instead of get_given_vouches() to traverse backwards
+    /// 3. Accumulates score when reaching any root in the roots vector
+    /// 4. Avoids exploring dead-end paths that don't lead to roots
+    /// 5. Maintains the same trust decay and cycle detection principles
+    ///
+    /// This should reduce processing budget by avoiding dead-end exploration.
+    fun walk_backwards_from_target(
+        current: address,
+        roots: &vector<address>,
+        visited: &mut vector<address>,
+        current_power: u64,
+        current_depth: u64,
+        processed_count: &mut u64
+    ): u64 {
+        // Early terminations that don't consume processing budget
+        if (current_depth >= MAX_PATH_DEPTH) return 0;
+        if (vector::contains(visited, &current)) return 0;
+        if (!vouch::is_init(current)) return 0;
+        if (current_power < 2) return 0;
+
+        // Check if we've reached a root of trust - this is our success condition!
+        if (vector::contains(roots, &current) && current_depth > 0) {
+            return current_power
         };
+
+        // Budget check and consumption
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) return 0;
+        *processed_count = *processed_count + 1;
+
+        // Get who vouched FOR this current user (backwards direction)
+        let (received_from, _) = vouch::get_received_vouches(current);
+        let neighbor_count = vector::length(&received_from);
+
+        if (neighbor_count == 0) return 0;
+
+        let total_score = 0;
+        let next_power = current_power / 2;
+        let next_depth = current_depth + 1;
+
+        // Add current to visited and explore received vouches (backwards)
+        vector::push_back(visited, current);
+
+        // CRITICAL: Limit number of neighbors explored to prevent exponential explosion
+        let max_neighbors_to_explore = if (current_depth < 2) { 10 } else { 5 };
+        let neighbors_explored = 0;
+        let i = 0;
+
+        while (i < neighbor_count && neighbors_explored < max_neighbors_to_explore) {
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES - 5) break;
+
+            let neighbor = *vector::borrow(&received_from, i);
+            if (!vector::contains(visited, &neighbor)) {
+                // Create a copy of visited for this path
+                let visited_copy = *visited;
+                let path_score = walk_backwards_from_target(
+                    neighbor,
+                    roots,
+                    &mut visited_copy,
+                    next_power,
+                    next_depth,
+                    processed_count
+                );
+                total_score = total_score + path_score;
+                neighbors_explored = neighbors_explored + 1;
+            };
+            i = i + 1;
+        };
+
         total_score
     }
 
