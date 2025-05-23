@@ -29,7 +29,7 @@ module ol_framework::page_rank_lazy {
 
     /// Circuit breaker to prevent stack overflow during recursive graph traversal.
     /// Limits the total number of nodes processed in a single traversal.
-    const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
+    const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
 
     /// Maximum depth for path traversal in the trust graph.
     /// This limits how far the algorithm will search from a root node.
@@ -129,28 +129,23 @@ module ol_framework::page_rank_lazy {
         let total_score = 0;
         let root_idx = 0;
         let roots_len = vector::length(roots);
+        let processed_count: u64 = 0; // Track total processed nodes globally
 
         // For each root, calculate its contribution independently
         while (root_idx < roots_len) {
+            // Check if the global limit for processed nodes has been reached
+            if (processed_count >= MAX_PROCESSED_ADDRESSES) {
+                break
+            };
             let root = *vector::borrow(roots, root_idx);
-
             let visited = vector::empty<address>();
-            // Create an initial empty visited set for each root traversal
-            // No need to add root to visited at this level since walk_from_node handles it
-
             if (root != target) {
-              // NOTE: root, you don't don't give yourself points in the walk
-
-                // Initial trust power is 100 (full trust from root)
                 total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE, 0
+                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count
                 );
             };
-
-
             root_idx = root_idx + 1;
         };
-
         total_score
     }
 
@@ -176,12 +171,25 @@ module ol_framework::page_rank_lazy {
         target: address,
         visited: &mut vector<address>,
         current_power: u64,
-        current_depth: u64
+        current_depth: u64,
+        processed_count: &mut u64
     ): u64 {
+        // Always check the global processed count limit first
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+            return 0
+        };
+        *processed_count = *processed_count + 1;
+
         // Early termination: max depth reached
         if (current_depth >= MAX_PATH_DEPTH) {
             return 0
         };
+
+        // Check if the global limit for processed nodes has been reached
+        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
+            return 0
+        };
+        *processed_count = *processed_count + 1;
 
         if(!vouch::is_init(current)) {
             return 0
@@ -239,20 +247,11 @@ module ol_framework::page_rank_lazy {
 
         // Add current to visited BEFORE checking neighbors
         vector::push_back(visited, current);
-
-        // Increment depth for next level
         let next_depth = current_depth + 1;
-
-        // Check ALL neighbors for paths to target
         let i = 0;
         while (i < neighbor_count) {
             let neighbor = *vector::borrow(&neighbors, i);
-
-            // Only explore if not already in our path (avoid cycles) and not the direct target
-            // (since we already counted the direct path above)
             if (!vector::contains(visited, &neighbor) && neighbor != target) {
-                // Skip this path if the neighbor is a root of trust (other than target)
-                // as we don't want to accumulate points from roots vouching for each other
                 if (
                     neighbor != target &&
                     root_of_trust::is_root_at_registry(@diem_framework, neighbor)
@@ -260,29 +259,21 @@ module ol_framework::page_rank_lazy {
                     i = i + 1;
                     continue
                 };
-
-                // Create a copy of visited for this path exploration
-                // This ensures each path can be explored independently
-                let path_visited = *visited;
-
-                // Continue search from this neighbor with reduced power and increased depth
+                // Pass the same mutable visited vector, and backtrack after recursion
                 let path_score = walk_from_node(
                     neighbor,
                     target,
-                    &mut path_visited,
+                    visited,
                     next_power,
-                    next_depth
+                    next_depth,
+                    processed_count
                 );
-
-                // Add to total score (accumulate from all paths)
-                // This ensures that when multiple paths lead to the target ("diamond pattern"),
-                // all valid paths contribute to the final score rather than only taking the best one
                 total_score = total_score + path_score;
             };
-
             i = i + 1;
         };
-
+        // Backtrack: remove current from visited after all neighbors processed
+        vector::pop_back(visited);
         total_score
     }
 
