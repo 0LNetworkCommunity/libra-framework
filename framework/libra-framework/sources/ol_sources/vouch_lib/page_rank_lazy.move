@@ -33,7 +33,7 @@ module ol_framework::page_rank_lazy {
 
     /// Maximum depth for path traversal in the trust graph.
     /// This limits how far the algorithm will search from a root node.
-    const MAX_PATH_DEPTH: u64 = 10;
+    const MAX_PATH_DEPTH: u64 = 4;
 
     /// Per-user trust record - each user stores their own trust data
     /// This resource tracks a user's cached trust score and staleness state.
