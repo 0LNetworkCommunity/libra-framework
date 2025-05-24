@@ -276,6 +276,7 @@ module ol_framework::ol_account {
   public entry fun transfer(sender: &signer, to: address, amount: u64)
   acquires BurnTracker {
     let payer = signer::address_of(sender);
+    reauthorization::assert_v8_authorized(payer);
 
     // community wallets cannot use ol_transfer, they have a dedicated workflow
     assert!(!community_wallet::is_init(payer),

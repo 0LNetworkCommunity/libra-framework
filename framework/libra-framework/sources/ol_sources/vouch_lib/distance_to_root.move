@@ -12,6 +12,7 @@ module ol_framework::distance_to_root {
 
     // Error codes
     const ENOT_INITIALIZED: u64 = 4;
+    const EMAX_PROCESSED_ADDRESSES: u64 = 5;
 
     // Per-user trust record - each user stores their own trust data
     struct ShortestPathRecord has key, drop {
@@ -102,9 +103,7 @@ module ol_framework::distance_to_root {
 
         while (!vector::is_empty(&queue)) {
             // Circuit breaker
-            if (processed_count >= MAX_PROCESSED_ADDRESSES) {
-                return (false, 0) // Path not found within processing limits
-            };
+            assert!(processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
             processed_count = processed_count + 1;
 

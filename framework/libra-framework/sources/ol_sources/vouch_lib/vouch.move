@@ -75,9 +75,6 @@ module ol_framework::vouch {
     /// Cooldown period (in epochs) required after a revocation before giving a new vouch
     const REVOCATION_COOLDOWN_EPOCHS: u64 = 3;
 
-    /// Maximum number of vouches allowed to be given per epoch
-    const MAX_VOUCHES_PER_EPOCH: u64 = 1;
-
     //////// ERROR CODES ////////
 
     /// Trying to vouch for yourself?
