@@ -552,7 +552,7 @@ module diem_framework::coin {
     // NOTE 0L: Locking down transfers so that only system contracts can use this
     // to enforce transfer limits on higher order contracts.
     /// Transfers `amount` of coins `CoinType` from `from` to `to`.
-    public(friend) entry fun transfer<CoinType>(
+    public(friend) fun transfer<CoinType>(
         from: &signer,
         to: address,
         amount: u64,
