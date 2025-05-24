@@ -894,6 +894,11 @@ module ol_framework::donor_voice_txs {
     let pro_rata_addresses = vector::empty<address>();
     let pro_rata_amounts = vector::empty<u64>();
 
+    // If there are no donations yet, return empty vectors
+    if (all_time_donations == 0) {
+      return (pro_rata_addresses, pro_rata_amounts)
+    };
+
     let i = 0;
     let len = vector::length(&donors);
     while (i < len) {
