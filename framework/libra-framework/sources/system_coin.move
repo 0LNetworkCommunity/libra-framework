@@ -530,7 +530,7 @@ module diem_framework::coin {
         Coin<CoinType> { value: amount }
     }
 
-    // regsister a user to receive a coin type.
+    // resister a user to receive a coin type.
     // NOTE: does not need to be a friend, and may be needed for third party applications.
     public(friend) fun register<CoinType>(account: &signer) {
         let account_addr = signer::address_of(account);
@@ -549,6 +549,7 @@ module diem_framework::coin {
         move_to(account, coin_store);
     }
 
+    #[test_only]
     // NOTE 0L: Locking down transfers so that only system contracts can use this
     // to enforce transfer limits on higher order contracts.
     /// Transfers `amount` of coins `CoinType` from `from` to `to`.
