@@ -132,6 +132,7 @@ module ol_framework::test_donor_voice {
 
       let (_unlocked_dv, dv_balance) = ol_account::balance(donor_voice_address);
       let (_, marlon_balance) = ol_account::balance(marlon_rando);
+      // TODO: add assert here
       diem_std::debug::print(&dv_balance);
       diem_std::debug::print(&marlon_balance);
 

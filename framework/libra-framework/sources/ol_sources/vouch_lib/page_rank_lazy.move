@@ -16,32 +16,35 @@ module ol_framework::page_rank_lazy {
     friend ol_framework::mock;
 
     //////// ERROR CODES ////////
-    /// trust record not initialized
+    /// Thrown if a trust record is missing for the user.
     const ENOT_INITIALIZED: u64 = 2;
 
-    /// max addresses processed
+    /// Thrown if the maximum number of nodes to process is exceeded.
     const EMAX_PROCESSED_ADDRESSES: u64 = 3;
 
     //////// CONSTANTS ////////
-    // Max score on a single vouch
+    /// Maximum score assignable for a single vouch (upper bound for direct trust).
     const MAX_VOUCH_SCORE: u64 = 100_000;
 
-    // Circuit breaker to prevent stack overflow
-    const MAX_PROCESSED_ADDRESSES: u64 = 1_000;
+    /// Maximum number of nodes processed in a single traversal (prevents stack overflow).
+    const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
 
-    // Per-user trust record - each user stores their own trust data
+    /// Maximum allowed depth for trust graph traversal.
+    const MAX_PATH_DEPTH: u64 = 5;
+
+    /// Stores a user's trust score and its staleness state.
     struct UserTrustRecord has key, drop {
-        // No need to store active_vouches - we'll get this from vouch module
-        // Cached trust score
+        /// Last computed trust score for this user.
         cached_score: u64,
-        // When the score was last computed (timestamp)
+        /// Timestamp (seconds) when the score was last computed.
         score_computed_at_timestamp: u64,
-        // Whether this node's trust data is stale and needs recalculation
+        /// True if the trust score is outdated and needs recalculation.
         is_stale: bool,
-        // Shortest path to root now handled in a separate module
+        // Shortest path to root is managed in a separate module.
     }
 
-    // Initialize a user trust record if it doesn't exist
+    /// Initializes a trust record for the account if it does not already exist.
+    /// This creates the basic structure needed to track a user's trust score.
     public fun maybe_initialize_trust_record(account: &signer) {
         let addr = signer::address_of(account);
         if (!exists<UserTrustRecord>(addr)) {
@@ -54,7 +57,18 @@ module ol_framework::page_rank_lazy {
     }
 
 
-    // Calculate or retrieve cached trust score
+    /// Returns the cached trust score for an address, or recalculates it if stale.
+    /// Uses a reverse PageRank-like algorithm to aggregate trust from roots.
+    ///
+    /// This function uses an optimized page rank algorithm that:
+    /// 1. Finds all possible paths from roots of trust to the target
+    /// 2. Accumulates scores from all valid paths, including diamond patterns
+    /// 3. Applies trust decay proportional to distance from roots
+    ///
+    /// The calculation considers the entire trust graph and properly handles:
+    /// - Multiple paths to the same target
+    /// - Branching and merging paths
+    /// - Root-of-trust special cases
     public(friend) fun get_trust_score(addr: address): u64 acquires UserTrustRecord {
 
         // If user has no trust record, they have no score
@@ -69,17 +83,22 @@ module ol_framework::page_rank_lazy {
         set_score(addr)
     }
 
-    // always calculate the score
+    /// Recalculates and updates the trust score for an address.
+    /// Traverses the trust graph from roots to the target and updates the cache.
+    /// This is a costly operation and should be used sparingly.
     fun set_score(addr: address): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
         // Default roots to system account if no registry
         let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
-
         // Compute score using selected algorithm
-        let score = traverse_graph(&roots, addr);
-
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+        let score = walk_backwards_from_target_with_stats(
+            addr, &roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached, MAX_PATH_DEPTH
+        );
         // Update the cache
         let user_record_mut = borrow_global_mut<UserTrustRecord>(addr);
         user_record_mut.cached_score = score;
@@ -89,148 +108,97 @@ module ol_framework::page_rank_lazy {
         score
     }
 
-    // Simplified graph traversal - only uses exhaustive walk
-    fun traverse_graph(
-        roots: &vector<address>,
-        target: address,
-    ): u64 {
-        let total_score = 0;
-        let root_idx = 0;
-        let roots_len = vector::length(roots);
-
-        // For each root, calculate its contribution independently
-        while (root_idx < roots_len) {
-            let root = *vector::borrow(roots, root_idx);
-
-            let visited = vector::empty<address>();
-            vector::push_back(&mut visited, root);
-
-            if (root != target) {
-              // NOTE: root, you don't don't give yourself points in the walk
-
-                // Initial trust power is 100 (full trust from root)
-                total_score = total_score + walk_from_node(
-                    root, target, &mut visited, 2 * MAX_VOUCH_SCORE
-                );
-            };
-
-
-            root_idx = root_idx + 1;
-        };
-
-        total_score
-    }
-
-    // Simplified full graph traversal from a single node - returns weighted score
-    fun walk_from_node(
+    /// Walks backwards from the target toward roots of trust, accumulating trust score.
+    /// - Starts from the target user.
+    /// - Uses received vouches for traversal.
+    /// - Accumulates score when reaching a root.
+    /// - Avoids cycles and dead ends.
+    /// - Applies trust decay and limits neighbor exploration to control complexity.
+    fun walk_backwards_from_target_with_stats(
         current: address,
-        target: address,
+        roots: &vector<address>,
         visited: &mut vector<address>,
-        current_power: u64
+        current_power: u64,
+        current_depth: u64,
+        processed_count: &mut u64,
+        max_depth_reached: &mut u64,
+        max_depth: u64
     ): u64 {
-        if(!vouch::is_init(current)) {
-            return 0
+        // Track maximum depth reached
+        if (current_depth > *max_depth_reached) {
+            *max_depth_reached = current_depth;
         };
 
-        // Great, we found the target!
-        // then we get to return the power
-        // otherwise it will be zero
-        // when we run out of power or depth
-        if (current == target) {
+        // Early terminations that don't consume processing budget
+        if (current_depth >= max_depth) return 0;
+        if (vector::contains(visited, &current)) return 0;
+        if (!vouch::is_init(current)) return 0;
+        if (current_power < 2) return 0;
+
+        // Check if we've reached a root of trust - this is our success condition!
+        if (vector::contains(roots, &current) && current_depth > 0) {
             return current_power
         };
 
-        // Stop condition - only stop if power is too low
-        if (current_power < 2) {
-            return 0
-        };
+        // Budget check and consumption
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
+        *processed_count = *processed_count + 1;
 
-        let (neighbors, _) = vouch::get_given_vouches(current);
-        let neighbor_count = vector::length(&neighbors);
+        // Get who vouched FOR this current user (backwards direction)
+        let (received_from, _) = vouch::get_received_vouches(current);
+        let neighbor_count = vector::length(&received_from);
 
-        // No neighbors means no path
-        if (neighbor_count == 0) {
-            return 0
-        };
+        if (neighbor_count == 0) return 0;
 
-        // Track total score from all paths
         let total_score = 0;
-
-
-        // Calculate power passed to neighbors (50% decay)
         let next_power = current_power / 2;
+        let next_depth = current_depth + 1;
 
-        // if the both current and target are a root of trust
-        // catch the case of a root of trust vouching for another root of trust
-        // and exit early
-        if (
-          root_of_trust::is_root_at_registry(@diem_framework, current) &&
-          root_of_trust::is_root_at_registry(@diem_framework, target) &&
-          current != target &&
-          vector::contains(&neighbors, &target) // Check if current directly vouches for target
-        ) {
-            vector::push_back(visited, current);
-            return next_power
-        };
+        // Add current to visited and explore received vouches (backwards)
+        vector::push_back(visited, current);
 
-        // Check ALL neighbors for paths to target
         let i = 0;
+
         while (i < neighbor_count) {
+            assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
-            let neighbor = *vector::borrow(&neighbors, i);
-
-            // Only visit if not already in path (avoid cycles)
+            let neighbor = *vector::borrow(&received_from, i);
             if (!vector::contains(visited, &neighbor)) {
-                    if (neighbor != target) {
-                    // Mark neighbor as visited
-                    // (Don't mark the target as visited
-                    // because we want to be able to
-                    // find it again)
-
-                    vector::push_back(visited, neighbor);
-                    // we don't re-enter the root of
-                    // trust list, because we don't
-                    // want to accumulate points from
-                    // roots vouching for each other.
-                    if(
-                      root_of_trust::is_root_at_registry(@diem_framework, neighbor)
-                      ) {
-                        continue
-                    };
-                };
-
-
-                // Continue search from this neighbor with reduced power
-                let path_score = walk_from_node(
+                let visited_copy = *visited;
+                let path_score = walk_backwards_from_target_with_stats(
                     neighbor,
-                    target,
-                    visited,
-                    next_power
+                    roots,
+                    &mut visited_copy,
+                    next_power,
+                    next_depth,
+                    processed_count,
+                    max_depth_reached,
+                    max_depth
                 );
-
-                // Add to total score
                 total_score = total_score + path_score;
             };
-
             i = i + 1;
         };
 
         total_score
     }
 
-    // Mark a user's trust score as stale
+    /// Marks a user's trust score as stale and propagates staleness to downstream accounts.
+    /// Uses cycle detection and a processing limit to prevent infinite recursion.
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
         let visited = vector::empty<address>();
         let processed_count: u64 = 0; // Initialize as a mutable local variable
         walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
     }
 
-    // Internal helper function with cycle detection for marking nodes as stale
-    // Uses vouch module to get outgoing vouches
+    /// Helper for `mark_as_stale`. Recursively marks downstream nodes as stale.
+    /// - Avoids revisiting nodes (cycle detection).
+    /// - Stops if the processing limit is reached.
+    /// - Only processes nodes initialized in the vouch system.
     fun walk_stale(
         user: address,
         visited: &mut vector<address>,
-        processed_count: &mut u64 // Changed to mutable reference
+        processed_count: &mut u64
     ) acquires UserTrustRecord {
         // Skip if we've already visited this node in the current traversal (cycle detection)
         // This also ensures we only count/process each unique node once.
@@ -240,9 +208,7 @@ module ol_framework::page_rank_lazy {
 
         // Check if the global limit for processed nodes has been reached *before* processing this one.
         // If *processed_count is already at the limit, we can't process another new node.
-        if (*processed_count >= MAX_PROCESSED_ADDRESSES) {
-            return
-        };
+        assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
         // This node is new and will be processed. Increment the global count.
         *processed_count = *processed_count + 1;
@@ -273,6 +239,9 @@ module ol_framework::page_rank_lazy {
         let i = 0;
         let len = vector::length(&outgoing_vouches);
         while (i < len) {
+            // Check again if we've hit the processing limit
+            if (*processed_count >= MAX_PROCESSED_ADDRESSES) break;
+
             let each_vouchee = vector::borrow(&outgoing_vouches, i);
             // Pass the same mutable reference to processed_count.
             // The checks at the beginning of the recursive call (visited and limit)
@@ -284,9 +253,8 @@ module ol_framework::page_rank_lazy {
 
     //////// CACHE ////////
 
-    /// Refresh the cache
-    /// state updates must be called by a user.
-    /// Vouch tree updates could be a DDOS vector
+    /// Refreshes the cached trust score for a user by recalculating it.
+    /// Only callable by the user.
     public entry fun refresh_cache(user: address) acquires UserTrustRecord{
       // assert initialized
       assert!(exists<UserTrustRecord>(user), error::invalid_state(ENOT_INITIALIZED));
@@ -296,7 +264,7 @@ module ol_framework::page_rank_lazy {
 
     //////// GETTERS ////////
     #[view]
-    /// Get the cached trust score for a user
+    /// Returns the cached trust score for a user.
     public fun get_cached_score(addr: address): u64 acquires UserTrustRecord {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
@@ -304,7 +272,42 @@ module ol_framework::page_rank_lazy {
     }
 
     #[view]
-    // check if it's stale
+    /// Calculates a fresh trust score for a user without updating the cache.
+    /// Returns (score, max_depth_reached, accounts_processed).
+    /// Intended for diagnostics and testing only.
+    public fun calculate_score(addr: address): (u64, u64, u64) {
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
+        // Cache is stale or expired - compute fresh score
+        // Default roots to system account if no registry
+        let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
+        // Compute score using selected algorithm
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+        let score = walk_backwards_from_target_with_stats(
+            addr, &roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached, MAX_PATH_DEPTH
+        );
+        (score, max_depth_reached, processed_count)
+    }
+
+    #[view]
+    /// Calculates a fresh trust score for a user without updating the cache, using a custom max depth.
+    /// Returns (score, max_depth_reached, accounts_processed).
+    /// Intended for diagnostics and testing only.
+    public fun calculate_score_depth(addr: address, max_depth: u64): (u64, u64, u64) {
+        assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
+        let roots = root_of_trust::get_current_roots_at_registry(@diem_framework);
+        let processed_count: u64 = 0;
+        let max_depth_reached: u64 = 0;
+        let visited = vector::empty<address>();
+        let score = walk_backwards_from_target_with_stats(
+            addr, &roots, &mut visited, 2 * MAX_VOUCH_SCORE, 0, &mut processed_count, &mut max_depth_reached, max_depth
+        );
+        (score, max_depth_reached, processed_count)
+    }
+
+    #[view]
+    /// Returns true if the user's trust score is marked as stale.
     public fun is_stale(addr: address): bool acquires UserTrustRecord {
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         let record = borrow_global<UserTrustRecord>(addr);
@@ -312,14 +315,16 @@ module ol_framework::page_rank_lazy {
     }
 
     #[view]
-    // get the const for highest vouch score
+    /// Returns the maximum possible score for a single vouch.
     public fun get_max_single_score(): u64 {
         MAX_VOUCH_SCORE
     }
 
     //////// TEST HELPERS ///////
-
     #[test_only]
+    // Sets up a mock trust network for testing.
+    // - Initializes trust records and vouch structures for all test accounts.
+    // - Sets up vouching relationships and unrelated ancestry for each account.
     public fun setup_mock_trust_network(
         admin: &signer,
         root: &signer,
