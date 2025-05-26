@@ -12,9 +12,22 @@ use libra_types::{
     type_extensions::client_ext::{entry_function_id, ClientExt},
 };
 use serde_json::{json, Value};
+use serde::{Deserialize, Serialize};
+
+/// Structured data for account vouch report
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AccountVouchReportData {
+    pub account: String,
+    pub cached_score: Option<u64>,
+    pub fresh_score: Option<u64>,
+    pub max_depth_reached: Option<u64>,
+    pub accounts_processed: Option<u64>,
+    pub max_vouches_by_score: Option<u64>,
+    pub remaining_vouches_available: Option<u64>,
+}
 
 /// helper to get libra balance at a SlowWalletBalance type which shows
-/// total balance and the unlocked balance.
+/// total balance and the unlocked balance. s
 pub async fn get_account_balance_libra(
     client: &Client,
     account: AccountAddress,
@@ -151,14 +164,13 @@ pub async fn page_rank_calculate_score(
     let res = client.view(&request, None).await?.into_inner();
 
     // Parse the tuple response (score, max_depth_reached, accounts_processed)
-    let values: Vec<String> = serde_json::from_value(res)?;
-    if values.len() != 3 {
-        return Err(anyhow::anyhow!("Expected 3 values from calculate_score, got {}", values.len()));
+    if res.len() != 3 {
+        return Err(anyhow::anyhow!("Expected 3 values from calculate_score, got {}", res.len()));
     }
 
-    let score: u64 = values[0].parse()?;
-    let max_depth_reached: u64 = values[1].parse()?;
-    let accounts_processed: u64 = values[2].parse()?;
+    let score: u64 = serde_json::from_value(res[0].clone())?;
+    let max_depth_reached: u64 = serde_json::from_value(res[1].clone())?;
+    let accounts_processed: u64 = serde_json::from_value(res[2].clone())?;
 
     Ok((score, max_depth_reached, accounts_processed))
 }
@@ -179,12 +191,11 @@ pub async fn page_rank_get_cached_score(
     let res = client.view(&request, None).await?.into_inner();
 
     // Parse the single u64 response
-    let values: Vec<String> = serde_json::from_value(res)?;
-    if values.is_empty() {
+    if res.is_empty() {
         return Err(anyhow::anyhow!("No values returned from get_cached_score"));
     }
 
-    let score: u64 = values[0].parse()?;
+    let score: u64 = serde_json::from_value(res[0].clone())?;
     Ok(score)
 }
 
@@ -204,12 +215,11 @@ pub async fn vouch_limits_calculate_score_limit(
     let res = client.view(&request, None).await?.into_inner();
 
     // Parse the single u64 response
-    let values: Vec<String> = serde_json::from_value(res)?;
-    if values.is_empty() {
+    if res.is_empty() {
         return Err(anyhow::anyhow!("No values returned from calculate_score_limit"));
     }
 
-    let limit: u64 = values[0].parse()?;
+    let limit: u64 = serde_json::from_value(res[0].clone())?;
     Ok(limit)
 }
 
@@ -230,11 +240,99 @@ pub async fn vouch_limits_get_vouch_limit(
     let res = client.view(&request, None).await?.into_inner();
 
     // Parse the single u64 response
-    let values: Vec<String> = serde_json::from_value(res)?;
-    if values.is_empty() {
+    if res.is_empty() {
         return Err(anyhow::anyhow!("No values returned from get_vouch_limit"));
     }
 
-    let limit: u64 = values[0].parse()?;
+    let limit: u64 = serde_json::from_value(res[0].clone())?;
     Ok(limit)
+}
+
+/// Creates a comprehensive vouch report for an account, combining page rank scores and vouch limits.
+/// This function returns structured data that can be used for JSON output or further processing.
+pub async fn account_vouch_report(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<AccountVouchReportData> {
+    // Get page rank scores
+    let cached_score = page_rank_get_cached_score(client, account).await.ok();
+
+    let (fresh_score, max_depth_reached, accounts_processed) = match page_rank_calculate_score(client, account).await {
+        Ok((score, max_depth_reached, accounts_processed)) => (Some(score), Some(max_depth_reached), Some(accounts_processed)),
+        Err(_) => (None, None, None),
+    };
+
+    // Get vouch limits
+    let max_vouches_by_score = vouch_limits_calculate_score_limit(client, account).await.ok();
+    let remaining_vouches_available = vouch_limits_get_vouch_limit(client, account).await.ok();
+
+    Ok(AccountVouchReportData {
+        account: account.to_string(),
+        cached_score,
+        fresh_score,
+        max_depth_reached,
+        accounts_processed,
+        max_vouches_by_score,
+        remaining_vouches_available,
+    })
+}
+
+/// Prints a comprehensive vouch report for an account to the console.
+/// This function provides a readable summary of an account's trust metrics and vouching capabilities.
+pub async fn account_vouch_report_console(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<()> {
+    println!("=== Account Vouch Report for {} ===\n", account);
+
+    // Get page rank scores
+    println!("📊 Page Rank Trust Scores:");
+
+    // Try to get cached score first
+    match page_rank_get_cached_score(client, account).await {
+        Ok(cached_score) => {
+            println!("  • Cached Trust Score: {}", cached_score);
+        }
+        Err(_) => {
+            println!("  • Cached Trust Score: Not available");
+        }
+    }
+
+    // Calculate fresh score with detailed metrics
+    match page_rank_calculate_score(client, account).await {
+        Ok((score, max_depth, accounts_processed)) => {
+            println!("  • Fresh Trust Score: {}", score);
+            println!("  • Max Depth Reached: {}", max_depth);
+            println!("  • Accounts Processed: {}", accounts_processed);
+        }
+        Err(e) => {
+            println!("  • Fresh Trust Score: Error calculating ({})", e);
+        }
+    }
+
+    println!();
+
+    // Get vouch limits
+    println!("🎯 Vouching Limits:");
+
+    match vouch_limits_calculate_score_limit(client, account).await {
+        Ok(score_limit) => {
+            println!("  • Max Vouches (based on trust score): {}", score_limit);
+        }
+        Err(e) => {
+            println!("  • Max Vouches (based on trust score): Error ({})", e);
+        }
+    }
+
+    match vouch_limits_get_vouch_limit(client, account).await {
+        Ok(remaining_limit) => {
+            println!("  • Remaining Vouches Available: {}", remaining_limit);
+        }
+        Err(e) => {
+            println!("  • Remaining Vouches Available: Error ({})", e);
+        }
+    }
+
+    println!("\n=== End of Report ===");
+    Ok(())
 }
