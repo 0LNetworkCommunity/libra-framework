@@ -134,3 +134,107 @@ pub async fn multi_auth_ballots(
 
     Ok(r.data)
 }
+
+/// Calculates a fresh page rank trust score for an account without updating the cache.
+/// Returns (score, max_depth_reached, accounts_processed) as a tuple.
+pub async fn page_rank_calculate_score(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<(u64, u64, u64)> {
+    let calculate_score_id = entry_function_id("page_rank_lazy", "calculate_score")?;
+    let request = ViewRequest {
+        function: calculate_score_id,
+        type_arguments: vec![],
+        arguments: vec![account.to_string().into()],
+    };
+
+    let res = client.view(&request, None).await?.into_inner();
+
+    // Parse the tuple response (score, max_depth_reached, accounts_processed)
+    let values: Vec<String> = serde_json::from_value(res)?;
+    if values.len() != 3 {
+        return Err(anyhow::anyhow!("Expected 3 values from calculate_score, got {}", values.len()));
+    }
+
+    let score: u64 = values[0].parse()?;
+    let max_depth_reached: u64 = values[1].parse()?;
+    let accounts_processed: u64 = values[2].parse()?;
+
+    Ok((score, max_depth_reached, accounts_processed))
+}
+
+/// Retrieves the cached page rank trust score for an account.
+/// This returns the previously computed score without recalculation.
+pub async fn page_rank_get_cached_score(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<u64> {
+    let get_cached_score_id = entry_function_id("page_rank_lazy", "get_cached_score")?;
+    let request = ViewRequest {
+        function: get_cached_score_id,
+        type_arguments: vec![],
+        arguments: vec![account.to_string().into()],
+    };
+
+    let res = client.view(&request, None).await?.into_inner();
+
+    // Parse the single u64 response
+    let values: Vec<String> = serde_json::from_value(res)?;
+    if values.is_empty() {
+        return Err(anyhow::anyhow!("No values returned from get_cached_score"));
+    }
+
+    let score: u64 = values[0].parse()?;
+    Ok(score)
+}
+
+/// Calculates the maximum number of vouches a user should be able to give based on their trust score.
+/// This is determined by the user's page rank trust score relative to the maximum score in the system.
+pub async fn vouch_limits_calculate_score_limit(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<u64> {
+    let calculate_score_limit_id = entry_function_id("vouch_limits", "calculate_score_limit")?;
+    let request = ViewRequest {
+        function: calculate_score_limit_id,
+        type_arguments: vec![],
+        arguments: vec![account.to_string().into()],
+    };
+
+    let res = client.view(&request, None).await?.into_inner();
+
+    // Parse the single u64 response
+    let values: Vec<String> = serde_json::from_value(res)?;
+    if values.is_empty() {
+        return Err(anyhow::anyhow!("No values returned from calculate_score_limit"));
+    }
+
+    let limit: u64 = values[0].parse()?;
+    Ok(limit)
+}
+
+/// Returns the number of vouches a user can still give based on system limits.
+/// This takes into account all constraints: base maximum limit, score-based limit,
+/// received vouches + 1 limit, and per-epoch limit.
+pub async fn vouch_limits_get_vouch_limit(
+    client: &Client,
+    account: AccountAddress,
+) -> anyhow::Result<u64> {
+    let get_vouch_limit_id = entry_function_id("vouch_limits", "get_vouch_limit")?;
+    let request = ViewRequest {
+        function: get_vouch_limit_id,
+        type_arguments: vec![],
+        arguments: vec![account.to_string().into()],
+    };
+
+    let res = client.view(&request, None).await?.into_inner();
+
+    // Parse the single u64 response
+    let values: Vec<String> = serde_json::from_value(res)?;
+    if values.is_empty() {
+        return Err(anyhow::anyhow!("No values returned from get_vouch_limit"));
+    }
+
+    let limit: u64 = values[0].parse()?;
+    Ok(limit)
+}

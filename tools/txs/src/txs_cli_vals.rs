@@ -7,7 +7,7 @@ use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
     ProofOfFeePofUpdateBidNetReward, StakeUpdateNetworkAndFullnodeAddresses,
-    ValidatorUniverseRegisterValidator, VouchTxsRevoke, VouchTxsVouchFor,
+    ValidatorUniverseRegisterValidator,
 };
 use libra_config::validator_registration;
 use libra_types::global_config_dir;
@@ -42,7 +42,6 @@ pub enum ValidatorTxs {
     },
 
     // commit note: deduplicated in favor of txs_cli_user
-
     /// Register as a validator
     Register {
         #[clap(short('f'), long)]
@@ -102,7 +101,6 @@ impl ValidatorTxs {
             },
 
             // commit note: deduplicated in favor of txs_cli_user
-
             ValidatorTxs::Register { operator_file } => {
                 let reg = validator_registration::registration_from_operator_yaml(
                     operator_file.to_owned(),
