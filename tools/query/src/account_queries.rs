@@ -24,6 +24,7 @@ pub struct AccountVouchReportData {
     pub accounts_processed: Option<u64>,
     pub max_vouches_by_score: Option<u64>,
     pub remaining_vouches_available: Option<u64>,
+    pub errors: Vec<String>,
 }
 
 /// helper to get libra balance at a SlowWalletBalance type which shows
@@ -171,9 +172,24 @@ pub async fn page_rank_calculate_score(
         ));
     }
 
-    let score: u64 = serde_json::from_value(res[0].clone())?;
-    let max_depth_reached: u64 = serde_json::from_value(res[1].clone())?;
-    let accounts_processed: u64 = serde_json::from_value(res[2].clone())?;
+    // Handle string or numeric responses from the Move VM
+    let score: u64 = match &res[0] {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format for score"))?,
+        _ => return Err(anyhow::anyhow!("Unexpected response type for score")),
+    };
+
+    let max_depth_reached: u64 = match &res[1] {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format for max_depth"))?,
+        _ => return Err(anyhow::anyhow!("Unexpected response type for max_depth")),
+    };
+
+    let accounts_processed: u64 = match &res[2] {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format for accounts_processed"))?,
+        _ => return Err(anyhow::anyhow!("Unexpected response type for accounts_processed")),
+    };
 
     Ok((score, max_depth_reached, accounts_processed))
 }
@@ -198,7 +214,12 @@ pub async fn page_rank_get_cached_score(
         return Err(anyhow::anyhow!("No values returned from get_cached_score"));
     }
 
-    let score: u64 = serde_json::from_value(res[0].clone())?;
+    // Handle both string and numeric responses from the Move VM
+    let score: u64 = match &res[0] {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
+        _ => return Err(anyhow::anyhow!("Unexpected response type for cached score")),
+    };
     Ok(score)
 }
 
@@ -224,7 +245,12 @@ pub async fn vouch_limits_calculate_score_limit(
         ));
     }
 
-    let limit: u64 = serde_json::from_value(res[0].clone())?;
+    // Handle both string and numeric responses from the Move VM
+    let limit: u64 = match &res[0] {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
+        _ => return Err(anyhow::anyhow!("Unexpected response type for score limit")),
+    };
     Ok(limit)
 }
 
@@ -249,7 +275,12 @@ pub async fn vouch_limits_get_vouch_limit(
         return Err(anyhow::anyhow!("No values returned from get_vouch_limit"));
     }
 
-    let limit: u64 = serde_json::from_value(res[0].clone())?;
+    // Handle both string and numeric responses from the Move VM
+    let limit: u64 = match &res[0] {
+        serde_json::Value::String(s) => s.parse()?,
+        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
+        _ => return Err(anyhow::anyhow!("Unexpected response type for vouch limit")),
+    };
     Ok(limit)
 }
 
@@ -259,8 +290,16 @@ pub async fn account_vouch_report(
     client: &Client,
     account: AccountAddress,
 ) -> anyhow::Result<AccountVouchReportData> {
+    let mut errors = Vec::new();
+
     // Get page rank scores
-    let cached_score = page_rank_get_cached_score(client, account).await.ok();
+    let cached_score = match page_rank_get_cached_score(client, account).await {
+        Ok(score) => Some(score),
+        Err(e) => {
+            errors.push(format!("cached_score: {}", e));
+            None
+        }
+    };
 
     let (fresh_score, max_depth_reached, accounts_processed) =
         match page_rank_calculate_score(client, account).await {
@@ -269,14 +308,28 @@ pub async fn account_vouch_report(
                 Some(max_depth_reached),
                 Some(accounts_processed),
             ),
-            Err(_) => (None, None, None),
+            Err(e) => {
+                errors.push(format!("fresh_score: {}", e));
+                (None, None, None)
+            }
         };
 
     // Get vouch limits
-    let max_vouches_by_score = vouch_limits_calculate_score_limit(client, account)
-        .await
-        .ok();
-    let remaining_vouches_available = vouch_limits_get_vouch_limit(client, account).await.ok();
+    let max_vouches_by_score = match vouch_limits_calculate_score_limit(client, account).await {
+        Ok(limit) => Some(limit),
+        Err(e) => {
+            errors.push(format!("max_vouches_by_score: {}", e));
+            None
+        }
+    };
+
+    let remaining_vouches_available = match vouch_limits_get_vouch_limit(client, account).await {
+        Ok(limit) => Some(limit),
+        Err(e) => {
+            errors.push(format!("remaining_vouches_available: {}", e));
+            None
+        }
+    };
 
     Ok(AccountVouchReportData {
         account: account.to_string(),
@@ -286,6 +339,7 @@ pub async fn account_vouch_report(
         accounts_processed,
         max_vouches_by_score,
         remaining_vouches_available,
+        errors,
     })
 }
 
@@ -295,53 +349,47 @@ pub async fn account_vouch_report_console(
     client: &Client,
     account: AccountAddress,
 ) -> anyhow::Result<()> {
+    let report = account_vouch_report(client, account).await?;
+
     println!("=== Account Vouch Report for {} ===\n", account);
 
-    // Get page rank scores
+    // Page rank scores
     println!("Page Rank Trust Scores:");
 
-    // Try to get cached score first
-    match page_rank_get_cached_score(client, account).await {
-        Ok(cached_score) => {
-            println!("  • Cached Trust Score: {}", cached_score);
-        }
-        Err(_) => {
-            println!("  • Cached Trust Score: Not available");
-        }
+    match report.cached_score {
+        Some(score) => println!("  • Cached Trust Score: {}", score),
+        None => println!("  • Cached Trust Score: Not available"),
     }
 
-    // Calculate fresh score with detailed metrics
-    match page_rank_calculate_score(client, account).await {
-        Ok((score, max_depth, accounts_processed)) => {
+    match (report.fresh_score, report.max_depth_reached, report.accounts_processed) {
+        (Some(score), Some(max_depth), Some(accounts_processed)) => {
             println!("  • Fresh Trust Score: {}", score);
             println!("  • Max Depth Reached: {}", max_depth);
             println!("  • Accounts Processed: {}", accounts_processed);
         }
-        Err(e) => {
-            println!("  • Fresh Trust Score: Error calculating ({})", e);
-        }
+        _ => println!("  • Fresh Trust Score: Not available"),
     }
 
     println!();
 
-    // Get vouch limits
+    // Vouch limits
     println!("Vouching Limits:");
 
-    match vouch_limits_calculate_score_limit(client, account).await {
-        Ok(score_limit) => {
-            println!("  • Max Vouches (based on trust score): {}", score_limit);
-        }
-        Err(e) => {
-            println!("  • Max Vouches (based on trust score): Error ({})", e);
-        }
+    match report.max_vouches_by_score {
+        Some(limit) => println!("  • Max Vouches (based on trust score): {}", limit),
+        None => println!("  • Max Vouches (based on trust score): Not available"),
     }
 
-    match vouch_limits_get_vouch_limit(client, account).await {
-        Ok(remaining_limit) => {
-            println!("  • Remaining Vouches Available: {}", remaining_limit);
-        }
-        Err(e) => {
-            println!("  • Remaining Vouches Available: Error ({})", e);
+    match report.remaining_vouches_available {
+        Some(limit) => println!("  • Remaining Vouches Available: {}", limit),
+        None => println!("  • Remaining Vouches Available: Not available"),
+    }
+
+    // Show errors if any
+    if !report.errors.is_empty() {
+        println!("\nErrors encountered:");
+        for error in &report.errors {
+            println!("  • {}", error);
         }
     }
 
