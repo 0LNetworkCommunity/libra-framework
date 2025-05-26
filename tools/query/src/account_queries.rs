@@ -11,8 +11,8 @@ use libra_types::{
     move_resource::{gas_coin::SlowWalletBalance, txschedule::TxSchedule},
     type_extensions::client_ext::{entry_function_id, ClientExt},
 };
-use serde_json::{json, Value};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
 /// Structured data for account vouch report
 #[derive(Debug, Serialize, Deserialize)]
@@ -165,7 +165,10 @@ pub async fn page_rank_calculate_score(
 
     // Parse the tuple response (score, max_depth_reached, accounts_processed)
     if res.len() != 3 {
-        return Err(anyhow::anyhow!("Expected 3 values from calculate_score, got {}", res.len()));
+        return Err(anyhow::anyhow!(
+            "Expected 3 values from calculate_score, got {}",
+            res.len()
+        ));
     }
 
     let score: u64 = serde_json::from_value(res[0].clone())?;
@@ -216,7 +219,9 @@ pub async fn vouch_limits_calculate_score_limit(
 
     // Parse the single u64 response
     if res.is_empty() {
-        return Err(anyhow::anyhow!("No values returned from calculate_score_limit"));
+        return Err(anyhow::anyhow!(
+            "No values returned from calculate_score_limit"
+        ));
     }
 
     let limit: u64 = serde_json::from_value(res[0].clone())?;
@@ -257,13 +262,20 @@ pub async fn account_vouch_report(
     // Get page rank scores
     let cached_score = page_rank_get_cached_score(client, account).await.ok();
 
-    let (fresh_score, max_depth_reached, accounts_processed) = match page_rank_calculate_score(client, account).await {
-        Ok((score, max_depth_reached, accounts_processed)) => (Some(score), Some(max_depth_reached), Some(accounts_processed)),
-        Err(_) => (None, None, None),
-    };
+    let (fresh_score, max_depth_reached, accounts_processed) =
+        match page_rank_calculate_score(client, account).await {
+            Ok((score, max_depth_reached, accounts_processed)) => (
+                Some(score),
+                Some(max_depth_reached),
+                Some(accounts_processed),
+            ),
+            Err(_) => (None, None, None),
+        };
 
     // Get vouch limits
-    let max_vouches_by_score = vouch_limits_calculate_score_limit(client, account).await.ok();
+    let max_vouches_by_score = vouch_limits_calculate_score_limit(client, account)
+        .await
+        .ok();
     let remaining_vouches_available = vouch_limits_get_vouch_limit(client, account).await.ok();
 
     Ok(AccountVouchReportData {
