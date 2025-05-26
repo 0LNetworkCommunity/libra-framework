@@ -175,20 +175,30 @@ pub async fn page_rank_calculate_score(
     // Handle string or numeric responses from the Move VM
     let score: u64 = match &res[0] {
         serde_json::Value::String(s) => s.parse()?,
-        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format for score"))?,
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Invalid number format for score"))?,
         _ => return Err(anyhow::anyhow!("Unexpected response type for score")),
     };
 
     let max_depth_reached: u64 = match &res[1] {
         serde_json::Value::String(s) => s.parse()?,
-        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format for max_depth"))?,
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Invalid number format for max_depth"))?,
         _ => return Err(anyhow::anyhow!("Unexpected response type for max_depth")),
     };
 
     let accounts_processed: u64 = match &res[2] {
         serde_json::Value::String(s) => s.parse()?,
-        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format for accounts_processed"))?,
-        _ => return Err(anyhow::anyhow!("Unexpected response type for accounts_processed")),
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Invalid number format for accounts_processed"))?,
+        _ => {
+            return Err(anyhow::anyhow!(
+                "Unexpected response type for accounts_processed"
+            ))
+        }
     };
 
     Ok((score, max_depth_reached, accounts_processed))
@@ -217,7 +227,9 @@ pub async fn page_rank_get_cached_score(
     // Handle both string and numeric responses from the Move VM
     let score: u64 = match &res[0] {
         serde_json::Value::String(s) => s.parse()?,
-        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
         _ => return Err(anyhow::anyhow!("Unexpected response type for cached score")),
     };
     Ok(score)
@@ -248,7 +260,9 @@ pub async fn vouch_limits_calculate_score_limit(
     // Handle both string and numeric responses from the Move VM
     let limit: u64 = match &res[0] {
         serde_json::Value::String(s) => s.parse()?,
-        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
         _ => return Err(anyhow::anyhow!("Unexpected response type for score limit")),
     };
     Ok(limit)
@@ -278,7 +292,9 @@ pub async fn vouch_limits_get_vouch_limit(
     // Handle both string and numeric responses from the Move VM
     let limit: u64 = match &res[0] {
         serde_json::Value::String(s) => s.parse()?,
-        serde_json::Value::Number(n) => n.as_u64().ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("Invalid number format"))?,
         _ => return Err(anyhow::anyhow!("Unexpected response type for vouch limit")),
     };
     Ok(limit)
@@ -361,7 +377,11 @@ pub async fn account_vouch_report_console(
         None => println!("  • Cached Trust Score: Not available"),
     }
 
-    match (report.fresh_score, report.max_depth_reached, report.accounts_processed) {
+    match (
+        report.fresh_score,
+        report.max_depth_reached,
+        report.accounts_processed,
+    ) {
         (Some(score), Some(max_depth), Some(accounts_processed)) => {
             println!("  • Fresh Trust Score: {}", score);
             println!("  • Max Depth Reached: {}", max_depth);
