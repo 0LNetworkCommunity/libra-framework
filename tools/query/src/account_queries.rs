@@ -286,7 +286,7 @@ pub async fn account_vouch_report_console(
     println!("=== Account Vouch Report for {} ===\n", account);
 
     // Get page rank scores
-    println!("📊 Page Rank Trust Scores:");
+    println!("Page Rank Trust Scores:");
 
     // Try to get cached score first
     match page_rank_get_cached_score(client, account).await {
@@ -313,7 +313,7 @@ pub async fn account_vouch_report_console(
     println!();
 
     // Get vouch limits
-    println!("🎯 Vouching Limits:");
+    println!("Vouching Limits:");
 
     match vouch_limits_calculate_score_limit(client, account).await {
         Ok(score_limit) => {
