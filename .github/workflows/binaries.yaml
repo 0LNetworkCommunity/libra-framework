@@ -1,0 +1,136 @@
+name: build binaries
+
+# Note: this workflow should really depend on a workflow that runs on-platform tests
+# because as is what we're doing here is building a binary blind that we have no idea
+# whether it works or not beyond being able to just execute the binary.
+# This is more important here than in other cases because it's highly likley
+# there are _no_ tests being run on most of the platforms we're building here.
+
+on:
+  push:
+    branches:
+      - "ci-test-binaries" # Push changes to this branch to initiate a draft release to test this workflow
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]*" # Normal trigger is a tag created of the form x.y.z (note not vx.y.z)
+
+env:
+  test_branch_name: "ci-test-binaries" # Branch which should be named above, used for release process testing
+
+jobs:
+  create_release:
+    name: Create the GitHub Release
+    permissions:
+      contents: write # See: https://github.com/orgs/community/discussions/68252
+    runs-on: ubuntu-latest
+    outputs:
+      release-tag: ${{ steps.release-info.outputs.release-tag }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: print build info
+        run: |
+          echo "github.ref: ${{ github.ref }}"
+          echo "test branch: ${{ env.test_branch_name }}"
+          echo "test run: ${{ endsWith( github.ref, env.test_branch_name ) }}"
+        shell: bash
+
+      - name: generate release info
+        id: release-info
+        # For release testing we don't have a version to use from a tag
+        # so we generate a stand in that's a time stamp
+        run: |
+          if [[ ${{ endsWith( github.ref, env.test_branch_name ) }} == 'true' ]]; then
+            tag=$(date +'%Y%m%d%H%M')
+          else
+            # This is a bit of a hack, but we need to get the tag name from the ref
+            tag=$(echo "${{ github.ref }}" | cut -d'/' -f3)
+          fi
+          echo "release-tag: ${tag}"
+          echo "release-tag=${tag}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: create release
+        id: create-release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: ${{ endsWith( github.ref, env.test_branch_name ) }}
+          tag_name: ${{ steps.release-info.outputs.release-tag }}
+          generate_release_notes: false # This doesn't seem to work -- it still generates release notes
+
+  build:
+    name: Build and upload binaries
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        # windows-11-arm currently fails build due to https://github.com/0LNetworkCommunity/libra-framework/issues/405
+        # macos-latest is ARM, ubuntu-latest is x86, windows-latest is x86
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13, windows-latest]
+    runs-on: ${{ matrix.os }}
+    needs: create_release
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: get executable binary_suffix
+        id: platform-info
+        run: |
+          if [[ ${{ runner.os }} == "Windows" ]]; then
+            binary_suffix=".exe"
+          else
+            binary_suffix=""
+          fi
+          echo "binary_suffix=${binary_suffix}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: install rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1 # We need 1.12.0 or later for Windows ARM64 support
+        with:
+          # Provisionally pinning version pre 1.81 sorting changes
+          toolchain: 1.80.1
+          override: true
+
+      - name: install dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+          version: 1.0
+        if: runner.os == 'Linux' # This action only works on Ubuntu
+
+      - name: set RUSTFLAGS # Note this is necessary because the setting in .cargo/config.toml doesn't propagate to dependency builds
+        run: echo "RUSTFLAGS=--cfg tokio_unstable" >> $GITHUB_ENV
+        shell: bash
+
+      - name: build libra binary
+        run: |
+          cargo b --release -p libra
+
+      - name: check binary runs on this platform
+        run: target/release/libra version
+        shell: bash
+
+      - name: rename to platform specific name
+        id: artifact-info
+        run: |
+          runner_os=${{ runner.os }}
+          runner_os_lowercase=${runner_os,,}
+          runner_arch=${{ runner.arch }}
+          runner_arch_lowercase=${runner_arch,,}
+          artifact_name=target/release/libra-${runner_os_lowercase}-${runner_arch_lowercase}${{ steps.platform-info.outputs.binary_suffix }}
+          echo "artifact_name=${artifact_name}" >> $GITHUB_OUTPUT
+          build_output=target/release/libra${binary_suffix}
+          echo "Renaming: ${build_output} to: ${artifact_name}"
+          mv ${build_output} ${artifact_name}
+        shell: bash
+
+      - name: print binary artifact name
+        run: |
+          echo "artifact_name: ${{ steps.artifact-info.outputs.artifact_name }}"
+        shell: bash
+
+      - name: upload binary to release # upload the binary as a release artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create_release.outputs.release-tag }}
+          files: ${{ steps.artifact-info.outputs.artifact_name }}

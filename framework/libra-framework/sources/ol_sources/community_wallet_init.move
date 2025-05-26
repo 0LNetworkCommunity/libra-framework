@@ -14,6 +14,7 @@ module ol_framework::community_wallet_init {
     use ol_framework::match_index;
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_advance;
+    use ol_framework::reauthorization;
 
 
     #[test_only]
@@ -71,11 +72,14 @@ module ol_framework::community_wallet_init {
       initial_authorities: vector<address>,
       check_threshold: u64,
     ) {
+      let signer_addr = signer::address_of(sig);
+      reauthorization::assert_v8_authorized(signer_addr);
+
       check_proposed_auths(initial_authorities, check_threshold);
 
       donor_voice_txs::make_donor_voice(sig);
 
-      if (!donor_voice_txs::is_liquidate_to_match_index(signer::address_of(sig))) {
+      if (!donor_voice_txs::is_liquidate_to_match_index(signer_addr)) {
         donor_voice_txs::set_liquidate_to_match_index(sig, true);
       };
       match_index::opt_into_match_index(sig);
