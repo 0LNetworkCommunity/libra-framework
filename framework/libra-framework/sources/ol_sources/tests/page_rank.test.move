@@ -311,7 +311,8 @@ module ol_framework::test_page_rank {
     let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
-    let one_root_sig = vector::borrow(&roots_sig, 0);
+    let root0_sig = vector::borrow(&roots_sig, 0);
+    let root1_sig = vector::borrow(&roots_sig, 1);
 
     let seven_user_sig = ol_account::test_emulate_v7_account(framework, @0xabcd1234);
     let user_addr = signer::address_of(&seven_user_sig);
@@ -333,12 +334,20 @@ module ol_framework::test_page_rank {
     let has_friends = founder::has_friends(user_addr);
     assert!(!has_friends, 7357004);
 
-    vouch_txs::vouch_for(one_root_sig, user_addr);
+    vouch_txs::vouch_for(root0_sig, user_addr);
     let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
     assert!(page_rank_score == max_single_score, 7357005);
 
+    // needs minimum 2 vouchers
     let has_friends = founder::has_friends(user_addr);
-    assert!(has_friends, 7357006);
+    assert!(!has_friends, 7357006);
+
+    vouch_txs::vouch_for(root1_sig, user_addr);
+    let page_rank_score_later = page_rank_lazy::get_trust_score(user_addr);
+    assert!(page_rank_score < page_rank_score_later, 7357007);
+
+    let has_friends = founder::has_friends(user_addr);
+    assert!(has_friends, 7357008);
   }
 
   #[test(framework = @ol_framework)]
@@ -970,9 +979,15 @@ module ol_framework::test_page_rank {
     let bob_final_score = page_rank_lazy::get_trust_score(bob_addr);
     assert!(bob_final_score == 50_000, 7357003);
 
+    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+    diem_std::debug::print(&root1_cached_score);
+
+
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
     let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+    diem_std::debug::print(&root1_cached_score);
+
     assert!(root1_cached_score == 25_000, 7357004);
   }
 
@@ -1034,13 +1049,18 @@ module ol_framework::test_page_rank {
     ////////
 
     let bob_final_score = page_rank_lazy::get_trust_score(bob_addr);
-    diem_std::debug::print(&bob_final_score);
+    // diem_std::debug::print(&bob_final_score);
     assert!(bob_final_score == 50_000, 7357003);
+
+    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+    diem_std::debug::print(&root1_cached_score);
 
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
     let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+
     diem_std::debug::print(&root1_cached_score);
+
     assert!(root1_cached_score == 25_000, 7357004);
   }
 }

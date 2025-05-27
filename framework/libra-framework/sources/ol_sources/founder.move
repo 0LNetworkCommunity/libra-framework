@@ -2,7 +2,9 @@
 /// in the trust network to prevent sybil attacks.
 module ol_framework::founder {
   use ol_framework::page_rank_lazy;
+  use ol_framework::vouch;
   use std::signer;
+  use std::vector;
 
   #[test_only]
   use ol_framework::testnet;
@@ -64,6 +66,12 @@ module ol_framework::founder {
   #[view]
   /// Checks if the user's trust score meets the required threshold.
   public fun is_voucher_score_valid(user: address): bool {
+    // requires a minimum of N vouches
+    let len = vector::length(&vouch::get_received_vouches_not_expired(user));
+    if (len < 2) {
+      return false
+    };
+
     page_rank_lazy::get_trust_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
   }
 
