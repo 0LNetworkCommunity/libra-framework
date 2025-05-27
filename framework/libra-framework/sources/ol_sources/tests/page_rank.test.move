@@ -260,17 +260,26 @@ module ol_framework::test_page_rank {
     let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
+    let root_sig = vector::borrow(&roots_sig, 0);
+    vouch::init(root_sig);
+
+
     let new_user_sig = mock::create_user_from_u64(framework, 11);
     let new_user_addr = signer::address_of(&new_user_sig);
-    let root_sig = vector::borrow(&roots_sig, 0);
-
-    vouch::init(root_sig);
     vouch::init(&new_user_sig);
-    // Initialize page rank for the new user
     page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
+
+    // a child account of new_user which we want to check remains stale
+    let child_sig = mock::create_user_from_u64(framework, 12);
+    let child_addr = signer::address_of(&child_sig);
+    vouch::init(&child_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&child_sig);
+
 
     // Setup one vouch from the first root
     vouch::vouch_for(root_sig, new_user_addr);
+    // new user vouches for child
+    vouch::vouch_for(&new_user_sig, child_addr);
 
     // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
@@ -281,8 +290,12 @@ module ol_framework::test_page_rank {
     // should mark stale
     vouch_txs::revoke(root_sig, new_user_addr);
 
+    // the user account in question is recalculated
     let stale = page_rank_lazy::is_stale(new_user_addr);
-    assert!(stale, 7357003);
+    assert!(!stale, 7357003);
+    // ... but the child account should be stale
+    let stale_child = page_rank_lazy::is_stale(child_addr);
+    assert!(stale_child, 7357004);
 
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     assert!(page_rank_score == 0, 7357004);
