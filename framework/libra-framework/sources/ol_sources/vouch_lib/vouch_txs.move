@@ -22,6 +22,8 @@ module ol_framework::vouch_txs {
     page_rank_lazy::mark_as_stale(friend_account);
     vouch::vouch_for(grantor, friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
+    diem_std::debug::print(&4444);
+
     founder::maybe_set_friendly_founder(friend_account);
     // you better free your mind instead
   }

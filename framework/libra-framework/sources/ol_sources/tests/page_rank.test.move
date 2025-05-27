@@ -1057,8 +1057,10 @@ module ol_framework::test_page_rank {
 
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
-    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+    let (root1_score, _, _) = page_rank_lazy::calculate_score(root1_addr);
+    diem_std::debug::print(&root1_score);
 
+    let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
     diem_std::debug::print(&root1_cached_score);
 
     assert!(root1_cached_score == 25_000, 7357004);

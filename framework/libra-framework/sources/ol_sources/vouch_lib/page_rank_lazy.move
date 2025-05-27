@@ -128,15 +128,24 @@ module ol_framework::page_rank_lazy {
         if (current_depth > *max_depth_reached) {
             *max_depth_reached = current_depth;
         };
+        diem_std::debug::print(&11111);
+        diem_std::debug::print(&current);
+        diem_std::debug::print(&current_depth);
 
         // Early terminations that don't consume processing budget
         if (current_depth >= max_depth) return 0;
         if (vector::contains(visited, &current)) return 0;
+
         if (!vouch::is_init(current)) return 0;
+
         if (current_power < 2) return 0;
+
+        diem_std::debug::print(&22222);
 
         // Check if we've reached a root of trust - this is our success condition!
         if (vector::contains(roots, &current) && current_depth > 0) {
+            diem_std::debug::print(&22222000001);
+
             return current_power
         };
 
@@ -144,9 +153,12 @@ module ol_framework::page_rank_lazy {
         assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
         *processed_count = *processed_count + 1;
 
+
         // Get who vouched FOR this current user (backwards direction)
         let received_from = vouch::get_received_vouches_not_expired(current);
         let neighbor_count = vector::length(&received_from);
+
+        diem_std::debug::print(&33333);
 
         if (neighbor_count == 0) return 0;
 
@@ -159,11 +171,15 @@ module ol_framework::page_rank_lazy {
 
         let i = 0;
 
+
         while (i < neighbor_count) {
             assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
             let neighbor = *vector::borrow(&received_from, i);
+            // if we haven't visited yet in this branch of the traversal,
             if (!vector::contains(visited, &neighbor)) {
+                // backtracking for the next neighbor
+                // each branch gets the previous visited set of this branch
                 let visited_copy = *visited;
                 let path_score = walk_backwards_from_target_with_stats(
                     neighbor,
