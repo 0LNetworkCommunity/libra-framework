@@ -145,7 +145,7 @@ module ol_framework::page_rank_lazy {
         *processed_count = *processed_count + 1;
 
         // Get who vouched FOR this current user (backwards direction)
-        let (received_from, _) = vouch::get_received_vouches(current);
+        let received_from = vouch::get_received_vouches_not_expired(current);
         let neighbor_count = vector::length(&received_from);
 
         if (neighbor_count == 0) return 0;
@@ -189,6 +189,7 @@ module ol_framework::page_rank_lazy {
         let visited = vector::empty<address>();
         let processed_count: u64 = 0; // Initialize as a mutable local variable
         walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
+        // set_score(user); // Recalculate the score after marking stale
     }
 
     /// Helper for `mark_as_stale`. Recursively marks downstream nodes as stale.
