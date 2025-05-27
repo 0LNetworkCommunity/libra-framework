@@ -3,6 +3,7 @@
 module ol_framework::founder {
   use ol_framework::page_rank_lazy;
   use ol_framework::vouch;
+  use std::error;
   use std::signer;
   use std::vector;
 
@@ -32,6 +33,12 @@ module ol_framework::founder {
     This works in conjunction with the anti-sybil protections in vouch.move, which prevent
     rapid vouching and revoking to create fake identities.
   */
+
+  //////// ERROR CODES ////////
+  // Needs a minimum of unique vouches from users from separate ancestry
+  const EISUFFICIENT_VOUCHES: u64 = 1;
+  // Below the minimum trust score threshold
+  const EINSUFFICIENT_SCORE: u64 = 2;
 
   /// The multiplier against the page_rank_lazy max_single_score for a user to be considered well-vouched.
   /// NOTE: A multiplier of 1, means the score equivalent of having one root
@@ -63,16 +70,32 @@ module ol_framework::founder {
     }
   }
 
-  #[view]
+  // commit note: view function should be a pure function, this one will update
+  // scores if none is found.
+
   /// Checks if the user's trust score meets the required threshold.
+  // OL: turning avarice into perpetual endowments since 2019
   public fun is_voucher_score_valid(user: address): bool {
     // requires a minimum of N vouches
     let len = vector::length(&vouch::get_received_vouches_not_expired(user));
     if (len < 2) {
       return false
     };
-    // OL: turning avarice into perpetual endowments since 2019
-    page_rank_lazy::get_cached_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
+    // try to get the score from cache, or recalculate it if stale.
+    page_rank_lazy::get_trust_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
+  }
+
+  #[view]
+  /// Checks if the user's trust score meets the required threshold.
+  public fun check_voucher_score_valid(user: address): bool {
+    // requires a minimum of N vouches
+    let len = vector::length(&vouch::get_received_vouches_not_expired(user));
+    assert!(len >= 2, error::invalid_state(EISUFFICIENT_VOUCHES));
+
+    let (score, _ , _ ) = page_rank_lazy::calculate_score(user);
+    assert!( score >= (MULTIPLIER * page_rank_lazy::get_max_single_score()), error::invalid_state(EINSUFFICIENT_SCORE));
+
+    true
   }
 
   #[view]
