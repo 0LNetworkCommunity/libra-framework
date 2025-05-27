@@ -86,7 +86,7 @@ module ol_framework::page_rank_lazy {
     /// Recalculates and updates the trust score for an address.
     /// Traverses the trust graph from roots to the target and updates the cache.
     /// This is a costly operation and should be used sparingly.
-    fun set_score(addr: address): u64 acquires UserTrustRecord {
+    public(friend) fun set_score(addr: address): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
@@ -128,9 +128,6 @@ module ol_framework::page_rank_lazy {
         if (current_depth > *max_depth_reached) {
             *max_depth_reached = current_depth;
         };
-        diem_std::debug::print(&11111);
-        diem_std::debug::print(&current);
-        diem_std::debug::print(&current_depth);
 
         // Early terminations that don't consume processing budget
         if (current_depth >= max_depth) return 0;
@@ -140,11 +137,8 @@ module ol_framework::page_rank_lazy {
 
         if (current_power < 2) return 0;
 
-        diem_std::debug::print(&22222);
-
         // Check if we've reached a root of trust - this is our success condition!
         if (vector::contains(roots, &current) && current_depth > 0) {
-            diem_std::debug::print(&22222000001);
 
             return current_power
         };
@@ -157,8 +151,6 @@ module ol_framework::page_rank_lazy {
         // Get who vouched FOR this current user (backwards direction)
         let received_from = vouch::get_received_vouches_not_expired(current);
         let neighbor_count = vector::length(&received_from);
-
-        diem_std::debug::print(&33333);
 
         if (neighbor_count == 0) return 0;
 

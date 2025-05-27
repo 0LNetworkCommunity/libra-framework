@@ -66,14 +66,13 @@ module ol_framework::founder {
   #[view]
   /// Checks if the user's trust score meets the required threshold.
   public fun is_voucher_score_valid(user: address): bool {
-    diem_std::debug::print(&77777);
     // requires a minimum of N vouches
     let len = vector::length(&vouch::get_received_vouches_not_expired(user));
     if (len < 2) {
       return false
     };
-
-    page_rank_lazy::get_trust_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
+    // OL: turning avarice into perpetual endowments since 2019
+    page_rank_lazy::get_cached_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
   }
 
   #[view]
