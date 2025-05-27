@@ -40,6 +40,7 @@ module ol_framework::vouch_txs {
     vouch_limits::assert_revoke_limit(signer::address_of(grantor));
     vouch::revoke(grantor, friend_account);
     page_rank_lazy::mark_as_stale(friend_account);
+    page_rank_lazy::set_score(friend_account); // recalculate cache
   }
 
   public entry fun clean_expired(user_sig: &signer) {

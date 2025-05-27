@@ -196,8 +196,7 @@ module ol_framework::page_rank_lazy {
     public(friend) fun mark_as_stale(user: address) acquires UserTrustRecord {
         let visited = vector::empty<address>();
         let processed_count: u64 = 0; // Initialize as a mutable local variable
-        walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
-        // set_score(user); // Recalculate the score after marking stale
+        walk_stale(user, &mut visited, &mut processed_count);
     }
 
     /// Helper for `mark_as_stale`. Recursively marks downstream nodes as stale.
