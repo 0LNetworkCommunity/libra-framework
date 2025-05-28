@@ -486,7 +486,7 @@ impl ReauthVoteTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
         // Submit the reauthorization vote
         let payload = libra_stdlib::donor_voice_txs_vote_reauth_tx(self.community_wallet);
-        sender.sign_submit_wait(payload).await.ok();
+        sender.sign_submit_wait(payload).await?;
 
         // First, check if we have pending reauthorization ballots
         let ballot_id =

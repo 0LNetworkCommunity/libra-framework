@@ -1,6 +1,6 @@
 use crate::{
     account_queries::{
-        community_wallet_scheduled_transactions, community_wallet_signers,
+        account_vouch_report, community_wallet_scheduled_transactions, community_wallet_signers,
         get_account_balance_libra, get_events, get_transactions, get_val_config,
         is_community_wallet_migrated,
     },
@@ -125,6 +125,11 @@ pub enum QueryType {
     },
     /// Display all account structs
     Annotate { account: AccountAddress },
+    /// Generate a comprehensive vouch report showing page rank scores and vouch limits
+    VouchReport {
+        /// account to generate vouch report for
+        account: AccountAddress,
+    },
 }
 
 impl QueryType {
@@ -246,6 +251,12 @@ impl QueryType {
                 };
                 let pretty = format!("{:#}", blob.unwrap().to_string());
                 Ok(json!(pretty))
+            }
+            QueryType::VouchReport { account } => {
+                // Get the structured vouch report data
+                let report_data = account_vouch_report(client, *account).await?;
+                // Return the data as JSON
+                Ok(json!(report_data))
             }
             _ => {
                 bail!(
