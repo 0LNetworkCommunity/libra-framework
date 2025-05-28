@@ -32,7 +32,7 @@ impl OLProgress {
 
     /// YAY, carpe diem
     pub fn fun_style() -> ProgressStyle {
-        ProgressStyle::with_template("  CARPE DIEM\n{msg}\n{spinner}")
+        ProgressStyle::with_template("CARPE     DIEM\n{msg}\n{spinner}")
             .unwrap()
             // For more spinners check out the cli-spinners project:
             // https://github.com/sindresorhus/cli-spinners/blob/master/spinners.json

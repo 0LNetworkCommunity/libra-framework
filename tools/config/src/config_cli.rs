@@ -1,19 +1,16 @@
 use crate::{
     config_wizard,
     get_genesis_artifacts::{download_genesis, get_genesis_waypoint},
+    interactive::options::{fix_config, FixOptions},
     make_yaml_public_fullnode::init_fullnode_yaml,
     validator_config::{validator_dialogue, vfn_dialogue},
 };
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use libra_types::{
-    core_types::{
-        app_cfg::{self, AppCfg},
-        network_playlist::NetworkPlaylist,
-    },
-    exports::{AccountAddress, AuthenticationKey, Client, NamedChain},
+    core_types::network_playlist::NetworkPlaylist,
+    exports::{AccountAddress, AuthenticationKey, NamedChain},
     global_config_dir, ol_progress,
-    type_extensions::client_ext::ClientExt,
 };
 use libra_wallet::{utils::read_operator_file, validator_files::OPERATOR_FILE};
 use std::path::PathBuf;
@@ -98,107 +95,14 @@ impl ConfigCli {
                 remove_profile,
                 fullnode_url: force_url,
             }) => {
-                // Validate exactly one argument is provided
-                let args_count = [
-                    *reset_address,
-                    remove_profile.is_some(),
-                    force_url.is_some(),
-                ]
-                .iter()
-                .filter(|&&x| x)
-                .count();
-
-                if args_count == 0 {
-                    return Err(anyhow!(
-                        "At least one argument must be provided to 'fix' command"
-                    ));
-                }
-                if args_count > 1 {
-                    return Err(anyhow!(
-                        "Only one argument can be provided to 'fix' command"
-                    ));
-                }
-
-                // Load configuration file
-                let mut cfg = AppCfg::load(self.path.clone())
-                    .map_err(|e| anyhow!("no config file found for libra tools, {}", e))?;
-                if !cfg.user_profiles.is_empty() {
-                    println!("your profiles:");
-                    for p in &cfg.user_profiles {
-                        println!("- address: {}, nickname: {}", p.account, p.nickname);
-                    }
-                } else {
-                    println!("no profiles found");
-                }
-
-                // Handle address fix option
-                let profile = if *reset_address {
-                    let mut account_keys = config_wizard::prompt_for_account()?;
-
-                    let client = Client::new(cfg.pick_url(self.chain_name)?);
-
-                    // Lookup originating address if client index is successful
-                    if client.get_index().await.is_ok() {
-                        account_keys.account = match client
-                            .lookup_originating_address(account_keys.auth_key)
-                            .await
-                        {
-                            Ok(r) => r,
-                            _ => {
-                                println!("This looks like a new account, and it's not yet on chain. If this is not what you expected, are you sure you are using the correct recovery mnemonic?");
-                                // do nothing
-                                account_keys.account
-                            }
-                        };
-                    };
-
-                    // Create profile based on account keys
-                    let profile =
-                        app_cfg::Profile::new(account_keys.auth_key, account_keys.account);
-
-                    // Add profile to configuration
-                    cfg.maybe_add_profile(profile)?;
-
-                    // Prompt to set as default profile
-                    if dialoguer::Confirm::new()
-                        .with_prompt("set as default profile?")
-                        .interact()?
-                    {
-                        cfg.workspace
-                            .set_default(account_keys.account.to_hex_literal());
-                    }
-
-                    cfg.get_profile_mut(Some(account_keys.account.to_hex_literal()))
-                } else {
-                    // get default profile
-                    println!("will try to fix your default profile");
-                    cfg.get_profile_mut(None)
-                }?;
-
-                println!("using profile: {}", &profile.nickname);
-
-                // user can take pledge here on fix or on init
-                profile.maybe_offer_basic_pledge();
-                profile.maybe_offer_validator_pledge();
-
-                // Remove profile if specified
-                if let Some(p) = remove_profile {
-                    let r = cfg.try_remove_profile(p);
-                    if r.is_err() {
-                        println!("no profile found matching {}", &p)
-                    }
-                }
-
-                // Force URL overwrite if specified
-                if let Some(u) = force_url {
-                    let np = cfg.get_network_profile_mut(self.chain_name)?;
-                    np.nodes = vec![];
-                    np.add_url(u.to_owned());
-                }
-
-                // Save configuration file
-                cfg.save_file()?;
-                Ok(())
+                fix_config(FixOptions {
+                    reset_address: *reset_address,
+                    remove_profile: remove_profile.clone(),
+                    fullnode_url: force_url.clone(),
+                    config_path: self.path.clone(),
+                    chain_name: self.chain_name,
+                })
+                .await
             }
 
             // Initialize configuration wizard
