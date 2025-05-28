@@ -1,5 +1,6 @@
 // Main config_fix module
 
+pub mod account_selection;
 pub mod defaults;
 pub mod interactive;
 pub mod networks;

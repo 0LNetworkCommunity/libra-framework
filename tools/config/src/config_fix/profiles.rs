@@ -5,14 +5,12 @@ use libra_types::{
     type_extensions::client_ext::ClientExt,
 };
 
-use crate::config_wizard;
-
 /// Reset address profile by prompting for account details
 pub async fn reset_address_profile(
     cfg: &mut AppCfg,
     chain_name: Option<NamedChain>,
 ) -> Result<&mut app_cfg::Profile> {
-    let (authkey, mut account_address) = config_wizard::interactive_account_selection()?;
+    let (authkey, mut account_address) = super::account_selection::interactive_account_selection()?;
 
     let client = Client::new(cfg.pick_url(chain_name)?);
 
@@ -48,6 +46,25 @@ pub async fn reset_address_profile(
 
 /// Remove a profile from the configuration
 pub fn remove_profile(cfg: &mut AppCfg, profile_identifier: &str) {
+    // First check if the profile exists and if it's the default
+    let profile_to_remove = cfg.user_profiles.iter().find(|p| {
+        p.account.to_hex_literal() == profile_identifier
+            || p.account.to_string() == profile_identifier
+            || p.nickname == profile_identifier
+    });
+
+    let is_default_profile = if let Some(profile) = profile_to_remove {
+        cfg.workspace
+            .default_profile
+            .as_ref()
+            .map(|default| {
+                default == &profile.account.to_hex_literal() || default == &profile.nickname
+            })
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
     // First try by the identifier directly (could be nickname or address)
     let result = cfg.try_remove_profile(profile_identifier);
 
@@ -57,8 +74,15 @@ pub fn remove_profile(cfg: &mut AppCfg, profile_identifier: &str) {
         if let Some(index) = cfg.user_profiles.iter().position(|p| {
             p.account.to_hex_literal() == profile_identifier
                 || p.account.to_string() == profile_identifier
+                || p.nickname == profile_identifier
         }) {
             cfg.user_profiles.remove(index);
+
+            // Handle default profile reset after removal
+            if is_default_profile {
+                reset_default_profile_after_removal(cfg);
+            }
+
             println!("Profile removed successfully!");
             return;
         }
@@ -67,7 +91,28 @@ pub fn remove_profile(cfg: &mut AppCfg, profile_identifier: &str) {
     if result.is_err() {
         println!("no profile found matching {}", profile_identifier);
     } else {
+        // Handle default profile reset after successful removal via try_remove_profile
+        if is_default_profile {
+            reset_default_profile_after_removal(cfg);
+        }
         println!("Profile removed successfully!");
+    }
+}
+
+/// Reset the default profile after a profile removal
+/// Sets the first remaining profile as default, or clears default if no profiles remain
+fn reset_default_profile_after_removal(cfg: &mut AppCfg) {
+    if cfg.user_profiles.is_empty() {
+        // No profiles left, clear the default
+        cfg.workspace.default_profile = None;
+        println!("No profiles remaining, default profile cleared.");
+    } else {
+        // Set the first remaining profile as the new default
+        let new_default = cfg.user_profiles[0].account.to_hex_literal();
+        cfg.workspace.set_default(new_default);
+        println!("Default profile reset to: {} ({})",
+                cfg.user_profiles[0].nickname,
+                cfg.user_profiles[0].account);
     }
 }
 
@@ -105,7 +150,6 @@ pub fn interactive_remove_profile(cfg: &mut AppCfg) -> Result<()> {
         .interact()?
     {
         remove_profile(cfg, &profile_id);
-        println!("Profile removed successfully!");
     } else {
         println!("Profile removal cancelled.");
     }
