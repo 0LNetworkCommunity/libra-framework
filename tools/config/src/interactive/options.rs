@@ -3,7 +3,7 @@ use libra_types::{core_types::app_cfg::AppCfg, exports::NamedChain};
 use std::path::PathBuf;
 use url::Url;
 
-use super::{interactive, networks, profiles, utils};
+use super::{fix, networks, profiles, utils};
 
 /// Fix configuration options
 pub struct FixOptions {
@@ -36,7 +36,7 @@ pub async fn fix_config(options: FixOptions) -> Result<()> {
 
     if args_count == 0 {
         // Interactive mode
-        changes_made = interactive::interactive_fix_setup(&mut cfg, options.chain_name).await?;
+        changes_made = fix::interactive_fix_setup(&mut cfg, options.chain_name).await?;
     } else {
         // Command-line mode - validate exactly one argument is provided
         if args_count > 1 {
