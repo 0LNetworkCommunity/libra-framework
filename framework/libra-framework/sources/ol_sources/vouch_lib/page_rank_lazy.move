@@ -30,7 +30,7 @@ module ol_framework::page_rank_lazy {
     const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
 
     /// Maximum allowed depth for trust graph traversal.
-    const MAX_PATH_DEPTH: u64 = 5;
+    const MAX_PATH_DEPTH: u64 = 4;
 
     /// Stores a user's trust score and its staleness state.
     struct UserTrustRecord has key, drop {
