@@ -28,7 +28,7 @@ pub struct AccountVouchReportData {
 }
 
 /// helper to get libra balance at a SlowWalletBalance type which shows
-/// total balance and the unlocked balance. s
+/// total balance and the unlocked balance.
 pub async fn get_account_balance_libra(
     client: &Client,
     account: AccountAddress,
