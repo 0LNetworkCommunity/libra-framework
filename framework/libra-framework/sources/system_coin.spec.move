@@ -33,19 +33,10 @@ spec diem_framework::coin {
         ensures exists<SupplyConfig>(diem_addr);
     }
 
-    // /// Can only be updated by `@diem_framework`.
-    // spec allow_supply_upgrades(diem_framework: &signer, allowed: bool) {
-    //     modifies global<SupplyConfig>(@diem_framework);
-    //     let diem_addr = signer::address_of(diem_framework);
-    //     aborts_if !system_addresses::is_diem_framework_address(diem_addr);
-    //     aborts_if !exists<SupplyConfig>(diem_addr);
-    //     let post allow_upgrades_post = global<SupplyConfig>(@diem_framework);
-    //     ensures allow_upgrades_post.allow_upgrades == allowed;
-    // }
+    // commit note: deprecated with Final Supply
 
     spec balance<CoinType>(owner: address): u64 {
-        aborts_if !exists<CoinStore<CoinType>>(owner);
-        ensures result == global<CoinStore<CoinType>>(owner).coin.value;
+        ensures exists<CoinStore<CoinType>>(owner) ==> result == global<CoinStore<CoinType>>(owner).coin.value;
     }
 
     spec is_coin_initialized<CoinType>(): bool {
@@ -150,43 +141,7 @@ spec diem_framework::coin {
         ensures coin.value == 0;
     }
 
-    // spec freeze_coin_store<CoinType>(
-    //     account_addr: address,
-    //     _freeze_cap: &FreezeCapability<CoinType>,
-    // ) {
-    //     pragma opaque;
-    //     modifies global<CoinStore<CoinType>>(account_addr);
-    //     aborts_if !exists<CoinStore<CoinType>>(account_addr);
-    //     let post coin_store = global<CoinStore<CoinType>>(account_addr);
-    //     ensures coin_store.frozen;
-    // }
-
-    // spec unfreeze_coin_store<CoinType>(
-    //     account_addr: address,
-    //     _freeze_cap: &FreezeCapability<CoinType>,
-    // ) {
-    //     pragma opaque;
-    //     modifies global<CoinStore<CoinType>>(account_addr);
-    //     aborts_if !exists<CoinStore<CoinType>>(account_addr);
-    //     let post coin_store = global<CoinStore<CoinType>>(account_addr);
-    //     ensures !coin_store.frozen;
-    // }
-
-    // /// The creator of `CoinType` must be `@diem_framework`.
-    // /// `SupplyConfig` allow upgrade.
-    // spec upgrade_supply<CoinType>(account: &signer) {
-    //     // TODO: The error target is in `optional_aggregator::read`,
-    //     // which cannot be verified because the calling level is too deep.
-    //     pragma aborts_if_is_partial;
-    //     let account_addr = signer::address_of(account);
-    //     let coin_address = type_info::type_of<CoinType>().account_address;
-    //     aborts_if coin_address != account_addr;
-    //     aborts_if !exists<SupplyConfig>(@diem_framework);
-    //     aborts_if !exists<CoinInfo<CoinType>>(account_addr);
-    //     let supply_config = global<SupplyConfig>(@diem_framework);
-    //     aborts_if !supply_config.allow_upgrades;
-    //     modifies global<CoinInfo<CoinType>>(account_addr);
-    // }
+    // commit note: does not apply to OL
 
     spec initialize {
         let account_addr = signer::address_of(account);
@@ -260,31 +215,36 @@ spec diem_framework::coin {
         ensures exists<CoinStore<CoinType>>(account_addr);
     }
 
-    /// `from` and `to` account not frozen.
-    /// `from` and `to` not the same address.
-    /// `from` account sufficient balance.
-    spec transfer<CoinType>(
-        from: &signer,
-        to: address,
-        amount: u64,
-    ) {
-        let account_addr_from = signer::address_of(from);
-        let coin_store_from = global<CoinStore<CoinType>>(account_addr_from);
-        let post coin_store_post_from = global<CoinStore<CoinType>>(account_addr_from);
-        let coin_store_to = global<CoinStore<CoinType>>(to);
-        let post coin_store_post_to = global<CoinStore<CoinType>>(to);
+    // /// `from` and `to` account not frozen.
+    // /// `from` and `to` not the same address.
+    // /// `from` account sufficient balance.
+    // spec transfer<CoinType>(
+    //     from: &signer,
+    //     to: address,
+    //     amount: u64,
+    // ) {
+    //     let account_addr_from = signer::address_of(from);
 
-        aborts_if !exists<CoinStore<CoinType>>(account_addr_from);
-        aborts_if !exists<CoinStore<CoinType>>(to);
-        // aborts_if coin_store_from.frozen;
-        // aborts_if coin_store_to.frozen;
-        aborts_if coin_store_from.coin.value < amount;
+    //     // check that transfers are not possible through
+    //     // this module unless the activity module is initialized
+    //     requires 0x1::activity::is_initialized(account_addr_from);
 
-        ensures account_addr_from != to ==> coin_store_post_from.coin.value ==
-                 coin_store_from.coin.value - amount;
-        ensures account_addr_from != to ==> coin_store_post_to.coin.value == coin_store_to.coin.value + amount;
-        ensures account_addr_from == to ==> coin_store_post_from.coin.value == coin_store_from.coin.value;
-    }
+    //     let coin_store_from = global<CoinStore<CoinType>>(account_addr_from);
+    //     let post coin_store_post_from = global<CoinStore<CoinType>>(account_addr_from);
+    //     let coin_store_to = global<CoinStore<CoinType>>(to);
+    //     let post coin_store_post_to = global<CoinStore<CoinType>>(to);
+
+    //     aborts_if !exists<CoinStore<CoinType>>(account_addr_from);
+    //     aborts_if !exists<CoinStore<CoinType>>(to);
+    //     // aborts_if coin_store_from.frozen;
+    //     // aborts_if coin_store_to.frozen;
+    //     aborts_if coin_store_from.coin.value < amount;
+
+    //     ensures account_addr_from != to ==> coin_store_post_from.coin.value ==
+    //              coin_store_from.coin.value - amount;
+    //     ensures account_addr_from != to ==> coin_store_post_to.coin.value == coin_store_to.coin.value + amount;
+    //     ensures account_addr_from == to ==> coin_store_post_from.coin.value == coin_store_from.coin.value;
+    // }
 
     /// Account is not frozen and sufficient balance.
     spec withdraw<CoinType>(
