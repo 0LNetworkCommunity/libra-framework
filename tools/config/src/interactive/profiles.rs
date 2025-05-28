@@ -110,9 +110,10 @@ fn reset_default_profile_after_removal(cfg: &mut AppCfg) {
         // Set the first remaining profile as the new default
         let new_default = cfg.user_profiles[0].account.to_hex_literal();
         cfg.workspace.set_default(new_default);
-        println!("Default profile reset to: {} ({})",
-                cfg.user_profiles[0].nickname,
-                cfg.user_profiles[0].account);
+        println!(
+            "Default profile reset to: {} ({})",
+            cfg.user_profiles[0].nickname, cfg.user_profiles[0].account
+        );
     }
 }
 
@@ -284,9 +285,7 @@ pub async fn interactive_manage_profiles(
                     add_new_profile(cfg, chain_name).await?;
                     Ok(true)
                 }
-                1 => {
-                    Ok(false)
-                }
+                1 => Ok(false),
                 _ => unreachable!(),
             }
         }

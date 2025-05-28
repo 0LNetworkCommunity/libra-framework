@@ -1,7 +1,4 @@
-use libra_types::{
-    core_types::app_cfg::AppCfg,
-    exports::NamedChain,
-};
+use libra_types::{core_types::app_cfg::AppCfg, exports::NamedChain};
 
 /// Display existing profiles in the configuration
 pub fn display_existing_profiles(cfg: &AppCfg) {

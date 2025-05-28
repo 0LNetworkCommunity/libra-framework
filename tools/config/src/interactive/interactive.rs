@@ -1,13 +1,13 @@
 use anyhow::Result;
-use libra_types::{
-    core_types::app_cfg::AppCfg,
-    exports::NamedChain,
-};
+use libra_types::{core_types::app_cfg::AppCfg, exports::NamedChain};
 
 use super::{defaults, networks, profiles};
 
 /// Interactive fix setup when no command-line options are provided
-pub async fn interactive_fix_setup(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+pub async fn interactive_fix_setup(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     println!("\nWhat do you want to do?");
 
     let options = vec![

@@ -1,6 +1,7 @@
 use crate::{
-    interactive, config_wizard,
+    config_wizard,
     get_genesis_artifacts::{download_genesis, get_genesis_waypoint},
+    interactive,
     make_yaml_public_fullnode::init_fullnode_yaml,
     validator_config::{validator_dialogue, vfn_dialogue},
 };

@@ -1,8 +1,5 @@
 use anyhow::{anyhow, Result};
-use libra_types::{
-    core_types::app_cfg::AppCfg,
-    exports::NamedChain,
-};
+use libra_types::{core_types::app_cfg::AppCfg, exports::NamedChain};
 
 /// Change the default profile
 pub fn change_default_profile(cfg: &mut AppCfg) -> Result<()> {

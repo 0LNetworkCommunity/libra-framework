@@ -29,7 +29,7 @@ pub async fn wizard(
         let account_keys = libra_wallet::account_keys::get_account_from_private(&pk);
         (account_keys.auth_key, account_keys.account)
     } else {
-      account_selection::interactive_account_selection()?
+        account_selection::interactive_account_selection()?
     };
 
     let spin = ol_progress::OLProgress::spin_steady(250, "fetching metadata".to_string());

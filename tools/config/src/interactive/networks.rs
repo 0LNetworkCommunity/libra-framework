@@ -6,7 +6,11 @@ use libra_types::{
 use url::Url;
 
 /// Force URL overwrite in the network profile
-pub fn force_url_overwrite(cfg: &mut AppCfg, url: &Url, chain_name: Option<NamedChain>) -> Result<()> {
+pub fn force_url_overwrite(
+    cfg: &mut AppCfg,
+    url: &Url,
+    chain_name: Option<NamedChain>,
+) -> Result<()> {
     let np = cfg.get_network_profile_mut(chain_name)?;
     np.nodes = vec![];
     np.add_url(url.to_owned());
@@ -98,7 +102,10 @@ pub async fn refresh_from_custom_playlist(
 }
 
 /// Interactive URL update
-pub async fn interactive_update_url(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+pub async fn interactive_update_url(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     // Display current URLs
     let current_urls = match cfg.get_network_profile(chain_name) {
         Ok(np) => np

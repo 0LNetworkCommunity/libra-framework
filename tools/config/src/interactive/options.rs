@@ -1,8 +1,5 @@
 use anyhow::{anyhow, Result};
-use libra_types::{
-    core_types::app_cfg::AppCfg,
-    exports::NamedChain,
-};
+use libra_types::{core_types::app_cfg::AppCfg, exports::NamedChain};
 use std::path::PathBuf;
 use url::Url;
 
