@@ -81,8 +81,10 @@ module ol_framework::founder {
     if (len < 2) {
       return false
     };
-    // try to get the score from cache, or recalculate it if stale.
-    page_rank_lazy::get_trust_score(user) >= MULTIPLIER * page_rank_lazy::get_max_single_score()
+    // always recalculate the score
+    // NOTE: formal verification fails with tooling error, when using get_trust_score
+    let (score, _, _ ) = page_rank_lazy::calculate_score(user);
+    score >= MULTIPLIER * page_rank_lazy::get_max_single_score()
   }
 
   #[view]
