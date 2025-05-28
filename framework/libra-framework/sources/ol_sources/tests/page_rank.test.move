@@ -260,17 +260,26 @@ module ol_framework::test_page_rank {
     let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
+    let root_sig = vector::borrow(&roots_sig, 0);
+    vouch::init(root_sig);
+
+
     let new_user_sig = mock::create_user_from_u64(framework, 11);
     let new_user_addr = signer::address_of(&new_user_sig);
-    let root_sig = vector::borrow(&roots_sig, 0);
-
-    vouch::init(root_sig);
     vouch::init(&new_user_sig);
-    // Initialize page rank for the new user
     page_rank_lazy::maybe_initialize_trust_record(&new_user_sig);
+
+    // a child account of new_user which we want to check remains stale
+    let child_sig = mock::create_user_from_u64(framework, 12);
+    let child_addr = signer::address_of(&child_sig);
+    vouch::init(&child_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&child_sig);
+
 
     // Setup one vouch from the first root
     vouch::vouch_for(root_sig, new_user_addr);
+    // new user vouches for child
+    vouch::vouch_for(&new_user_sig, child_addr);
 
     // Now check the page rank score (should be 100)
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
@@ -281,8 +290,12 @@ module ol_framework::test_page_rank {
     // should mark stale
     vouch_txs::revoke(root_sig, new_user_addr);
 
+    // the user account in question is recalculated
     let stale = page_rank_lazy::is_stale(new_user_addr);
-    assert!(stale, 7357003);
+    assert!(!stale, 7357003);
+    // ... but the child account should be stale
+    let stale_child = page_rank_lazy::is_stale(child_addr);
+    assert!(stale_child, 7357004);
 
     let page_rank_score = page_rank_lazy::get_trust_score(new_user_addr);
     assert!(page_rank_score == 0, 7357004);
@@ -311,7 +324,8 @@ module ol_framework::test_page_rank {
     let max_single_score = page_rank_lazy::get_max_single_score();
     // Set up the test base
     let roots_sig = test_base(framework);
-    let one_root_sig = vector::borrow(&roots_sig, 0);
+    let root0_sig = vector::borrow(&roots_sig, 0);
+    let root1_sig = vector::borrow(&roots_sig, 1);
 
     let seven_user_sig = ol_account::test_emulate_v7_account(framework, @0xabcd1234);
     let user_addr = signer::address_of(&seven_user_sig);
@@ -333,12 +347,20 @@ module ol_framework::test_page_rank {
     let has_friends = founder::has_friends(user_addr);
     assert!(!has_friends, 7357004);
 
-    vouch_txs::vouch_for(one_root_sig, user_addr);
+    vouch_txs::vouch_for(root0_sig, user_addr);
     let page_rank_score = page_rank_lazy::get_trust_score(user_addr);
     assert!(page_rank_score == max_single_score, 7357005);
 
+    // needs minimum 2 vouchers
     let has_friends = founder::has_friends(user_addr);
-    assert!(has_friends, 7357006);
+    assert!(!has_friends, 7357006);
+
+    vouch_txs::vouch_for(root1_sig, user_addr);
+    let page_rank_score_later = page_rank_lazy::get_trust_score(user_addr);
+    assert!(page_rank_score < page_rank_score_later, 7357007);
+
+    let has_friends = founder::has_friends(user_addr);
+    assert!(has_friends, 7357008);
   }
 
   #[test(framework = @ol_framework)]
@@ -652,7 +674,6 @@ module ol_framework::test_page_rank {
     // alice score does not increment with additional loop from
     // TODO: is this the spec?
     let (alice_score_post, _, _) = page_rank_lazy::calculate_score(alice_addr);
-    diem_std::debug::print(&alice_score_post);
     assert!(alice_score_post == 100_000, 7357002);
   }
 
@@ -755,7 +776,6 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&bob_sig, carol_addr);
 
     let (carol_score_post, _, _) = page_rank_lazy::calculate_score(carol_addr);
-    diem_std::debug::print(&carol_score_post);
     assert!(carol_score_post == 100_000, 7357002);
   }
 
@@ -809,7 +829,6 @@ module ol_framework::test_page_rank {
 
     let (dave_score_post, _, _) = page_rank_lazy::calculate_score(dave_addr);
     // expect 50K from alice, and 25K via bob and carol
-    diem_std::debug::print(&dave_score_post);
     assert!(dave_score_post == 75_000, 7357002);
   }
 
@@ -865,7 +884,6 @@ module ol_framework::test_page_rank {
 
     let (dave_score_post, _, _) = page_rank_lazy::calculate_score(dave_addr);
     // expect 50K from alice, and 25K via bob and carol
-    diem_std::debug::print(&dave_score_post);
     assert!(dave_score_post == 75_000, 7357002);
   }
 
@@ -918,7 +936,6 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&bob_sig, alice_addr);
 
     let page_rank_score_finally = page_rank_lazy::get_trust_score(alice_addr);
-    diem_std::debug::print(&page_rank_score_finally);
     // 100k from root0, 100k from root1, 50k from bob
     assert!(page_rank_score_finally == 250_000, 7357005);
   }
@@ -973,6 +990,7 @@ module ol_framework::test_page_rank {
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
     let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
+
     assert!(root1_cached_score == 25_000, 7357004);
   }
 
@@ -1034,13 +1052,15 @@ module ol_framework::test_page_rank {
     ////////
 
     let bob_final_score = page_rank_lazy::get_trust_score(bob_addr);
-    diem_std::debug::print(&bob_final_score);
     assert!(bob_final_score == 50_000, 7357003);
 
     vouch_txs::vouch_for(&bob_sig, root1_addr);
 
+    let (root1_score, _, _) = page_rank_lazy::calculate_score(root1_addr);
+
     let root1_cached_score = page_rank_lazy::get_cached_score(root1_addr);
-    diem_std::debug::print(&root1_cached_score);
+
     assert!(root1_cached_score == 25_000, 7357004);
+    assert!(root1_score == root1_cached_score, 7357005);
   }
 }

@@ -133,9 +133,8 @@ module ol_framework::test_donor_voice {
       let (_unlocked_dv, dv_balance) = ol_account::balance(donor_voice_address);
       let (_, marlon_balance) = ol_account::balance(marlon_rando);
       // TODO: add assert here
-      diem_std::debug::print(&dv_balance);
-      diem_std::debug::print(&marlon_balance);
-
+      assert!(dv_balance == 1000, 7357000);
+      assert!(marlon_balance == 0, 7357001);
 
       let unlocked_advance = true;
       // sends an 0.1% of the CW balance to an unrestricted/ordinary account

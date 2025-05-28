@@ -498,7 +498,7 @@ module ol_framework::vouch {
     }
 
     #[view]
-    // Deprecation notice, function will renamed, pass through until then.
+    // TODO: Deprecation notice, function will renamed, pass through until then.
     /// gets the received vouches not expired
     public fun all_not_expired(addr: address): vector<address> acquires ReceivedVouches {
       get_received_vouches_not_expired(addr)
@@ -507,6 +507,7 @@ module ol_framework::vouch {
 
     #[view]
     /// gets the received vouches not expired
+    // TODO: duplicated with true_friends
     public fun get_received_vouches_not_expired(addr: address): vector<address> acquires ReceivedVouches {
 
       let (all_received, epoch_vouched) = get_received_vouches(addr);
@@ -538,6 +539,7 @@ module ol_framework::vouch {
 
 
     #[view]
+    // TODO: deprecate this, duplicated with get_received_vouches_not_expired
     /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
         if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();

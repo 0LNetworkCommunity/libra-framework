@@ -21,6 +21,7 @@ module ol_framework::vouch_txs {
     vouch_limits::assert_under_limit(grantor_addr, friend_account);
     page_rank_lazy::mark_as_stale(friend_account);
     vouch::vouch_for(grantor, friend_account);
+    page_rank_lazy::set_score(friend_account);
     maybe_debit_validator_cost(grantor, friend_account);
     founder::maybe_set_friendly_founder(friend_account);
     // you better free your mind instead
@@ -39,6 +40,7 @@ module ol_framework::vouch_txs {
     vouch_limits::assert_revoke_limit(signer::address_of(grantor));
     vouch::revoke(grantor, friend_account);
     page_rank_lazy::mark_as_stale(friend_account);
+    page_rank_lazy::set_score(friend_account); // recalculate cache
   }
 
   public entry fun clean_expired(user_sig: &signer) {
