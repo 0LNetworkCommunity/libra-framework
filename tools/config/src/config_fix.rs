@@ -216,7 +216,7 @@ fn interactive_remove_profile(cfg: &mut AppCfg) -> Result<()> {
     let profile_id = profile_to_remove.account.to_hex_literal();
 
     if dialoguer::Confirm::new()
-        .with_prompt(&format!(
+        .with_prompt(format!(
             "Are you sure you want to remove profile '{}' ({})?",
             profile_to_remove.nickname, profile_to_remove.account
         ))
