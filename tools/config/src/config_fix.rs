@@ -397,7 +397,6 @@ async fn interactive_edit_single_profile(
     let options = vec![
         "Reset account address from mnemonic",
         "Add a new profile",
-        "Update fullnode URL",
         "Exit without making changes",
     ];
 
@@ -420,10 +419,6 @@ async fn interactive_edit_single_profile(
             Ok(true)
         }
         2 => {
-            // Update URL
-            interactive_update_url(cfg, chain_name).await
-        }
-        3 => {
             // Exit
             Ok(false)
         }
@@ -443,7 +438,6 @@ async fn interactive_profile_management(
         "Change default profile",
         "Edit a profile",
         "Remove a profile",
-        "Update fullnode URL",
         "Exit without making changes",
     ];
 
@@ -474,10 +468,6 @@ async fn interactive_profile_management(
             Ok(true)
         }
         4 => {
-            // Update URL
-            interactive_update_url(cfg, chain_name).await
-        }
-        5 => {
             // Exit
             Ok(false)
         }
