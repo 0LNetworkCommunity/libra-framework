@@ -183,9 +183,11 @@ module ol_framework::vouch_limits {
     #[view]
     /// Calculate the maximum number of vouches a user should be able to give based on their trust score
     public fun calculate_score_limit(grantor_acc: address): u64 {
-        // Calculate the quality using the social distance method
+        // Get the user's vouching limit using the social distance method
         // This avoids dependency on page_rank_lazy
-        let trust_score = page_rank_lazy::get_trust_score(grantor_acc);
+
+        // commit note: this was previously an impure function which would fail
+        let trust_score = page_rank_lazy::get_cached_score(grantor_acc);
         let max_score = page_rank_lazy::get_max_single_score();
 
         // For accounts with low quality vouchers,

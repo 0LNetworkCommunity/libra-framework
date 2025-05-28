@@ -5902,6 +5902,7 @@ dependencies = [
  "indoc",
  "libra-smoke-tests",
  "libra-types",
+ "serde 1.0.214",
  "serde_json",
  "tokio",
  "url",

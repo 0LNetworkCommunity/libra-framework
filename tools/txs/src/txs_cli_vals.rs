@@ -7,7 +7,7 @@ use diem_types::account_address::AccountAddress;
 use libra_cached_packages::libra_stdlib::EntryFunctionCall::{
     self, JailUnjailByVoucher, ProofOfFeePofRetractBid, ProofOfFeePofUpdateBid,
     ProofOfFeePofUpdateBidNetReward, StakeUpdateNetworkAndFullnodeAddresses,
-    ValidatorUniverseRegisterValidator, VouchTxsRevoke, VouchTxsVouchFor,
+    ValidatorUniverseRegisterValidator,
 };
 use libra_config::validator_registration;
 use libra_types::global_config_dir;
@@ -40,15 +40,8 @@ pub enum ValidatorTxs {
         /// Un-jail this validator. Used by any validators which are vouching for a validator which is jailed
         unjail_acct: AccountAddress,
     },
-    /// Vouch for accounts
-    Vouch {
-        #[clap(short, long)]
-        /// Vouch for another account, usually for validators
-        vouch_for: AccountAddress,
-        #[clap(short, long)]
-        /// Revoke a vouch for an account
-        revoke: bool,
-    },
+
+    // commit note: deduplicated in favor of txs_cli_user
     /// Register as a validator
     Register {
         #[clap(short('f'), long)]
@@ -106,22 +99,8 @@ impl ValidatorTxs {
             ValidatorTxs::Jail { unjail_acct } => JailUnjailByVoucher {
                 addr: unjail_acct.to_owned(),
             },
-            // TODO: kept here for compatibility
-            // should be deprecated in favor of txs_cli_user
-            ValidatorTxs::Vouch {
-                vouch_for: vouch_acct,
-                revoke,
-            } => {
-                if *revoke {
-                    VouchTxsRevoke {
-                        friend_account: *vouch_acct,
-                    }
-                } else {
-                    VouchTxsVouchFor {
-                        friend_account: *vouch_acct,
-                    }
-                }
-            }
+
+            // commit note: deduplicated in favor of txs_cli_user
             ValidatorTxs::Register { operator_file } => {
                 let reg = validator_registration::registration_from_operator_yaml(
                     operator_file.to_owned(),
