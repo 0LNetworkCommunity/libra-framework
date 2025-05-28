@@ -98,11 +98,10 @@ async fn reset_address_profile(
     let client = Client::new(cfg.pick_url(chain_name)?);
 
     // Lookup originating address if client index is successful and we have a real authkey
-    if client.get_index().await.is_ok() && authkey != libra_types::exports::AuthenticationKey::zero() {
-        account_address = match client
-            .lookup_originating_address(authkey)
-            .await
-        {
+    if client.get_index().await.is_ok()
+        && authkey != libra_types::exports::AuthenticationKey::zero()
+    {
+        account_address = match client.lookup_originating_address(authkey).await {
             Ok(r) => r,
             _ => {
                 println!("This looks like a new account, and it's not yet on chain. If this is not what you expected, are you sure you are using the correct recovery mnemonic?");
@@ -123,8 +122,7 @@ async fn reset_address_profile(
         .with_prompt("set as default profile?")
         .interact()?
     {
-        cfg.workspace
-            .set_default(account_address.to_hex_literal());
+        cfg.workspace.set_default(account_address.to_hex_literal());
     }
 
     cfg.get_profile_mut(Some(account_address.to_hex_literal()))
@@ -138,10 +136,10 @@ fn remove_profile(cfg: &mut AppCfg, profile_identifier: &str) {
     // If that fails, try to find by account address directly
     if result.is_err() {
         // Find the profile index by direct account comparison
-        if let Some(index) = cfg.user_profiles.iter().position(|p|
-            p.account.to_hex_literal() == profile_identifier ||
-            p.account.to_string() == profile_identifier
-        ) {
+        if let Some(index) = cfg.user_profiles.iter().position(|p| {
+            p.account.to_hex_literal() == profile_identifier
+                || p.account.to_string() == profile_identifier
+        }) {
             cfg.user_profiles.remove(index);
             println!("Profile removed successfully!");
             return;
@@ -156,11 +154,7 @@ fn remove_profile(cfg: &mut AppCfg, profile_identifier: &str) {
 }
 
 /// Force URL overwrite in the network profile
-fn force_url_overwrite(
-    cfg: &mut AppCfg,
-    url: &Url,
-    chain_name: Option<NamedChain>,
-) -> Result<()> {
+fn force_url_overwrite(cfg: &mut AppCfg, url: &Url, chain_name: Option<NamedChain>) -> Result<()> {
     let np = cfg.get_network_profile_mut(chain_name)?;
     np.nodes = vec![];
     np.add_url(url.to_owned());
@@ -241,7 +235,11 @@ fn interactive_remove_profile(cfg: &mut AppCfg) -> Result<()> {
 async fn interactive_update_url(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
     // Display current URLs
     let current_urls = match cfg.get_network_profile(chain_name) {
-        Ok(np) => np.nodes.iter().map(|n| n.url.to_string()).collect::<Vec<_>>(),
+        Ok(np) => np
+            .nodes
+            .iter()
+            .map(|n| n.url.to_string())
+            .collect::<Vec<_>>(),
         Err(_) => vec!["No URLs configured".to_string()],
     };
 
@@ -289,7 +287,6 @@ async fn interactive_update_url(cfg: &mut AppCfg, chain_name: Option<NamedChain>
         }
         4 => {
             // Cancel
-            println!("No changes made to fullnode URLs.");
             Ok(false)
         }
         _ => unreachable!(),
@@ -302,8 +299,7 @@ fn add_fullnode_url(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<
         .with_prompt("Enter fullnode URL to add")
         .interact()?;
 
-    let url = Url::parse(&url_input)
-        .map_err(|_| anyhow!("Invalid URL format"))?;
+    let url = Url::parse(&url_input).map_err(|_| anyhow!("Invalid URL format"))?;
 
     let np = cfg.get_network_profile_mut(chain_name)?;
     np.add_url(url.clone());
@@ -329,7 +325,10 @@ fn remove_all_fullnodes(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Res
 }
 
 /// Refresh URLs from the default playlist for the network
-async fn refresh_from_default_playlist(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+async fn refresh_from_default_playlist(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     use libra_types::core_types::network_playlist::NetworkPlaylist;
 
     println!("Refreshing from default playlist...");
@@ -351,15 +350,18 @@ async fn refresh_from_default_playlist(cfg: &mut AppCfg, chain_name: Option<Name
 }
 
 /// Refresh URLs from a custom playlist URL
-async fn refresh_from_custom_playlist(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+async fn refresh_from_custom_playlist(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     use libra_types::core_types::network_playlist::NetworkPlaylist;
 
     let playlist_url_input: String = dialoguer::Input::new()
         .with_prompt("Enter playlist URL")
         .interact()?;
 
-    let playlist_url = Url::parse(&playlist_url_input)
-        .map_err(|_| anyhow!("Invalid playlist URL format"))?;
+    let playlist_url =
+        Url::parse(&playlist_url_input).map_err(|_| anyhow!("Invalid playlist URL format"))?;
 
     println!("Fetching playlist from {}...", playlist_url);
 
@@ -380,9 +382,15 @@ async fn refresh_from_custom_playlist(cfg: &mut AppCfg, chain_name: Option<Named
 }
 
 /// Interactive edit for a single profile (with option to add new profile)
-async fn interactive_edit_single_profile(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+async fn interactive_edit_single_profile(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     let current_profile = &cfg.user_profiles[0];
-    println!("\nCurrent profile: {} ({})", current_profile.nickname, current_profile.account);
+    println!(
+        "\nCurrent profile: {} ({})",
+        current_profile.nickname, current_profile.account
+    );
 
     println!("\nWhat would you like to do?");
 
@@ -424,7 +432,10 @@ async fn interactive_edit_single_profile(cfg: &mut AppCfg, chain_name: Option<Na
 }
 
 /// Interactive profile management menu (for multiple profiles)
-async fn interactive_profile_management(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+async fn interactive_profile_management(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     println!("\nProfile Management");
 
     let options = vec![
@@ -475,7 +486,10 @@ async fn interactive_profile_management(cfg: &mut AppCfg, chain_name: Option<Nam
 }
 
 /// Interactive profile management based on number of profiles
-async fn interactive_manage_profiles(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Result<bool> {
+async fn interactive_manage_profiles(
+    cfg: &mut AppCfg,
+    chain_name: Option<NamedChain>,
+) -> Result<bool> {
     if cfg.user_profiles.len() == 1 {
         // Single profile: Show edit profile menu with option to add new profile
         interactive_edit_single_profile(cfg, chain_name).await
@@ -486,10 +500,7 @@ async fn interactive_manage_profiles(cfg: &mut AppCfg, chain_name: Option<NamedC
         // No profiles: Show basic options
         println!("\nNo profiles found. What would you like to do?");
 
-        let options = vec![
-            "Add a new profile",
-            "Cancel",
-        ];
+        let options = vec!["Add a new profile", "Cancel"];
 
         let selection = dialoguer::Select::new()
             .with_prompt("Choose an option")
@@ -512,7 +523,10 @@ async fn interactive_manage_profiles(cfg: &mut AppCfg, chain_name: Option<NamedC
 }
 
 /// Interactive network management
-async fn interactive_manage_networks(cfg: &mut AppCfg, _chain_name: Option<NamedChain>) -> Result<bool> {
+async fn interactive_manage_networks(
+    cfg: &mut AppCfg,
+    _chain_name: Option<NamedChain>,
+) -> Result<bool> {
     // Display current networks
     println!("\nConfigured networks:");
     if cfg.network_playlist.is_empty() {
@@ -520,7 +534,12 @@ async fn interactive_manage_networks(cfg: &mut AppCfg, _chain_name: Option<Named
     } else {
         for (i, np) in cfg.network_playlist.iter().enumerate() {
             let url_count = np.nodes.len();
-            println!("  {}. {:?} ({} fullnode URLs)", i + 1, np.chain_name, url_count);
+            println!(
+                "  {}. {:?} ({} fullnode URLs)",
+                i + 1,
+                np.chain_name,
+                url_count
+            );
         }
     }
 
@@ -534,7 +553,9 @@ async fn interactive_manage_networks(cfg: &mut AppCfg, _chain_name: Option<Named
     }
 
     // Add option to add new network if there are unconfigured chains
-    let configured_chains: Vec<NamedChain> = cfg.network_playlist.iter()
+    let configured_chains: Vec<NamedChain> = cfg
+        .network_playlist
+        .iter()
         .map(|np| np.chain_name)
         .collect();
 
@@ -562,7 +583,6 @@ async fn interactive_manage_networks(cfg: &mut AppCfg, _chain_name: Option<Named
         }
         _ => {
             // Cancel
-            println!("No changes made to networks.");
             Ok(false)
         }
     }
@@ -572,11 +592,7 @@ async fn interactive_manage_networks(cfg: &mut AppCfg, _chain_name: Option<Named
 async fn interactive_change_defaults(cfg: &mut AppCfg) -> Result<bool> {
     println!("\nWhat default would you like to change?");
 
-    let options = vec![
-        "Change default profile",
-        "Change default chain",
-        "Cancel",
-    ];
+    let options = vec!["Change default profile", "Change default chain", "Cancel"];
 
     let selection = dialoguer::Select::new()
         .with_prompt("Choose an option")
@@ -627,9 +643,13 @@ fn change_default_profile(cfg: &mut AppCfg) -> Result<()> {
         .interact()?;
 
     let selected_profile = &cfg.user_profiles[selection];
-    cfg.workspace.set_default(selected_profile.account.to_hex_literal());
+    cfg.workspace
+        .set_default(selected_profile.account.to_hex_literal());
 
-    println!("Default profile changed to: {} ({})", selected_profile.nickname, selected_profile.account);
+    println!(
+        "Default profile changed to: {} ({})",
+        selected_profile.nickname, selected_profile.account
+    );
     Ok(())
 }
 
@@ -645,12 +665,7 @@ async fn add_new_profile(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Re
 fn change_default_chain(cfg: &mut AppCfg) -> Result<()> {
     use dialoguer::Select;
 
-    let chain_options = vec![
-        "mainnet",
-        "testnet",
-        "devnet",
-        "testing",
-    ];
+    let chain_options = vec!["mainnet", "testnet", "devnet", "testing"];
 
     let selection = Select::new()
         .with_prompt("Choose default chain")
@@ -691,7 +706,10 @@ async fn edit_profile(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Resul
         .interact()?;
 
     let selected_profile = &cfg.user_profiles[selection];
-    println!("\nEditing profile: {} ({})", selected_profile.nickname, selected_profile.account);
+    println!(
+        "\nEditing profile: {} ({})",
+        selected_profile.nickname, selected_profile.account
+    );
 
     let options = vec![
         "Reset account address from mnemonic",
@@ -732,7 +750,6 @@ async fn edit_profile(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Resul
         }
         2 => {
             // Cancel
-            println!("No changes made to profile.");
             Ok(false)
         }
         _ => unreachable!(),
@@ -781,7 +798,9 @@ async fn select_and_edit_network(cfg: &mut AppCfg) -> Result<bool> {
 
 /// Add a new network (chain) to the configuration
 async fn add_new_network(cfg: &mut AppCfg) -> Result<bool> {
-    let configured_chains: Vec<NamedChain> = cfg.network_playlist.iter()
+    let configured_chains: Vec<NamedChain> = cfg
+        .network_playlist
+        .iter()
         .map(|np| np.chain_name)
         .collect();
 
@@ -875,7 +894,11 @@ async fn add_new_network(cfg: &mut AppCfg) -> Result<bool> {
                 Ok(false)
             } else {
                 cfg.maybe_add_custom_playlist(&np);
-                println!("Network {:?} added with {} custom URLs.", selected_chain, np.nodes.len());
+                println!(
+                    "Network {:?} added with {} custom URLs.",
+                    selected_chain,
+                    np.nodes.len()
+                );
                 Ok(true)
             }
         }
@@ -891,7 +914,8 @@ async fn add_new_network(cfg: &mut AppCfg) -> Result<bool> {
                 .map_err(|_| anyhow!("Invalid playlist URL format"))?;
 
             println!("Fetching playlist from {}...", playlist_url);
-            let mut np = NetworkPlaylist::from_playlist_url(playlist_url, Some(selected_chain)).await?;
+            let mut np =
+                NetworkPlaylist::from_playlist_url(playlist_url, Some(selected_chain)).await?;
             np.refresh_sync_status().await?;
 
             cfg.maybe_add_custom_playlist(&np);
