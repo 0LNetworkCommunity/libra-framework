@@ -30,7 +30,7 @@ module ol_framework::page_rank_lazy {
     const MAX_PROCESSED_ADDRESSES: u64 = 10_000;
 
     /// Maximum allowed depth for trust graph traversal.
-    const MAX_PATH_DEPTH: u64 = 5;
+    const MAX_PATH_DEPTH: u64 = 4;
 
     /// Stores a user's trust score and its staleness state.
     struct UserTrustRecord has key, drop {
@@ -86,7 +86,7 @@ module ol_framework::page_rank_lazy {
     /// Recalculates and updates the trust score for an address.
     /// Traverses the trust graph from roots to the target and updates the cache.
     /// This is a costly operation and should be used sparingly.
-    fun set_score(addr: address): u64 acquires UserTrustRecord {
+    public(friend) fun set_score(addr: address): u64 acquires UserTrustRecord {
         // If user has no trust record, they have no score
         assert!(exists<UserTrustRecord>(addr), error::invalid_state(ENOT_INITIALIZED));
         // Cache is stale or expired - compute fresh score
@@ -132,11 +132,14 @@ module ol_framework::page_rank_lazy {
         // Early terminations that don't consume processing budget
         if (current_depth >= max_depth) return 0;
         if (vector::contains(visited, &current)) return 0;
+
         if (!vouch::is_init(current)) return 0;
+
         if (current_power < 2) return 0;
 
         // Check if we've reached a root of trust - this is our success condition!
         if (vector::contains(roots, &current) && current_depth > 0) {
+
             return current_power
         };
 
@@ -144,8 +147,9 @@ module ol_framework::page_rank_lazy {
         assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
         *processed_count = *processed_count + 1;
 
+
         // Get who vouched FOR this current user (backwards direction)
-        let (received_from, _) = vouch::get_received_vouches(current);
+        let received_from = vouch::get_received_vouches_not_expired(current);
         let neighbor_count = vector::length(&received_from);
 
         if (neighbor_count == 0) return 0;
@@ -159,11 +163,15 @@ module ol_framework::page_rank_lazy {
 
         let i = 0;
 
+
         while (i < neighbor_count) {
             assert!(*processed_count < MAX_PROCESSED_ADDRESSES, error::invalid_state(EMAX_PROCESSED_ADDRESSES));
 
             let neighbor = *vector::borrow(&received_from, i);
+            // if we haven't visited yet in this branch of the traversal,
             if (!vector::contains(visited, &neighbor)) {
+                // backtracking for the next neighbor
+                // each branch gets the previous visited set of this branch
                 let visited_copy = *visited;
                 let path_score = walk_backwards_from_target_with_stats(
                     neighbor,
@@ -189,6 +197,7 @@ module ol_framework::page_rank_lazy {
         let visited = vector::empty<address>();
         let processed_count: u64 = 0; // Initialize as a mutable local variable
         walk_stale(user, &mut visited, &mut processed_count); // Pass as a mutable reference
+        // set_score(user); // Recalculate the score after marking stale
     }
 
     /// Helper for `mark_as_stale`. Recursively marks downstream nodes as stale.
