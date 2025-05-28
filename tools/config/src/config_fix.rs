@@ -81,7 +81,18 @@ fn display_existing_profiles(cfg: &AppCfg) {
     if !cfg.user_profiles.is_empty() {
         println!("your profiles:");
         for p in &cfg.user_profiles {
-            println!("- address: {}, nickname: {}", p.account, p.nickname);
+            let is_default = cfg
+                .workspace
+                .default_profile
+                .as_ref()
+                .map(|default| default == &p.account.to_hex_literal())
+                .unwrap_or(false);
+
+            let default_marker = if is_default { " (default)" } else { "" };
+            println!(
+                "- address: {}, nickname: {}{}",
+                p.account, p.nickname, default_marker
+            );
         }
     } else {
         println!("no profiles found");
@@ -204,7 +215,17 @@ fn interactive_remove_profile(cfg: &mut AppCfg) -> Result<()> {
     let profile_options: Vec<String> = cfg
         .user_profiles
         .iter()
-        .map(|p| format!("{} ({})", p.nickname, p.account))
+        .map(|p| {
+            let is_default = cfg
+                .workspace
+                .default_profile
+                .as_ref()
+                .map(|default| default == &p.account.to_hex_literal())
+                .unwrap_or(false);
+
+            let default_marker = if is_default { " (default)" } else { "" };
+            format!("{} ({}){}", p.nickname, p.account, default_marker)
+        })
         .collect();
 
     let selection = dialoguer::Select::new()
@@ -480,34 +501,39 @@ async fn interactive_manage_profiles(
     cfg: &mut AppCfg,
     chain_name: Option<NamedChain>,
 ) -> Result<bool> {
-    if cfg.user_profiles.len() == 1 {
-        // Single profile: Show edit profile menu with option to add new profile
-        interactive_edit_single_profile(cfg, chain_name).await
-    } else if cfg.user_profiles.len() > 1 {
-        // Multiple profiles: Show profile management menu
-        interactive_profile_management(cfg, chain_name).await
-    } else {
-        // No profiles: Show basic options
-        println!("\nNo profiles found. What would you like to do?");
+    use std::cmp::Ordering;
 
-        let options = vec!["Add a new profile", "Cancel"];
+    match cfg.user_profiles.len().cmp(&1) {
+        Ordering::Equal => {
+            // Single profile: Show edit profile menu with option to add new profile
+            interactive_edit_single_profile(cfg, chain_name).await
+        }
+        Ordering::Greater => {
+            // Multiple profiles: Show profile management menu
+            interactive_profile_management(cfg, chain_name).await
+        }
+        Ordering::Less => {
+            // No profiles: Show basic options
+            println!("\nNo profiles found. What would you like to do?");
 
-        let selection = dialoguer::Select::new()
-            .with_prompt("Choose an option")
-            .items(&options)
-            .default(0)
-            .interact()?;
+            let options = vec!["Add a new profile", "Cancel"];
 
-        match selection {
-            0 => {
-                add_new_profile(cfg, chain_name).await?;
-                Ok(true)
+            let selection = dialoguer::Select::new()
+                .with_prompt("Choose an option")
+                .items(&options)
+                .default(0)
+                .interact()?;
+
+            match selection {
+                0 => {
+                    add_new_profile(cfg, chain_name).await?;
+                    Ok(true)
+                }
+                1 => {
+                    Ok(false)
+                }
+                _ => unreachable!(),
             }
-            1 => {
-                println!("No changes made.");
-                Ok(false)
-            }
-            _ => unreachable!(),
         }
     }
 }
@@ -623,7 +649,17 @@ fn change_default_profile(cfg: &mut AppCfg) -> Result<()> {
     let profile_options: Vec<String> = cfg
         .user_profiles
         .iter()
-        .map(|p| format!("{} ({})", p.nickname, p.account))
+        .map(|p| {
+            let is_default = cfg
+                .workspace
+                .default_profile
+                .as_ref()
+                .map(|default| default == &p.account.to_hex_literal())
+                .unwrap_or(false);
+
+            let default_marker = if is_default { " (current default)" } else { "" };
+            format!("{} ({}){}", p.nickname, p.account, default_marker)
+        })
         .collect();
 
     let selection = dialoguer::Select::new()
@@ -655,7 +691,22 @@ async fn add_new_profile(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Re
 fn change_default_chain(cfg: &mut AppCfg) -> Result<()> {
     use dialoguer::Select;
 
-    let chain_options = vec!["mainnet", "testnet", "devnet", "testing"];
+    if cfg.network_playlist.is_empty() {
+        return Err(anyhow!(
+            "No networks configured. Please configure a network first."
+        ));
+    }
+
+    let configured_chains: Vec<NamedChain> = cfg
+        .network_playlist
+        .iter()
+        .map(|np| np.chain_name)
+        .collect();
+
+    let chain_options: Vec<String> = configured_chains
+        .iter()
+        .map(|chain| format!("{:?}", chain).to_lowercase())
+        .collect();
 
     let selection = Select::new()
         .with_prompt("Choose default chain")
@@ -663,13 +714,7 @@ fn change_default_chain(cfg: &mut AppCfg) -> Result<()> {
         .default(0)
         .interact()?;
 
-    let selected_chain = match selection {
-        0 => NamedChain::MAINNET,
-        1 => NamedChain::TESTNET,
-        2 => NamedChain::DEVNET,
-        3 => NamedChain::TESTING,
-        _ => unreachable!(),
-    };
+    let selected_chain = configured_chains[selection];
 
     cfg.workspace.default_chain_id = selected_chain;
     println!("Default chain changed to: {:?}", selected_chain);
@@ -686,7 +731,17 @@ async fn edit_profile(cfg: &mut AppCfg, chain_name: Option<NamedChain>) -> Resul
     let profile_options: Vec<String> = cfg
         .user_profiles
         .iter()
-        .map(|p| format!("{} ({})", p.nickname, p.account))
+        .map(|p| {
+            let is_default = cfg
+                .workspace
+                .default_profile
+                .as_ref()
+                .map(|default| default == &p.account.to_hex_literal())
+                .unwrap_or(false);
+
+            let default_marker = if is_default { " (default)" } else { "" };
+            format!("{} ({}){}", p.nickname, p.account, default_marker)
+        })
         .collect();
 
     let selection = dialoguer::Select::new()
