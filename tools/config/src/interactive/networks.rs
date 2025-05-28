@@ -186,7 +186,7 @@ pub async fn select_and_edit_network(cfg: &mut AppCfg) -> Result<bool> {
 
 /// Add a new network (chain) to the configuration
 pub async fn add_new_network(cfg: &mut AppCfg) -> Result<bool> {
-    use crate::config_fix::utils::get_available_chains_not_configured;
+    use crate::interactive::utils::get_available_chains_not_configured;
 
     let configured_chains: Vec<NamedChain> = cfg
         .network_playlist
@@ -320,7 +320,7 @@ pub async fn interactive_manage_networks(
     cfg: &mut AppCfg,
     _chain_name: Option<NamedChain>,
 ) -> Result<bool> {
-    use crate::config_fix::utils::get_available_chains_not_configured;
+    use crate::interactive::utils::get_available_chains_not_configured;
 
     // Display current networks
     println!("\nConfigured networks:");

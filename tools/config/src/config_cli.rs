@@ -1,5 +1,5 @@
 use crate::{
-    config_fix, config_wizard,
+    interactive, config_wizard,
     get_genesis_artifacts::{download_genesis, get_genesis_waypoint},
     make_yaml_public_fullnode::init_fullnode_yaml,
     validator_config::{validator_dialogue, vfn_dialogue},
@@ -94,7 +94,7 @@ impl ConfigCli {
                 remove_profile,
                 fullnode_url: force_url,
             }) => {
-                config_fix::fix_config(config_fix::FixOptions {
+                interactive::fix_config(interactive::FixOptions {
                     reset_address: *reset_address,
                     remove_profile: remove_profile.clone(),
                     fullnode_url: force_url.clone(),

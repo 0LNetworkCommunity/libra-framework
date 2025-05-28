@@ -1,4 +1,4 @@
-use crate::config_fix::account_selection;
+use crate::interactive::account_selection;
 use anyhow::Context;
 use diem_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
 use diem_types::chain_id::NamedChain;

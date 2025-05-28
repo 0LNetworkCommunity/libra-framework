@@ -1,5 +1,5 @@
 pub mod config_cli;
-pub mod config_fix;
+pub mod interactive;
 pub mod config_wizard;
 pub mod get_genesis_artifacts;
 pub mod make_profile; // TODO: deprecated?

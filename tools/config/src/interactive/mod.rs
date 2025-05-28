@@ -1,4 +1,4 @@
-// Main config_fix module
+// Main interactive module
 
 pub mod account_selection;
 pub mod defaults;
