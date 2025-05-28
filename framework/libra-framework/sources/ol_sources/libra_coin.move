@@ -19,6 +19,7 @@ module ol_framework::libra_coin {
     use diem_framework::system_addresses;
 
     use ol_framework::globals;
+    use ol_framework::testnet;
 
     friend diem_framework::genesis;
     friend ol_framework::genesis_migration;
@@ -34,6 +35,8 @@ module ol_framework::libra_coin {
     const EDELEGATION_NOT_FOUND: u64 = 3;
     /// Supply somehow above MAX_U64
     const ESUPPLY_OVERFLOW: u64 = 4;
+    /// This operation is not allowed on mainnet
+    const ENOT_ALLOWED_ON_MAINNET: u64 = 5;
 
     struct LibraCoin has key { /* new games for society */}
 
@@ -303,6 +306,7 @@ module ol_framework::libra_coin {
     /// Only callable in tests and testnets where the core resources account exists.
     /// Claim the delegated mint capability and destroy the delegated token.
     fun claim_mint_capability(account: &signer) acquires Delegations, MintCapStore {
+        assert!(testnet::is_not_mainnet(), error::invalid_state(ENOT_ALLOWED_ON_MAINNET));
         let maybe_index = find_delegation(signer::address_of(account));
         assert!(option::is_some(&maybe_index), EDELEGATION_NOT_FOUND);
         let idx = *option::borrow(&maybe_index);
