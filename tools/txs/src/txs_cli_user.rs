@@ -12,6 +12,7 @@ use diem_types::{
     transaction::TransactionPayload,
 };
 use libra_cached_packages::libra_stdlib;
+use libra_query;
 use libra_types::{
     exports::{AuthenticationKey, Ed25519PrivateKey},
     type_extensions::client_ext::ClientExt,
@@ -346,12 +347,66 @@ pub struct VouchTx {
 
 impl VouchTx {
     pub async fn run(&self, sender: &mut Sender) -> anyhow::Result<()> {
+        let sender_address = sender.local_account.address();
+
+        // Show vouch reports BEFORE the transaction
+        println!("\n=== BEFORE TRANSACTION ===");
+        println!("\nSender account vouch report:");
+        if let Err(e) = libra_query::account_queries::account_vouch_report_console(
+            sender.client(),
+            sender_address,
+        )
+        .await
+        {
+            println!("Could not get sender vouch report: {}", e);
+        }
+
+        println!("\nTarget account vouch report:");
+        if let Err(e) = libra_query::account_queries::account_vouch_report_console(
+            sender.client(),
+            self.vouch_for,
+        )
+        .await
+        {
+            println!("Could not get target account vouch report: {}", e);
+        }
+
+        // Execute the transaction
+        let action = if self.revoke { "revoke" } else { "vouch for" };
+        println!(
+            "\nExecuting transaction to {} address {}...",
+            action, self.vouch_for
+        );
+
         let payload = if self.revoke {
             libra_stdlib::vouch_txs_revoke(self.vouch_for)
         } else {
             libra_stdlib::vouch_txs_vouch_for(self.vouch_for)
         };
         sender.sign_submit_wait(payload).await?;
+
+        // Show vouch reports AFTER the transaction
+        println!("\n=== AFTER TRANSACTION ===");
+        println!("\nSender account vouch report:");
+        if let Err(e) = libra_query::account_queries::account_vouch_report_console(
+            sender.client(),
+            sender_address,
+        )
+        .await
+        {
+            println!("Could not get sender vouch report: {}", e);
+        }
+
+        println!("\nTarget account vouch report:");
+        if let Err(e) = libra_query::account_queries::account_vouch_report_console(
+            sender.client(),
+            self.vouch_for,
+        )
+        .await
+        {
+            println!("Could not get target account vouch report: {}", e);
+        }
+
         Ok(())
     }
 }
