@@ -172,16 +172,19 @@ module ol_framework::donor_voice_txs {
       // commit note: moving this to the end, because it may check data
       // structures that are not yet initialized.
 
-      // check if the account has a meaningful balance
-      // donor voice accounts build slowly through decentralized
-      // donations, and large initialization removes transaction
-      // metadata for donor governance
-      let (_, balance) = ol_account::balance(addr);
-      assert!(balance < MAXIMUM_STARTING_BALANCE, error::invalid_argument(ECANT_INIT_WITH_HIGH_BALANCE));
+      // If account is a pre-v8 CW the balance check will fail
+      if (!donor_voice::is_donor_voice(addr)) {
+        // check users are not bypassing the human verification
+        // for level 8
+        reauthorization::assert_v8_authorized(addr);
 
-      // check users are not bypassing the human verification
-      // for level 8
-      reauthorization::assert_v8_authorized(addr);
+        // check if the account has a meaningful balance
+        // donor voice accounts build slowly through decentralized
+        // donations, and large initialization removes transaction
+        // metadata for donor governance
+        let (_, balance) = ol_account::balance(addr);
+        assert!(balance < MAXIMUM_STARTING_BALANCE, error::invalid_argument(ECANT_INIT_WITH_HIGH_BALANCE));
+      };
 
     }
 

@@ -14,8 +14,6 @@ module ol_framework::community_wallet_init {
     use ol_framework::match_index;
     use ol_framework::community_wallet;
     use ol_framework::community_wallet_advance;
-    use ol_framework::reauthorization;
-
 
     #[test_only]
     friend ol_framework::test_community_wallet;
@@ -73,7 +71,6 @@ module ol_framework::community_wallet_init {
       check_threshold: u64,
     ) {
       let signer_addr = signer::address_of(sig);
-      reauthorization::assert_v8_authorized(signer_addr);
 
       check_proposed_auths(initial_authorities, check_threshold);
 
