@@ -50,6 +50,7 @@ module ol_framework::multi_action {
     #[test_only]
     friend ol_framework::test_community_wallet;
 
+    /// Donor voice governance not initialized
     const EGOV_NOT_INITIALIZED: u64 = 1;
     /// The owner of this account can't be an authority, since it will subsequently be bricked. The signer of this account is no longer useful. The account is now controlled by the Governance logic.
     const ESIGNER_CANT_BE_AUTHORITY: u64 = 2;
