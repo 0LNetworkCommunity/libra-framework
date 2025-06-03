@@ -4,13 +4,10 @@ on:
   workflow_dispatch: # manual trigger
   schedule:
     - cron: "30 00 * * *"
-  pull_request:
-    types:
-      - opened
-      - synchronize
+  push:
     branches:
-      - "release**"
-      - "main**"
+      - main
+      - "release*"
 jobs:
   builds:
     strategy:
