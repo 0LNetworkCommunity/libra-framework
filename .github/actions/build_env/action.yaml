@@ -21,7 +21,7 @@ runs:
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld libgmp-dev
+        packages: build-essential ca-certificates clang curl git libpq-dev libssl-dev pkg-config lsof lld
         version: 1.0
 
     - uses: actions-rs/toolchain@v1
