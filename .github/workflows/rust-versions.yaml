@@ -2,8 +2,6 @@
 name: rust-versions
 on:
   workflow_dispatch: # manual trigger
-  push:
-    branches: ["**"] # glob pattern to allow slash /
   schedule:
     - cron: "30 00 * * *"
   pull_request:
