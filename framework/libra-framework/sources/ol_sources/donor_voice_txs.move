@@ -156,19 +156,7 @@ module ol_framework::donor_voice_txs {
 
     public(friend) fun make_donor_voice(sponsor: &signer)  {
       assert!(!ol_features_constants::is_governance_mode_enabled(), error::invalid_state(EGOVERNANCE_MODE));
-
-      // check users are not bypassing the human verification
-      // for level 8
       let addr = signer::address_of(sponsor);
-      reauthorization::assert_v8_authorized(addr);
-
-      // check if the account has a meaningful balance
-      // donor voice accounts build slowly through decentralized
-      // donations, and large initialization removes transaction
-      // metadata for donor governance
-      let (_, balance) = ol_account::balance(addr);
-      assert!(balance < MAXIMUM_STARTING_BALANCE, error::invalid_argument(ECANT_INIT_WITH_HIGH_BALANCE));
-
 
       // will not create if already exists (for migration)
       cumulative_deposits::init_cumulative_deposits(sponsor);
@@ -179,6 +167,25 @@ module ol_framework::donor_voice_txs {
       structs_init(sponsor, liquidate_to_match_index);
       make_multi_action(sponsor);
       donor_voice::add(sponsor);
+
+
+      // commit note: moving this to the end, because it may check data
+      // structures that are not yet initialized.
+
+      // If account is a pre-v8 CW the balance check will fail
+      if (!donor_voice::is_donor_voice(addr)) {
+        // check users are not bypassing the human verification
+        // for level 8
+        reauthorization::assert_v8_authorized(addr);
+
+        // check if the account has a meaningful balance
+        // donor voice accounts build slowly through decentralized
+        // donations, and large initialization removes transaction
+        // metadata for donor governance
+        let (_, balance) = ol_account::balance(addr);
+        assert!(balance < MAXIMUM_STARTING_BALANCE, error::invalid_argument(ECANT_INIT_WITH_HIGH_BALANCE));
+      };
+
     }
 
     fun structs_init(sig: &signer, liquidate_to_match_index: bool) {
@@ -186,25 +193,32 @@ module ol_framework::donor_voice_txs {
 
       // exit gracefully in migration cases
       // if Freeze exists everything else is likely created
-      if (exists<Freeze>(signer::address_of(sig))) return;
+      if (!exists<Freeze>(signer::address_of(sig))) {
+          move_to<Freeze>(
+          sig,
+          Freeze {
+            is_frozen: false,
+            consecutive_rejections: 0,
+            unfreeze_votes: vector::empty<address>(),
+            liquidate_to_match_index,
+          }
+        );
+      };
 
-      move_to<Freeze>(
-        sig,
-        Freeze {
-          is_frozen: false,
-          consecutive_rejections: 0,
-          unfreeze_votes: vector::empty<address>(),
-          liquidate_to_match_index,
-        }
-      );
 
-      let guid_capability = account::create_guid_capability(sig);
-      move_to(sig, TxSchedule {
+      if (!exists<TxSchedule>(signer::address_of(sig))) {
+        // if the TxSchedule does not exist, we create it
+        // this is the first time we are initializing the account
+        // so we create a GUID capability for the multisig
+        // and then we can use it to schedule payments.
+        let guid_capability = account::create_guid_capability(sig);
+        move_to(sig, TxSchedule {
           scheduled: vector::empty(),
           veto: vector::empty(),
           paid: vector::empty(),
           guid_capability,
         });
+      };
 
       // Commit note: this should now failover gracefully
       donor_voice_governance::maybe_init_dv_governance(sig);

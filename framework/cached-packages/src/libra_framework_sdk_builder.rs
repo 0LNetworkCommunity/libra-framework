@@ -132,13 +132,6 @@ pub enum EntryFunctionCall {
         code: Vec<Vec<u8>>,
     },
 
-    /// Transfers `amount` of coins `CoinType` from `from` to `to`.
-    CoinTransfer {
-        coin_type: TypeTag,
-        to: AccountAddress,
-        amount: u64,
-    },
-
     /// TODO: Allow to propose change only on the signature threshold
     /// Add or remove a signer to/from the multisig, and check if they may be related in the ancestry tree
     CommunityWalletInitChangeSignerCommunityMultisig {
@@ -330,9 +323,8 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    /// Refresh the cache
-    /// state updates must be called by a user.
-    /// Vouch tree updates could be a DDOS vector
+    /// Refreshes the cached trust score for a user by recalculating it.
+    /// Only callable by the user.
     PageRankLazyRefreshCache {
         user: AccountAddress,
     },
@@ -452,11 +444,6 @@ impl EntryFunctionCall {
                 metadata_serialized,
                 code,
             } => code_publish_package_txn(metadata_serialized, code),
-            CoinTransfer {
-                coin_type,
-                to,
-                amount,
-            } => coin_transfer(coin_type, to, amount),
             CommunityWalletInitChangeSignerCommunityMultisig {
                 multisig_address,
                 new_signer,
@@ -824,22 +811,6 @@ pub fn code_publish_package_txn(
             bcs::to_bytes(&metadata_serialized).unwrap(),
             bcs::to_bytes(&code).unwrap(),
         ],
-    ))
-}
-
-/// Transfers `amount` of coins `CoinType` from `from` to `to`.
-pub fn coin_transfer(coin_type: TypeTag, to: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("coin").to_owned(),
-        ),
-        ident_str!("transfer").to_owned(),
-        vec![coin_type],
-        vec![bcs::to_bytes(&to).unwrap(), bcs::to_bytes(&amount).unwrap()],
     ))
 }
 
@@ -1415,9 +1386,8 @@ pub fn ol_account_transfer(to: AccountAddress, amount: u64) -> TransactionPayloa
     ))
 }
 
-/// Refresh the cache
-/// state updates must be called by a user.
-/// Vouch tree updates could be a DDOS vector
+/// Refreshes the cached trust score for a user by recalculating it.
+/// Only callable by the user.
 pub fn page_rank_lazy_refresh_cache(user: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -1741,18 +1711,6 @@ mod decoder {
             Some(EntryFunctionCall::CodePublishPackageTxn {
                 metadata_serialized: bcs::from_bytes(script.args().first()?).ok()?,
                 code: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn coin_transfer(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::CoinTransfer {
-                coin_type: script.ty_args().first()?.clone(),
-                to: bcs::from_bytes(script.args().first()?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -2271,10 +2229,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "code_publish_package_txn".to_string(),
             Box::new(decoder::code_publish_package_txn),
-        );
-        map.insert(
-            "coin_transfer".to_string(),
-            Box::new(decoder::coin_transfer),
         );
         map.insert(
             "community_wallet_init_change_signer_community_multisig".to_string(),

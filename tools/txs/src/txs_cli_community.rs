@@ -41,11 +41,11 @@ impl CommunityTxs {
             CommunityTxs::GovOffer(tx) => tx
                 .run(sender)
                 .await
-                .map(|_| "community wallet offer proposed"),
+                .map(|_| "community wallet admin role offered"),
             CommunityTxs::GovClaim(tx) => tx
                 .run(sender)
                 .await
-                .map(|_| "community wallet offer claimed"),
+                .map(|_| "community wallet admin role claimed"),
             CommunityTxs::GovCage(tx) => tx.run(sender).await.map(|_| "community wallet finalized"),
             CommunityTxs::GovAdmin(tx) => tx
                 .run(sender)
