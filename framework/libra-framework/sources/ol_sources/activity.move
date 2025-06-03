@@ -45,11 +45,12 @@ module ol_framework::activity {
   /// Increment the activity timestamp of a user
   // NOTE: this serves to gate users who have not onboarded since v8 upgrade
   public(friend) fun increment(user: &signer) acquires Activity {
-    is_initialized(signer::address_of(user));
-    maybe_fix_malformed(user);
+    if (is_initialized(signer::address_of(user))) {
+      maybe_fix_malformed(user);
 
-    let state = borrow_global_mut<Activity>(signer::address_of(user));
-    state.last_touch_usecs = timestamp::now_seconds();
+      let state = borrow_global_mut<Activity>(signer::address_of(user));
+      state.last_touch_usecs = timestamp::now_seconds();
+    }
   }
 
   #[view]
