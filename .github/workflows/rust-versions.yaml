@@ -2,7 +2,7 @@
 name: rust-versions
 on:
   push:
-    branches: ["*"] # glob pattern to allow slash /
+    branches: ["**"] # glob pattern to allow slash /
   schedule:
     - cron: "30 00 * * *"
 
@@ -10,7 +10,8 @@ jobs:
   builds:
     strategy:
       matrix:
-        channel: ["stable", "beta"]
+        # lowest supported version, plus stable and beta
+        channel: ["1.78.0", "stable", "beta"]
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
     runs-on: ubuntu-latest
     steps:
