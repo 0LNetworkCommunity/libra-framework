@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         # lowest supported version, plus stable and beta
-        channel: ["1.78.0", "stable", "beta"]
+        channel: ["1.80.1", "stable", "beta"]
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
     runs-on: ubuntu-latest
     steps:
