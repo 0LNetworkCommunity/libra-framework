@@ -280,14 +280,20 @@ module ol_framework::donor_voice_txs {
       let tx: Payment = multi_action::extract_proposal_data(multisig_address, &uid);
 
       if (passed && option::is_some(&withdraw_cap_opt)) {
-        // unlocked advances can unlock on the next epoch boundary
-        let deadline = epoch_helper::get_current_epoch();
         // else large payments to slow wallets take longer to review
         if (slow_wallet::is_slow(payee)) {
-          deadline = deadline + DEFAULT_PAYMENT_DURATION;
-        };
+          let deadline = epoch_helper::get_current_epoch() + DEFAULT_PAYMENT_DURATION;
+          schedule(option::borrow(&withdraw_cap_opt), tx, &uid, deadline);
 
-        schedule(option::borrow(&withdraw_cap_opt), tx, &uid, deadline);
+        } else {
+          // transfer happens immediately after multisig threshold is reached
+          let can_withdraw = community_wallet_advance::can_withdraw_amount(multisig_address, tx.value);
+
+          if (can_withdraw) {
+              community_wallet_advance::transfer_credit(option::borrow(&withdraw_cap_opt), tx.payee, tx.value);
+          }
+        }
+
       };
 
       multi_action::maybe_restore_withdraw_cap(withdraw_cap_opt);

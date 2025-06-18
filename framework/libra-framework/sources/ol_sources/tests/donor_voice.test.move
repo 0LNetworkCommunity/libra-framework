@@ -541,9 +541,8 @@ module ol_framework::test_donor_voice {
 
       // PROCESS THE PAYMENT
 
-      // COMMIT NOTE: community wallet advances of unlocked coins
-      // happen on the next epoch boundary
-      mock::trigger_epoch(root); // into epoch 1
+      // COMMIT NOTE: No need to advance epoch here, since we are testing the unlocked payment, which is processed immediately.
+      // mock::trigger_epoch(root); // into epoch 1
 
 
       let (marlon_unlocked_post, marlon_rando_balance_post) = ol_account::balance(marlon_addr);
