@@ -540,12 +540,11 @@ module ol_framework::test_donor_voice {
       donor_voice_txs::propose_payment_tx(carol, donor_voice_address, marlon_addr, 100, b"thanks marlon", is_unlocked_advance);
 
       // PROCESS THE PAYMENT
-      // process epoch 3 accounts
 
+      // COMMIT NOTE: community wallet advances of unlocked coins
+      // happen on the next epoch boundary
       mock::trigger_epoch(root); // into epoch 1
-      mock::trigger_epoch(root); // into epoch 2
-      mock::trigger_epoch(root); // into epoch 3, processes at the end of this epoch.
-      mock::trigger_epoch(root); // epoch 4 should include the payment
+
 
       let (marlon_unlocked_post, marlon_rando_balance_post) = ol_account::balance(marlon_addr);
 

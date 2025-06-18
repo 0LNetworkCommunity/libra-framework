@@ -280,7 +280,14 @@ module ol_framework::donor_voice_txs {
       let tx: Payment = multi_action::extract_proposal_data(multisig_address, &uid);
 
       if (passed && option::is_some(&withdraw_cap_opt)) {
-        schedule(option::borrow(&withdraw_cap_opt), tx, &uid);
+        // unlocked advances can unlock on the next epoch boundary
+        let deadline = epoch_helper::get_current_epoch();
+        // else large payments to slow wallets take longer to review
+        if (slow_wallet::is_slow(payee)) {
+          deadline = deadline + DEFAULT_PAYMENT_DURATION;
+        };
+
+        schedule(option::borrow(&withdraw_cap_opt), tx, &uid, deadline);
       };
 
       multi_action::maybe_restore_withdraw_cap(withdraw_cap_opt);
@@ -302,12 +309,10 @@ module ol_framework::donor_voice_txs {
     // the rejected list.
 
     fun schedule(
-      withdraw_capability: &WithdrawCapability, tx: Payment, uid: &guid::ID
+      withdraw_capability: &WithdrawCapability, tx: Payment, uid: &guid::ID, deadline: u64
     ) acquires TxSchedule {
       let multisig_address = account::get_withdraw_cap_address(withdraw_capability);
       let transfers = borrow_global_mut<TxSchedule>(multisig_address);
-
-      let deadline = epoch_helper::get_current_epoch() + DEFAULT_PAYMENT_DURATION;
 
       let t = TimedTransfer {
         uid: *uid,
@@ -404,7 +409,7 @@ module ol_framework::donor_voice_txs {
         let is_slow = slow_wallet::is_slow(t.tx.payee);
 
 
-        let this_transfer_value =if (!is_slow) {
+        let this_transfer_value = if (!is_slow) {
           let can_withdraw = community_wallet_advance::can_withdraw_amount(multisig_address, t.tx.value);
 
           if (can_withdraw) {
@@ -1000,21 +1005,9 @@ module ol_framework::donor_voice_txs {
     ids
   }
 
-  // // Helper function to list proposals by status in the multisig system
-  // fun list_multisig_proposals_by_status(multisig_address: address, status_enum: u8): vector<u64> {
-  //   // Check if we have access to the multi_action module for the Payment type
-  //   if (!multi_action::has_action<Payment>(multisig_address)) {
-  //     return vector::empty<u64>()
-  //   };
-
-  //   // Use the new get_proposals_by_status function to fetch IDs directly
-  //   multi_action::get_proposals_by_status<Payment>(multisig_address, status_enum)
-  // }
-
   //////// TRANSACTIONS ////////
 
-  // /// A signer of the multisig can propose a payment
-  // }
+  /// A signer of the multisig can propose a payment
 
   public entry fun propose_payment_tx(
     auth: signer,
