@@ -1,11 +1,18 @@
 module ol_framework::filo_migration {
   use ol_framework::activity;
+  use ol_framework::donor_voice;
   use ol_framework::founder;
   use ol_framework::page_rank_lazy;
   use ol_framework::slow_wallet;
+
   use ol_framework::vouch;
+  use std::signer;
+  use std::error;
 
   friend diem_framework::transaction_validation;
+
+  /// Cannot be used by donor voice accounts
+  const EDONOR_VOICE: u64 = 1;
 
   // Welcome to Level 8
 
@@ -14,6 +21,9 @@ module ol_framework::filo_migration {
   // For a dream that's worth the fight, worth the chase
   // It's a journey, it's a race.
   public entry fun maybe_migrate(user_sig: &signer) {
+    // community wallets should not do this migration
+    assert!(!donor_voice::is_donor_voice(signer::address_of(user_sig)), error::invalid_argument(EDONOR_VOICE));
+
     // Rising up, back on the street
     // Did my time, took my chances
     // Went the distance, now I'm back on my feet
