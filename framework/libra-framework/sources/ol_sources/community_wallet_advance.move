@@ -243,4 +243,44 @@ module ol_framework::community_wallet_advance {
     limit - usage
   }
 
+  #[view]
+  /// Get the total lifetime withdrawals (advances) from a community wallet account
+  ///
+  /// This function returns the cumulative amount of coins that have been withdrawn
+  /// as advances from the specified community wallet account since its initialization.
+  /// These withdrawals represent unlocked coins that were transferred from the
+  /// community wallet to ordinary wallets as loans/advances.
+  ///
+  /// # Parameters
+  /// * `dv_account`: The address of the donor voice (community wallet) account
+  ///
+  /// # Returns
+  /// * The total amount of coins withdrawn as advances over the account's lifetime
+  /// * Returns 0 if the account doesn't have the Advances struct initialized
+  ///
+  /// # Usage
+  /// This function is primarily used by supply calculation functions to determine
+  /// how much of the total supply has been unlocked through community wallet advances,
+  /// which contributes to the circulating supply calculation.
+  public fun get_lifetime_withdrawals(dv_account: address): u64 acquires Advances {
+    if (!exists<Advances>(dv_account)) {
+      return 0
+    };
+    let cs_state = borrow_global<Advances>(dv_account);
+    cs_state.lifetime_withdrawals
+  }
+
+  #[view]
+  /// Get the basis points used for calculating credit line from account balance
+  /// This represents the percentage of an account's balance that can be extended as credit
+  public fun get_credit_line_bps(): u64 {
+    BPS_BALANCE_CREDIT_LINE
+  }
+
+  #[view]
+  /// Check if a community wallet has the advance feature initialized
+  public fun is_advance_initialized(dv_account: address): bool {
+    exists<Advances>(dv_account)
+  }
+
 }
