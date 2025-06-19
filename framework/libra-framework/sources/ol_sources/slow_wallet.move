@@ -12,6 +12,7 @@ module ol_framework::slow_wallet {
   use std::vector;
   use diem_framework::account;
   use diem_framework::system_addresses;
+  use ol_framework::community_wallet;
   use ol_framework::libra_coin;
   use ol_framework::reauthorization;
   use ol_framework::sacred_cows;
@@ -305,10 +306,17 @@ module ol_framework::slow_wallet {
         return 0
       };
 
-      if (exists<SlowWallet>(addr)) {
+      if (
+        exists<SlowWallet>(addr) &&
+        // patches bug in v8 where CW may have initialized as user account
+        !community_wallet::is_init(addr)
+      ) {
         let s = borrow_global<SlowWallet>(addr);
         return s.unlocked
       };
+
+      // NOTE: we would use community_wallet_advance::total_credit_available
+      // for community wallets but it causes a dependency loop
 
       // this is a normal account, so return the normal balance
 
