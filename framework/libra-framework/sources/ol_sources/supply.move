@@ -8,6 +8,7 @@ module ol_framework::supply {
   use ol_framework::donor_voice;
   use ol_framework::community_wallet_advance;
   use ol_framework::ol_account;
+  use ol_framework::burn;
 
   #[view]
 
@@ -41,16 +42,102 @@ module ol_framework::supply {
     // will not be counted in the slow_locked or unlocked
     let assumed_locked = total - community_endowments - future_pledges - all_unlocked;
 
-    // TODO: add unlocked coins that CW have from advances
-
     (total, assumed_locked, community_endowments, future_pledges, all_unlocked)
   }
 
-  // TODO: view function for max supply, which is the final supply number in libracoin
+  #[view]
+  /// Get the maximum possible supply of Libra Coin
+  ///
+  /// This function returns the final supply number that was set at genesis,
+  /// representing the maximum amount of Libra Coin that can ever exist in the system.
+  /// This is different from the current total supply, which may be less due to
+  /// burns or if minting hasn't reached the final supply yet.
+  ///
+  /// @returns
+  /// * The maximum possible supply of Libra Coin as set during genesis
+  public fun get_max_supply(): u64 {
+    libra_coin::get_final_supply()
+  }
 
-  // TODO: view function for simple total supply
+  #[view]
+  /// Get the lifetime burn statistics for Libra Coin
+  ///
+  /// This function returns comprehensive burn statistics that track the total amount
+  /// of Libra Coin that has been permanently removed from circulation through burning
+  /// and the amount that has been recycled back into the system.
+  ///
+  /// # Returns
+  /// A tuple containing two values:
+  /// * `lifetime_burned`: Total amount of Libra Coin permanently burned/destroyed
+  /// * `lifetime_recycled`: Total amount of Libra Coin recycled back into circulation
+  ///
+  /// # Burn vs Recycle
+  /// - **Burned**: Coins permanently removed from total supply (deflationary)
+  /// - **Recycled**: Coins temporarily removed but redistributed back to the system
+  ///
+  /// # Usage
+  /// This is essential for understanding the deflationary mechanics of Libra Coin:
+  /// - Calculate effective total supply: `total_supply - lifetime_burned`
+  /// - Track deflationary pressure over time
+  /// - Analyze burn/recycle ratios for tokenomics
+  ///
+  /// # Example
+  /// ```
+  /// let (burned, recycled) = supply::get_lifetime_burn();
+  /// let total_supply = supply::get_max_supply();
+  /// let effective_supply = total_supply - burned; // Actual circulating potential
+  /// let burn_rate = (burned * 100) / total_supply; // Percentage of max supply burned
+  /// ```
+  public fun get_lifetime_burn(): (u64, u64) {
+    burn::get_lifetime_tracker()
+  }
 
-  // TODO: view function to show lifetime burn from burn.move
+  #[view]
+  /// Get the current total supply of Libra Coin
+  ///
+  /// This function provides the current total supply of Libra Coin that actually
+  /// exists in the system. In OpenLibra, this will typically be lower than the
+  /// maximum supply (`get_max_supply()`) due to the burn mechanism that permanently
+  /// removes coins from circulation.
+  ///
+  /// # Returns
+  /// * The total amount of Libra Coin currently in existence (after accounting for burns)
+  ///
+  /// # OpenLibra Supply Reduction Model
+  /// Unlike many cryptocurrencies, OpenLibra has a supply reduction model:
+  /// - Coins are permanently burned and removed from the total supply
+  /// - Total supply decreases over time as burns occur
+  /// - This makes the remaining coins potentially more scarce
+  ///
+  /// # Usage
+  /// This is the most straightforward supply metric and is useful for:
+  /// - Calculating actual scarcity (vs theoretical maximum)
+  /// - Market cap calculations with real circulating amount
+  /// - Understanding the impact of burn mechanisms
+  /// - Tracking supply reduction over time
+  ///
+  /// # Relationship to Other Functions
+  /// - This is the actual current supply (post-burns)
+  /// - `get_max_supply()` is the theoretical maximum (pre-burns)
+  /// - `get_lifetime_burn()` shows how much has been permanently removed
+  /// - `get_stats()` provides detailed breakdowns of current supply
+  /// - `get_circulating()` shows immediately available portion
+  ///
+  /// # Example
+  /// ```
+  /// let total = supply::get_total_supply();
+  /// let max = supply::get_max_supply();
+  /// let (burned, _) = supply::get_lifetime_burn();
+  ///
+  /// // Total should equal max minus burned (approximately, due to other factors)
+  /// assert!(total <= max, "Total supply cannot exceed maximum");
+  ///
+  /// // Calculate burn rate
+  /// let burn_rate = (burned * 100) / max; // Percentage of max supply burned
+  /// ```
+  public fun get_total_supply(): u64 {
+    libra_coin::supply()
+  }
 
   #[view]
   // Unlocks come from two sources:

@@ -326,12 +326,10 @@ module ol_framework::slow_wallet {
     #[view]
     /// Returns the amount of slow wallet transfers tracked
     public fun transferred_amount(addr: address): u64 acquires SlowWallet{
-
-      // this is a normal account, so return the normal balance
-      if (exists<SlowWallet>(addr)) {
-        if (!reauthorization::is_v8_authorized(addr)) {
-          return 0
-        };
+      // Only return transferred amount for actual slow wallets (not community wallets)
+      if (exists<SlowWallet>(addr) &&
+          reauthorization::is_v8_authorized(addr) &&
+          !community_wallet::is_init(addr)) {
         let s = borrow_global<SlowWallet>(addr);
         return s.transferred
       };
@@ -402,6 +400,10 @@ module ol_framework::slow_wallet {
     /// have the SlowWallet struct, avoiding the magnitude issue where normal
     /// account balances were incorrectly counted as slow wallet amounts.
     ///
+    /// Additionally, this excludes community wallets that may have accidentally
+    /// received SlowWallet capability during V8 migration, which was causing
+    /// incorrect supply calculations.
+    ///
     /// @return a tuple with three values:
     /// - unlocked: the total amount of unlocked coins across all actual slow wallets
     /// - total: the total balance of all actual slow wallet accounts
@@ -418,8 +420,11 @@ module ol_framework::slow_wallet {
       while (i < len) {
         let addr = vector::borrow<address>(&list, i);
 
-        // Only count accounts that actually have SlowWallet struct and are authorized
-        if (is_slow(*addr) && reauthorization::is_v8_authorized(*addr)) {
+        // Only count accounts that actually have SlowWallet struct, are authorized,
+        // and are NOT community wallets (fixes V8 migration bug where some CWs got slow wallet capability)
+        if (is_slow(*addr) &&
+            reauthorization::is_v8_authorized(*addr) &&
+            !community_wallet::is_init(*addr)) {
           let s = borrow_global<SlowWallet>(*addr);
           let account_balance = libra_coin::balance(*addr);
 
