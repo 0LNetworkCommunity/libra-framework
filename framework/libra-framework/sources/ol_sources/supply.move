@@ -46,6 +46,12 @@ module ol_framework::supply {
     (total, assumed_locked, community_endowments, future_pledges, all_unlocked)
   }
 
+  // TODO: view function for max supply, which is the final supply number in libracoin
+
+  // TODO: view function for simple total supply
+
+  // TODO: view function to show lifetime burn from burn.move
+
   #[view]
   // Unlocks come from two sources:
   // 1. Slow wallets, which have been unlocked by the slow wallet system
@@ -99,6 +105,7 @@ module ol_framework::supply {
     total_advanced
   }
 
+  #[view]
   /// Calculate the total remaining credit available across all community wallets
   ///
   /// Community wallets have credit limits based on their balance and usage. This function
