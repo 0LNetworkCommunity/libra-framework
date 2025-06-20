@@ -326,12 +326,10 @@ module ol_framework::slow_wallet {
     #[view]
     /// Returns the amount of slow wallet transfers tracked
     public fun transferred_amount(addr: address): u64 acquires SlowWallet{
-
-      // this is a normal account, so return the normal balance
-      if (exists<SlowWallet>(addr)) {
-        if (!reauthorization::is_v8_authorized(addr)) {
-          return 0
-        };
+      // Only return transferred amount for actual slow wallets (not community wallets)
+      if (exists<SlowWallet>(addr) &&
+          reauthorization::is_v8_authorized(addr) &&
+          !community_wallet::is_init(addr)) {
         let s = borrow_global<SlowWallet>(addr);
         return s.transferred
       };
@@ -397,10 +395,19 @@ module ol_framework::slow_wallet {
 
     #[view]
     /// Returns the aggregate statistics for all slow wallets in the system
+    ///
+    /// This function has been corrected to only include accounts that actually
+    /// have the SlowWallet struct, avoiding the magnitude issue where normal
+    /// account balances were incorrectly counted as slow wallet amounts.
+    ///
+    /// Additionally, this excludes community wallets that may have accidentally
+    /// received SlowWallet capability during V8 migration, which was causing
+    /// incorrect supply calculations.
+    ///
     /// @return a tuple with three values:
-    /// - unlocked: the total amount of unlocked coins across all slow wallets
-    /// - total: the total balance of all slow wallet accounts
-    /// - transferred: the total amount that has been transferred from all slow wallets
+    /// - unlocked: the total amount of unlocked coins across all actual slow wallets
+    /// - total: the total balance of all actual slow wallet accounts
+    /// - transferred: the total amount that has been transferred from all actual slow wallets
     public fun get_slow_supply(): (u64, u64, u64) acquires SlowWallet, SlowWalletList {
       let list = get_slow_list();
       let len = vector::length<address>(&list);
@@ -412,20 +419,25 @@ module ol_framework::slow_wallet {
       let i = 0;
       while (i < len) {
         let addr = vector::borrow<address>(&list, i);
-        let (u, t) = unlocked_and_total(*addr);
-        spec {
-          assume total + t < MAX_U64;
-          assume unlocked + u < MAX_U64;
+
+        // Only count accounts that actually have SlowWallet struct, are authorized,
+        // and are NOT community wallets (fixes V8 migration bug where some CWs got slow wallet capability)
+        if (is_slow(*addr) &&
+            reauthorization::is_v8_authorized(*addr) &&
+            !community_wallet::is_init(*addr)) {
+          let s = borrow_global<SlowWallet>(*addr);
+          let account_balance = libra_coin::balance(*addr);
+
+          spec {
+            assume total + account_balance < MAX_U64;
+            assume unlocked + s.unlocked < MAX_U64;
+            assume transferred + s.transferred < MAX_U64;
+          };
+
+          total = total + account_balance;
+          unlocked = unlocked + s.unlocked;
+          transferred = transferred + s.transferred;
         };
-
-        total = total + t;
-        unlocked = unlocked + u;
-        transferred = transferred + transferred_amount(*addr);
-
-        // TODO:
-        // assert!(total < system_supply, error::invalid_argument(EINVALID_SUPPLY));
-        // assert!(unlocked < total, error::invalid_argument(EINVALID_SUPPLY));
-        // assert!(transferred < total, error::invalid_argument(EINVALID_SUPPLY));
 
         i = i + 1;
       };
