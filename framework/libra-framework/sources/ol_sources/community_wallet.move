@@ -22,7 +22,7 @@
 /// 4. CommunityWallets have a high threshold for sybils: all multisig authorities must be unrelated in their permission trees, per ancestry.
 
 module ol_framework::community_wallet {
-    use std::signer;
+    // use std::signer;
 
     friend ol_framework::community_wallet_init;
 
@@ -62,8 +62,12 @@ module ol_framework::community_wallet {
     }
 
     public(friend) fun set_comm_wallet(sender: &signer) {
-      let addr = signer::address_of(sender);
-      if (!is_init(addr)) {
+      let addr = std::signer::address_of(sender);
+      // NOTE: Using exists<CommunityWallet>(addr) directly instead of is_init(addr)
+      // WORKAROUND: Move prover bug - friend functions calling other functions in the same module
+      // causes prover crash with "assertion failed: callees.is_empty()" in function_target_pipeline.rs
+      // Using direct exists check avoids the internal function call that triggers the bug
+      if (!exists<CommunityWallet>(addr)) {
         move_to(sender, CommunityWallet{});
       }
     }
