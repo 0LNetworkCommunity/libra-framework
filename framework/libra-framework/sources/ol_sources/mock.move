@@ -579,7 +579,7 @@ public fun mock_vouch_score_50(framework: &signer, target_account: address): vec
 public fun simulate_v8_migration(sender: &signer) {
     // run migrations
     // Note, Activity and Founder struct should have been set above
-    filo_migration::maybe_migrate(sender);
+    filo_migration::test_unchecked_migration(sender);
     // touching the account will also increment activity
     activity::increment(sender);
 }
