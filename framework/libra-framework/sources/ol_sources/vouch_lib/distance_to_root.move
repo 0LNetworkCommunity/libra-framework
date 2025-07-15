@@ -7,7 +7,7 @@ module ol_framework::distance_to_root {
 
     // Constants
     const DEFAULT_INWARD_MAX_DEPTH: u64 = 10; // Maximum depth for inward path search
-    const MAX_PROCESSED_ADDRESSES: u64 = 1000; // Circuit breaker to prevent stack overflow
+    const MAX_PROCESSED_ADDRESSES: u64 = 10_000; // Circuit breaker to prevent stack overflow
     const SCORE_TTL_SECONDS: u64 = 1000; // Score validity period in seconds
 
     // Error codes
