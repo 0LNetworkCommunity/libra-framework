@@ -1,3 +1,7 @@
+    /// Returns true if both addresses are validators
+    fun both_are_validators(addr1: address, addr2: address): bool {
+        validator_universe::is_validator(addr1) && validator_universe::is_validator(addr2)
+    }
 module ol_framework::vouch {
     use std::error;
     use std::signer;
@@ -221,40 +225,47 @@ module ol_framework::vouch {
       let current_epoch = epoch_helper::get_current_epoch();
 
       let state = borrow_global_mut<GivenVouches>(user);
-
       let i = 0;
       while (i < vector::length(&state.outgoing_vouches)) {
         let vouch_received = vector::borrow(&state.outgoing_vouches, i);
         let when_vouched = *vector::borrow(&state.epoch_vouched, i);
-        // check if the vouch is expired
-        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+        if (both_are_validators(user, *vouch_received)) {
+          // Only expire if both are validators
+          if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+            vector::push_back(&mut valid_vouches, *vouch_received);
+            vector::push_back(&mut valid_epochs, when_vouched);
+          }
+        } else {
+          // Otherwise, never expire vouches
           vector::push_back(&mut valid_vouches, *vouch_received);
           vector::push_back(&mut valid_epochs, when_vouched);
-
-        };
+        }
         i = i + 1;
       };
       state.outgoing_vouches = valid_vouches;
       state.epoch_vouched = valid_epochs;
 
       //////// RECEIVED ////////
-      // TODO: Gross code duplication, only because field incoming_vouches is different, otherwise could be generic type.
       let valid_vouches = vector::empty<address>();
       let valid_epochs = vector::empty<u64>();
       let current_epoch = epoch_helper::get_current_epoch();
 
       let state = borrow_global_mut<ReceivedVouches>(user);
-
       let i = 0;
       while (i < vector::length(&state.incoming_vouches)) {
         let vouch_received = vector::borrow(&state.incoming_vouches, i);
         let when_vouched = *vector::borrow(&state.epoch_vouched, i);
-        // check if the vouch is expired
-        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+        if (both_are_validators(user, *vouch_received)) {
+          // Only expire if both are validators
+          if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+            vector::push_back(&mut valid_vouches, *vouch_received);
+            vector::push_back(&mut valid_epochs, when_vouched);
+          }
+        } else {
+          // Otherwise, never expire vouches
           vector::push_back(&mut valid_vouches, *vouch_received);
           vector::push_back(&mut valid_epochs, when_vouched);
-
-        };
+        }
         i = i + 1;
       };
       state.incoming_vouches = valid_vouches;
@@ -435,24 +446,26 @@ module ol_framework::vouch {
       };
     }
 
-    fun filter_expired(list_addr: vector<address>, epoch_vouched: vector<u64>): vector<address> {
-      let valid_vouches = vector::empty<address>();
-
-      let current_epoch = epoch_helper::get_current_epoch();
-
-      let i = 0;
-      while (i < vector::length(&list_addr)) {
-        let vouch_received = vector::borrow(&list_addr, i);
-        let when_vouched = *vector::borrow(&epoch_vouched, i);
-        // check if the vouch is expired
-        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
-          vector::push_back(&mut valid_vouches, *vouch_received)
-        };
-        i = i + 1;
-      };
-
-      valid_vouches
+fun filter_expired(account: address, list_addr: vector<address>, epoch_vouched: vector<u64>): vector<address> {
+  let valid_vouches = vector::empty<address>();
+  let current_epoch = epoch_helper::get_current_epoch();
+  let i = 0;
+  while (i < vector::length(&list_addr)) {
+    let vouch_received = vector::borrow(&list_addr, i);
+    let when_vouched = *vector::borrow(&epoch_vouched, i);
+    if (both_are_validators(account, *vouch_received)) {
+      // Only expire if both voucher and vouchee are validators
+      if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
+        vector::push_back(&mut valid_vouches, *vouch_received);
+      }
+    } else {
+      // Otherwise, never expire vouches
+      vector::push_back(&mut valid_vouches, *vouch_received);
     }
+    i = i + 1;
+  };
+  valid_vouches
+}
 
 
     ///////// GETTERS //////////
@@ -510,16 +523,15 @@ module ol_framework::vouch {
     /// gets the received vouches not expired
     // TODO: duplicated with true_friends
     public fun get_received_vouches_not_expired(addr: address): vector<address> acquires ReceivedVouches {
-
       let (all_received, epoch_vouched) = get_received_vouches(addr);
-      filter_expired(all_received, epoch_vouched)
+      filter_expired(addr, all_received, epoch_vouched)
     }
 
     #[view]
     /// gets the given vouches not expired
     public fun get_given_vouches_not_expired(addr: address): vector<address> acquires GivenVouches {
-      let (all_received, epoch_vouched) = get_given_vouches(addr);
-      filter_expired(all_received, epoch_vouched)
+      let (all_given, epoch_vouched) = get_given_vouches(addr);
+      filter_expired(addr, all_given, epoch_vouched)
     }
 
     #[view]
