@@ -375,11 +375,12 @@ module ol_framework::vouch {
 
       // lazy update counter
       if (current_epoch > lifetime.last_revocation_epoch) {
+        // If this is a new epoch vs the last revoke, reset the per-epoch count
         lifetime.last_revocation_epoch = current_epoch;
-      lifetime.revocations_this_epoch = lifetime.revocations_this_epoch + 1;
-
+        lifetime.revocations_this_epoch = 1;
       } else {
-        lifetime.revocations_this_epoch =1;
+        // Otherwise, increment the revoke count for the current epoch
+        lifetime.revocations_this_epoch = lifetime.revocations_this_epoch + 1;
       }
 
     }
