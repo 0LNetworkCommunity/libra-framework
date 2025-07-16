@@ -455,26 +455,24 @@ module ol_framework::vouch {
     }
 
     #[view]
-    // TODO: Deprecation notice, function will renamed, pass through until then.
+    /// TODO: deprecate this, left for compatibility
     /// gets the received vouches not expired
     public fun all_not_expired(addr: address): vector<address> acquires ReceivedVouches {
-      get_received_vouches_not_expired(addr)
+      all_vouchers(addr)
     }
 
 
     #[view]
-    /// gets the received vouches not expired
-    // TODO: duplicated with true_friends
+    /// TODO: deprecate this, left for compatibility
     public fun get_received_vouches_not_expired(addr: address): vector<address> acquires ReceivedVouches {
-      let (all_received, _epoch_vouched) = get_received_vouches(addr);
-      all_received
+      all_vouchers(addr);
     }
 
     #[view]
+    /// TODO: deprecate this, left for compatibility
     /// gets the given vouches not expired
     public fun get_given_vouches_not_expired(addr: address): vector<address> acquires GivenVouches {
-      let (all_given, _epoch_vouched) = get_given_vouches(addr);
-      all_given
+      all_vouchers(addr)
     }
 
     #[view]
