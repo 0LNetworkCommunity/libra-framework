@@ -11,6 +11,7 @@ module ol_framework::vouch_txs {
   use ol_framework::page_rank_lazy;
   use ol_framework::vouch;
   use ol_framework::vouch_limits;
+  use ol_framework::validator_vouch;
 
   public entry fun vouch_for(grantor: &signer, friend_account: address) {
     // better error message
@@ -44,7 +45,7 @@ module ol_framework::vouch_txs {
   }
 
   public entry fun clean_expired(user_sig: &signer) {
-    vouch::garbage_collect_expired(signer::address_of(user_sig));
+    validator_vouch::garbage_collect_expired_for_signer(user_sig);
   }
 
   /// validators vouching has a cost
