@@ -147,11 +147,13 @@ module ol_framework::vouch_limits {
     /// amount of vouches you currently have received.
 
     public(friend) fun assert_revoke_limit(grantor_acc: address) {
+      let current_epoch = epoch_helper::get_current_epoch();
       let revokes = vouch::get_revocations_this_epoch(grantor_acc);
+      let last_revocation_epoch = vouch::get_last_revocation_epoch(grantor_acc);
 
       // Check if user has exceeded revocations in this epoch
       assert!(
-        revokes < MAX_REVOCATIONS_PER_EPOCH,
+        current_epoch > last_revocation_epoch || revokes < MAX_REVOCATIONS_PER_EPOCH,
         error::invalid_state(EREVOCATION_LIMIT_REACHED)
       );
     }
