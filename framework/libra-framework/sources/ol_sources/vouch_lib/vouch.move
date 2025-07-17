@@ -27,6 +27,8 @@ module ol_framework::vouch {
     friend ol_framework::test_validator_vouch;
     #[test_only]
     friend ol_framework::test_page_rank;
+    #[test_only]
+    friend ol_framework::test_permanent_vouches;
 
     //////// CONST ////////
 
@@ -465,14 +467,15 @@ module ol_framework::vouch {
     #[view]
     /// TODO: deprecate this, left for compatibility
     public fun get_received_vouches_not_expired(addr: address): vector<address> acquires ReceivedVouches {
-      all_vouchers(addr);
+      all_vouchers(addr)
     }
 
     #[view]
     /// TODO: deprecate this, left for compatibility
     /// gets the given vouches not expired
     public fun get_given_vouches_not_expired(addr: address): vector<address> acquires GivenVouches {
-      all_vouchers(addr)
+      let (outgoing_vouches, _) = get_given_vouches(addr);
+      outgoing_vouches
     }
 
     #[view]
