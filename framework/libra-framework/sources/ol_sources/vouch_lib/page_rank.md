@@ -52,7 +52,7 @@ Score depends on the paths from root nodes to the target node, with trust value 
 - Uses a transitive staleness propagation to ensure downstream accuracy.
 
 #### D. Circuit Breaker for Recursive Operations
-- Implemented a hard limit of 1000 processed addresses for any recursive operation.
+- Implemented a hard limit of 10000 processed addresses for any recursive operation.
 - Prevents stack overflows in complex trust networks or denial-of-service attacks.
 - Ensures predicable resource usage for mark-as-stale operations.
 
