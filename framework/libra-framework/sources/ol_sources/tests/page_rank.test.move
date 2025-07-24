@@ -1063,4 +1063,240 @@ module ol_framework::test_page_rank {
     assert!(root1_cached_score == 25_000, 7357004);
     assert!(root1_score == root1_cached_score, 7357005);
   }
+
+  // Check that a user can vouch for one other user per epoch
+  #[test(framework = @ol_framework)]
+  fun vouches_per_epoch(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let dave_sig = mock::create_user_from_u64(framework, 14);
+    let dave_addr = signer::address_of(&dave_sig);
+    vouch::init(&dave_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&dave_sig);
+
+    // Root 0 vouches for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(root0, bob_addr);
+
+    // alice vouches for three accounts, one in each epoch
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, carol_addr);
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, dave_addr);
+  }
+
+  // Check that a user can revoke vouches for two users per epoch
+  #[test(framework = @ol_framework)]
+  fun revokes_per_epoch(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let dave_sig = mock::create_user_from_u64(framework, 14);
+    let dave_addr = signer::address_of(&dave_sig);
+    vouch::init(&dave_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&dave_sig);
+
+    // Root 0 vouches for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(root0, bob_addr);
+
+    // alice vouches for bob
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    // alice vouches for carol in a new epoch
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, carol_addr);
+    // alice vouches for dave
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, dave_addr);
+
+    // alice tries to revoke three accounts, two in the same epoch
+    mock::trigger_epoch(framework);
+    vouch_txs::revoke(&alice_sig, bob_addr);
+    mock::trigger_epoch(framework);
+    vouch_txs::revoke(&alice_sig, carol_addr);
+    vouch_txs::revoke(&alice_sig, dave_addr);
+  }
+
+  #[test(framework = @ol_framework)]
+  #[expected_failure(abort_code = 0x3000C, location = ol_framework::vouch_limits)]
+  fun vouches_per_epoch_limit(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let dave_sig = mock::create_user_from_u64(framework, 14);
+    let dave_addr = signer::address_of(&dave_sig);
+    vouch::init(&dave_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&dave_sig);
+
+    // Root 0 vouches for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(root0, bob_addr);
+
+    // alice vouches for bob
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    // alice vouches for carol in a new epoch (should work)
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, carol_addr);
+    // alice vouches for dave in the same epoch (should fail with EMAX_VOUCHES_PER_EPOCH)
+    vouch_txs::vouch_for(&alice_sig, dave_addr);
+  }
+
+  #[test(framework = @ol_framework)]
+  #[expected_failure(abort_code = 0x30007, location = ol_framework::vouch_limits)]
+  fun revokes_per_epoch_limit(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let dave_sig = mock::create_user_from_u64(framework, 14);
+    let dave_addr = signer::address_of(&dave_sig);
+    vouch::init(&dave_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&dave_sig);
+
+    // Root 0 vouches for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(root0, bob_addr);
+
+    // alice vouches for bob
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    // alice vouches for carol in a new epoch
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, carol_addr);
+    // alice vouches for dave
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, dave_addr);
+
+    // alice tries to revoke three accounts in the same epoch (should fail with EREVOCATION_LIMIT_REACHED)
+    mock::trigger_epoch(framework);
+    vouch_txs::revoke(&alice_sig, bob_addr);
+    vouch_txs::revoke(&alice_sig, carol_addr);
+    vouch_txs::revoke(&alice_sig, dave_addr);
+  }
+
+  // Regression test for https://github.com/0LNetworkCommunity/libra-framework/pull/426
+  // and https://github.com/0LNetworkCommunity/libra-framework/pull/428
+  // Revocation history was not maintained correctly such that an account performing
+  // two revocations in different epochs would end up being stuck unable to perform any
+  // further revocations. This test will fail against the original code, and pass against
+  // the fixed code.
+  #[test(framework = @ol_framework)]
+  fun revoke_three_accounts(framework: &signer) {
+    // Set up the test base
+    let roots_sig = test_base(framework);
+
+    let root0 = vector::borrow(&roots_sig, 0);
+    vouch::init(root0);
+
+    let alice_sig = mock::create_user_from_u64(framework, 11);
+    let alice_addr = signer::address_of(&alice_sig);
+    vouch::init(&alice_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&alice_sig);
+
+    let bob_sig = mock::create_user_from_u64(framework, 12);
+    let bob_addr = signer::address_of(&bob_sig);
+    vouch::init(&bob_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&bob_sig);
+
+    let carol_sig = mock::create_user_from_u64(framework, 13);
+    let carol_addr = signer::address_of(&carol_sig);
+    vouch::init(&carol_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&carol_sig);
+
+    let dave_sig = mock::create_user_from_u64(framework, 14);
+    let dave_addr = signer::address_of(&dave_sig);
+    vouch::init(&dave_sig);
+    page_rank_lazy::maybe_initialize_trust_record(&dave_sig);
+
+    // Root 0 vouches for alice
+    vouch_txs::vouch_for(root0, alice_addr);
+    vouch_txs::vouch_for(root0, bob_addr);
+
+    // alice vouches for bob
+    vouch_txs::vouch_for(&alice_sig, bob_addr);
+    // alice vouches for carol
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, carol_addr);
+    // alice vouches for dave
+    mock::trigger_epoch(framework);
+    vouch_txs::vouch_for(&alice_sig, dave_addr);
+
+    // now alice revokes the vouches
+    vouch_txs::revoke(&alice_sig, bob_addr);
+    vouch_txs::revoke(&alice_sig, carol_addr);
+    mock::trigger_epoch(framework);
+    vouch_txs::revoke(&alice_sig, dave_addr); // Originally test would error here with EREVOCATION_LIMIT_REACHED
+  }
 }
