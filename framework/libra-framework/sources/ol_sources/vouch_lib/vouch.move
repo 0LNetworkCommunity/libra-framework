@@ -1,4 +1,3 @@
-
 module ol_framework::vouch {
     use std::error;
     use std::signer;
@@ -27,8 +26,6 @@ module ol_framework::vouch {
     friend ol_framework::test_validator_vouch;
     #[test_only]
     friend ol_framework::test_page_rank;
-    #[test_only]
-    friend ol_framework::test_permanent_vouches;
 
     //////// CONST ////////
 
@@ -474,6 +471,7 @@ module ol_framework::vouch {
     /// TODO: deprecate this, left for compatibility
     /// gets the given vouches not expired
     public fun get_given_vouches_not_expired(addr: address): vector<address> acquires GivenVouches {
+      // get the given vouches
       let (outgoing_vouches, _) = get_given_vouches(addr);
       outgoing_vouches
     }
@@ -496,7 +494,6 @@ module ol_framework::vouch {
 
 
     #[view]
-    // TODO: deprecate this, duplicated with get_received_vouches_not_expired
     /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
         if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
