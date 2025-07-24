@@ -221,6 +221,12 @@ module ol_framework::ancestry {
         // for each account in list, compare to the others.
         // if they are unrelated, add them to the list.
         let target_acc = vector::borrow<address>(&list, i);
+        // check if the target account is initialized with ancestry.
+        if (!exists<Ancestry>(*target_acc)) {
+          // if not, skip it.
+          i = i + 1;
+          continue
+        };
 
         // now loop through all the accounts again, and check if this target
         // account is related to anyone.
@@ -229,6 +235,13 @@ module ol_framework::ancestry {
           let comparison_acc = vector::borrow(&list, k);
           // skip if you're the same person
           if (comparison_acc != target_acc) {
+            // check that the comparison account is initialized
+            // with ancestry.
+            if (!exists<Ancestry>(*comparison_acc)) {
+              k = k + 1;
+              continue
+            };
+
             // check ancestry algo
             let (is_fam, _parent) = is_family(*comparison_acc, *target_acc);
             if (!is_fam) {
