@@ -95,7 +95,7 @@ impl LibraSmoke {
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
             count_vals.unwrap_or(1).into(),
             bundle,
-            swarm_dir
+            swarm_dir,
         )
         .await;
         let chain_name =
