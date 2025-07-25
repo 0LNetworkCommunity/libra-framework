@@ -5746,7 +5746,7 @@ checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
 
 [[package]]
 name = "libra"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "clap 4.5.20",
@@ -5770,7 +5770,7 @@ dependencies = [
 
 [[package]]
 name = "libra-backwards-compatibility"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5796,7 +5796,7 @@ dependencies = [
 
 [[package]]
 name = "libra-cached-packages"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "bcs 0.1.4",
  "diem-types",
@@ -5807,7 +5807,7 @@ dependencies = [
 
 [[package]]
 name = "libra-config"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5833,7 +5833,7 @@ dependencies = [
 
 [[package]]
 name = "libra-framework"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5853,7 +5853,7 @@ dependencies = [
 
 [[package]]
 name = "libra-genesis-tools"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -5891,7 +5891,7 @@ dependencies = [
 
 [[package]]
 name = "libra-query"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "clap 4.5.20",
@@ -5910,7 +5910,7 @@ dependencies = [
 
 [[package]]
 name = "libra-rescue"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -5951,7 +5951,7 @@ dependencies = [
 
 [[package]]
 name = "libra-smoke-tests"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "diem-config",
@@ -5980,7 +5980,7 @@ dependencies = [
 
 [[package]]
 name = "libra-storage"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6012,7 +6012,7 @@ dependencies = [
 
 [[package]]
 name = "libra-testnet"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6051,7 +6051,7 @@ dependencies = [
 
 [[package]]
 name = "libra-txs"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6084,7 +6084,7 @@ dependencies = [
 
 [[package]]
 name = "libra-types"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -6119,7 +6119,7 @@ dependencies = [
 
 [[package]]
 name = "libra-upgrade-tests"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "bcs 0.1.4",
@@ -6139,7 +6139,7 @@ dependencies = [
 
 [[package]]
 name = "libra-wallet"
-version = "8.0.11"
+version = "8.0.12"
 dependencies = [
  "anyhow",
  "blst",
