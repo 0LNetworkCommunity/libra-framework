@@ -246,13 +246,6 @@ module ol_framework::vouch {
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
       assert!(is_init(friend_account), error::invalid_state(ERECEIVER_NOT_INIT));
 
-
-
-      // // while we are here.
-      // garbage_collect_expired(grantor_acc);
-      // garbage_collect_expired(friend_account);
-
-
       if (check_unrelated) {
         ancestry::assert_unrelated(grantor_acc, friend_account);
       };
