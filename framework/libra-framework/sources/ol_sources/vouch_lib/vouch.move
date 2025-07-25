@@ -26,6 +26,8 @@ module ol_framework::vouch {
     friend ol_framework::test_validator_vouch;
     #[test_only]
     friend ol_framework::test_page_rank;
+    #[test_only]
+    friend ol_framework::test_permanent_vouches;
 
     //////// CONST ////////
 
