@@ -8,7 +8,7 @@ use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 // let's check that this test environment produces same coins as expected in unit tests, and we have the tools to mint and test balances
 async fn sanity_balances() -> anyhow::Result<()> {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
-    let mut swarm = new_local_swarm_with_release(4, release).await;
+    let mut swarm = new_local_swarm_with_release(4, release, None).await;
     let v = swarm.validators_mut().next().unwrap();
     let pri_key = v.account_private_key().as_ref().unwrap();
     let address = v.peer_id().to_owned();

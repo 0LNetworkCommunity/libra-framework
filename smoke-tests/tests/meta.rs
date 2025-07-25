@@ -9,7 +9,7 @@ use smoke_test::smoke_test_environment::new_local_swarm_with_release;
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn meta_can_start_swarm() {
     let release = ReleaseTarget::Head.load_bundle().unwrap();
-    let mut swarm = new_local_swarm_with_release(1, release).await;
+    let mut swarm = new_local_swarm_with_release(1, release, None).await;
     let mut public_info = swarm.diem_public_info();
 
     let payload = public_info

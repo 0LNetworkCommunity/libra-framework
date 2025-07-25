@@ -86,9 +86,16 @@ impl LibraSmoke {
         );
         println!("Using diem-node binary at {:?}", &diem_path);
 
+        let mut swarm_path = TempPath::new();
+        swarm_path.create_as_dir()?;
+        swarm_path.persist();
+        println!("Creating swarm at {:?}", swarm_path.path());
+        let swarm_dir = swarm_path.path().to_str().map(|s| s.to_string());
+
         let mut swarm = smoke_test_environment::new_local_swarm_with_release(
             count_vals.unwrap_or(1).into(),
             bundle,
+            swarm_dir,
         )
         .await;
         let chain_name =
