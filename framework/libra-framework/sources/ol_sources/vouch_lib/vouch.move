@@ -14,6 +14,7 @@ module ol_framework::vouch {
     friend ol_framework::validator_universe;
     friend ol_framework::vouch_txs;
     friend ol_framework::page_rank_lazy;
+    friend ol_framework::validator_vouch;
 
     #[test_only]
     friend ol_framework::mock;
@@ -25,6 +26,8 @@ module ol_framework::vouch {
     friend ol_framework::test_validator_vouch;
     #[test_only]
     friend ol_framework::test_page_rank;
+    #[test_only]
+    friend ol_framework::test_permanent_vouches;
 
     //////// CONST ////////
 
@@ -193,6 +196,28 @@ module ol_framework::vouch {
       };
     }
 
+    /// Remove a vouch between voucher and vouchee, updating both states
+    public(friend) fun remove_vouch(voucher: address, vouchee: address) acquires GivenVouches, ReceivedVouches {
+        // Remove vouchee from voucher's outgoing vouches
+        if (exists<GivenVouches>(voucher)) {
+            let gv = borrow_global_mut<GivenVouches>(voucher);
+            let (found, i) = vector::index_of(&gv.outgoing_vouches, &vouchee);
+            if (found) {
+                vector::remove<address>(&mut gv.outgoing_vouches, i);
+                vector::remove<u64>(&mut gv.epoch_vouched, i);
+            }
+        };
+        // Remove voucher from vouchee's incoming vouches
+        if (exists<ReceivedVouches>(vouchee)) {
+            let rv = borrow_global_mut<ReceivedVouches>(vouchee);
+            let (found, i) = vector::index_of(&rv.incoming_vouches, &voucher);
+            if (found) {
+                vector::remove<address>(&mut rv.incoming_vouches, i);
+                vector::remove<u64>(&mut rv.epoch_vouched, i);
+            }
+        }
+    }
+
     public(friend) fun set_vouch_price(framework: &signer, amount: u64) acquires VouchPrice {
       system_addresses::assert_ol(framework);
       if (!exists<VouchPrice>(@ol_framework)) {
@@ -213,54 +238,6 @@ module ol_framework::vouch {
     /// amount of vouches you currently have received.
 
 
-    // lazily remove expired vouches prior to setting any new ones
-    // ... by popular request
-    public(friend) fun garbage_collect_expired(user: address) acquires GivenVouches, ReceivedVouches {
-      let valid_vouches = vector::empty<address>();
-      let valid_epochs = vector::empty<u64>();
-      let current_epoch = epoch_helper::get_current_epoch();
-
-      let state = borrow_global_mut<GivenVouches>(user);
-
-      let i = 0;
-      while (i < vector::length(&state.outgoing_vouches)) {
-        let vouch_received = vector::borrow(&state.outgoing_vouches, i);
-        let when_vouched = *vector::borrow(&state.epoch_vouched, i);
-        // check if the vouch is expired
-        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
-          vector::push_back(&mut valid_vouches, *vouch_received);
-          vector::push_back(&mut valid_epochs, when_vouched);
-
-        };
-        i = i + 1;
-      };
-      state.outgoing_vouches = valid_vouches;
-      state.epoch_vouched = valid_epochs;
-
-      //////// RECEIVED ////////
-      // TODO: Gross code duplication, only because field incoming_vouches is different, otherwise could be generic type.
-      let valid_vouches = vector::empty<address>();
-      let valid_epochs = vector::empty<u64>();
-      let current_epoch = epoch_helper::get_current_epoch();
-
-      let state = borrow_global_mut<ReceivedVouches>(user);
-
-      let i = 0;
-      while (i < vector::length(&state.incoming_vouches)) {
-        let vouch_received = vector::borrow(&state.incoming_vouches, i);
-        let when_vouched = *vector::borrow(&state.epoch_vouched, i);
-        // check if the vouch is expired
-        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
-          vector::push_back(&mut valid_vouches, *vouch_received);
-          vector::push_back(&mut valid_epochs, when_vouched);
-
-        };
-        i = i + 1;
-      };
-      state.incoming_vouches = valid_vouches;
-      state.epoch_vouched = valid_epochs;
-    }
-
     fun vouch_impl(grantor: &signer, friend_account: address, check_unrelated: bool) acquires ReceivedVouches, GivenVouches, VouchesLifetime {
       let grantor_acc = signer::address_of(grantor);
       assert!(grantor_acc != friend_account, error::invalid_argument(ETRY_SELF_VOUCH_REALLY));
@@ -268,13 +245,6 @@ module ol_framework::vouch {
       // check if structures are initialized
       assert!(is_init(grantor_acc), error::invalid_state(EGRANTOR_NOT_INIT));
       assert!(is_init(friend_account), error::invalid_state(ERECEIVER_NOT_INIT));
-
-
-
-      // while we are here.
-      garbage_collect_expired(grantor_acc);
-      garbage_collect_expired(friend_account);
-
 
       if (check_unrelated) {
         ancestry::assert_unrelated(grantor_acc, friend_account);
@@ -435,26 +405,6 @@ module ol_framework::vouch {
       };
     }
 
-    fun filter_expired(list_addr: vector<address>, epoch_vouched: vector<u64>): vector<address> {
-      let valid_vouches = vector::empty<address>();
-
-      let current_epoch = epoch_helper::get_current_epoch();
-
-      let i = 0;
-      while (i < vector::length(&list_addr)) {
-        let vouch_received = vector::borrow(&list_addr, i);
-        let when_vouched = *vector::borrow(&epoch_vouched, i);
-        // check if the vouch is expired
-        if ((when_vouched + EXPIRATION_ELAPSED_EPOCHS) > current_epoch) {
-          vector::push_back(&mut valid_vouches, *vouch_received)
-        };
-        i = i + 1;
-      };
-
-      valid_vouches
-    }
-
-
     ///////// GETTERS //////////
 
     #[view]
@@ -499,27 +449,26 @@ module ol_framework::vouch {
     }
 
     #[view]
-    // TODO: Deprecation notice, function will renamed, pass through until then.
+    /// TODO: deprecate this, left for compatibility
     /// gets the received vouches not expired
     public fun all_not_expired(addr: address): vector<address> acquires ReceivedVouches {
-      get_received_vouches_not_expired(addr)
+      all_vouchers(addr)
     }
 
 
     #[view]
-    /// gets the received vouches not expired
-    // TODO: duplicated with true_friends
+    /// TODO: deprecate this, left for compatibility
     public fun get_received_vouches_not_expired(addr: address): vector<address> acquires ReceivedVouches {
-
-      let (all_received, epoch_vouched) = get_received_vouches(addr);
-      filter_expired(all_received, epoch_vouched)
+      all_vouchers(addr)
     }
 
     #[view]
+    /// TODO: deprecate this, left for compatibility
     /// gets the given vouches not expired
     public fun get_given_vouches_not_expired(addr: address): vector<address> acquires GivenVouches {
-      let (all_received, epoch_vouched) = get_given_vouches(addr);
-      filter_expired(all_received, epoch_vouched)
+      // get the given vouches
+      let (outgoing_vouches, _) = get_given_vouches(addr);
+      outgoing_vouches
     }
 
     #[view]
@@ -540,7 +489,6 @@ module ol_framework::vouch {
 
 
     #[view]
-    // TODO: deprecate this, duplicated with get_received_vouches_not_expired
     /// show the received vouches but filter expired vouches, and do ancestry check
     public fun true_friends(addr: address): vector<address> acquires ReceivedVouches {
         if (!exists<ReceivedVouches>(addr)) return vector::empty<address>();
