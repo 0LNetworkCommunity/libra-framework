@@ -47,6 +47,20 @@ validator_network:
     type: 'from_file'
     path: {path}/validator-identity.yaml
 
+state_sync:
+  state_sync_driver:
+    bootstrapping_mode: ExecuteOrApplyFromGenesis
+    continuous_syncing_mode: ApplyTransactionOutputs
+
+storage:
+  storage_pruner_config:
+    ledger_pruner_config:
+      enable: false
+    state_merkle_pruner_config:
+      enable: false
+    epoch_snapshot_pruner_config:
+      enable: false
+
 full_node_networks:
 - network_id:
     private: 'vfn'
