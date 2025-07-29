@@ -9,7 +9,8 @@ RUN apt update && apt install -y build-essential lld pkg-config libssl-dev libgm
 
 WORKDIR /usr/libra
 COPY . .
-RUN cargo build --release
+# We specify -j 1 to avoid OOM-killing the build
+RUN cargo build -j 1 --release
 
 FROM ubuntu:latest
 RUN apt update && apt install -y ca-certificates
