@@ -1,6 +1,8 @@
 # Built from https://github.com/rust-lang/docker-rust
-# "latest" has a Debian base
-FROM rust:latest AS builder
+# Note we specify an explicit version of the image as a workaround for the fact that
+# on developer machines "latest" gets pulled once at the beginning of time then never
+# updated. So unfortunately we will need to maintain the version here.
+FROM rust:1.88 AS builder
 
 # Install build dependencies
 RUN apt update && apt install -y build-essential lld pkg-config libssl-dev libgmp-dev clang
