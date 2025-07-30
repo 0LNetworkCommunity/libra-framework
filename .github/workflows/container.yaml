@@ -28,7 +28,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository }}/libra-node
+            ghcr.io/${{ github.repository_owner }}/libra-node
           tags: |
             # tag as branch name
             type=sha,enable=true,priority=100,prefix=,suffix=,format=long
