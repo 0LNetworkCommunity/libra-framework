@@ -118,6 +118,7 @@ state_sync:
 full_node_networks:
 - network_id: 'public'
   listen_address: '/ip4/0.0.0.0/tcp/6182'
+  max_outbound_connections: 10
 
 
 api:
@@ -164,7 +165,7 @@ storage:
 full_node_networks:
 - network_id: 'public'
   listen_address: '/ip4/0.0.0.0/tcp/6182'
-
+  max_outbound_connections: 10
 
 api:
   enabled: true
@@ -213,6 +214,7 @@ storage:
 full_node_networks:
 - network_id: 'public'
   listen_address: '/ip4/0.0.0.0/tcp/6182'
+  max_outbound_connections: 10
   identity:
     type: 'from_file'
     path: {path}/validator-full-node-identity.yaml
