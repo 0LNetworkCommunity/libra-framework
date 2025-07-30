@@ -219,10 +219,7 @@ impl ConfigCli {
                     .items(&sync_options)
                     .interact()?;
 
-                let archive_mode = match selection {
-                    0 => false,
-                    _ => true,
-                };
+                let archive_mode = selection != 0;
 
                 // You can now use `archive_mode` to configure the fullnode accordingly.
                 let p = init_fullnode_yaml(home_path.to_owned(), true, archive_mode).await?;
