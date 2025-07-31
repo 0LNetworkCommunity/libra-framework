@@ -10,7 +10,8 @@ RUN apt update && apt install -y build-essential lld pkg-config libssl-dev libgm
 WORKDIR /usr/libra
 COPY . .
 # We specify -j 1 to avoid OOM-killing the build
-RUN cargo build -j 1 --release
+ARG LIBRA_CARGO_CONCURRENCY=1
+RUN cargo build -j $LIBRA_CARGO_CONCURRENCY --release
 
 # Note we specify an explicit version of the image as a workaround for the fact that
 # on developer machines "latest" gets pulled once at the beginning of time then never
