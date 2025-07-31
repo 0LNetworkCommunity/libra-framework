@@ -216,9 +216,6 @@ impl ConfigCli {
                 home_path,
                 archive_mode,
             }) => {
-                download_genesis(home_path.to_owned()).await?;
-                println!("downloaded genesis block");
-
                 let archive = archive_mode.unwrap_or_else(|| {
                     let sync_options = vec!["Fast Sync (default)", "Archive (full history)"];
 
@@ -231,6 +228,9 @@ impl ConfigCli {
 
                     selection != 0
                 });
+
+                println!("downloading genesis block");
+                download_genesis(home_path.to_owned()).await?;
 
                 // You can now use `archive_mode` to configure the fullnode accordingly.
                 let p = init_fullnode_yaml(home_path.to_owned(), true, archive).await?;
