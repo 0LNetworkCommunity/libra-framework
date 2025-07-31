@@ -12,7 +12,26 @@ COPY . .
 # We specify -j 1 to avoid OOM-killing the build
 RUN cargo build -j 1 --release
 
-FROM ubuntu:latest
+# Note we specify an explicit version of the image as a workaround for the fact that
+# on developer machines "latest" gets pulled once at the beginning of time then never
+# updated. So unfortunately we will need to maintain the version here.
+FROM ubuntu:24.04
 RUN apt update && apt install -y ca-certificates
 
 COPY --from=builder /usr/libra/target/release/libra /usr/libra/target/release/libra-* /usr/local/bin/
+
+COPY container/run.sh /run.sh
+
+# Mount this path to persist node config and storage
+VOLUME /home/root/.libra
+# Validator p2p port (not used by FN)
+EXPOSE 6180/tcp
+# VFN p2p port (not used by FN)
+EXPOSE 6181/tcp
+# FN p2p port (not used by Validators)
+EXPOSE 6182/tcp
+# API http service
+EXPOSE 8080/tcp
+
+CMD /run.sh
+
