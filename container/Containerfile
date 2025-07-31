@@ -34,5 +34,5 @@ EXPOSE 6182/tcp
 # API http service
 EXPOSE 8080/tcp
 
-CMD /run.sh
+CMD ["/run.sh"]
 
