@@ -31,10 +31,14 @@ struct GithubContent {
 pub async fn init_fullnode_yaml(
     home_dir: Option<PathBuf>,
     overwrite_peers: bool,
+    archive_mode: bool,
 ) -> anyhow::Result<PathBuf> {
     let waypoint = get_genesis_waypoint(home_dir.clone()).await?;
 
-    let yaml = make_fullnode_yaml(home_dir.clone(), waypoint)?;
+    let yaml = match archive_mode {
+        true => make_fullnode_archive_yaml(home_dir.clone(), waypoint)?,
+        false => make_fullnode_fast_sync_yaml(home_dir.clone(), waypoint)?,
+    };
 
     let home = home_dir.unwrap_or_else(global_config_dir);
     let p = home.join(FN_FILENAME);
@@ -85,8 +89,51 @@ pub async fn fetch_seed_addresses(
     Ok(seeds)
 }
 
+/// A fullnode config which does a fast sync to the chain
+/// as opposed to the default fullnode config for archive nodes.
+pub fn make_fullnode_fast_sync_yaml(
+    home_dir: Option<PathBuf>,
+    waypoint: Waypoint,
+) -> anyhow::Result<String> {
+    let home_dir = home_dir.unwrap_or_else(global_config_dir);
+    let path = home_dir.display().to_string();
+
+    // Create the YAML template with necessary configurations
+    let template = format!(
+        "
+base:
+  role: 'full_node'
+  data_dir: '{path}/data'
+  waypoint:
+    from_config: '{waypoint}'
+
+execution:
+  genesis_file_location: '{path}/genesis/genesis.blob'
+
+state_sync:
+     state_sync_driver:
+        bootstrapping_mode: DownloadLatestStates
+        continuous_syncing_mode: ApplyTransactionOutputs
+
+full_node_networks:
+- network_id: 'public'
+  listen_address: '/ip4/0.0.0.0/tcp/6182'
+  max_outbound_connections: 10
+
+
+api:
+  enabled: true
+  address: '0.0.0.0:8080'
+"
+    );
+    Ok(template)
+}
+
 /// Create a fullnode yaml to bootstrap node
-pub fn make_fullnode_yaml(home_dir: Option<PathBuf>, waypoint: Waypoint) -> anyhow::Result<String> {
+pub fn make_fullnode_archive_yaml(
+    home_dir: Option<PathBuf>,
+    waypoint: Waypoint,
+) -> anyhow::Result<String> {
     let home_dir = home_dir.unwrap_or_else(global_config_dir);
     let path = home_dir.display().to_string();
 
@@ -106,10 +153,19 @@ state_sync:
      state_sync_driver:
         bootstrapping_mode: ExecuteOrApplyFromGenesis
         continuous_syncing_mode: ApplyTransactionOutputs
+storage:
+  storage_pruner_config:
+    ledger_pruner_config:
+      enable: false
+    state_merkle_pruner_config:
+      enable: false
+    epoch_snapshot_pruner_config:
+      enable: false
 
 full_node_networks:
 - network_id: 'public'
   listen_address: '/ip4/0.0.0.0/tcp/6182'
+  max_outbound_connections: 10
 
 api:
   enabled: true
@@ -146,9 +202,19 @@ state_sync:
         bootstrapping_mode: ApplyTransactionOutputsFromGenesis
         continuous_syncing_mode: ApplyTransactionOutputs
 
+storage:
+  storage_pruner_config:
+    ledger_pruner_config:
+      enable: false
+    state_merkle_pruner_config:
+      enable: false
+    epoch_snapshot_pruner_config:
+      enable: false
+
 full_node_networks:
 - network_id: 'public'
   listen_address: '/ip4/0.0.0.0/tcp/6182'
+  max_outbound_connections: 10
   identity:
     type: 'from_file'
     path: {path}/validator-full-node-identity.yaml
@@ -180,13 +246,6 @@ mempool:
     Ok(template)
 }
 
-// #[tokio::test]
-// async fn get_peers() {
-//     let _seed = fetch_seed_addresses(None).await.unwrap();
-
-//     TODO: test
-// }
-
 #[tokio::test]
 async fn get_yaml() {
     use std::str::FromStr;
@@ -194,7 +253,7 @@ async fn get_yaml() {
 
     let seeds = fetch_seed_addresses(None).await.unwrap();
 
-    let y = make_fullnode_yaml(
+    let y = make_fullnode_archive_yaml(
         Some(p.clone()),
         Waypoint::from_str("0:95023f4d6a7e24cac3e52cad29697184db260214210b57aef3f1031ad4d8c02c")
             .unwrap(),
