@@ -7,6 +7,7 @@ use crate::{
 };
 use anyhow::{bail, Context, Result};
 use clap::Parser;
+use dialoguer::Select;
 use libra_types::{
     core_types::network_playlist::NetworkPlaylist,
     exports::{AccountAddress, AuthenticationKey, NamedChain},
@@ -211,8 +212,17 @@ impl ConfigCli {
             Some(ConfigSub::FullnodeInit { home_path }) => {
                 download_genesis(home_path.to_owned()).await?;
                 println!("downloaded genesis block");
+                let sync_options = vec!["Fast Sync (default)", "Archive (full history)"];
+                let selection = Select::new()
+                    .with_prompt("choose fullnode sync mode")
+                    .default(0)
+                    .items(&sync_options)
+                    .interact()?;
 
-                let p = init_fullnode_yaml(home_path.to_owned(), true).await?;
+                let archive_mode = selection != 0;
+
+                // You can now use `archive_mode` to configure the fullnode accordingly.
+                let p = init_fullnode_yaml(home_path.to_owned(), true, archive_mode).await?;
 
                 println!("config created at {}", p.display());
 
