@@ -1,4 +1,6 @@
 # LIBRA_CONTAINER_MODE : validator|vfn|fullnode
+# Currently only supports fullnode mode
+#
 # Check if this container has already been configured
 libra_home=/root/.libra
 file_indicating_already_configured="fullnode.yml"
@@ -14,4 +16,3 @@ fi
 # Start node
 echo "Starting libra node"
 libra node
-
