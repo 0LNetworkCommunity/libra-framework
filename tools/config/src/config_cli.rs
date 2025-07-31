@@ -84,6 +84,9 @@ enum ConfigSub {
         /// path to libra config and data files defaults to $HOME/.libra
         #[clap(long)]
         home_path: Option<PathBuf>,
+        /// optional, whether to use archive mode (full history) or fast sync mode
+        #[clap(long)]
+        archive_mode: Option<bool>,
     },
 }
 
@@ -209,20 +212,28 @@ impl ConfigCli {
             }
 
             // Initialize fullnode configuration
-            Some(ConfigSub::FullnodeInit { home_path }) => {
-                download_genesis(home_path.to_owned()).await?;
-                println!("downloaded genesis block");
-                let sync_options = vec!["Fast Sync (default)", "Archive (full history)"];
-                let selection = Select::new()
-                    .with_prompt("choose fullnode sync mode")
-                    .default(0)
-                    .items(&sync_options)
-                    .interact()?;
+            Some(ConfigSub::FullnodeInit {
+                home_path,
+                archive_mode,
+            }) => {
+                let archive = archive_mode.unwrap_or_else(|| {
+                    let sync_options = vec!["Fast Sync (default)", "Archive (full history)"];
 
-                let archive_mode = selection != 0;
+                    let selection = Select::new()
+                        .with_prompt("choose fullnode sync mode")
+                        .default(0)
+                        .items(&sync_options)
+                        .interact()
+                        .expect("user did not select sync mode");
+
+                    selection != 0
+                });
+
+                println!("downloading genesis block");
+                download_genesis(home_path.to_owned()).await?;
 
                 // You can now use `archive_mode` to configure the fullnode accordingly.
-                let p = init_fullnode_yaml(home_path.to_owned(), true, archive_mode).await?;
+                let p = init_fullnode_yaml(home_path.to_owned(), true, archive).await?;
 
                 println!("config created at {}", p.display());
 
