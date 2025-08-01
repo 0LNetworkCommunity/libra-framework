@@ -6,6 +6,7 @@ on:
       # make binaries which may be ahead of releases to use in CI jobs
       - "canary*"
       - "ci-bins*"
+      - "refactor-container"
     tags: # run this also on release candidates
       - "[0-9]+.[0-9]+.[0-9]*"
 env:
@@ -27,7 +28,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository }}/libra-node
+            ghcr.io/${{ github.repository_owner }}/libra-node
           tags: |
             # tag as branch name
             type=sha,enable=true,priority=100,prefix=,suffix=,format=long
@@ -53,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./container/for-registry/Containerfile
+          file: ./container/Containerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
