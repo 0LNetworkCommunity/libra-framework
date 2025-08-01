@@ -24,7 +24,8 @@ COPY --from=builder /usr/libra/target/release/libra /usr/libra/target/release/li
 COPY container/run.sh /run.sh
 
 # Mount this path to persist node config and storage
-VOLUME /home/root/.libra
+# (note at present this depends on the uid/gid the container is run with)
+VOLUME /home/ubuntu/.libra
 # Validator p2p port (not used by FN)
 EXPOSE 6180/tcp
 # VFN p2p port (not used by FN)

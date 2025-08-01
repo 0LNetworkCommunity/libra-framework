@@ -8,6 +8,11 @@ if [[ ! -f ${libra_home}/${file_indicating_already_configured} ]]; then
 	echo "No existing config detected, initializing as a fullnode..."
 	# If not, run libra config
 	libra config fullnode-init --archive-mode false
+	result=$?
+	if [[ $result != 0 ]]; then
+		echo "Fatal Error: libra config failed"
+		exit 1
+	fi
 	echo "Initialized"
 else
 	echo "Container already configured"
