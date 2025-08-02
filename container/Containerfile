@@ -22,10 +22,10 @@ RUN apt update && apt install -y ca-certificates
 COPY --from=builder /usr/libra/target/release/libra /usr/libra/target/release/libra-* /usr/local/bin/
 
 COPY container/run.sh /run.sh
+COPY container/change-uid.sh /change-uid.sh
 
 # Mount this path to persist node config and storage
-# (note at present this depends on the uid/gid the container is run with)
-VOLUME /home/ubuntu/.libra
+VOLUME ["/mnt/libra"]
 # Validator p2p port (not used by FN)
 EXPOSE 6180/tcp
 # VFN p2p port (not used by FN)
@@ -37,4 +37,4 @@ EXPOSE 8080/tcp
 
 SHELL ["/bin/bash", "-c"]
 CMD "/run.sh"
-
+CMD ["/change-uid.sh", "/run.sh"]
