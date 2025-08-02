@@ -6,7 +6,6 @@ on:
       # make binaries which may be ahead of releases to use in CI jobs
       - "canary*"
       - "ci-bins*"
-      - "refactor-container"
     tags: # run this also on release candidates
       - "[0-9]+.[0-9]+.[0-9]*"
 env:
