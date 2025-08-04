@@ -27,16 +27,14 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository }}/libra-node
+            ghcr.io/${{ github.repository_owner }}/libra-node
           tags: |
-            # tag as branch name
+            # tag as git sha
             type=sha,enable=true,priority=100,prefix=,suffix=,format=long
             # tag canary releases
             type=raw,value=canary,enable=${{contains(env.BRANCH_NAME, 'canary')}}
             # tag ci bins releases
             type=raw,value=ci-bins,enable=${{contains(env.BRANCH_NAME, 'ci-bins')}}
-            # if is in MAIN branch, also tag as latest
-            type=raw,value=latest,enable={{is_default_branch}}
             # tag version
             type=semver,pattern={{version}}
 
@@ -53,7 +51,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./container/for-registry/Containerfile
+          file: ./container/Containerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
