@@ -1,0 +1,40 @@
+# Built from https://github.com/rust-lang/docker-rust
+# Note we specify an explicit version of the image as a workaround for the fact that
+# on developer machines "latest" gets pulled once at the beginning of time then never
+# updated. So unfortunately we will need to maintain the version here.
+FROM rust:1.88 AS builder
+
+# Install build dependencies
+RUN apt update && apt install -y build-essential lld pkg-config libssl-dev libgmp-dev clang
+
+WORKDIR /usr/libra
+COPY . .
+# We specify -j 1 to avoid OOM-killing the build
+ARG LIBRA_CARGO_CONCURRENCY=1
+RUN cargo build -j $LIBRA_CARGO_CONCURRENCY --release
+
+# Note we specify an explicit version of the image as a workaround for the fact that
+# on developer machines "latest" gets pulled once at the beginning of time then never
+# updated. So unfortunately we will need to maintain the version here.
+FROM ubuntu:24.04
+RUN apt update && apt install -y ca-certificates
+
+COPY --from=builder /usr/libra/target/release/libra /usr/libra/target/release/libra-* /usr/local/bin/
+
+COPY container/run.sh /run.sh
+COPY container/change-uid.sh /change-uid.sh
+
+# Mount this path to persist node config and storage
+VOLUME ["/mnt/libra"]
+# Validator p2p port (not used by FN)
+EXPOSE 6180/tcp
+# VFN p2p port (not used by FN)
+EXPOSE 6181/tcp
+# FN p2p port (not used by Validators)
+EXPOSE 6182/tcp
+# API http service
+EXPOSE 8080/tcp
+
+SHELL ["/bin/bash", "-c"]
+CMD "/run.sh"
+CMD ["/change-uid.sh", "/run.sh"]
